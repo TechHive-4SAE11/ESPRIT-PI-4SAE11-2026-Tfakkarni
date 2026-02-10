@@ -1,0 +1,45 @@
+<div class="min-h-screen bg-background text-foreground">
+  <div class="container mx-auto p-8">
+    <h1 class="text-4xl font-bold mb-8 text-primary">Zard/UI + Tailwind CSS Setup</h1>
+
+    <div class="space-y-4">
+      <div class="card p-6 bg-card text-card-foreground rounded-lg border border-border">
+        <h2 class="text-2xl font-semibold mb-4">Welcome to {{ title }}</h2>
+        <p class="text-muted-foreground mb-4">
+          This is a test component to verify that Zard/UI and Tailwind CSS are properly configured.
+        </p>
+
+        <div class="flex gap-4 flex-wrap">
+          <button class="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
+            (click)="onPrimaryClick()">
+            Primary Button
+          </button>
+
+          <button
+            class="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:opacity-90 transition-opacity"
+            (click)="onSecondaryClick()">
+            Secondary Button
+          </button>
+
+          <button class="px-4 py-2 bg-destructive text-white rounded-lg hover:opacity-90 transition-opacity"
+            (click.prevent)="onDestructiveClick()">
+            Destructive (with .prevent modifier)
+          </button>
+        </div>
+      </div>
+
+      <div class="card p-6 bg-popover text-popover-foreground rounded-lg border border-border">
+        <h3 class="text-xl font-semibold mb-2">Test Event Modifier</h3>
+        <p class="text-sm text-muted-foreground mb-4">
+          The buttons above use the custom event manager plugins from Zard/UI
+        </p>
+        <input type="text" placeholder="Type something (debounced 500ms)..."
+          class="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+          (input.debounce.500)="onDebounceInput($event)" />
+        <p class="mt-2 text-sm text-muted-foreground">Input value: {{ inputValue }}</p>
+      </div>
+    </div>
+  </div>
+
+  <router-outlet></router-outlet>
+</div>

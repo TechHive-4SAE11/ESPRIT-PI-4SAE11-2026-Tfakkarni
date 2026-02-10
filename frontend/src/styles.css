@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.995 0.005 290);
+  --foreground: oklch(0.2 0.04 290);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.04 290);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.04 290);
+  --primary: oklch(0.55 0.22 290);
+  --primary-foreground: oklch(0.98 0.01 290);
+  --secondary: oklch(0.95 0.025 290);
+  --secondary-foreground: oklch(0.3 0.04 290);
+  --muted: oklch(0.95 0.02 290);
+  --muted-foreground: oklch(0.5 0.03 290);
+  --accent: oklch(0.92 0.05 290);
+  --accent-foreground: oklch(0.3 0.04 290);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.9 0.025 290);
+  --input: oklch(0.9 0.025 290);
+  --ring: oklch(0.55 0.22 290);
+  --chart-1: oklch(0.55 0.22 290);
+  --chart-2: oklch(0.6 0.2 270);
+  --chart-3: oklch(0.7 0.18 310);
+  --chart-4: oklch(0.5 0.25 260);
+  --chart-5: oklch(0.75 0.15 300);
+  --sidebar: oklch(0.98 0.015 290);
+  --sidebar-foreground: oklch(0.2 0.04 290);
+  --sidebar-primary: oklch(0.55 0.22 290);
+  --sidebar-primary-foreground: oklch(0.98 0.015 290);
+  --sidebar-accent: oklch(0.95 0.025 290);
+  --sidebar-accent-foreground: oklch(0.3 0.04 290);
+  --sidebar-border: oklch(0.9 0.025 290);
+  --sidebar-ring: oklch(0.55 0.22 290);
+}
+
+.dark {
+  --background: oklch(0.15 0.025 290);
+  --foreground: oklch(0.95 0.01 290);
+  --card: oklch(0.2 0.03 290);
+  --card-foreground: oklch(0.95 0.01 290);
+  --popover: oklch(0.2 0.03 290);
+  --popover-foreground: oklch(0.95 0.01 290);
+  --primary: oklch(0.621 0.217 315.954);
+  --primary-foreground: oklch(0.15 0.025 290);
+  --secondary: oklch(0.28 0.035 290);
+  --secondary-foreground: oklch(0.95 0.01 290);
+  --muted: oklch(0.28 0.03 290);
+  --muted-foreground: oklch(0.65 0.05 290);
+  --accent: oklch(0.35 0.06 290);
+  --accent-foreground: oklch(0.95 0.01 290);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(0.35 0.04 290);
+  --input: oklch(0.35 0.04 290);
+  --ring: oklch(0.66 0.185 312.394);
+  --chart-1: oklch(0.68 0.2 290);
+  --chart-2: oklch(0.6 0.18 270);
+  --chart-3: oklch(0.7 0.15 310);
+  --chart-4: oklch(0.52 0.22 260);
+  --chart-5: oklch(0.75 0.12 300);
+  --sidebar: oklch(0.2 0.03 290);
+  --sidebar-foreground: oklch(0.95 0.01 290);
+  --sidebar-primary: oklch(0.68 0.2 290);
+  --sidebar-primary-foreground: oklch(0.15 0.025 290);
+  --sidebar-accent: oklch(0.28 0.035 290);
+  --sidebar-accent-foreground: oklch(0.95 0.01 290);
+  --sidebar-border: oklch(0.35 0.04 290);
+  --sidebar-ring: oklch(0.68 0.2 290);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-track {
+  border-radius: 5px;
+  background: var(--muted);
+}
+
+/* You can add global styles to this file, and also import other style files */
