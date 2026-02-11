@@ -10,6 +10,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.techhive.userservice.config.KeycloakAdminConfig;
 import org.techhive.userservice.dto.RegisterRequest;
+import org.techhive.userservice.entity.User;
+import org.techhive.userservice.repository.UserRepository;
 
 import java.util.*;
 
@@ -20,6 +22,7 @@ public class KeycloakUserService {
 
   private final RestTemplate restTemplate;
   private final KeycloakAdminConfig keycloakConfig;
+  private final UserRepository userRepository;
 
   /**
    * Register a new user in Keycloak under the configured realm.
@@ -28,16 +31,22 @@ public class KeycloakUserService {
   public void registerUser(RegisterRequest request) {
     String adminToken = getAdminToken();
 
-    // 1. Create the user
+    // 1. Create the user in Keycloak
     createKeycloakUser(adminToken, request);
 
-    // 2. Find the created user by email (Keycloak uses email as username)
-    String userId = findUserByEmail(adminToken, request.getEmail());
+    // 2. Find the created user by email to get the Keycloak ID
+    String keycloakId = findUserByEmail(adminToken, request.getEmail());
 
-    // 3. Assign the chosen role
-    assignRole(adminToken, userId, request.getRole());
+    // 3. Assign the chosen role in Keycloak
+    assignRole(adminToken, keycloakId, request.getRole());
 
-    log.info("User '{}' registered successfully with role '{}'", request.getEmail(), request.getRole());
+    // 4. Save user to local PostgreSQL database
+    User user = new User(keycloakId, request.getFirstName(), request.getLastName(),
+        request.getEmail(), request.getRole());
+    userRepository.save(user);
+
+    log.info("User '{}' registered successfully with role '{}', keycloakId='{}'",
+        request.getEmail(), request.getRole(), keycloakId);
   }
 
   private String getAdminToken() {
