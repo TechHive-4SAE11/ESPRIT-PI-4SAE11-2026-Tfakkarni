@@ -22,6 +22,7 @@ export interface ZardStringTemplateOutletContext {
 @Directive({
   selector: '[zStringTemplateOutlet]',
   exportAs: 'zStringTemplateOutlet',
+  standalone: true,
 })
 export class ZardStringTemplateOutletDirective<T = unknown> implements OnDestroy {
   private readonly viewContainer = inject(ViewContainerRef);

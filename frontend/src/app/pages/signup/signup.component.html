@@ -1,0 +1,128 @@
+<div
+  class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+  <div class="w-full max-w-md">
+    <!-- Logo/Brand Section -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold text-primary mb-2">Tfakkarni</h1>
+      <p class="text-muted-foreground text-sm">
+        Alzheimer's Patient Monitoring Platform
+      </p>
+    </div>
+
+    <!-- Signup Card -->
+    <z-card zTitle="Create Account" zDescription="Sign up to get started">
+      <div class="space-y-6">
+        <form (ngSubmit)="onSubmit()" class="space-y-4">
+          <!-- Name Row -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-2">
+              <label for="firstName" class="text-sm font-medium leading-none">
+                First Name
+              </label>
+              <input z-input type="text" id="firstName" name="firstName" [(ngModel)]="firstName"
+                placeholder="First name" class="w-full" required />
+            </div>
+            <div class="space-y-2">
+              <label for="lastName" class="text-sm font-medium leading-none">
+                Last Name
+              </label>
+              <input z-input type="text" id="lastName" name="lastName" [(ngModel)]="lastName" placeholder="Last name"
+                class="w-full" required />
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="space-y-2">
+            <label for="email" class="text-sm font-medium leading-none">
+              Email
+            </label>
+            <input z-input type="email" id="email" name="email" [(ngModel)]="email" placeholder="Enter your email"
+              class="w-full" required />
+          </div>
+
+          <!-- Password -->
+          <div class="space-y-2">
+            <label for="password" class="text-sm font-medium leading-none">
+              Password
+            </label>
+            <input z-input type="password" id="password" name="password" [(ngModel)]="password"
+              placeholder="Create a password" class="w-full" required />
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="space-y-2">
+            <label for="confirmPassword" class="text-sm font-medium leading-none">
+              Confirm Password
+            </label>
+            <input z-input type="password" id="confirmPassword" name="confirmPassword" [(ngModel)]="confirmPassword"
+              placeholder="Confirm your password" class="w-full" required />
+          </div>
+
+          <!-- Role Selection -->
+          <div class="space-y-2">
+            <span class="text-sm font-medium leading-none">
+              I am a
+            </span>
+            <div class="grid grid-cols-2 gap-3">
+              <button z-button type="button" [zType]="selectedRole === 'patient' ? 'default' : 'outline'" class="w-full"
+                (click)="selectedRole = 'patient'">
+                <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                </svg>
+                Patient
+              </button>
+              <button z-button type="button" [zType]="selectedRole === 'doctor' ? 'default' : 'outline'" class="w-full"
+                (click)="selectedRole = 'doctor'">
+                <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 20a6 6 0 0 0-12 0" />
+                  <circle cx="12" cy="10" r="4" />
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+                Doctor
+              </button>
+            </div>
+          </div>
+
+          <!-- Error Message -->
+          @if (errorMessage) {
+          <div class="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+            {{ errorMessage }}
+          </div>
+          }
+
+          <!-- Success Message -->
+          @if (successMessage) {
+          <div class="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+            {{ successMessage }}
+          </div>
+          }
+
+          <!-- Sign Up Button -->
+          <button z-button type="submit" class="w-full" zSize="lg" [disabled]="isLoading">
+            @if (isLoading) {
+            <span>Creating account...</span>
+            } @else {
+            <span>Sign Up</span>
+            }
+          </button>
+        </form>
+
+        <!-- Login Link -->
+        <div class="text-center text-sm">
+          <span class="text-muted-foreground">Already have an account? </span>
+          <a routerLink="/login" class="text-primary hover:underline font-medium">
+            Sign in
+          </a>
+        </div>
+      </div>
+    </z-card>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center text-sm text-muted-foreground">
+      <p>&copy; 2026 Tfakkarni. All rights reserved.</p>
+    </div>
+  </div>
+</div>
