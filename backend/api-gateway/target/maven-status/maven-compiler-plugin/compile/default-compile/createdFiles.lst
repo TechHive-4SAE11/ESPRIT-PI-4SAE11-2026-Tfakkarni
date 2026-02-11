@@ -1,0 +1,3 @@
+org\techhive\apigateway\config\SecurityConfig.class
+org\techhive\apigateway\ApiGatewayApplication.class
+org\techhive\apigateway\config\SecurityConfig$KeycloakRoleConverter.class
