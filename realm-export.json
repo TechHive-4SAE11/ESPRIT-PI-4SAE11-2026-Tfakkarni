@@ -89,6 +89,15 @@
         "attributes": {}
       },
       {
+        "id": "92362afa-be05-4d0d-8935-bfccacfbb14b",
+        "name": "admin",
+        "description": "",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "45b21aae-2f0c-4a92-8a0d-e7f8b238f5cc",
+        "attributes": {}
+      },
+      {
         "id": "717d46a1-f3c7-4c98-8a3d-0a45ef60e521",
         "name": "uma_authorization",
         "description": "${role_uma_authorization}",
