@@ -31,6 +31,7 @@ public class SecurityConfig {
             .pathMatchers("/public/**").permitAll()
             .pathMatchers("/actuator/**").permitAll()
             .pathMatchers("/api/users/register").permitAll()
+            .pathMatchers("/api/games/play/**").permitAll()
             // All other endpoints require authentication
             .anyExchange().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2

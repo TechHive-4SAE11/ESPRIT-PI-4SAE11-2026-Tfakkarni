@@ -31,6 +31,10 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/api/users/**
+        - id: game-service
+          uri: lb://game-service
+          predicates:
+            - Path=/api/games/**
   security:
     oauth2:
       resourceserver:

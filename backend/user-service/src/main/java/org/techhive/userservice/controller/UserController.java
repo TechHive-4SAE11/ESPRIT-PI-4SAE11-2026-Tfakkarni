@@ -7,8 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.techhive.userservice.dto.RegisterRequest;
+import org.techhive.userservice.entity.User;
 import org.techhive.userservice.service.KeycloakUserService;
+import org.techhive.userservice.service.UserService;
 
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -18,6 +21,7 @@ import java.util.Map;
 public class UserController {
 
   private final KeycloakUserService keycloakUserService;
+  private final UserService userService;
 
   @PostMapping("/register")
   public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
@@ -41,5 +45,32 @@ public class UserController {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body(Map.of("error", "Registration failed: " + e.getMessage()));
     }
+  }
+
+  /**
+   * List all users (admin).
+   */
+  @GetMapping
+  public ResponseEntity<List<User>> getAllUsers() {
+    return ResponseEntity.ok(userService.getAllUsers());
+  }
+
+  /**
+   * List users by role (e.g., /api/users/role/patient).
+   */
+  @GetMapping("/role/{role}")
+  public ResponseEntity<List<User>> getUsersByRole(@PathVariable String role) {
+    return ResponseEntity.ok(userService.getUsersByRole(role));
+  }
+
+  /**
+   * Get a user by their Keycloak ID.
+   */
+  @GetMapping("/keycloak/{keycloakId}")
+  public ResponseEntity<?> getUserByKeycloakId(@PathVariable String keycloakId) {
+    return userService.getUserByKeycloakId(keycloakId)
+        .<ResponseEntity<?>>map(ResponseEntity::ok)
+        .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", "User not found")));
   }
 }

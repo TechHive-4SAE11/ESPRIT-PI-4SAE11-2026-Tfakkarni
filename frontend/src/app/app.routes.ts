@@ -50,6 +50,15 @@ export const routes: Routes = [
     data: { roles: ['patient'] },
   },
   {
+    path: 'patient-dashboard/play/:gameId',
+    loadComponent: () =>
+      import('@/pages/patient-dashboard/play-game/play-game.component').then(
+        (m) => m.PlayGameComponent
+      ),
+    canActivate: [AuthGuard],
+    data: { roles: ['patient'] },
+  },
+  {
     path: 'access-denied',
     loadComponent: () =>
       import('@/pages/access-denied/access-denied.component').then(

@@ -1,8 +1,9 @@
-import { Component, OnInit, inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, inject, PLATFORM_ID, NgZone } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { KeycloakService } from 'keycloak-angular';
 import { AuthService } from '@/core/auth';
 import { ZardButtonComponent } from '@/shared/components/button/button.component';
@@ -35,7 +36,8 @@ export class LoginComponent implements OnInit {
     private readonly authService: AuthService,
     private readonly keycloakService: KeycloakService,
     private readonly router: Router,
-    private readonly http: HttpClient
+    private readonly http: HttpClient,
+    private readonly ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
@@ -73,11 +75,13 @@ export class LoginComponent implements OnInit {
       body.set('username', this.username);
       body.set('password', this.password);
 
-      const response = await this.http.post<any>(tokenEndpoint, body.toString(), {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }).toPromise();
+      const response = await firstValueFrom(
+        this.http.post<any>(tokenEndpoint, body.toString(), {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        })
+      );
 
       console.log('[LOGIN] Token response received:', {
         hasAccessToken: !!response?.access_token,
@@ -87,25 +91,60 @@ export class LoginComponent implements OnInit {
       });
 
       if (response?.access_token) {
-        console.log('[LOGIN] Initializing Keycloak with token...');
-        await this.keycloakService.init({
-          config: {
-            url: 'http://localhost:8180',
-            realm: 'techhive',
-            clientId: 'tfakkarni-frontend',
-          },
-          initOptions: {
-            token: response.access_token,
-            refreshToken: response.refresh_token,
-            checkLoginIframe: false,
-          },
-          enableBearerInterceptor: true,
-          bearerPrefix: 'Bearer',
-        });
+        console.log('[LOGIN] Setting token on existing Keycloak instance...');
 
-        console.log('[LOGIN] Keycloak initialized with token, routing by role...');
+        // Get the already-initialized Keycloak instance (from APP_INITIALIZER)
+        // and set tokens directly — do NOT call init() a second time.
+        const kc = this.keycloakService.getKeycloakInstance();
+
+        kc.token = response.access_token;
+        kc.refreshToken = response.refresh_token;
+        kc.authenticated = true;
+
+        // Parse the JWT payload so keycloak-angular can read roles
+        const tokenPayload = response.access_token.split('.')[1];
+        kc.tokenParsed = JSON.parse(atob(tokenPayload));
+        kc.subject = kc.tokenParsed?.['sub'];
+        (kc as any).sessionId = kc.tokenParsed?.['session_state'];
+
+        // Populate realmAccess and resourceAccess so getUserRoles() works
+        kc.realmAccess = kc.tokenParsed?.['realm_access'] ?? { roles: [] };
+        kc.resourceAccess = kc.tokenParsed?.['resource_access'] ?? {};
+
+        if (response.refresh_token) {
+          const refreshPayload = response.refresh_token.split('.')[1];
+          kc.refreshTokenParsed = JSON.parse(atob(refreshPayload));
+        }
+
+        // Set token expiry so automatic refresh works
+        if (kc.tokenParsed?.['exp']) {
+          kc.tokenParsed['iat'] = kc.tokenParsed['iat'] ?? Math.floor(Date.now() / 1000);
+        }
+
+        console.log('[LOGIN] Token set. Authenticated:', kc.authenticated);
+        console.log('[LOGIN] realmAccess:', JSON.stringify(kc.realmAccess));
         console.log('[LOGIN] User roles:', this.authService.getUserRoles());
-        this.authService.routeByRole();
+
+        // Use NgZone.run to ensure navigation happens inside Angular zone
+        this.ngZone.run(() => {
+          const role = this.authService.getPrimaryRole();
+          console.log('[LOGIN] Primary role:', role);
+          switch (role) {
+            case 'admin':
+              this.router.navigate(['/admin-dashboard']);
+              break;
+            case 'doctor':
+              this.router.navigate(['/doctor-dashboard']);
+              break;
+            case 'patient':
+              this.router.navigate(['/patient-dashboard']);
+              break;
+            default:
+              console.error('[LOGIN] No recognized role, going to access-denied');
+              this.router.navigate(['/access-denied']);
+              break;
+          }
+        });
       } else {
         console.error('[LOGIN] No access_token in response:', response);
         this.errorMessage = 'Authentication failed: no token received';
@@ -131,18 +170,5 @@ export class LoginComponent implements OnInit {
     } finally {
       this.isLoading = false;
     }
-  }
-
-  loginWithKeycloakSSO(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
-    }
-
-    this.keycloakService.login({
-      redirectUri: globalThis.location.origin + '/login',
-    }).catch((error: any) => {
-      console.error('Keycloak SSO login error:', error);
-      this.errorMessage = 'SSO login failed. Please try again.';
-    });
   }
 }

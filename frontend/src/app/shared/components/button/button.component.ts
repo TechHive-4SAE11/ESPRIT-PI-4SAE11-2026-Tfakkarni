@@ -26,8 +26,8 @@ import { ZardIconComponent } from '@/shared/components/icon/icon.component';
 
 @Component({
   selector: 'z-button, button[z-button], a[z-button]',
-  imports: [ZardIconComponent],
   standalone: true,
+  imports: [ZardIconComponent],
   template: `
     @if (zLoading()) {
       <z-icon zType="loader-circle" class="animate-spin duration-2000" />
