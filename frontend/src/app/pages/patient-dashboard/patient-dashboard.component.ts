@@ -216,6 +216,28 @@ import { GameService, type GameResponse, type GameStatsResponse } from '@/core/s
             }
           </z-card>
 
+          @if (errorMessage()) {
+            <div class="mb-4 p-4 rounded-md bg-destructive/10 border border-destructive text-destructive text-sm">
+              {{ errorMessage() }}
+            </div>
+          }
+          @if (successMessage()) {
+            <div class="mb-4 p-4 rounded-md bg-green-500/10 border border-green-500 text-green-700 text-sm">
+              {{ successMessage() }}
+            </div>
+          }
+
+          @if (!canCreateGame() && !creating()) {
+            <p class="text-sm text-muted-foreground mb-3">
+              @if (newGameTitle().trim().length === 0) {
+                <span class="text-destructive">• Enter a game title</span><br/>
+              }
+              @if (uploadedImages().length < 2) {
+                <span class="text-destructive">• Upload at least 2 images (currently {{ uploadedImages().length }})</span>
+              }
+            </p>
+          }
+
           <div class="flex gap-3">
             <button
               z-button
@@ -328,6 +350,8 @@ export class PatientDashboardComponent implements OnInit {
   newGameDescription = signal('');
   uploadedImages = signal<{ name: string; base64: string; contentType: string; preview: string }[]>([]);
   creating = signal(false);
+  errorMessage = signal('');
+  successMessage = signal('');
 
   keycloakId = '';
 
@@ -357,12 +381,14 @@ export class PatientDashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.keycloakService.loadUserProfile().then(profile => {
-      this.keycloakId = profile.id ?? '';
+    const kc = this.keycloakService.getKeycloakInstance();
+    this.keycloakId = kc?.subject ?? kc?.tokenParsed?.['sub'] ?? '';
+
+    if (this.keycloakId) {
       this.loadData();
-    }).catch(() => {
-      this.keycloakId = '';
-    });
+    } else {
+      console.error('[PatientDashboard] Could not determine keycloakId');
+    }
   }
 
   setPage(page: string): void {
@@ -412,15 +438,34 @@ export class PatientDashboardComponent implements OnInit {
     this.uploadedImages.update(images => images.filter((_, i) => i !== index));
   }
 
-  createGame(): void {
+  async createGame(): Promise<void> {
     if (!this.canCreateGame()) return;
     this.creating.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    // Ensure the access token is fresh before making the request
+    try {
+      const kc = this.keycloakService.getKeycloakInstance();
+      if (kc?.refreshToken) {
+        await this.keycloakService.updateToken(30);
+      }
+    } catch (e) {
+      console.warn('[CreateGame] Token refresh failed, proceeding with current token', e);
+    }
+
+    console.log('[CreateGame] Sending POST /api/games', {
+      keycloakId: this.keycloakId,
+      title: this.newGameTitle(),
+      imageCount: this.uploadedImages().length,
+    });
 
     this.gameService.createGame(this.keycloakId, {
       title: this.newGameTitle(),
       description: this.newGameDescription(),
     }).subscribe({
       next: game => {
+        console.log('[CreateGame] Game created successfully, id:', game.id);
         // Upload images
         const uploads = this.uploadedImages().map(img => ({
           name: img.name,
@@ -430,14 +475,17 @@ export class PatientDashboardComponent implements OnInit {
 
         this.gameService.uploadImages(game.id, uploads).subscribe({
           next: () => {
+            console.log('[CreateGame] Images uploaded successfully');
             this.creating.set(false);
+            this.successMessage.set('Game created successfully!');
             this.resetForm();
             this.loadData();
             this.setPage('My Games');
           },
           error: err => {
-            console.error('Failed to upload images', err);
+            console.error('[CreateGame] Failed to upload images', err);
             this.creating.set(false);
+            this.errorMessage.set('Game created but failed to upload images: ' + (err?.error?.error || err?.message || 'Unknown error'));
             // Game was created, reload anyway
             this.loadData();
             this.setPage('My Games');
@@ -445,8 +493,18 @@ export class PatientDashboardComponent implements OnInit {
         });
       },
       error: err => {
-        console.error('Failed to create game', err);
+        console.error('[CreateGame] Failed to create game', err);
         this.creating.set(false);
+        const status = err?.status;
+        let msg = 'Failed to create game: ';
+        if (status === 401 || status === 403) {
+          msg += 'Authentication error. Please log out and log back in.';
+        } else if (status === 0) {
+          msg += 'Could not reach the server. Check if the API gateway is running on port 9090.';
+        } else {
+          msg += (err?.error?.error || err?.message || 'Unknown error (status ' + status + ')');
+        }
+        this.errorMessage.set(msg);
       },
     });
   }
@@ -455,6 +513,7 @@ export class PatientDashboardComponent implements OnInit {
     this.newGameTitle.set('');
     this.newGameDescription.set('');
     this.uploadedImages.set([]);
+    this.errorMessage.set('');
   }
 
   playGame(gameId: number): void {

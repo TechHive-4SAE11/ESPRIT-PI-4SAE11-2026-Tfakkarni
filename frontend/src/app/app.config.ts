@@ -48,6 +48,65 @@ function initializeKeycloak(keycloak: KeycloakService, platformId: object) {
       })
       .then((authenticated) => {
         console.log('[KC-INIT] Keycloak initialized successfully. Authenticated:', authenticated);
+
+        // If check-sso didn't find a session, try restoring tokens from localStorage
+        // (direct password grant doesn't create a KC session cookie)
+        if (!authenticated) {
+          try {
+            const raw = localStorage.getItem('tfk_tokens');
+            if (raw) {
+              const { accessToken, refreshToken } = JSON.parse(raw);
+              if (accessToken) {
+                const kc = keycloak.getKeycloakInstance();
+                kc.token = accessToken;
+                kc.refreshToken = refreshToken;
+                kc.authenticated = true;
+
+                const payload = accessToken.split('.')[1];
+                kc.tokenParsed = JSON.parse(atob(payload));
+                kc.subject = kc.tokenParsed?.['sub'];
+                (kc as any).sessionId = kc.tokenParsed?.['session_state'];
+                kc.realmAccess = kc.tokenParsed?.['realm_access'] ?? { roles: [] };
+                kc.resourceAccess = kc.tokenParsed?.['resource_access'] ?? {};
+
+                if (refreshToken) {
+                  const rPayload = refreshToken.split('.')[1];
+                  kc.refreshTokenParsed = JSON.parse(atob(rPayload));
+                }
+
+                // Check if access token is expired, try refresh
+                const exp = kc.tokenParsed?.['exp'] ?? 0;
+                if (exp * 1000 < Date.now()) {
+                  console.log('[KC-INIT] Stored access token expired, attempting refresh...');
+                  return keycloak.updateToken(30)
+                    .then(() => {
+                      console.log('[KC-INIT] Token refreshed successfully');
+                      // Save the new tokens
+                      const newKc = keycloak.getKeycloakInstance();
+                      localStorage.setItem('tfk_tokens', JSON.stringify({
+                        accessToken: newKc.token,
+                        refreshToken: newKc.refreshToken,
+                      }));
+                      return true;
+                    })
+                    .catch(() => {
+                      console.log('[KC-INIT] Token refresh failed, clearing stored tokens');
+                      localStorage.removeItem('tfk_tokens');
+                      kc.authenticated = false;
+                      return false;
+                    });
+                }
+
+                console.log('[KC-INIT] Restored tokens from storage. Authenticated:', kc.authenticated);
+                return true;
+              }
+            }
+          } catch (e) {
+            console.error('[KC-INIT] Failed to restore tokens from storage:', e);
+            localStorage.removeItem('tfk_tokens');
+          }
+        }
+
         return authenticated;
       })
       .catch((err) => {

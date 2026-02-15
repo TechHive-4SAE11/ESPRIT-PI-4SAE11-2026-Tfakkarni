@@ -235,11 +235,8 @@ export class PlayGameComponent implements OnInit {
   ngOnInit(): void {
     this.gameId = Number(this.route.snapshot.paramMap.get('gameId') ?? 0);
 
-    this.keycloakService.loadUserProfile().then(profile => {
-      this.keycloakId = profile.id ?? '';
-    }).catch(() => {
-      this.keycloakId = '';
-    });
+    const kc = this.keycloakService.getKeycloakInstance();
+    this.keycloakId = kc?.subject ?? kc?.tokenParsed?.['sub'] ?? '';
 
     this.loadGame();
   }

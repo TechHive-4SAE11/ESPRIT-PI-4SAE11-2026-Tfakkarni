@@ -111,6 +111,9 @@ export class LoginComponent implements OnInit {
         kc.realmAccess = kc.tokenParsed?.['realm_access'] ?? { roles: [] };
         kc.resourceAccess = kc.tokenParsed?.['resource_access'] ?? {};
 
+        // Persist tokens so page reloads keep the session
+        this.authService.saveTokens(response.access_token, response.refresh_token);
+
         if (response.refresh_token) {
           const refreshPayload = response.refresh_token.split('.')[1];
           kc.refreshTokenParsed = JSON.parse(atob(refreshPayload));
