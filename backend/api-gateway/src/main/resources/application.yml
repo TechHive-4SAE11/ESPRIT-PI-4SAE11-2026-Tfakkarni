@@ -35,6 +35,22 @@ spring:
           uri: lb://game-service
           predicates:
             - Path=/api/games/**
+        - id: tracking-service
+          uri: lb://tracking-service
+          predicates:
+            - Path=/api/tracking/**
+        - id: alert-service
+          uri: lb://alert-service
+          predicates:
+            - Path=/api/alerts/**
+        - id: ml-service
+          uri: lb://ml-service
+          predicates:
+            - Path=/api/ml/**
+        - id: medical-service
+          uri: lb://medical-service
+          predicates:
+            - Path=/api/medical/**
   security:
     oauth2:
       resourceserver:
