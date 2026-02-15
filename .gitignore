@@ -1,1 +1,19 @@
 /keycloak
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+
+# Build outputs
+**/target/
+**/build/
+**/dist/
+**/out/
+
+# Compiled files
+*.class
+*.jar
+*.war
