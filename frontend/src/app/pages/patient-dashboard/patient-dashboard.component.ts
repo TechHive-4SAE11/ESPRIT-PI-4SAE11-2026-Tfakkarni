@@ -29,7 +29,7 @@ import { GameService, type GameResponse, type GameStatsResponse } from '@/core/s
     <app-dashboard-layout
       [menuGroups]="menuGroups"
       [pageTitle]="currentPage()"
-      basePath="/patient-dashboard"
+      basePath="/patient"
     >
       @switch (currentPage()) {
         @case ('Home') {
@@ -458,7 +458,7 @@ export class PatientDashboardComponent implements OnInit {
   }
 
   playGame(gameId: number): void {
-    this.router.navigate(['/patient-dashboard/play', gameId]);
+    this.router.navigate(['/patient/play', gameId]);
   }
 
   deleteGame(gameId: number): void {

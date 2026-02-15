@@ -49,13 +49,13 @@ export class AuthService {
     const role = this.getPrimaryRole();
     switch (role) {
       case 'admin':
-        this.router.navigate(['/admin-dashboard']);
+        this.router.navigate(['/admin']);
         break;
       case 'doctor':
-        this.router.navigate(['/doctor-dashboard']);
+        this.router.navigate(['/doctor']);
         break;
       case 'patient':
-        this.router.navigate(['/patient-dashboard']);
+        this.router.navigate(['/patient']);
         break;
       default:
         this.router.navigate(['/access-denied']);

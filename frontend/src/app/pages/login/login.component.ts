@@ -131,13 +131,13 @@ export class LoginComponent implements OnInit {
           console.log('[LOGIN] Primary role:', role);
           switch (role) {
             case 'admin':
-              this.router.navigate(['/admin-dashboard']);
+              this.router.navigate(['/admin']);
               break;
             case 'doctor':
-              this.router.navigate(['/doctor-dashboard']);
+              this.router.navigate(['/doctor']);
               break;
             case 'patient':
-              this.router.navigate(['/patient-dashboard']);
+              this.router.navigate(['/patient']);
               break;
             default:
               console.error('[LOGIN] No recognized role, going to access-denied');

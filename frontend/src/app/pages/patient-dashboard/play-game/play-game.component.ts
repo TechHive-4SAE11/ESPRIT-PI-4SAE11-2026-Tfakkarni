@@ -320,7 +320,7 @@ export class PlayGameComponent implements OnInit {
 
   goBack(): void {
     this.stopTimer();
-    this.router.navigate(['/patient-dashboard']);
+    this.router.navigate(['/patient']);
   }
 
   formatTime(seconds: number): string {

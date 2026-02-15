@@ -12,7 +12,7 @@ import { RouterLink } from '@angular/router';
         <h1 class="text-6xl font-bold text-destructive">403</h1>
         <h2 class="text-2xl font-semibold">Access Denied</h2>
         <p class="text-muted-foreground">You do not have permission to view this page.</p>
-        <a routerLink="/" class="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity">
+        <a routerLink="/landing" class="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity">
           Go Home
         </a>
       </div>

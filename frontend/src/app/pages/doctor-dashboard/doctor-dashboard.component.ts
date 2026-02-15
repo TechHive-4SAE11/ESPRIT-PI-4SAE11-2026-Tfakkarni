@@ -30,7 +30,7 @@ import { GameService, type GameStatsResponse } from '@/core/services/game.servic
     <app-dashboard-layout
       [menuGroups]="menuGroups"
       [pageTitle]="currentPage()"
-      basePath="/doctor-dashboard"
+      basePath="/doctor"
     >
       @switch (currentPage()) {
         @case ('Home') {
