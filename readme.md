@@ -95,14 +95,14 @@ All IoT data is received by the **Tracking Service** and alerts are managed by t
      ┌────────▼──┐ ┌─────▼─────┐ ┌▼────────┐ ┌▼────────┐ ┌▼────────┐ ┌▼────────────┐
      │  User     │ │  Game     │ │Tracking │ │ Alert   │ │  ML     │ │  Medical    │
      │  Service  │ │  Service  │ │ Service │ │ Service │ │ Service │ │  Service    │
-     │  :8081    │ │  :8082    │ │  :8083  │ │  :8084  │ │  :8085  │ │  :8086      │
+     │  :18081   │ │  :18082   │ │ :18083  │ │ :18084  │ │ :18085  │ │  :18086     │
      └─────┬─────┘ └─────┬─────┘ └────┬────┘ └────┬────┘ └────┬────┘ └──────┬──────┘
            │              │            │           │           │             │
            └──────────────┴────────────┴───────────┴───────────┴─────────────┘
                                        │
                               ┌────────▼────────┐        ┌──────────────┐
                               │   PostgreSQL    │        │   Keycloak   │
-                              │   (Neon Cloud)  │        │   :8180      │
+                              │   (Neon Cloud)  │        │   :8280      │
                               └─────────────────┘        └──────────────┘
                                                                 │
                                                   Eureka Discovery :8761
@@ -112,19 +112,19 @@ All IoT data is received by the **Tracking Service** and alerts are managed by t
 
 ## Service Ports
 
-| Service                | Port   | URL / Notes                                                              |
-| ---------------------- | ------ | ------------------------------------------------------------------------ |
-| **Frontend (Angular)** | `4200` | http://localhost:4200                                                    |
-| **API Gateway**        | `9090` | http://localhost:9090 — single entry point for all APIs                  |
-| **Eureka Discovery**   | `8761` | http://localhost:8761 — service registry dashboard                       |
-| **User Service**       | `8081` | http://localhost:8081 — user management & Keycloak sync                  |
-| **Game Service**       | `8082` | http://localhost:8082 — personalized memory games                        |
-| **Tracking Service**   | `8083` | http://localhost:8083 — IoT data (GPS, heartbeat)                        |
-| **Alert Service**      | `8084` | http://localhost:8084 — alerts (IoT, manual, medication)                 |
-| **ML Service**         | `8085` | http://localhost:8085 — Alzheimer risk prediction & quiz scoring         |
-| **Medical Service**    | `8086` | http://localhost:8086 — appointments, prescriptions, medication tracking |
-| **Keycloak**           | `8180` | http://localhost:8180 — identity & access management                     |
-| **PostgreSQL (Neon)**  | `5432` | Cloud-hosted on Neon (no local install needed)                           |
+| Service                | Port    | URL / Notes                                                               |
+| ---------------------- | ------- | ------------------------------------------------------------------------- |
+| **Frontend (Angular)** | `4200`  | http://localhost:4200                                                     |
+| **API Gateway**        | `9090`  | http://localhost:9090 — single entry point for all APIs                   |
+| **Eureka Discovery**   | `8761`  | http://localhost:8761 — service registry dashboard                        |
+| **User Service**       | `18081` | http://localhost:18081 — user management & Keycloak sync                  |
+| **Game Service**       | `18082` | http://localhost:18082 — personalized memory games                        |
+| **Tracking Service**   | `18083` | http://localhost:18083 — IoT data (GPS, heartbeat)                        |
+| **Alert Service**      | `18084` | http://localhost:18084 — alerts (IoT, manual, medication)                 |
+| **ML Service**         | `18085` | http://localhost:18085 — Alzheimer risk prediction & quiz scoring         |
+| **Medical Service**    | `18086` | http://localhost:18086 — appointments, prescriptions, medication tracking |
+| **Keycloak**           | `8280`  | http://localhost:8280 — identity & access management                      |
+| **PostgreSQL (Neon)**  | `5432`  | Cloud-hosted on Neon (no local install needed)                            |
 
 ---
 
@@ -157,8 +157,8 @@ All IoT data is received by the **Tracking Service** and alerts are managed by t
 
 ```bash
 cd keycloak/bin
-.\kc.bat start-dev --http-port=8180      # Windows
-./kc.sh start-dev --http-port=8180       # macOS / Linux
+.\kc.bat start-dev --http-port=8280      # Windows
+./kc.sh start-dev --http-port=8280       # macOS / Linux
 ```
 
 ### 2. Start Eureka Discovery
@@ -273,12 +273,12 @@ Tfakkarni/
 │   ├── pom.xml                    # Parent POM (all modules)
 │   ├── discovery-service/         # Eureka service registry         :8761
 │   ├── api-gateway/               # Spring Cloud Gateway + JWT      :9090
-│   ├── user-service/              # User management                 :8081
-│   ├── game-service/              # Personalized memory games       :8082
-│   ├── tracking-service/          # IoT data (GPS, heartbeat)       :8083
-│   ├── alert-service/             # Alerts & notifications          :8084
-│   ├── ml-service/                # ML risk prediction & quiz       :8085
-│   └── medical-service/           # Appointments & prescriptions    :8086
+│   ├── user-service/              # User management                 :18081
+│   ├── game-service/              # Personalized memory games       :18082
+│   ├── tracking-service/          # IoT data (GPS, heartbeat)       :18083
+│   ├── alert-service/             # Alerts & notifications          :18084
+│   ├── ml-service/                # ML risk prediction & quiz       :18085
+│   └── medical-service/           # Appointments & prescriptions    :18086
 │
 └── frontend/                      # Angular 18 + Zard UI
     ├── src/
@@ -300,6 +300,6 @@ Tfakkarni/
 | Add a gateway route     | `backend/api-gateway/src/main/resources/application.yml` → `routes:` |
 | Add a frontend page     | `frontend/src/app/pages/<feature>/`                                  |
 | Use a UI component      | Browse https://zardui.com → import from `@/shared/components/`       |
-| Keycloak admin console  | http://localhost:8180/admin (admin/admin)                            |
+| Keycloak admin console  | http://localhost:8280/admin (admin/admin)                            |
 | Eureka dashboard        | http://localhost:8761                                                |
 | DB schema changes       | Hibernate `ddl-auto: update` handles it — just update your `@Entity` |

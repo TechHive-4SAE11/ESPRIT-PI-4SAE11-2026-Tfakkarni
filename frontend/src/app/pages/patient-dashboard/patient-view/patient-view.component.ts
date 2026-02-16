@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { GameService, type GameResponse, type GameStatsResponse } from '@/core/services/game.service';
 import { AuthService } from '@/core/auth';
+import { GuessPlaceComponent } from './guess-place/guess-place.component';
 
 @Component({
   selector: 'app-patient-view',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, GuessPlaceComponent],
   template: `
     <div class="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800">
       <!-- Top bar -->
@@ -69,6 +70,17 @@ import { AuthService } from '@/core/auth';
                 <div class="text-left">
                   <p class="text-xl sm:text-2xl font-bold">My Scores</p>
                   <p class="text-amber-100 text-sm sm:text-base">See how well you're doing</p>
+                </div>
+              </button>
+
+              <button
+                (click)="setPage('Guess Place')"
+                class="w-full flex items-center gap-5 p-6 sm:p-8 rounded-2xl bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white shadow-lg shadow-green-500/25 transition-all"
+              >
+                <span class="text-4xl sm:text-5xl">📍</span>
+                <div class="text-left">
+                  <p class="text-xl sm:text-2xl font-bold">Guess the Place</p>
+                  <p class="text-green-100 text-sm sm:text-base">Recognize familiar locations</p>
                 </div>
               </button>
             </div>
@@ -199,6 +211,13 @@ import { AuthService } from '@/core/auth';
               </div>
             }
           }
+
+          @case ('Guess Place') {
+            <app-guess-place
+              [keycloakId]="keycloakId"
+              (goBack)="setPage('Home')"
+            />
+          }
         }
       </main>
 
@@ -234,6 +253,16 @@ import { AuthService } from '@/core/auth';
           >
             <span class="text-2xl">🏆</span>
             <span class="text-xs font-medium">Scores</span>
+          </button>
+          <button
+            (click)="setPage('Guess Place')"
+            class="flex-1 flex flex-col items-center gap-1 py-3 transition-colors"
+            [class]="currentPage() === 'Guess Place'
+              ? 'text-green-600 dark:text-green-400'
+              : 'text-slate-400 dark:text-slate-500'"
+          >
+            <span class="text-2xl">📍</span>
+            <span class="text-xs font-medium">Places</span>
           </button>
         </div>
       </nav>

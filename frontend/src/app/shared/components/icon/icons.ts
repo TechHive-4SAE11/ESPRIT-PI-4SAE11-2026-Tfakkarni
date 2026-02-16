@@ -62,6 +62,7 @@ import {
   LogOut,
   type LucideIconData,
   Mail,
+  MapPin,
   Minus,
   Monitor,
   Moon,
@@ -224,6 +225,7 @@ export const ZARD_ICONS = {
   'x-circle': CircleX,
   'trash-2': Trash2,
   'trending-up': TrendingUp,
+  'map-pin': MapPin,
 } as const satisfies Record<string, LucideIconData>;
 
 export declare type ZardIcon = keyof typeof ZARD_ICONS | LucideIconData;
