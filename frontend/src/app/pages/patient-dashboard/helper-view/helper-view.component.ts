@@ -6,8 +6,11 @@ import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardBadgeComponent } from '@/shared/components/badge';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardProgressBarComponent } from '@/shared/components/progress-bar';
+import { ZardTableImports } from '@/shared/components/table/table.imports';
 import { GameService, type GameResponse, type GameStatsResponse } from '@/core/services/game.service';
 import { AddPlaceComponent } from './add-place/add-place.component';
+import { PrescriptionService } from '@/core/services/prescription.service';
+import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
 
 @Component({
   selector: 'app-helper-view',
@@ -20,6 +23,7 @@ import { AddPlaceComponent } from './add-place/add-place.component';
     ZardButtonComponent,
     ZardProgressBarComponent,
     AddPlaceComponent,
+    ZardTableImports,
   ],
   template: `
     @switch (currentPage()) {
@@ -138,6 +142,51 @@ import { AddPlaceComponent } from './add-place/add-place.component';
               <z-icon zType="plus" class="mr-2" />
               Create Game
             </button>
+          </z-card>
+        }
+      }
+
+      @case ('Prescriptions') {
+        <h2 class="text-2xl font-bold mb-6">My Prescriptions</h2>
+        
+        @if (prescriptions().length > 0) {
+          <table z-table>
+            <thead z-table-header>
+              <tr z-table-row>
+                <th z-table-head>Date</th>
+                <th z-table-head>Medications</th>
+              </tr>
+            </thead>
+            <tbody z-table-body>
+              @for (prescription of prescriptions(); track prescription.id) {
+                <tr z-table-row>
+                  <td z-table-cell>{{ prescription.createdAt | date:'mediumDate' }}</td>
+                  <td z-table-cell>
+                    <div class="space-y-2">
+                      @for (med of prescription.medications; track med.id) {
+                        <div class="text-sm border-b pb-1 last:border-0 last:pb-0">
+                          <span class="font-semibold">{{ med.medicationName }}</span>
+                          <span class="text-muted-foreground mx-1">-</span>
+                          <span>{{ med.dosage }}</span>
+                          <div class="text-xs text-muted-foreground">
+                            {{ med.frequency }} for {{ med.duration }}
+                            @if (med.instructions) {
+                              <span class="block italic text-xs mt-0.5">Note: {{ med.instructions }}</span>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <z-card class="p-12 text-center">
+             <z-icon zType="pill" class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+             <h3 class="font-semibold mb-2">No prescriptions found</h3>
+             <p class="text-muted-foreground">You don't have any prescriptions yet.</p>
           </z-card>
         }
       }
@@ -312,6 +361,7 @@ export class HelperViewComponent implements OnInit {
   currentPage = signal('Home');
   games = signal<GameResponse[]>([]);
   stats = signal<GameStatsResponse | null>(null);
+  prescriptions = signal<PrescriptionResponseDTO[]>([]);
 
   // Create game form
   newGameTitle = signal('');
@@ -324,6 +374,7 @@ export class HelperViewComponent implements OnInit {
   constructor(
     private readonly gameService: GameService,
     private readonly keycloakService: KeycloakService,
+    private readonly prescriptionService: PrescriptionService,
   ) {}
 
   ngOnInit(): void {
@@ -461,6 +512,11 @@ export class HelperViewComponent implements OnInit {
     this.gameService.getPlayerStats(this.keycloakId).subscribe({
       next: stats => this.stats.set(stats),
       error: err => console.error('Failed to load stats', err),
+    });
+
+    this.prescriptionService.getPrescriptionsByPatient(this.keycloakId).subscribe({
+      next: data => this.prescriptions.set(data),
+      error: err => console.error('Failed to load prescriptions', err),
     });
   }
 }

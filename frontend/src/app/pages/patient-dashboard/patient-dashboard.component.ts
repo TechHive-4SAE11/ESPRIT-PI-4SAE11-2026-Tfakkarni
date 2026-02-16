@@ -123,6 +123,7 @@ export class PatientDashboardComponent implements OnInit {
           { icon: 'house', label: 'Home', action: () => this.helperView?.setPage('Home') },
           { icon: 'gamepad-2', label: 'Manage Games', action: () => this.helperView?.setPage('My Games') },
           { icon: 'bar-chart-3', label: 'Progress', action: () => this.helperView?.setPage('Progress') },
+          { icon: 'pill', label: 'My Prescriptions', action: () => this.helperView?.setPage('Prescriptions') },
         ],
       },
       {

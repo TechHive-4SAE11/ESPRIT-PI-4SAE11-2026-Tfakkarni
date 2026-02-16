@@ -139,7 +139,7 @@ export class ZardAvatarComponent {
       this.zSrc();
       this.imageError.set(false);
       this.imageLoaded.set(false);
-    });
+    }, { allowSignalWrites: true });
   }
 
   protected readonly containerClasses = computed(() => {

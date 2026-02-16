@@ -99,11 +99,13 @@ import {
   Underline,
   Upload,
   TrendingUp,
+  Edit,
+  Pill,
   User,
-  UserPlus,
-  Users,
   X,
   Zap,
+  Users,
+  UserPlus,
 } from 'lucide-angular';
 
 const DarkMode: LucideIconData = [
@@ -226,6 +228,7 @@ export const ZARD_ICONS = {
   'trash-2': Trash2,
   'trending-up': TrendingUp,
   'map-pin': MapPin,
+  pill: Pill,
 } as const satisfies Record<string, LucideIconData>;
 
 export declare type ZardIcon = keyof typeof ZARD_ICONS | LucideIconData;
