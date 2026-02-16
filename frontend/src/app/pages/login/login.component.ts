@@ -111,6 +111,9 @@ export class LoginComponent implements OnInit {
         kc.realmAccess = kc.tokenParsed?.['realm_access'] ?? { roles: [] };
         kc.resourceAccess = kc.tokenParsed?.['resource_access'] ?? {};
 
+        // Persist tokens so page reloads keep the session
+        this.authService.saveTokens(response.access_token, response.refresh_token);
+
         if (response.refresh_token) {
           const refreshPayload = response.refresh_token.split('.')[1];
           kc.refreshTokenParsed = JSON.parse(atob(refreshPayload));
@@ -131,13 +134,13 @@ export class LoginComponent implements OnInit {
           console.log('[LOGIN] Primary role:', role);
           switch (role) {
             case 'admin':
-              this.router.navigate(['/admin-dashboard']);
+              this.router.navigate(['/admin']);
               break;
             case 'doctor':
-              this.router.navigate(['/doctor-dashboard']);
+              this.router.navigate(['/doctor']);
               break;
             case 'patient':
-              this.router.navigate(['/patient-dashboard']);
+              this.router.navigate(['/patient']);
               break;
             default:
               console.error('[LOGIN] No recognized role, going to access-denied');

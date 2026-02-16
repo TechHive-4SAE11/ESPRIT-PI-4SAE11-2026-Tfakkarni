@@ -1,0 +1,292 @@
+import { Component, OnInit, signal, Input, Output, EventEmitter } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { GameService, type GameResponse, type GameStatsResponse } from '@/core/services/game.service';
+import { AuthService } from '@/core/auth';
+
+@Component({
+  selector: 'app-patient-view',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div class="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800">
+      <!-- Top bar -->
+      <header class="sticky top-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 px-4 py-3 sm:px-6">
+        <div class="max-w-2xl mx-auto flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">🧠</span>
+            <span class="text-xl font-bold text-slate-800 dark:text-white">Tfakkarni</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              (click)="switchToHelper.emit()"
+              class="text-xs px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+            >
+              Switch to Helper
+            </button>
+            <button
+              (click)="logout()"
+              class="text-xs px-3 py-1.5 rounded-full bg-red-50 dark:bg-red-900/30 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="max-w-2xl mx-auto px-4 sm:px-6 py-6 pb-28">
+        @switch (currentPage()) {
+          @case ('Home') {
+            <!-- Greeting -->
+            <div class="text-center mb-8 pt-4">
+              <p class="text-4xl mb-3">👋</p>
+              <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-2">
+                Hello!
+              </h1>
+              <p class="text-lg text-slate-500 dark:text-slate-400">
+                What would you like to do today?
+              </p>
+            </div>
+
+            <!-- Main actions - big touch targets -->
+            <div class="space-y-4 mb-8">
+              <button
+                (click)="setPage('Play Games')"
+                class="w-full flex items-center gap-5 p-6 sm:p-8 rounded-2xl bg-blue-500 hover:bg-blue-600 active:scale-[0.98] text-white shadow-lg shadow-blue-500/25 transition-all"
+              >
+                <span class="text-4xl sm:text-5xl">🎮</span>
+                <div class="text-left">
+                  <p class="text-xl sm:text-2xl font-bold">Play Games</p>
+                  <p class="text-blue-100 text-sm sm:text-base">Exercise your memory</p>
+                </div>
+              </button>
+
+              <button
+                (click)="setPage('My Scores')"
+                class="w-full flex items-center gap-5 p-6 sm:p-8 rounded-2xl bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white shadow-lg shadow-amber-500/25 transition-all"
+              >
+                <span class="text-4xl sm:text-5xl">🏆</span>
+                <div class="text-left">
+                  <p class="text-xl sm:text-2xl font-bold">My Scores</p>
+                  <p class="text-amber-100 text-sm sm:text-base">See how well you're doing</p>
+                </div>
+              </button>
+            </div>
+
+            <!-- Quick stats -->
+            @if (stats(); as s) {
+              <div class="grid grid-cols-2 gap-3">
+                <div class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 text-center shadow-sm">
+                  <p class="text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400">{{ s.totalGamesPlayed }}</p>
+                  <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Games Played</p>
+                </div>
+                <div class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 text-center shadow-sm">
+                  <p class="text-3xl sm:text-4xl font-bold text-amber-600 dark:text-amber-400">{{ s.bestScore }}</p>
+                  <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Best Score</p>
+                </div>
+              </div>
+            }
+          }
+
+          @case ('Play Games') {
+            <!-- Back button -->
+            <button
+              (click)="setPage('Home')"
+              class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors"
+            >
+              <span class="text-2xl">←</span>
+              <span>Back</span>
+            </button>
+
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-2">
+              🎮 Pick a Game
+            </h1>
+            <p class="text-lg text-slate-500 dark:text-slate-400 mb-6">Tap a game to start playing</p>
+
+            @if (playableGames().length > 0) {
+              <div class="space-y-4">
+                @for (game of playableGames(); track game.id) {
+                  <button
+                    (click)="playGame(game.id)"
+                    class="w-full flex items-center gap-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 active:scale-[0.98] shadow-sm hover:shadow-md transition-all text-left"
+                  >
+                    <span class="text-3xl sm:text-4xl flex-shrink-0">🧩</span>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white truncate">{{ game.title }}</p>
+                      <p class="text-sm text-slate-500 dark:text-slate-400 truncate">{{ game.description }}</p>
+                      <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ game.imageCount }} photos</p>
+                    </div>
+                    <span class="text-3xl text-blue-500 flex-shrink-0">▶</span>
+                  </button>
+                }
+              </div>
+            } @else {
+              <div class="text-center py-16">
+                <p class="text-5xl mb-4">😊</p>
+                <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">No games yet</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-lg">
+                  Ask your helper to create some games for you!
+                </p>
+              </div>
+            }
+          }
+
+          @case ('My Scores') {
+            <!-- Back button -->
+            <button
+              (click)="setPage('Home')"
+              class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors"
+            >
+              <span class="text-2xl">←</span>
+              <span>Back</span>
+            </button>
+
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-6">
+              🏆 My Scores
+            </h1>
+
+            @if (stats(); as s) {
+              <div class="space-y-4">
+                <!-- Big score display -->
+                <div class="rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 p-6 sm:p-8 text-center text-white shadow-lg">
+                  <p class="text-lg opacity-80 mb-1">Best Score</p>
+                  <p class="text-5xl sm:text-6xl font-bold">{{ s.bestScore }}</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 text-center shadow-sm">
+                    <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ s.totalGamesPlayed }}</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Games Played</p>
+                  </div>
+                  <div class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 text-center shadow-sm">
+                    <p class="text-3xl font-bold text-green-600 dark:text-green-400">{{ s.averageScore | number:'1.0-0' }}%</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Average</p>
+                  </div>
+                </div>
+
+                <div class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 text-center shadow-sm">
+                  <p class="text-3xl font-bold text-purple-600 dark:text-purple-400">{{ s.totalAttempts }}</p>
+                  <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Total Attempts</p>
+                </div>
+
+                <!-- Progress bar -->
+                @if (s.totalAttempts > 0) {
+                  <div class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+                    <p class="text-base font-semibold text-slate-700 dark:text-slate-300 mb-3">Average Accuracy</p>
+                    <div class="relative w-full h-6 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        class="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500"
+                        [style.width.%]="s.averageScore"
+                      ></div>
+                    </div>
+                    <p class="text-right text-sm text-slate-500 dark:text-slate-400 mt-1">{{ s.averageScore | number:'1.0-0' }}%</p>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-center py-16">
+                <p class="text-5xl mb-4">🎯</p>
+                <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">No scores yet</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-lg">
+                  Play some games to see your scores here!
+                </p>
+                <button
+                  (click)="setPage('Play Games')"
+                  class="mt-6 px-8 py-4 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold shadow-lg transition-all"
+                >
+                  🎮 Play Now
+                </button>
+              </div>
+            }
+          }
+        }
+      </main>
+
+      <!-- Bottom nav - fixed, big touch targets -->
+      <nav class="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-t border-slate-200 dark:border-slate-700 z-10">
+        <div class="max-w-2xl mx-auto flex">
+          <button
+            (click)="setPage('Home')"
+            class="flex-1 flex flex-col items-center gap-1 py-3 transition-colors"
+            [class]="currentPage() === 'Home'
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-slate-400 dark:text-slate-500'"
+          >
+            <span class="text-2xl">🏠</span>
+            <span class="text-xs font-medium">Home</span>
+          </button>
+          <button
+            (click)="setPage('Play Games')"
+            class="flex-1 flex flex-col items-center gap-1 py-3 transition-colors"
+            [class]="currentPage() === 'Play Games'
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-slate-400 dark:text-slate-500'"
+          >
+            <span class="text-2xl">🎮</span>
+            <span class="text-xs font-medium">Play</span>
+          </button>
+          <button
+            (click)="setPage('My Scores')"
+            class="flex-1 flex flex-col items-center gap-1 py-3 transition-colors"
+            [class]="currentPage() === 'My Scores'
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-slate-400 dark:text-slate-500'"
+          >
+            <span class="text-2xl">🏆</span>
+            <span class="text-xs font-medium">Scores</span>
+          </button>
+        </div>
+      </nav>
+    </div>
+  `,
+})
+export class PatientViewComponent implements OnInit {
+  @Input() keycloakId = '';
+  @Output() switchToHelper = new EventEmitter<void>();
+
+  currentPage = signal('Home');
+  games = signal<GameResponse[]>([]);
+  stats = signal<GameStatsResponse | null>(null);
+
+  constructor(
+    private readonly gameService: GameService,
+    private readonly router: Router,
+    private readonly authService: AuthService,
+  ) {}
+
+  ngOnInit(): void {
+    if (this.keycloakId) {
+      this.loadData();
+    }
+  }
+
+  setPage(page: string): void {
+    this.currentPage.set(page);
+  }
+
+  playableGames(): GameResponse[] {
+    return this.games().filter(g => g.imageCount >= 2);
+  }
+
+  playGame(gameId: number): void {
+    this.router.navigate(['/patient/play', gameId]);
+  }
+
+  logout(): void {
+    this.authService.logout();
+  }
+
+  loadData(): void {
+    if (!this.keycloakId) return;
+
+    this.gameService.getPatientGames(this.keycloakId).subscribe({
+      next: games => this.games.set(games),
+      error: err => console.error('Failed to load games', err),
+    });
+
+    this.gameService.getPlayerStats(this.keycloakId).subscribe({
+      next: stats => this.stats.set(stats),
+      error: err => console.error('Failed to load stats', err),
+    });
+  }
+}

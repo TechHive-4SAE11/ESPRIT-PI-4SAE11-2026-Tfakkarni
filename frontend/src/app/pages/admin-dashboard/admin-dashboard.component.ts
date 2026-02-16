@@ -28,7 +28,7 @@ import { GameService, type GameResponse, type OverviewStatsResponse } from '@/co
     <app-dashboard-layout
       [menuGroups]="menuGroups"
       [pageTitle]="currentPage()"
-      basePath="/admin-dashboard"
+      basePath="/admin"
     >
       @switch (currentPage()) {
         @case ('Home') {

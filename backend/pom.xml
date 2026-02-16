@@ -25,6 +25,9 @@
 		<module>user-service</module>
 		<module>game-service</module>
 		<module>tracking-service</module>
+		<module>alert-service</module>
+		<module>ml-service</module>
+		<module>medical-service</module>
 	</modules>
 	<dependencyManagement>
 		<dependencies>

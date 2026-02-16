@@ -3,6 +3,7 @@ package org.techhive.apigateway.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,6 +12,9 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -23,10 +27,26 @@ import java.util.stream.Collectors;
 public class SecurityConfig {
 
   @Bean
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration config = new CorsConfiguration();
+    config.setAllowedOrigins(List.of("http://localhost:4200"));
+    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+    config.setAllowedHeaders(List.of("*"));
+    config.setAllowCredentials(true);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", config);
+    return source;
+  }
+
+  @Bean
   public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
     http
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .csrf(ServerHttpSecurity.CsrfSpec::disable)
         .authorizeExchange(exchanges -> exchanges
+            // Allow all CORS preflight requests
+            .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             // Public endpoints - no authentication required
             .pathMatchers("/public/**").permitAll()
             .pathMatchers("/actuator/**").permitAll()

@@ -48,7 +48,7 @@ export class AuthGuard implements CanActivate {
 
     if (!isLoggedIn) {
       // Redirect to login page instead of Keycloak SSO
-      return this.router.createUrlTree(['/login']);
+      return this.router.createUrlTree(['/landing']);
     }
 
     // Get the required roles from the route data

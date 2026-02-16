@@ -5,7 +5,14 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'login',
+    redirectTo: 'landing',
+  },
+  {
+    path: 'landing',
+    loadComponent: () =>
+      import('@/pages/landing/landing.component').then(
+        (m) => m.LandingComponent
+      ),
   },
   {
     path: 'login',
@@ -18,12 +25,7 @@ export const routes: Routes = [
       import('@/pages/signup/signup.component').then((m) => m.SignupComponent),
   },
   {
-    path: 'home',
-    loadComponent: () =>
-      import('@/pages/home/home.component').then((m) => m.HomeComponent),
-  },
-  {
-    path: 'admin-dashboard',
+    path: 'admin',
     loadComponent: () =>
       import('@/pages/admin-dashboard/admin-dashboard.component').then(
         (m) => m.AdminDashboardComponent
@@ -32,7 +34,7 @@ export const routes: Routes = [
     data: { roles: ['admin'] },
   },
   {
-    path: 'doctor-dashboard',
+    path: 'doctor',
     loadComponent: () =>
       import('@/pages/doctor-dashboard/doctor-dashboard.component').then(
         (m) => m.DoctorDashboardComponent
@@ -41,7 +43,7 @@ export const routes: Routes = [
     data: { roles: ['doctor'] },
   },
   {
-    path: 'patient-dashboard',
+    path: 'patient',
     loadComponent: () =>
       import('@/pages/patient-dashboard/patient-dashboard.component').then(
         (m) => m.PatientDashboardComponent
@@ -50,7 +52,7 @@ export const routes: Routes = [
     data: { roles: ['patient'] },
   },
   {
-    path: 'patient-dashboard/play/:gameId',
+    path: 'patient/play/:gameId',
     loadComponent: () =>
       import('@/pages/patient-dashboard/play-game/play-game.component').then(
         (m) => m.PlayGameComponent
@@ -67,6 +69,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'home',
+    redirectTo: 'landing',
   },
 ];
