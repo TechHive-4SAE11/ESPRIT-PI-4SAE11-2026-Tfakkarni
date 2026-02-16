@@ -72,7 +72,7 @@ export class SidebarComponent {
   constructor() {
     effect(() => {
       this.internalCollapsed.set(this.zCollapsed());
-    });
+    }, { allowSignalWrites: true });
   }
 
   protected readonly currentWidth = computed(() => {

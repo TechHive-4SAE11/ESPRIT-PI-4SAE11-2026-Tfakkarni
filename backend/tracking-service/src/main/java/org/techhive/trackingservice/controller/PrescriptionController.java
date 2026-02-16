@@ -24,8 +24,17 @@ public class PrescriptionController {
     private final PrescriptionMapper prescriptionMapper;
 
     @PostMapping
-    public ResponseEntity<PrescriptionResponseDTO> createPrescription(@RequestBody PrescriptionRequestDTO requestDTO) {
+    public ResponseEntity<?> createPrescription(@RequestBody PrescriptionRequestDTO requestDTO) {
         try {
+            System.out.println("[PrescriptionController] Received request: " + requestDTO);
+            System.out.println("[PrescriptionController] SessionId: " + requestDTO.getSessionId());
+            System.out.println("[PrescriptionController] Medications count: " + 
+                (requestDTO.getMedications() != null ? requestDTO.getMedications().size() : 0));
+            
+            if (requestDTO.getSessionId() == null) {
+                return ResponseEntity.badRequest().body("Session ID is required");
+            }
+            
             Prescription prescription = new Prescription();
             
             // Convert medication DTOs to entities
@@ -39,7 +48,9 @@ public class PrescriptionController {
             Prescription saved = prescriptionService.createPrescriptionForSession(requestDTO.getSessionId(), prescription);
             return ResponseEntity.status(HttpStatus.CREATED).body(prescriptionMapper.toResponseDTO(saved));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+            System.err.println("[PrescriptionController] ERROR creating prescription: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
     }
 
