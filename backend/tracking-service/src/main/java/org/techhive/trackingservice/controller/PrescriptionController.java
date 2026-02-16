@@ -4,15 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.techhive.trackingservice.dto.MedicationRequestDTO;
-import org.techhive.trackingservice.dto.MedicationResponseDTO;
 import org.techhive.trackingservice.dto.PrescriptionRequestDTO;
 import org.techhive.trackingservice.dto.PrescriptionResponseDTO;
 import org.techhive.trackingservice.entity.Medication;
 import org.techhive.trackingservice.entity.Prescription;
+import org.techhive.trackingservice.mapper.PrescriptionMapper;
 import org.techhive.trackingservice.service.PrescriptionService;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,6 +21,7 @@ import java.util.stream.Collectors;
 public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
+    private final PrescriptionMapper prescriptionMapper;
 
     @PostMapping
     public ResponseEntity<PrescriptionResponseDTO> createPrescription(@RequestBody PrescriptionRequestDTO requestDTO) {
@@ -32,13 +31,13 @@ public class PrescriptionController {
             // Convert medication DTOs to entities
             if (requestDTO.getMedications() != null) {
                 List<Medication> medications = requestDTO.getMedications().stream()
-                        .map(this::toMedicationEntity)
+                        .map(prescriptionMapper::toMedicationEntity)
                         .collect(Collectors.toList());
                 prescription.setMedications(medications);
             }
             
             Prescription saved = prescriptionService.createPrescriptionForSession(requestDTO.getSessionId(), prescription);
-            return ResponseEntity.status(HttpStatus.CREATED).body(toResponseDTO(saved));
+            return ResponseEntity.status(HttpStatus.CREATED).body(prescriptionMapper.toResponseDTO(saved));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
@@ -48,7 +47,7 @@ public class PrescriptionController {
     public ResponseEntity<List<PrescriptionResponseDTO>> getAllPrescriptions() {
         List<Prescription> prescriptions = prescriptionService.getAllPrescriptions();
         List<PrescriptionResponseDTO> responseDTOs = prescriptions.stream()
-                .map(this::toResponseDTO)
+                .map(prescriptionMapper::toResponseDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(responseDTOs);
     }
@@ -56,7 +55,7 @@ public class PrescriptionController {
     @GetMapping("/{id}")
     public ResponseEntity<PrescriptionResponseDTO> getPrescriptionById(@PathVariable Long id) {
         return prescriptionService.getPrescriptionById(id)
-                .map(prescription -> ResponseEntity.ok(toResponseDTO(prescription)))
+                .map(prescription -> ResponseEntity.ok(prescriptionMapper.toResponseDTO(prescription)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -64,7 +63,7 @@ public class PrescriptionController {
     public ResponseEntity<List<PrescriptionResponseDTO>> getPrescriptionsBySession(@PathVariable Long sessionId) {
         List<Prescription> prescriptions = prescriptionService.getPrescriptionsBySession(sessionId);
         List<PrescriptionResponseDTO> responseDTOs = prescriptions.stream()
-                .map(this::toResponseDTO)
+                .map(prescriptionMapper::toResponseDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(responseDTOs);
     }
@@ -73,7 +72,7 @@ public class PrescriptionController {
     public ResponseEntity<List<PrescriptionResponseDTO>> getPrescriptionsByPatient(@PathVariable String idPatient) {
         List<Prescription> prescriptions = prescriptionService.getPrescriptionsByPatient(idPatient);
         List<PrescriptionResponseDTO> responseDTOs = prescriptions.stream()
-                .map(this::toResponseDTO)
+                .map(prescriptionMapper::toResponseDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(responseDTOs);
     }
@@ -87,14 +86,14 @@ public class PrescriptionController {
         // Convert medication DTOs to entities
         if (requestDTO.getMedications() != null) {
             List<Medication> medications = requestDTO.getMedications().stream()
-                    .map(this::toMedicationEntity)
+                    .map(prescriptionMapper::toMedicationEntity)
                     .collect(Collectors.toList());
             prescription.setMedications(medications);
         }
         
         try {
             Prescription updated = prescriptionService.updatePrescription(id, prescription);
-            return ResponseEntity.ok(toResponseDTO(updated));
+            return ResponseEntity.ok(prescriptionMapper.toResponseDTO(updated));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -104,44 +103,5 @@ public class PrescriptionController {
     public ResponseEntity<Void> deletePrescription(@PathVariable Long id) {
         prescriptionService.deletePrescription(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private PrescriptionResponseDTO toResponseDTO(Prescription prescription) {
-        List<MedicationResponseDTO> medicationDTOs = new ArrayList<>();
-        if (prescription.getMedications() != null) {
-            medicationDTOs = prescription.getMedications().stream()
-                    .map(this::toMedicationResponseDTO)
-                    .collect(Collectors.toList());
-        }
-        
-        return new PrescriptionResponseDTO(
-                prescription.getId(),
-                prescription.getSession().getId(),
-                medicationDTOs,
-                prescription.getCreatedAt(),
-                prescription.getUpdatedAt()
-        );
-    }
-
-    private Medication toMedicationEntity(MedicationRequestDTO dto) {
-        Medication medication = new Medication();
-        medication.setMedicationName(dto.getMedicationName());
-        medication.setDosage(dto.getDosage());
-        medication.setFrequency(dto.getFrequency());
-        medication.setDuration(dto.getDuration());
-        medication.setInstructions(dto.getInstructions());
-        return medication;
-    }
-
-    private MedicationResponseDTO toMedicationResponseDTO(Medication medication) {
-        return new MedicationResponseDTO(
-                medication.getId(),
-                medication.getMedicationName(),
-                medication.getDosage(),
-                medication.getFrequency(),
-                medication.getDuration(),
-                medication.getInstructions(),
-                medication.getCreatedAt()
-        );
     }
 }
