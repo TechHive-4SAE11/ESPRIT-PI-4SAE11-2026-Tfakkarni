@@ -229,6 +229,7 @@ export const ZARD_ICONS = {
   'trending-up': TrendingUp,
   'map-pin': MapPin,
   pill: Pill,
+  edit: Edit,
 } as const satisfies Record<string, LucideIconData>;
 
 export declare type ZardIcon = keyof typeof ZARD_ICONS | LucideIconData;

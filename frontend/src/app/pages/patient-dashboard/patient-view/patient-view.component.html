@@ -71,6 +71,15 @@
                     <p class="text-purple-100 text-sm sm:text-base">View your medications</p>
                 </div>
             </button>
+
+            <button (click)="setPage('My Care Plans')"
+                class="w-full flex items-center gap-5 p-6 sm:p-8 rounded-2xl bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white shadow-lg shadow-emerald-500/25 transition-all">
+                <span class="text-4xl sm:text-5xl">📅</span>
+                <div class="text-left">
+                    <p class="text-xl sm:text-2xl font-bold">My Care Plans</p>
+                    <p class="text-emerald-100 text-sm sm:text-base">Your daily activities</p>
+                </div>
+            </button>
         </div>
 
         <!-- Quick stats -->
@@ -217,6 +226,22 @@
         <p class="text-lg text-slate-500 dark:text-slate-400 mb-6">Your current medications</p>
 
         <app-prescription-list [prescriptions]="prescriptions()" [isLoading]="isLoadingPrescriptions()" />
+        }
+
+        @case ('My Care Plans') {
+        <!-- Back button -->
+        <button (click)="setPage('Home')"
+            class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
+            <span class="text-2xl">←</span>
+            <span>Back</span>
+        </button>
+
+        <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-2">
+            📅 My Care Plans
+        </h1>
+        <p class="text-lg text-slate-500 dark:text-slate-400 mb-6">Your daily activities and routines</p>
+
+        <app-care-plan-list [carePlans]="carePlans()" [isLoading]="isLoadingCarePlans()" />
         }
         }
     </main>
