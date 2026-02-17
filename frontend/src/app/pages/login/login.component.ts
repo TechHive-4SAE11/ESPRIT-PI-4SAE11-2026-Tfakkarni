@@ -66,7 +66,7 @@ export class LoginComponent implements OnInit {
     this.errorMessage = '';
 
     try {
-      const tokenEndpoint = 'http://localhost:8180/realms/techhive/protocol/openid-connect/token';
+      const tokenEndpoint = 'http://localhost:8280/realms/techhive/protocol/openid-connect/token';
       console.log('[LOGIN] Requesting token from:', tokenEndpoint);
 
       const body = new URLSearchParams();

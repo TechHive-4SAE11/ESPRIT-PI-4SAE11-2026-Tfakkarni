@@ -26,7 +26,7 @@ eureka:
     register-with-eureka: true
 
 keycloak:
-  server-url: http://localhost:8180
+  server-url: http://localhost:8280
   realm: techhive
   admin:
     username: admin

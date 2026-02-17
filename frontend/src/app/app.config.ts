@@ -22,13 +22,13 @@ function initializeKeycloak(keycloak: KeycloakService, platformId: object) {
     }
 
     console.log('[KC-INIT] Starting Keycloak initialization...');
-    console.log('[KC-INIT] Config:', { url: 'http://localhost:8180', realm: 'techhive', clientId: 'tfakkarni-frontend' });
+    console.log('[KC-INIT] Config:', { url: 'http://localhost:8280', realm: 'techhive', clientId: 'tfakkarni-frontend' });
     console.log('[KC-INIT] silentCheckSsoRedirectUri:', globalThis.location.origin + '/assets/silent-check-sso.html');
 
     return keycloak
       .init({
         config: {
-          url: 'http://localhost:8180',
+          url: 'http://localhost:8280',
           realm: 'techhive',
           clientId: 'tfakkarni-frontend',
         },
@@ -44,7 +44,7 @@ function initializeKeycloak(keycloak: KeycloakService, platformId: object) {
         bearerPrefix: 'Bearer',
         // Exclude Keycloak server URLs from the bearer interceptor
         // so login/signup requests aren't intercepted
-        bearerExcludedUrls: ['/assets', '/public', 'http://localhost:8180'],
+        bearerExcludedUrls: ['/assets', '/public', 'http://localhost:8280'],
       })
       .then((authenticated) => {
         console.log('[KC-INIT] Keycloak initialized successfully. Authenticated:', authenticated);
