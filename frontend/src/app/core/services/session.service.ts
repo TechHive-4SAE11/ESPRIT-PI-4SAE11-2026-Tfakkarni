@@ -2,6 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface SessionRequestDTO {
   medicalFolderId: number;
@@ -22,9 +23,9 @@ export interface SessionResponseDTO {
   providedIn: 'root',
 })
 export class SessionService {
-  private readonly baseUrl = 'http://localhost:9090/api/sessions';
+  private readonly baseUrl = `${environment.apiBaseUrl}/api/sessions`;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) { }
 
   getSessionsByMedicalFolder(medicalFolderId: number): Observable<SessionResponseDTO[]> {
     return this.http.get<SessionResponseDTO[]>(`${this.baseUrl}/medical-folder/${medicalFolderId}`);
