@@ -31,19 +31,19 @@ applyTo: "**/*"
 
 ## Architecture & Services
 
-| Service            | Port | Spring App Name   | Gateway Route      | Purpose                                      |
-| ------------------ | ---- | ----------------- | ------------------ | -------------------------------------------- |
-| Frontend (Angular) | 4200 | —                 | —                  | SPA served by Angular CLI / SSR              |
-| API Gateway        | 9090 | api-gateway       | —                  | Single entry point, JWT validation, CORS     |
-| Eureka Discovery   | 8761 | discovery-service | —                  | Service registry                             |
-| User Service       | 8081 | user-service      | /api/users/\*\*    | User management & Keycloak sync              |
-| Game Service       | 8082 | game-service      | /api/games/\*\*    | Personalized memory games CRUD, play, scores |
-| Tracking Service   | 8083 | tracking-service  | /api/tracking/\*\* | IoT data ingestion (GPS, heartbeat)          |
-| Alert Service      | 8084 | alert-service     | /api/alerts/\*\*   | Alerts & notifications (IoT + manual + meds) |
-| ML Service         | 8085 | ml-service        | /api/ml/\*\*       | Alzheimer risk prediction & quiz scoring     |
-| Medical Service    | 8086 | medical-service   | /api/medical/\*\*  | Appointments, prescriptions, medication logs |
-| Keycloak           | 8180 | —                 | —                  | Identity & access management                 |
-| PostgreSQL (Neon)  | 5432 | —                 | —                  | Cloud-hosted database                        |
+| Service            | Port  | Spring App Name   | Gateway Route      | Purpose                                      |
+| ------------------ | ----- | ----------------- | ------------------ | -------------------------------------------- |
+| Frontend (Angular) | 4200  | —                 | —                  | SPA served by Angular CLI / SSR              |
+| API Gateway        | 9090  | api-gateway       | —                  | Single entry point, JWT validation, CORS     |
+| Eureka Discovery   | 8761  | discovery-service | —                  | Service registry                             |
+| User Service       | 18081 | user-service      | /api/users/\*\*    | User management & Keycloak sync              |
+| Game Service       | 18082 | game-service      | /api/games/\*\*    | Personalized memory games CRUD, play, scores |
+| Tracking Service   | 18083 | tracking-service  | /api/tracking/\*\* | IoT data ingestion (GPS, heartbeat)          |
+| Alert Service      | 18084 | alert-service     | /api/alerts/\*\*   | Alerts & notifications (IoT + manual + meds) |
+| ML Service         | 18085 | ml-service        | /api/ml/\*\*       | Alzheimer risk prediction & quiz scoring     |
+| Medical Service    | 18086 | medical-service   | /api/medical/\*\*  | Appointments, prescriptions, medication logs |
+| Keycloak           | 8280  | —                 | —                  | Identity & access management                 |
+| PostgreSQL (Neon)  | 5432  | —                 | —                  | Cloud-hosted database                        |
 
 ### Tech Stack
 

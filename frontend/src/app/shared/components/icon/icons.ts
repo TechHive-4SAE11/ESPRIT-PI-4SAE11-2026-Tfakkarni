@@ -62,6 +62,7 @@ import {
   LogOut,
   type LucideIconData,
   Mail,
+  MapPin,
   Minus,
   Monitor,
   Moon,
@@ -226,6 +227,7 @@ export const ZARD_ICONS = {
   'x-circle': CircleX,
   'trash-2': Trash2,
   'trending-up': TrendingUp,
+  'map-pin': MapPin,
   pill: Pill,
 } as const satisfies Record<string, LucideIconData>;
 

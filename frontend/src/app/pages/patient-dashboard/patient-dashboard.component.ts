@@ -130,6 +130,7 @@ export class PatientDashboardComponent implements OnInit {
         label: 'Actions',
         items: [
           { icon: 'plus-circle', label: 'Create Game', action: () => this.helperView?.setPage('Create Game') },
+          { icon: 'map-pin', label: 'Guess the Place', action: () => this.helperView?.setPage('Places') },
         ],
       },
     ];

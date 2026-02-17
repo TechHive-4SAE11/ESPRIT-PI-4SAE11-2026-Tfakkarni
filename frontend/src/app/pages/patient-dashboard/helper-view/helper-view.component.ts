@@ -8,6 +8,7 @@ import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardProgressBarComponent } from '@/shared/components/progress-bar';
 import { ZardTableImports } from '@/shared/components/table/table.imports';
 import { GameService, type GameResponse, type GameStatsResponse } from '@/core/services/game.service';
+import { AddPlaceComponent } from './add-place/add-place.component';
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
 
@@ -21,6 +22,7 @@ import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
     ZardBadgeComponent,
     ZardButtonComponent,
     ZardProgressBarComponent,
+    AddPlaceComponent,
     ZardTableImports,
   ],
   template: `
@@ -86,6 +88,15 @@ import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
               <div>
                 <h3 class="font-semibold">Manage Games</h3>
                 <p class="text-sm text-muted-foreground">View and manage created games</p>
+              </div>
+            </div>
+          </z-card>
+          <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Places')">
+            <div class="flex items-center gap-3">
+              <z-icon zType="map-pin" class="text-primary h-10 w-10" />
+              <div>
+                <h3 class="font-semibold">Guess the Place</h3>
+                <p class="text-sm text-muted-foreground">Manage location-based memory places</p>
               </div>
             </div>
           </z-card>
@@ -332,6 +343,13 @@ import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
             <p class="text-muted-foreground">The patient hasn't played any games yet.</p>
           </z-card>
         }
+      }
+
+      @case ('Places') {
+        <app-add-place
+          [keycloakId]="keycloakId"
+          (goBack)="setPage('Home')"
+        />
       }
     }
   `,
