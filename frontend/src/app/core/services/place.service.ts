@@ -61,4 +61,8 @@ export class PlaceService {
   deletePlace(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
+
+  editPlace(id: number, request: CreatePlaceRequest): Observable<PlaceResponse> {
+    return this.http.put<PlaceResponse>(`${this.baseUrl}/${id}`, request);
+  }
 }

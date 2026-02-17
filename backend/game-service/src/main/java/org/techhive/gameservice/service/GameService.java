@@ -84,6 +84,61 @@ public class GameService {
     }
 
     /**
+     * Edit an existing minigame: update title/description and replace images.
+     * Existing images (with id) are kept/renamed; missing old images are removed;
+     * new images (id == null) are added.
+     */
+    @Transactional
+    public GameDetailResponse editGame(Long gameId, EditGameRequest request) {
+        MiniGame game = miniGameRepository.findById(gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found: " + gameId));
+
+        game.setTitle(request.getTitle());
+        game.setDescription(request.getDescription());
+
+        // Determine which existing images to keep
+        java.util.Set<Long> keepIds = new java.util.HashSet<>();
+        if (request.getImages() != null) {
+            for (EditGameRequest.EditImageEntry entry : request.getImages()) {
+                if (entry.getId() != null) {
+                    keepIds.add(entry.getId());
+                }
+            }
+        }
+
+        // Remove images not in the keep set
+        game.getImages().removeIf(img -> !keepIds.contains(img.getId()));
+
+        // Update names of kept images & add new ones
+        if (request.getImages() != null) {
+            int order = 0;
+            for (EditGameRequest.EditImageEntry entry : request.getImages()) {
+                if (entry.getId() != null) {
+                    // Existing image — find and update name/order
+                    for (GameImage img : game.getImages()) {
+                        if (img.getId().equals(entry.getId())) {
+                            img.setName(entry.getName());
+                            img.setDisplayOrder(order);
+                            break;
+                        }
+                    }
+                } else {
+                    // New image
+                    byte[] imageData = Base64.getDecoder().decode(entry.getImageBase64());
+                    GameImage newImg = new GameImage(game, entry.getName(), imageData,
+                            entry.getContentType(), order);
+                    game.getImages().add(newImg);
+                }
+                order++;
+            }
+        }
+
+        miniGameRepository.save(game);
+        log.info("Edited game {} (now {} images)", gameId, game.getImages().size());
+        return toGameDetailResponse(game);
+    }
+
+    /**
      * Delete a minigame and all its images.
      */
     @Transactional
@@ -104,8 +159,7 @@ public class GameService {
                 game.getTitle(),
                 game.getDescription(),
                 imageCount,
-                game.getCreatedAt()
-        );
+                game.getCreatedAt());
     }
 
     private GameDetailResponse toGameDetailResponse(MiniGame game) {
@@ -121,8 +175,7 @@ public class GameService {
                         img.getName(),
                         Base64.getEncoder().encodeToString(img.getImageData()),
                         img.getImageContentType(),
-                        img.getDisplayOrder()
-                ))
+                        img.getDisplayOrder()))
                 .collect(Collectors.toList()));
         return response;
     }

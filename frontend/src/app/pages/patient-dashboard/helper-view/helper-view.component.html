@@ -72,6 +72,15 @@
             </div>
         </div>
     </z-card>
+    <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Movie Quiz')">
+        <div class="flex items-center gap-3">
+            <z-icon zType="play" class="text-primary h-10 w-10" />
+            <div>
+                <h3 class="font-semibold">Movie Characters</h3>
+                <p class="text-sm text-muted-foreground">Create movie character naming quizzes</p>
+            </div>
+        </div>
+    </z-card>
     <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Prescriptions')">
         <div class="flex items-center gap-3">
             <z-icon zType="file-text" class="text-primary h-10 w-10" />
@@ -106,6 +115,10 @@
         </div>
         <p class="text-xs text-muted-foreground mb-4">Created {{ game.createdAt | date:'mediumDate' }}</p>
         <div class="flex gap-2">
+            <button z-button zSize="sm" (click)="startEdit(game.id)">
+                <z-icon zType="settings" class="mr-1" />
+                Edit
+            </button>
             <button z-button zType="destructive" zSize="sm" (click)="deleteGame(game.id)">
                 <z-icon zType="trash-2" class="mr-1" />
                 Delete
@@ -141,11 +154,11 @@
 
 @case ('Create Game') {
 <div class="flex items-center gap-2 mb-6">
-    <button z-button zType="ghost" zSize="sm" (click)="setPage('My Games')">
+    <button z-button zType="ghost" zSize="sm" (click)="resetForm(); setPage('My Games')">
         <z-icon zType="arrow-left" class="mr-1" />
         Back
     </button>
-    <h2 class="text-2xl font-bold">Create New Game</h2>
+    <h2 class="text-2xl font-bold">{{ editingGameId() ? 'Edit Game' : 'Create New Game' }}</h2>
 </div>
 
 <z-card class="p-6 mb-6">
@@ -224,13 +237,13 @@
     <button z-button [disabled]="!canCreateGame()" (click)="createGame()">
         @if (creating()) {
         <z-icon zType="loader-2" class="mr-2 animate-spin" />
-        Creating...
+        {{ editingGameId() ? 'Saving...' : 'Creating...' }}
         } @else {
         <z-icon zType="check" class="mr-2" />
-        Create Game
+        {{ editingGameId() ? 'Save Changes' : 'Create Game' }}
         }
     </button>
-    <button z-button zType="outline" (click)="resetForm()">Cancel</button>
+    <button z-button zType="outline" (click)="resetForm(); setPage('My Games')">Cancel</button>
 </div>
 }
 
@@ -280,5 +293,9 @@
 
 @case ('Places') {
 <app-add-place [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
+}
+
+@case ('Movie Quiz') {
+<app-movie-game-manager [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
 }
 }
