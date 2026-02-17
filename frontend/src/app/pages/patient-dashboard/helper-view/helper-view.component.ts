@@ -11,6 +11,7 @@ import { GameService, type GameResponse, type GameStatsResponse } from '@/core/s
 import { AddPlaceComponent } from './add-place/add-place.component';
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
+import { UserApiService } from '@/core/services/user-api.service';
 
 @Component({
   selector: 'app-helper-view',
@@ -147,46 +148,105 @@ import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
       }
 
       @case ('Prescriptions') {
-        <h2 class="text-2xl font-bold mb-6">My Prescriptions</h2>
+        <div class="flex items-center gap-2 mb-6">
+          <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
+            <z-icon zType="arrow-left" class="mr-1" />
+            Back
+          </button>
+          <h2 class="text-2xl font-bold">Patient Prescriptions</h2>
+        </div>
         
-        @if (prescriptions().length > 0) {
-          <table z-table>
-            <thead z-table-header>
-              <tr z-table-row>
-                <th z-table-head>Date</th>
-                <th z-table-head>Medications</th>
-              </tr>
-            </thead>
-            <tbody z-table-body>
-              @for (prescription of prescriptions(); track prescription.id) {
-                <tr z-table-row>
-                  <td z-table-cell>{{ prescription.createdAt | date:'mediumDate' }}</td>
-                  <td z-table-cell>
-                    <div class="space-y-2">
-                      @for (med of prescription.medications; track med.id) {
-                        <div class="text-sm border-b pb-1 last:border-0 last:pb-0">
-                          <span class="font-semibold">{{ med.medicationName }}</span>
-                          <span class="text-muted-foreground mx-1">-</span>
-                          <span>{{ med.dosage }}</span>
-                          <div class="text-xs text-muted-foreground">
-                            {{ med.frequency }} for {{ med.duration }}
-                            @if (med.instructions) {
-                              <span class="block italic text-xs mt-0.5">Note: {{ med.instructions }}</span>
-                            }
+        @if (isLoadingPrescriptions()) {
+          <div class="space-y-4">
+            @for (i of [1,2,3]; track i) {
+              <z-card class="p-6 animate-pulse">
+                <div class="h-6 bg-muted rounded w-3/4 mb-3"></div>
+                <div class="h-4 bg-muted rounded w-1/2 mb-2"></div>
+                <div class="h-4 bg-muted rounded w-2/3"></div>
+              </z-card>
+            }
+          </div>
+        } @else if (prescriptions().length > 0) {
+          <div class="space-y-4">
+            @for (prescription of prescriptions(); track prescription.id) {
+              <z-card class="p-6 hover:shadow-lg transition-shadow">
+                <div class="flex items-start justify-between mb-4">
+                  <div>
+                    <div class="flex items-center gap-2 mb-1">
+                      <z-icon zType="file-text" class="text-primary h-5 w-5" />
+                      <h3 class="font-semibold text-lg">Prescription #{{ prescription.id }}</h3>
+                    </div>
+                    <p class="text-sm text-muted-foreground">
+                      <z-icon zType="calendar" class="inline h-4 w-4 mr-1" />
+                      {{ prescription.createdAt | date:'medium' }}
+                    </p>
+                  </div>
+                  <z-badge zType="secondary">
+                    {{ prescription.medications.length || 0 }} medication(s)
+                  </z-badge>
+                </div>
+                
+                @if (prescription.medications && prescription.medications.length > 0) {
+                  <div class="space-y-3 mt-4">
+                    @for (med of prescription.medications; track med.id) {
+                      <div class="border-l-4 border-primary pl-4 py-3 bg-muted/30 rounded-r-lg">
+                        <div class="flex items-start justify-between mb-2">
+                          <h4 class="font-bold text-base text-foreground">{{ med.medicationName }}</h4>
+                          <z-icon zType="pill" class="text-primary h-5 w-5" />
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                          <div class="flex items-center gap-2">
+                            <z-icon zType="circle" class="h-4 w-4 text-muted-foreground" />
+                            <span class="text-muted-foreground">Dosage:</span>
+                            <span class="font-medium">{{ med.dosage }}</span>
+                          </div>
+                          <div class="flex items-center gap-2">
+                            <z-icon zType="clock" class="h-4 w-4 text-muted-foreground" />
+                            <span class="text-muted-foreground">Frequency:</span>
+                            <span class="font-medium">{{ med.frequency }}</span>
+                          </div>
+                          <div class="flex items-center gap-2">
+                            <z-icon zType="calendar" class="h-4 w-4 text-muted-foreground" />
+                            <span class="text-muted-foreground">Duration:</span>
+                            <span class="font-medium">{{ med.duration }}</span>
                           </div>
                         </div>
-                      }
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+                        
+                        @if (med.instructions) {
+                          <div class="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <div class="flex items-start gap-2">
+                              <z-icon zType="info" class="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p class="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-1">Special Instructions</p>
+                                <p class="text-sm text-blue-800 dark:text-blue-200">{{ med.instructions }}</p>
+                              </div>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div class="text-center py-4 text-muted-foreground italic">
+                    <z-icon zType="circle-alert" class="inline h-5 w-5 mr-1" />
+                    No medications listed in this prescription
+                  </div>
+                }
+              </z-card>
+            }
+          </div>
         } @else {
           <z-card class="p-12 text-center">
-             <z-icon zType="pill" class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-             <h3 class="font-semibold mb-2">No prescriptions found</h3>
-             <p class="text-muted-foreground">You don't have any prescriptions yet.</p>
+            <div class="flex flex-col items-center">
+              <div class="rounded-full bg-muted p-6 mb-4">
+                <z-icon zType="pill" class="h-12 w-12 text-muted-foreground" />
+              </div>
+              <h3 class="font-semibold text-xl mb-2">No prescriptions found</h3>
+              <p class="text-muted-foreground max-w-md">
+                The patient doesn't have any prescriptions yet. Prescriptions will appear here once they are created by their doctor.
+              </p>
+            </div>
           </z-card>
         }
       }
@@ -362,6 +422,8 @@ export class HelperViewComponent implements OnInit {
   games = signal<GameResponse[]>([]);
   stats = signal<GameStatsResponse | null>(null);
   prescriptions = signal<PrescriptionResponseDTO[]>([]);
+  userNeonDbId = signal<number | null>(null);
+  isLoadingPrescriptions = signal(false);
 
   // Create game form
   newGameTitle = signal('');
@@ -375,7 +437,8 @@ export class HelperViewComponent implements OnInit {
     private readonly gameService: GameService,
     private readonly keycloakService: KeycloakService,
     private readonly prescriptionService: PrescriptionService,
-  ) {}
+    private readonly userApiService: UserApiService,
+  ) { }
 
   ngOnInit(): void {
     if (this.keycloakId) {
@@ -514,9 +577,53 @@ export class HelperViewComponent implements OnInit {
       error: err => console.error('Failed to load stats', err),
     });
 
-    this.prescriptionService.getPrescriptionsByPatient(this.keycloakId).subscribe({
-      next: data => this.prescriptions.set(data),
-      error: err => console.error('Failed to load prescriptions', err),
+    this.loadPrescriptions();
+  }
+
+  loadPrescriptions(): void {
+    if (!this.keycloakId) {
+      console.warn('[HELPER PRESCRIPTIONS] No keycloakId provided, skipping load');
+      return;
+    }
+
+    console.log('[HELPER PRESCRIPTIONS] Step 1: Fetching user info for keycloakId:', this.keycloakId);
+    this.isLoadingPrescriptions.set(true);
+
+    // First, get the user's NeonDB ID from their keycloakId
+    this.userApiService.getUserByKeycloakId(this.keycloakId).subscribe({
+      next: userInfo => {
+        console.log('[HELPER PRESCRIPTIONS] Step 2: User info retrieved:', userInfo);
+        console.log('[HELPER PRESCRIPTIONS] NeonDB ID:', userInfo.id);
+        this.userNeonDbId.set(userInfo.id);
+
+        // Now fetch prescriptions using the NeonDB ID
+        const neonDbId = userInfo.id.toString();
+        console.log('[HELPER PRESCRIPTIONS] Step 3: Loading prescriptions for NeonDB ID:', neonDbId);
+        console.log('[HELPER PRESCRIPTIONS] API URL will be: /api/prescriptions/patient/' + neonDbId);
+
+        this.prescriptionService.getPrescriptionsByPatient(neonDbId).subscribe({
+          next: prescriptions => {
+            console.log('[HELPER PRESCRIPTIONS] Step 4: Successfully loaded prescriptions:', prescriptions);
+            console.log('[HELPER PRESCRIPTIONS] Number of prescriptions:', prescriptions.length);
+            this.prescriptions.set(prescriptions);
+            this.isLoadingPrescriptions.set(false);
+          },
+          error: err => {
+            console.error('[HELPER PRESCRIPTIONS] Step 4 ERROR: Failed to load prescriptions');
+            console.error('[HELPER PRESCRIPTIONS] Error status:', err?.status);
+            console.error('[HELPER PRESCRIPTIONS] Error message:', err?.message);
+            console.error('[HELPER PRESCRIPTIONS] Error details:', err);
+            this.isLoadingPrescriptions.set(false);
+          },
+        });
+      },
+      error: err => {
+        console.error('[HELPER PRESCRIPTIONS] Step 2 ERROR: Failed to fetch user info');
+        console.error('[HELPER PRESCRIPTIONS] Error status:', err?.status);
+        console.error('[HELPER PRESCRIPTIONS] Error message:', err?.message);
+        console.error('[HELPER PRESCRIPTIONS] Error details:', err);
+        this.isLoadingPrescriptions.set(false);
+      },
     });
   }
 }
