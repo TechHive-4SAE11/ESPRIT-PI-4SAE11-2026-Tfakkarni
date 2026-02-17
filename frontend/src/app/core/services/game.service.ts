@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface CreateGameRequest {
   title: string;
@@ -96,9 +97,9 @@ export interface OverviewStatsResponse {
   providedIn: 'root',
 })
 export class GameService {
-  private readonly baseUrl = 'http://localhost:9090/api/games';
+  private readonly baseUrl = `${environment.apiBaseUrl}/api/games`;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) { }
 
   private userHeaders(keycloakId: string): HttpHeaders {
     return new HttpHeaders({ 'X-User-Id': keycloakId });

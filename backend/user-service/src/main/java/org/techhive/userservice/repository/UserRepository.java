@@ -1,6 +1,8 @@
 package org.techhive.userservice.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.techhive.userservice.entity.User;
 
 import java.util.List;
@@ -14,5 +16,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   boolean existsByEmail(String email);
 
-  List<User> findByRole(String role);
+  @Query("SELECT u FROM User u WHERE LOWER(u.role) = LOWER(:role)")
+  List<User> findByRole(@Param("role") String role);
 }

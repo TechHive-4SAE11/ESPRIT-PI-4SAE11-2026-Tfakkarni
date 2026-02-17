@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: 18081
 
 spring:
   application:
@@ -17,6 +17,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        auto_quote_keyword: true
 
 eureka:
   client:

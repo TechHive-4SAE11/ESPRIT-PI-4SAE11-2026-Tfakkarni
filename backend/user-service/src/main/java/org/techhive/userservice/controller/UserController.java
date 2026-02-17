@@ -59,8 +59,17 @@ public class UserController {
    * List users by role (e.g., /api/users/role/patient).
    */
   @GetMapping("/role/{role}")
-  public ResponseEntity<List<User>> getUsersByRole(@PathVariable String role) {
-    return ResponseEntity.ok(userService.getUsersByRole(role));
+  public ResponseEntity<?> getUsersByRole(@PathVariable String role) {
+    try {
+      log.info("Fetching users with role: {}", role);
+      List<User> users = userService.getUsersByRole(role);
+      log.info("Found {} users with role: {}", users.size(), role);
+      return ResponseEntity.ok(users);
+    } catch (Exception e) {
+      log.error("Error fetching users by role: {}", role, e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(Map.of("error", "Failed to fetch users: " + e.getMessage()));
+    }
   }
 
   /**
