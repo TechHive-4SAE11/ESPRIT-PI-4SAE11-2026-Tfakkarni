@@ -1,14 +1,28 @@
-import { Component, OnInit, signal, Input, Output, EventEmitter } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  signal,
+  Input,
+  Output,
+  EventEmitter,
+  inject,
+  DestroyRef
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { catchError, finalize, of, tap, switchMap } from 'rxjs';
 import { KeycloakService } from 'keycloak-angular';
+
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardBadgeComponent } from '@/shared/components/badge';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardProgressBarComponent } from '@/shared/components/progress-bar';
 import { ZardTableImports } from '@/shared/components/table/table.imports';
-import { GameService, type GameResponse, type GameStatsResponse } from '@/core/services/game.service';
 import { AddPlaceComponent } from './add-place/add-place.component';
+import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
+
+import { GameService, type GameResponse, type GameStatsResponse } from '@/core/services/game.service';
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
 import { UserApiService } from '@/core/services/user-api.service';
@@ -25,420 +39,37 @@ import { UserApiService } from '@/core/services/user-api.service';
     ZardProgressBarComponent,
     AddPlaceComponent,
     ZardTableImports,
+    PrescriptionListComponent
   ],
-  template: `
-    @switch (currentPage()) {
-      @case ('Home') {
-        <h2 class="text-2xl font-bold mb-6">Helper Dashboard</h2>
-        <p class="text-muted-foreground mb-6">Manage games, track progress, and support the patient's memory exercises.</p>
-
-        <div class="grid gap-4 md:grid-cols-3 mb-8">
-          <z-card class="p-6">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm text-muted-foreground">Games Created</p>
-                <p class="text-3xl font-bold">{{ stats()?.totalGamesCreated ?? 0 }}</p>
-              </div>
-              <z-icon zType="gamepad-2" class="text-primary h-8 w-8" />
-            </div>
-          </z-card>
-          <z-card class="p-6">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm text-muted-foreground">Games Played</p>
-                <p class="text-3xl font-bold">{{ stats()?.totalGamesPlayed ?? 0 }}</p>
-              </div>
-              <z-icon zType="target" class="text-primary h-8 w-8" />
-            </div>
-          </z-card>
-          <z-card class="p-6">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm text-muted-foreground">Best Score</p>
-                <p class="text-3xl font-bold">{{ stats()?.bestScore ?? 0 }}</p>
-              </div>
-              <z-icon zType="trophy" class="text-primary h-8 w-8" />
-            </div>
-          </z-card>
-        </div>
-
-        @if ((stats()?.totalAttempts ?? 0) > 0) {
-          <z-card class="p-6 mb-6">
-            <h3 class="text-lg font-semibold mb-4">Patient Performance</h3>
-            <div class="flex items-center gap-4">
-              <span class="text-sm text-muted-foreground">Average Score</span>
-              <z-progress-bar [progress]="stats()?.averageScore ?? 0" class="flex-1 h-3" />
-              <span class="text-sm font-semibold">{{ (stats()?.averageScore ?? 0) | number:'1.0-0' }}%</span>
-            </div>
-          </z-card>
-        }
-
-        <div class="grid gap-4 md:grid-cols-2">
-          <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Create Game')">
-            <div class="flex items-center gap-3">
-              <z-icon zType="plus-circle" class="text-primary h-10 w-10" />
-              <div>
-                <h3 class="font-semibold">Create New Game</h3>
-                <p class="text-sm text-muted-foreground">Upload photos of relatives & places</p>
-              </div>
-            </div>
-          </z-card>
-          <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('My Games')">
-            <div class="flex items-center gap-3">
-              <z-icon zType="gamepad-2" class="text-primary h-10 w-10" />
-              <div>
-                <h3 class="font-semibold">Manage Games</h3>
-                <p class="text-sm text-muted-foreground">View and manage created games</p>
-              </div>
-            </div>
-          </z-card>
-          <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Places')">
-            <div class="flex items-center gap-3">
-              <z-icon zType="map-pin" class="text-primary h-10 w-10" />
-              <div>
-                <h3 class="font-semibold">Guess the Place</h3>
-                <p class="text-sm text-muted-foreground">Manage location-based memory places</p>
-              </div>
-            </div>
-          </z-card>
-        </div>
-      }
-
-      @case ('My Games') {
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold">Manage Games</h2>
-          <button z-button (click)="setPage('Create Game')">
-            <z-icon zType="plus" class="mr-2" />
-            New Game
-          </button>
-        </div>
-
-        @if (games().length > 0) {
-          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            @for (game of games(); track game.id) {
-              <z-card class="p-6">
-                <div class="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 class="font-semibold text-lg">{{ game.title }}</h3>
-                    <p class="text-sm text-muted-foreground">{{ game.description }}</p>
-                  </div>
-                  <z-badge zType="secondary">{{ game.imageCount }} images</z-badge>
-                </div>
-                <p class="text-xs text-muted-foreground mb-4">Created {{ game.createdAt | date:'mediumDate' }}</p>
-                <div class="flex gap-2">
-                  <button z-button zType="destructive" zSize="sm" (click)="deleteGame(game.id)">
-                    <z-icon zType="trash-2" class="mr-1" />
-                    Delete
-                  </button>
-                </div>
-              </z-card>
-            }
-          </div>
-        } @else {
-          <z-card class="p-12 text-center">
-            <z-icon zType="gamepad-2" class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 class="font-semibold mb-2">No games yet</h3>
-            <p class="text-muted-foreground mb-4">Create the first memory game for the patient!</p>
-            <button z-button (click)="setPage('Create Game')">
-              <z-icon zType="plus" class="mr-2" />
-              Create Game
-            </button>
-          </z-card>
-        }
-      }
-
-      @case ('Prescriptions') {
-        <div class="flex items-center gap-2 mb-6">
-          <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
-            <z-icon zType="arrow-left" class="mr-1" />
-            Back
-          </button>
-          <h2 class="text-2xl font-bold">Patient Prescriptions</h2>
-        </div>
-        
-        @if (isLoadingPrescriptions()) {
-          <div class="space-y-4">
-            @for (i of [1,2,3]; track i) {
-              <z-card class="p-6 animate-pulse">
-                <div class="h-6 bg-muted rounded w-3/4 mb-3"></div>
-                <div class="h-4 bg-muted rounded w-1/2 mb-2"></div>
-                <div class="h-4 bg-muted rounded w-2/3"></div>
-              </z-card>
-            }
-          </div>
-        } @else if (prescriptions().length > 0) {
-          <div class="space-y-4">
-            @for (prescription of prescriptions(); track prescription.id) {
-              <z-card class="p-6 hover:shadow-lg transition-shadow">
-                <div class="flex items-start justify-between mb-4">
-                  <div>
-                    <div class="flex items-center gap-2 mb-1">
-                      <z-icon zType="file-text" class="text-primary h-5 w-5" />
-                      <h3 class="font-semibold text-lg">Prescription #{{ prescription.id }}</h3>
-                    </div>
-                    <p class="text-sm text-muted-foreground">
-                      <z-icon zType="calendar" class="inline h-4 w-4 mr-1" />
-                      {{ prescription.createdAt | date:'medium' }}
-                    </p>
-                  </div>
-                  <z-badge zType="secondary">
-                    {{ prescription.medications.length || 0 }} medication(s)
-                  </z-badge>
-                </div>
-                
-                @if (prescription.medications && prescription.medications.length > 0) {
-                  <div class="space-y-3 mt-4">
-                    @for (med of prescription.medications; track med.id) {
-                      <div class="border-l-4 border-primary pl-4 py-3 bg-muted/30 rounded-r-lg">
-                        <div class="flex items-start justify-between mb-2">
-                          <h4 class="font-bold text-base text-foreground">{{ med.medicationName }}</h4>
-                          <z-icon zType="pill" class="text-primary h-5 w-5" />
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                          <div class="flex items-center gap-2">
-                            <z-icon zType="circle" class="h-4 w-4 text-muted-foreground" />
-                            <span class="text-muted-foreground">Dosage:</span>
-                            <span class="font-medium">{{ med.dosage }}</span>
-                          </div>
-                          <div class="flex items-center gap-2">
-                            <z-icon zType="clock" class="h-4 w-4 text-muted-foreground" />
-                            <span class="text-muted-foreground">Frequency:</span>
-                            <span class="font-medium">{{ med.frequency }}</span>
-                          </div>
-                          <div class="flex items-center gap-2">
-                            <z-icon zType="calendar" class="h-4 w-4 text-muted-foreground" />
-                            <span class="text-muted-foreground">Duration:</span>
-                            <span class="font-medium">{{ med.duration }}</span>
-                          </div>
-                        </div>
-                        
-                        @if (med.instructions) {
-                          <div class="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                            <div class="flex items-start gap-2">
-                              <z-icon zType="info" class="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                              <div>
-                                <p class="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-1">Special Instructions</p>
-                                <p class="text-sm text-blue-800 dark:text-blue-200">{{ med.instructions }}</p>
-                              </div>
-                            </div>
-                          </div>
-                        }
-                      </div>
-                    }
-                  </div>
-                } @else {
-                  <div class="text-center py-4 text-muted-foreground italic">
-                    <z-icon zType="circle-alert" class="inline h-5 w-5 mr-1" />
-                    No medications listed in this prescription
-                  </div>
-                }
-              </z-card>
-            }
-          </div>
-        } @else {
-          <z-card class="p-12 text-center">
-            <div class="flex flex-col items-center">
-              <div class="rounded-full bg-muted p-6 mb-4">
-                <z-icon zType="pill" class="h-12 w-12 text-muted-foreground" />
-              </div>
-              <h3 class="font-semibold text-xl mb-2">No prescriptions found</h3>
-              <p class="text-muted-foreground max-w-md">
-                The patient doesn't have any prescriptions yet. Prescriptions will appear here once they are created by their doctor.
-              </p>
-            </div>
-          </z-card>
-        }
-      }
-
-      @case ('Create Game') {
-        <div class="flex items-center gap-2 mb-6">
-          <button z-button zType="ghost" zSize="sm" (click)="setPage('My Games')">
-            <z-icon zType="arrow-left" class="mr-1" />
-            Back
-          </button>
-          <h2 class="text-2xl font-bold">Create New Game</h2>
-        </div>
-
-        <z-card class="p-6 mb-6">
-          <h3 class="font-semibold mb-4">Game Details</h3>
-          <div class="space-y-4">
-            <div>
-              <label class="text-sm font-medium mb-1 block">Title</label>
-              <input
-                class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                [value]="newGameTitle()"
-                (input)="newGameTitle.set($any($event.target).value)"
-                placeholder="e.g., Family Members"
-              />
-            </div>
-            <div>
-              <label class="text-sm font-medium mb-1 block">Description</label>
-              <input
-                class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                [value]="newGameDescription()"
-                (input)="newGameDescription.set($any($event.target).value)"
-                placeholder="e.g., Photos of my family members"
-              />
-            </div>
-          </div>
-        </z-card>
-
-        <z-card class="p-6 mb-6">
-          <h3 class="font-semibold mb-4">Upload Images</h3>
-          <p class="text-sm text-muted-foreground mb-4">Add photos and give each one a name (this will be the answer).</p>
-
-          <div class="border-2 border-dashed border-border rounded-lg p-8 text-center mb-4">
-            <z-icon zType="upload" class="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-            <p class="text-sm text-muted-foreground mb-2">Click to select images</p>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              class="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90"
-              (change)="onFilesSelected($event)"
-            />
-          </div>
-
-          @if (uploadedImages().length > 0) {
-            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              @for (img of uploadedImages(); track $index; let i = $index) {
-                <div class="border border-border rounded-lg p-3">
-                  <img [src]="img.preview" alt="Preview" class="w-full h-32 object-cover rounded mb-2" />
-                  <input
-                    class="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground"
-                    [value]="img.name"
-                    (input)="updateImageName(i, $any($event.target).value)"
-                    placeholder="Name (e.g., Grandma Sara)"
-                  />
-                  <button z-button zType="ghost" zSize="sm" class="mt-1 text-destructive w-full" (click)="removeImage(i)">
-                    <z-icon zType="x" class="mr-1" />
-                    Remove
-                  </button>
-                </div>
-              }
-            </div>
-          }
-        </z-card>
-
-        @if (errorMessage()) {
-          <div class="mb-4 p-4 rounded-md bg-destructive/10 border border-destructive text-destructive text-sm">
-            {{ errorMessage() }}
-          </div>
-        }
-        @if (successMessage()) {
-          <div class="mb-4 p-4 rounded-md bg-green-500/10 border border-green-500 text-green-700 text-sm">
-            {{ successMessage() }}
-          </div>
-        }
-
-        @if (!canCreateGame() && !creating()) {
-          <p class="text-sm text-muted-foreground mb-3">
-            @if (newGameTitle().trim().length === 0) {
-              <span class="text-destructive">&#x2022; Enter a game title</span><br/>
-            }
-            @if (uploadedImages().length < 2) {
-              <span class="text-destructive">&#x2022; Upload at least 2 images (currently {{ uploadedImages().length }})</span>
-            }
-          </p>
-        }
-
-        <div class="flex gap-3">
-          <button
-            z-button
-            [disabled]="!canCreateGame()"
-            (click)="createGame()"
-          >
-            @if (creating()) {
-              <z-icon zType="loader-2" class="mr-2 animate-spin" />
-              Creating...
-            } @else {
-              <z-icon zType="check" class="mr-2" />
-              Create Game
-            }
-          </button>
-          <button z-button zType="outline" (click)="resetForm()">Cancel</button>
-        </div>
-      }
-
-      @case ('Progress') {
-        <h2 class="text-2xl font-bold mb-6">Patient Progress</h2>
-
-        @if (stats(); as s) {
-          <div class="grid gap-4 md:grid-cols-4 mb-8">
-            <z-card class="p-6">
-              <p class="text-sm text-muted-foreground">Total Attempts</p>
-              <p class="text-3xl font-bold">{{ s.totalAttempts }}</p>
-            </z-card>
-            <z-card class="p-6">
-              <p class="text-sm text-muted-foreground">Games Played</p>
-              <p class="text-3xl font-bold">{{ s.totalGamesPlayed }}</p>
-            </z-card>
-            <z-card class="p-6">
-              <p class="text-sm text-muted-foreground">Average Score</p>
-              <p class="text-3xl font-bold">{{ s.averageScore | number:'1.0-0' }}%</p>
-            </z-card>
-            <z-card class="p-6">
-              <p class="text-sm text-muted-foreground">Best Score</p>
-              <p class="text-3xl font-bold">{{ s.bestScore }}</p>
-            </z-card>
-          </div>
-
-          <z-card class="p-6">
-            <h3 class="text-lg font-semibold mb-4">Performance</h3>
-            <div class="space-y-4">
-              <div>
-                <div class="flex justify-between text-sm mb-1">
-                  <span>Average Accuracy</span>
-                  <span>{{ s.averageScore | number:'1.0-0' }}%</span>
-                </div>
-                <z-progress-bar [progress]="s.averageScore" />
-              </div>
-            </div>
-          </z-card>
-        } @else {
-          <z-card class="p-12 text-center">
-            <z-icon zType="bar-chart-3" class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 class="font-semibold mb-2">No progress yet</h3>
-            <p class="text-muted-foreground">The patient hasn't played any games yet.</p>
-          </z-card>
-        }
-      }
-
-      @case ('Places') {
-        <app-add-place
-          [keycloakId]="keycloakId"
-          (goBack)="setPage('Home')"
-        />
-      }
-    }
-  `,
+  templateUrl: './helper-view.component.html',
 })
 export class HelperViewComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly gameService = inject(GameService);
+  private readonly keycloakService = inject(KeycloakService);
+  private readonly prescriptionService = inject(PrescriptionService);
+  private readonly userApiService = inject(UserApiService);
+
   @Input() keycloakId = '';
   @Output() pageChange = new EventEmitter<string>();
 
-  currentPage = signal('Home');
+  // State Signals
+  currentPage = signal<string>('Home');
   games = signal<GameResponse[]>([]);
   stats = signal<GameStatsResponse | null>(null);
   prescriptions = signal<PrescriptionResponseDTO[]>([]);
   userNeonDbId = signal<number | null>(null);
-  isLoadingPrescriptions = signal(false);
 
-  // Create game form
-  newGameTitle = signal('');
-  newGameDescription = signal('');
+  // Loading Signals
+  isLoadingPrescriptions = signal<boolean>(false);
+  creating = signal<boolean>(false);
+
+  // Form Signals
+  newGameTitle = signal<string>('');
+  newGameDescription = signal<string>('');
   uploadedImages = signal<{ name: string; base64: string; contentType: string; preview: string }[]>([]);
-  creating = signal(false);
-  errorMessage = signal('');
-  successMessage = signal('');
-
-  constructor(
-    private readonly gameService: GameService,
-    private readonly keycloakService: KeycloakService,
-    private readonly prescriptionService: PrescriptionService,
-    private readonly userApiService: UserApiService,
-  ) { }
+  errorMessage = signal<string>('');
+  successMessage = signal<string>('');
 
   ngOnInit(): void {
     if (this.keycloakId) {
@@ -451,8 +82,96 @@ export class HelperViewComponent implements OnInit {
     this.pageChange.emit(page);
   }
 
+  // ==================== Data Loading ====================
+
+  loadData(): void {
+    if (!this.keycloakId) return;
+
+    this.loadGames();
+    this.loadStats();
+    this.loadPrescriptions();
+  }
+
+  private loadGames(): void {
+    this.gameService.getPatientGames(this.keycloakId)
+      .pipe(
+        tap(games => this.games.set(games)),
+        catchError(err => {
+          console.error('[HelperView] Failed to load games', err);
+          return of([]);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  private loadStats(): void {
+    this.gameService.getPlayerStats(this.keycloakId)
+      .pipe(
+        tap(stats => this.stats.set(stats)),
+        catchError(err => {
+          console.error('[HelperView] Failed to load stats', err);
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  private loadPrescriptions(): void {
+    if (!this.keycloakId) {
+      console.warn('[HelperView] No keycloakId provided, skipping prescription load');
+      return;
+    }
+
+    console.log('[HelperView] Loading prescriptions for:', this.keycloakId);
+    this.isLoadingPrescriptions.set(true);
+
+    this.userApiService.getUserByKeycloakId(this.keycloakId)
+      .pipe(
+        tap(userInfo => {
+          console.log('[HelperView] User info retrieved. DB ID:', userInfo.id);
+          this.userNeonDbId.set(userInfo.id);
+        }),
+        switchMap(userInfo => {
+          const neonDbId = userInfo.id.toString();
+          return this.prescriptionService.getPrescriptionsByPatient(neonDbId);
+        }),
+        tap(prescriptions => {
+          console.log('[HelperView] Prescriptions loaded:', prescriptions.length);
+          this.prescriptions.set(prescriptions);
+        }),
+        catchError(err => {
+          console.error('[HelperView] Failed to load prescriptions', err);
+          return of([]);
+        }),
+        finalize(() => this.isLoadingPrescriptions.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  deleteGame(gameId: number): void {
+    if (!confirm('Are you sure you want to delete this game?')) return;
+
+    this.gameService.deleteGame(gameId)
+      .pipe(
+        tap(() => this.loadData()),
+        catchError(err => {
+          console.error('[HelperView] Failed to delete game', err);
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  // ==================== Game Creation ====================
+
   canCreateGame(): boolean {
-    return this.newGameTitle().trim().length > 0 && this.uploadedImages().length >= 2 && !this.creating();
+    return this.newGameTitle().trim().length > 0 &&
+      this.uploadedImages().length >= 2 &&
+      !this.creating();
   }
 
   onFilesSelected(event: Event): void {
@@ -490,8 +209,17 @@ export class HelperViewComponent implements OnInit {
     this.uploadedImages.update(images => images.filter((_, i) => i !== index));
   }
 
+  resetForm(): void {
+    this.newGameTitle.set('');
+    this.newGameDescription.set('');
+    this.uploadedImages.set([]);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+  }
+
   async createGame(): Promise<void> {
     if (!this.canCreateGame()) return;
+
     this.creating.set(true);
     this.errorMessage.set('');
     this.successMessage.set('');
@@ -502,128 +230,49 @@ export class HelperViewComponent implements OnInit {
         await this.keycloakService.updateToken(30);
       }
     } catch (e) {
-      console.warn('[CreateGame] Token refresh failed, proceeding with current token', e);
+      console.warn('[HelperView] Token refresh warning:', e);
     }
 
+    // 1. Create Game
     this.gameService.createGame(this.keycloakId, {
       title: this.newGameTitle(),
       description: this.newGameDescription(),
-    }).subscribe({
-      next: game => {
+    }).pipe(
+      // 2. Upload Images
+      switchMap(game => {
         const uploads = this.uploadedImages().map(img => ({
           name: img.name,
           imageBase64: img.base64,
           contentType: img.contentType,
         }));
-
-        this.gameService.uploadImages(game.id, uploads).subscribe({
-          next: () => {
-            this.creating.set(false);
-            this.successMessage.set('Game created successfully!');
-            this.resetForm();
-            this.loadData();
-            this.setPage('My Games');
-          },
-          error: err => {
-            console.error('[CreateGame] Failed to upload images', err);
-            this.creating.set(false);
-            this.errorMessage.set('Game created but failed to upload images: ' + (err?.error?.error || err?.message || 'Unknown error'));
-            this.loadData();
-            this.setPage('My Games');
-          },
-        });
-      },
-      error: err => {
-        console.error('[CreateGame] Failed to create game', err);
-        this.creating.set(false);
+        return this.gameService.uploadImages(game.id, uploads);
+      }),
+      // 3. Handle Success
+      tap(() => {
+        this.successMessage.set('Game created successfully!');
+        this.resetForm();
+        this.loadData();
+        this.setPage('My Games'); // Auto-navigate to list
+      }),
+      // 4. Handle Errors
+      catchError(err => {
+        console.error('[HelperView] Game creation failed', err);
         const status = err?.status;
         let msg = 'Failed to create game: ';
+
         if (status === 401 || status === 403) {
           msg += 'Authentication error. Please log out and log back in.';
         } else if (status === 0) {
-          msg += 'Could not reach the server. Check if the API gateway is running on port 9090.';
+          msg += 'Could not reach the server. Check if the API gateway is running.';
         } else {
-          msg += (err?.error?.error || err?.message || 'Unknown error (status ' + status + ')');
+          msg += (err?.error?.error || err?.message || 'Unknown error');
         }
+
         this.errorMessage.set(msg);
-      },
-    });
-  }
-
-  resetForm(): void {
-    this.newGameTitle.set('');
-    this.newGameDescription.set('');
-    this.uploadedImages.set([]);
-    this.errorMessage.set('');
-  }
-
-  deleteGame(gameId: number): void {
-    this.gameService.deleteGame(gameId).subscribe({
-      next: () => this.loadData(),
-      error: err => console.error('Failed to delete game', err),
-    });
-  }
-
-  loadData(): void {
-    if (!this.keycloakId) return;
-
-    this.gameService.getPatientGames(this.keycloakId).subscribe({
-      next: games => this.games.set(games),
-      error: err => console.error('Failed to load games', err),
-    });
-
-    this.gameService.getPlayerStats(this.keycloakId).subscribe({
-      next: stats => this.stats.set(stats),
-      error: err => console.error('Failed to load stats', err),
-    });
-
-    this.loadPrescriptions();
-  }
-
-  loadPrescriptions(): void {
-    if (!this.keycloakId) {
-      console.warn('[HELPER PRESCRIPTIONS] No keycloakId provided, skipping load');
-      return;
-    }
-
-    console.log('[HELPER PRESCRIPTIONS] Step 1: Fetching user info for keycloakId:', this.keycloakId);
-    this.isLoadingPrescriptions.set(true);
-
-    // First, get the user's NeonDB ID from their keycloakId
-    this.userApiService.getUserByKeycloakId(this.keycloakId).subscribe({
-      next: userInfo => {
-        console.log('[HELPER PRESCRIPTIONS] Step 2: User info retrieved:', userInfo);
-        console.log('[HELPER PRESCRIPTIONS] NeonDB ID:', userInfo.id);
-        this.userNeonDbId.set(userInfo.id);
-
-        // Now fetch prescriptions using the NeonDB ID
-        const neonDbId = userInfo.id.toString();
-        console.log('[HELPER PRESCRIPTIONS] Step 3: Loading prescriptions for NeonDB ID:', neonDbId);
-        console.log('[HELPER PRESCRIPTIONS] API URL will be: /api/prescriptions/patient/' + neonDbId);
-
-        this.prescriptionService.getPrescriptionsByPatient(neonDbId).subscribe({
-          next: prescriptions => {
-            console.log('[HELPER PRESCRIPTIONS] Step 4: Successfully loaded prescriptions:', prescriptions);
-            console.log('[HELPER PRESCRIPTIONS] Number of prescriptions:', prescriptions.length);
-            this.prescriptions.set(prescriptions);
-            this.isLoadingPrescriptions.set(false);
-          },
-          error: err => {
-            console.error('[HELPER PRESCRIPTIONS] Step 4 ERROR: Failed to load prescriptions');
-            console.error('[HELPER PRESCRIPTIONS] Error status:', err?.status);
-            console.error('[HELPER PRESCRIPTIONS] Error message:', err?.message);
-            console.error('[HELPER PRESCRIPTIONS] Error details:', err);
-            this.isLoadingPrescriptions.set(false);
-          },
-        });
-      },
-      error: err => {
-        console.error('[HELPER PRESCRIPTIONS] Step 2 ERROR: Failed to fetch user info');
-        console.error('[HELPER PRESCRIPTIONS] Error status:', err?.status);
-        console.error('[HELPER PRESCRIPTIONS] Error message:', err?.message);
-        console.error('[HELPER PRESCRIPTIONS] Error details:', err);
-        this.isLoadingPrescriptions.set(false);
-      },
-    });
+        return of(null);
+      }),
+      finalize(() => this.creating.set(false)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
   }
 }
