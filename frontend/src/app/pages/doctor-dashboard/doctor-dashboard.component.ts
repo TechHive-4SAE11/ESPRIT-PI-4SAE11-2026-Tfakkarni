@@ -70,7 +70,15 @@ import { PrescriptionManagementComponent } from './prescription-management/presc
           <z-card>
             <div class="p-6">
               <h3 class="text-lg font-semibold mb-4">Patients Overview</h3>
-              @if (patients().length > 0) {
+              @if (isLoading()) {
+                <z-skeleton class="h-32 w-full" />
+              } @else if (error()) {
+                <div class="p-8 text-center text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <p class="font-semibold text-lg mb-2">Error loading patients</p>
+                  <p class="mb-4">{{ error() }}</p>
+                  <button z-button (click)="retryLoadPatients()">Retry</button>
+                </div>
+              } @else if (patients().length > 0) {
                 <table z-table>
                   <thead z-table-header>
                     <tr z-table-row>
@@ -116,7 +124,11 @@ import { PrescriptionManagementComponent } from './prescription-management/presc
                   </tbody>
                 </table>
               } @else {
-                <z-skeleton class="h-32 w-full" />
+                <div class="p-12 text-center text-muted-foreground bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                  <z-icon zType="users" class="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p class="text-lg font-medium">No patients found</p>
+                  <p class="text-sm mt-1">Patients assigned to you will appear here.</p>
+                </div>
               }
             </div>
           </z-card>
@@ -212,6 +224,8 @@ export class DoctorDashboardComponent implements OnInit {
   selectedPatient = signal<UserInfo | null>(null);
   selectedPatientStats = signal<GameStatsResponse | null>(null);
   currentDoctor = signal<UserInfo | null>(null);
+  isLoading = signal(true);
+  error = signal<string | null>(null);
   totalPatientGames = 0;
   avgPatientScore = 0;
 
@@ -248,7 +262,7 @@ export class DoctorDashboardComponent implements OnInit {
           error: err => console.error('Failed to load doctor info', err)
         });
       }
-      
+
       this.loadPatients();
     }
   }
@@ -275,10 +289,18 @@ export class DoctorDashboardComponent implements OnInit {
     this.setPage('Prescriptions');
   }
 
+  retryLoadPatients(): void {
+    this.loadPatients();
+  }
+
   private loadPatients(): void {
+    this.isLoading.set(true);
+    this.error.set(null);
+
     this.userApiService.getUsersByRole('patient').subscribe({
       next: patients => {
         this.patients.set(patients);
+        this.isLoading.set(false);
         // Load stats for each patient
         for (const patient of patients) {
           this.gameService.getPlayerStats(patient.keycloakId).subscribe({
@@ -291,7 +313,11 @@ export class DoctorDashboardComponent implements OnInit {
           });
         }
       },
-      error: err => console.error('Failed to load patients', err),
+      error: err => {
+        console.error('Failed to load patients', err);
+        this.error.set('Unable to load patients. Please check the backend connection.');
+        this.isLoading.set(false);
+      },
     });
   }
 

@@ -21,7 +21,15 @@ public class UserService {
   }
 
   public List<User> getUsersByRole(String role) {
-    return userRepository.findByRole(role);
+    log.info("Querying database for users with role: {}", role);
+    try {
+      List<User> users = userRepository.findByRole(role);
+      log.info("Query successful. Found {} users with role: {}", users.size(), role);
+      return users;
+    } catch (Exception e) {
+      log.error("Database error while fetching users by role: {}", role, e);
+      throw e;
+    }
   }
 
   public Optional<User> getUserByKeycloakId(String keycloakId) {

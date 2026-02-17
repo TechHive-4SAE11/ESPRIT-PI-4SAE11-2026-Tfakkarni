@@ -1,6 +1,7 @@
 package org.techhive.trackingservice.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,8 +13,10 @@ import org.techhive.trackingservice.mapper.PrescriptionMapper;
 import org.techhive.trackingservice.service.PrescriptionService;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/prescriptions")
 @RequiredArgsConstructor
@@ -26,31 +29,42 @@ public class PrescriptionController {
     @PostMapping
     public ResponseEntity<?> createPrescription(@RequestBody PrescriptionRequestDTO requestDTO) {
         try {
-            System.out.println("[PrescriptionController] Received request: " + requestDTO);
-            System.out.println("[PrescriptionController] SessionId: " + requestDTO.getSessionId());
-            System.out.println("[PrescriptionController] Medications count: " + 
-                (requestDTO.getMedications() != null ? requestDTO.getMedications().size() : 0));
-            
+            log.info("Received prescription creation request: sessionId={}, medicationsCount={}",
+                requestDTO.getSessionId(),
+                requestDTO.getMedications() != null ? requestDTO.getMedications().size() : 0);
+
+            // Validation
             if (requestDTO.getSessionId() == null) {
-                return ResponseEntity.badRequest().body("Session ID is required");
+                log.warn("Session ID is missing in prescription request");
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Session ID is required"));
+            }
+
+            if (requestDTO.getMedications() == null || requestDTO.getMedications().isEmpty()) {
+                log.warn("No medications provided in prescription request");
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "At least one medication is required"));
             }
             
             Prescription prescription = new Prescription();
             
             // Convert medication DTOs to entities
-            if (requestDTO.getMedications() != null) {
-                List<Medication> medications = requestDTO.getMedications().stream()
-                        .map(prescriptionMapper::toMedicationEntity)
-                        .collect(Collectors.toList());
-                prescription.setMedications(medications);
-            }
-            
+            List<Medication> medications = requestDTO.getMedications().stream()
+                    .map(prescriptionMapper::toMedicationEntity)
+                    .collect(Collectors.toList());
+            prescription.setMedications(medications);
+
             Prescription saved = prescriptionService.createPrescriptionForSession(requestDTO.getSessionId(), prescription);
+            log.info("Prescription created successfully with ID: {}", saved.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(prescriptionMapper.toResponseDTO(saved));
+        } catch (IllegalArgumentException e) {
+            log.error("Validation error creating prescription: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
         } catch (RuntimeException e) {
-            System.err.println("[PrescriptionController] ERROR creating prescription: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            log.error("Error creating prescription", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to create prescription: " + e.getMessage()));
         }
     }
 

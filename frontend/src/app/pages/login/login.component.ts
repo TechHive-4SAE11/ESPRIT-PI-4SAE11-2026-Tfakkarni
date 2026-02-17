@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { KeycloakService } from 'keycloak-angular';
+import { environment } from '../../../environments/environment';
 import { AuthService } from '@/core/auth';
 import { ZardButtonComponent } from '@/shared/components/button/button.component';
 import { ZardCardComponent } from '@/shared/components/card/card.component';
@@ -38,7 +39,7 @@ export class LoginComponent implements OnInit {
     private readonly router: Router,
     private readonly http: HttpClient,
     private readonly ngZone: NgZone
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) {
@@ -66,7 +67,7 @@ export class LoginComponent implements OnInit {
     this.errorMessage = '';
 
     try {
-      const tokenEndpoint = 'http://localhost:8280/realms/techhive/protocol/openid-connect/token';
+      const tokenEndpoint = `${environment.keycloakUrl}/realms/techhive/protocol/openid-connect/token`;
       console.log('[LOGIN] Requesting token from:', tokenEndpoint);
 
       const body = new URLSearchParams();

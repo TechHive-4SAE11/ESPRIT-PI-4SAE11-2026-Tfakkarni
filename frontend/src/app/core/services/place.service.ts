@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 // ─── DTOs ──────────────────────────────────────────────────
 
@@ -35,9 +36,9 @@ export interface PlaceQuizResponse {
   providedIn: 'root',
 })
 export class PlaceService {
-  private readonly baseUrl = 'http://localhost:9090/api/games/places';
+  private readonly baseUrl = `${environment.apiBaseUrl}/api/games/places`;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) { }
 
   private userHeaders(keycloakId: string): HttpHeaders {
     return new HttpHeaders({ 'X-User-Id': keycloakId });
