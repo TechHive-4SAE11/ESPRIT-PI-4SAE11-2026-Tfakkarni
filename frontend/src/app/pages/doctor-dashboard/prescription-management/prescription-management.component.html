@@ -115,9 +115,11 @@
                         </option>
                         }
                     </select>
-                    @if (sessions().length === 0 && !isLoadingSessions()) {
-                    <p class="text-xs text-destructive">No sessions found. Please create a consultation session first.
+                    <p class="text-xs text-slate-500 italic">
+                        Note: Only sessions without an existing prescription are listed here.
                     </p>
+                    @if (sessions().length === 0 && !isLoadingSessions()) {
+                    <p class="text-xs text-destructive">No available sessions found. Please create a new consultation session.</p>
                     }
                     @if (isLoadingSessions()) {
                     <p class="text-xs text-muted-foreground">Loading sessions...</p>

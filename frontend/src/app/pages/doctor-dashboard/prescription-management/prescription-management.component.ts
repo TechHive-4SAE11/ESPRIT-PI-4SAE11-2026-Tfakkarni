@@ -1,10 +1,11 @@
-// src/app/pages/doctor-dashboard/prescription-management/prescription-management.component.ts
 import { Component, Input, OnInit, signal, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray, AbstractControl } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, FormArray, AbstractControl, Validators } from '@angular/forms';
 import { catchError, finalize, of, tap } from 'rxjs';
+import { z } from 'zod';
 
+import { createZodValidator } from '@/core/utils/zod-validator';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
@@ -35,6 +36,10 @@ import {
 export class PrescriptionManagementComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly alertDialog = inject(ZardAlertDialogService);
+  private readonly fb = inject(FormBuilder);
+  private readonly prescriptionService = inject(PrescriptionService);
+  private readonly medicalFolderService = inject(MedicalFolderService);
+  private readonly sessionService = inject(SessionService);
 
   @Input({ required: true }) patient!: UserInfo;
   @Input() doctor: UserInfo | null = null;
@@ -53,44 +58,58 @@ export class PrescriptionManagementComponent implements OnInit {
   editingPrescriptionId = signal<number | null>(null);
   errorMessage = signal<string | null>(null);
 
-  // Form
-  prescriptionForm: FormGroup;
+  prescriptionForm!: FormGroup;
 
-  constructor(
-    private readonly fb: FormBuilder,
-    private readonly prescriptionService: PrescriptionService,
-    private readonly medicalFolderService: MedicalFolderService,
-    private readonly sessionService: SessionService
-  ) {
+  // Zod Schemas
+  private readonly medicationFieldSchemas = {
+    medicationName: z.string().min(1, { message: 'Medication name is required' }),
+    dosage: z.string().min(1, { message: 'Dosage is required' }),
+    frequency: z.string().min(1, { message: 'Frequency is required' }),
+    duration: z.string().min(1, { message: 'Duration is required' }),
+    instructions: z.string().optional()
+  };
+
+  private readonly prescriptionSchema = z.object({
+    sessionId: z.union([
+      z.number(),
+      z.string().min(1)
+    ]).refine(val => val !== null && val !== '', { message: 'Session is required' }),
+    medications: z.array(z.any()).min(1, { message: 'At least one medication is required' })
+  });
+
+  ngOnInit(): void {
     this.prescriptionForm = this.createPrescriptionForm();
+    this.loadPrescriptions();
+    this.loadSessions();
   }
 
   get medications(): FormArray {
     return this.prescriptionForm.get('medications') as FormArray;
   }
 
-  ngOnInit(): void {
-    this.loadPrescriptions();
-    this.loadSessions();
-  }
-
   // ==================== Form Creation ====================
 
   private createPrescriptionForm(): FormGroup {
     return this.fb.group({
-      sessionId: [null, Validators.required],
-      medications: this.fb.array([], [Validators.required, Validators.minLength(1)])
+      sessionId: [null, createZodValidator(this.prescriptionSchema.shape.sessionId)],
+      medications: this.fb.array([], [createZodValidator(this.prescriptionSchema.shape.medications)])
     });
   }
 
   private createMedicationFormGroup(medication?: MedicationRequestDTO): FormGroup {
     return this.fb.group({
-      medicationName: [medication?.medicationName || '', Validators.required],
-      dosage: [medication?.dosage || '', Validators.required],
-      frequency: [medication?.frequency || '', Validators.required],
-      duration: [medication?.duration || '', Validators.required],
-      instructions: [medication?.instructions || '']
+      medicationName: [medication?.medicationName || '', createZodValidator(this.medicationFieldSchemas.medicationName)],
+      dosage: [medication?.dosage || '', createZodValidator(this.medicationFieldSchemas.dosage)],
+      frequency: [medication?.frequency || '', createZodValidator(this.medicationFieldSchemas.frequency)],
+      duration: [medication?.duration || '', createZodValidator(this.medicationFieldSchemas.duration)],
+      instructions: [medication?.instructions || '', createZodValidator(this.medicationFieldSchemas.instructions)]
     });
+  }
+
+  // Helper method used in template for validation
+  getMedicationControl(index: number, controlName: string): AbstractControl | null {
+    const medicationGroup = this.medications.at(index) as FormGroup;
+    return medicationGroup?.get(controlName);
   }
 
   // ==================== Data Loading ====================
@@ -166,10 +185,10 @@ export class PrescriptionManagementComponent implements OnInit {
   }
 
   private loadSessionsForFolder(folderId: number): void {
-    this.sessionService.getSessionsByMedicalFolder(folderId)
+    this.sessionService.getSessionsWhereNoPrescription(folderId)
       .pipe(
         tap(sessions => {
-          console.log('[PrescriptionManagement] Loaded sessions:', sessions);
+          console.log('[PrescriptionManagement] Loaded sessions without prescription:', sessions);
           this.sessions.set(sessions);
         }),
         catchError(error => {
@@ -183,44 +202,65 @@ export class PrescriptionManagementComponent implements OnInit {
       .subscribe();
   }
 
-  // ==================== Dialog Management ====================
+  // ==================== Actions ====================
 
   openCreateDialog(): void {
-    this.resetForm();
-    this.editingPrescriptionId.set(null);
-    this.errorMessage.set(null);
-    this.addMedication();
-    this.showCreateDialog.set(true);
+    console.log('PrescriptionManagement: openCreateDialog called');
+    try {
+      this.editingPrescriptionId.set(null);
+      this.prescriptionForm.reset();
+      this.medications.clear();
+      this.addMedication();
+      this.errorMessage.set(null);
+      this.showCreateDialog.set(true);
+    } catch (error) {
+      console.error('PrescriptionManagement: Error opening create dialog', error);
+      this.errorMessage.set('An error occurred while opening the dialog');
+    }
   }
 
   openEditDialog(prescription: PrescriptionResponseDTO): void {
-    this.resetForm();
     this.editingPrescriptionId.set(prescription.id);
-    this.errorMessage.set(null);
-
     this.prescriptionForm.patchValue({
       sessionId: prescription.sessionId
     });
 
+    this.medications.clear();
     if (prescription.medications && prescription.medications.length > 0) {
       prescription.medications.forEach(med => {
-        this.medications.push(this.createMedicationFormGroup(med));
+        // Map response DTO to request DTO for form
+        const requestDto: MedicationRequestDTO = {
+          medicationName: med.medicationName,
+          dosage: med.dosage,
+          frequency: med.frequency,
+          duration: med.duration,
+          instructions: med.instructions
+        };
+        this.medications.push(this.createMedicationFormGroup(requestDto));
       });
     } else {
       this.addMedication();
     }
 
+    this.errorMessage.set(null);
     this.showCreateDialog.set(true);
   }
 
   closeCreateDialog(): void {
     this.showCreateDialog.set(false);
-    this.resetForm();
+    this.prescriptionForm.reset();
+    this.medications.clear();
+    this.errorMessage.set(null);
   }
 
   viewPrescription(prescription: PrescriptionResponseDTO): void {
     this.selectedPrescription.set(prescription);
     this.showViewDialog.set(true);
+  }
+
+  closeViewDialog(): void {
+    this.showViewDialog.set(false);
+    this.selectedPrescription.set(null);
   }
 
   deletePrescription(id: number): void {
@@ -234,25 +274,21 @@ export class PrescriptionManagementComponent implements OnInit {
         this.prescriptionService.deletePrescription(id)
           .pipe(
             tap(() => {
-              this.prescriptions.update(current => current.filter(p => p.id !== id));
+              this.loadPrescriptions();
+              if (this.selectedPrescription()?.id === id) {
+                this.closeViewDialog();
+              }
             }),
             catchError(error => {
-              console.error('[PrescriptionManagement] Error deleting prescription:', error);
-              // Optionally show an error message
+              console.error('[PrescriptionManagement] Error removing prescription:', error);
               return of(null);
             }),
             takeUntilDestroyed(this.destroyRef)
-          ).subscribe();
-      },
+          )
+          .subscribe();
+      }
     });
   }
-
-  closeViewDialog(): void {
-    this.showViewDialog.set(false);
-    this.selectedPrescription.set(null);
-  }
-
-  // ==================== Form Management ====================
 
   addMedication(): void {
     this.medications.push(this.createMedicationFormGroup());
@@ -263,19 +299,6 @@ export class PrescriptionManagementComponent implements OnInit {
       this.medications.removeAt(index);
     }
   }
-
-  getMedicationControl(index: number, controlName: string): AbstractControl | null {
-    const medicationGroup = this.medications.at(index) as FormGroup;
-    return medicationGroup?.get(controlName) || null;
-  }
-
-  private resetForm(): void {
-    this.prescriptionForm.reset();
-    this.medications.clear();
-    this.errorMessage.set(null);
-  }
-
-  // ==================== Form Submission ====================
 
   onSubmit(): void {
     if (this.prescriptionForm.invalid) {
