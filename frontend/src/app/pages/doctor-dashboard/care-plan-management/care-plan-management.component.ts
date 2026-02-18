@@ -7,6 +7,7 @@ import { catchError, finalize, of, tap } from 'rxjs';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
+import { ZardAlertDialogService } from '@/shared/components/alert-dialog/alert-dialog.service';
 
 import { UserInfo } from '@/core/services/user-api.service';
 import { CarePlanService } from '@/core/services/care-plan.service';
@@ -15,7 +16,8 @@ import { SessionService, SessionResponseDTO } from '@/core/services/session.serv
 import {
   CarePlanResponseDTO,
   CarePlanRequestDTO,
-  CareActivityRequestDTO
+  CareActivityRequestDTO,
+  CareActivityType
 } from '@/core/models/care-plan.model';
 
 @Component({
@@ -32,6 +34,7 @@ import {
 })
 export class CarePlanManagementComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly alertDialog = inject(ZardAlertDialogService);
 
   @Input({ required: true }) patient!: UserInfo;
   @Input() doctor: UserInfo | null = null;
@@ -40,6 +43,17 @@ export class CarePlanManagementComponent implements OnInit {
   carePlans = signal<CarePlanResponseDTO[]>([]);
   sessions = signal<SessionResponseDTO[]>([]);
   selectedCarePlan = signal<CarePlanResponseDTO | null>(null);
+
+  physicalActivities = computed(() => 
+    this.selectedCarePlan()?.activities.filter(a => a.activityType === CareActivityType.PHYSICAL_ACTIVITY) ?? []
+  );
+
+  nutritionActivities = computed(() => 
+    this.selectedCarePlan()?.activities.filter(a => a.activityType === CareActivityType.NUTRITION_PLAN) ?? []
+  );
+
+  // Constants
+  CareActivityType = CareActivityType;
 
   // UI state signals
   showCreateDialog = signal(false);
@@ -81,13 +95,43 @@ export class CarePlanManagementComponent implements OnInit {
   }
 
   private createCareActivityFormGroup(activity?: CareActivityRequestDTO): FormGroup {
-    return this.fb.group({
+    const group = this.fb.group({
       activityName: [activity?.activityName || '', Validators.required],
+      activityType: [activity?.activityType || CareActivityType.PHYSICAL_ACTIVITY, Validators.required],
       description: [activity?.description || '', Validators.required],
-      frequency: [activity?.frequency || '', Validators.required],
-      duration: [activity?.duration || '', Validators.required],
+      frequency: [activity?.frequency || ''],
+      duration: [activity?.duration || ''],
       completionStatus: [activity?.completionStatus || 'Pending']
     });
+
+    // Set initial validators
+    this.updateActivityValidators(group);
+
+    // Subscribe to changes
+    group.get('activityType')?.valueChanges.subscribe(() => {
+      this.updateActivityValidators(group);
+    });
+
+    return group;
+  }
+
+  private updateActivityValidators(group: FormGroup): void {
+    const type = group.get('activityType')?.value;
+    const freqControl = group.get('frequency');
+    const durControl = group.get('duration');
+
+    if (type === CareActivityType.PHYSICAL_ACTIVITY) {
+      freqControl?.setValidators([Validators.required]);
+      durControl?.setValidators([Validators.required]);
+    } else {
+      freqControl?.clearValidators();
+      durControl?.clearValidators();
+      // Optionally clear values if switching to Nutrition, but maybe not necessary
+      freqControl?.setValue('');
+      durControl?.setValue('');
+    }
+    freqControl?.updateValueAndValidity();
+    durControl?.updateValueAndValidity();
   }
 
   // ==================== Data Loading ====================
@@ -253,5 +297,33 @@ export class CarePlanManagementComponent implements OnInit {
       finalize(() => this.isSubmitting.set(false)),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe();
+  }
+
+  deleteCarePlan(id: number): void {
+    this.alertDialog.confirm({
+      zTitle: 'Delete Care Plan',
+      zDescription: 'Are you sure you want to delete this Care Plan? This action cannot be undone.',
+      zOkText: 'Delete',
+      zCancelText: 'Cancel',
+      zOkDestructive: true,
+      zOnOk: () => {
+        this.carePlanService.deleteCarePlan(id)
+          .pipe(
+            tap(() => {
+              this.loadCarePlans();
+              if (this.selectedCarePlan()?.id === id) {
+                this.closeViewDialog();
+              }
+            }),
+            catchError(err => {
+              console.error('Failed to delete care plan', err);
+              this.errorMessage.set('Failed to delete care plan. Please try again.');
+              return of(null);
+            }),
+            takeUntilDestroyed(this.destroyRef)
+          )
+          .subscribe();
+      }
+    });
   }
 }

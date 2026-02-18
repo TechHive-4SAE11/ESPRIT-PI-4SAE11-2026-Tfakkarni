@@ -38,6 +38,9 @@ public class CarePlanMapper {
         
         if (carePlan.getSession() != null) {
             dto.setSessionId(carePlan.getSession().getId());
+            if (carePlan.getSession().getMedicalFolder() != null) {
+                dto.setDoctorId(carePlan.getSession().getMedicalFolder().getIdDoctor());
+            }
         }
         
         if (carePlan.getCareActivities() != null) {
@@ -58,6 +61,7 @@ public class CarePlanMapper {
         
         CareActivity activity = new CareActivity();
         activity.setActivityName(dto.getActivityName());
+        activity.setActivityType(dto.getActivityType());
         activity.setDescription(dto.getDescription());
         activity.setFrequency(dto.getFrequency());
         activity.setDuration(dto.getDuration());
@@ -74,6 +78,7 @@ public class CarePlanMapper {
         CareActivityResponseDTO dto = new CareActivityResponseDTO();
         dto.setId(activity.getId());
         dto.setActivityName(activity.getActivityName());
+        dto.setActivityType(activity.getActivityType() != null ? activity.getActivityType() : org.techhive.trackingservice.enums.CareActivityType.PHYSICAL_ACTIVITY);
         dto.setDescription(activity.getDescription());
         dto.setFrequency(activity.getFrequency());
         dto.setDuration(activity.getDuration());

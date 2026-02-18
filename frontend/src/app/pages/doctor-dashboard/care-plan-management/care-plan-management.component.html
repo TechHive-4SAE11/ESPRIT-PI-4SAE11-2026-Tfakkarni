@@ -71,6 +71,10 @@
                             title="Edit Care Plan">
                             <z-icon zType="edit" class="w-4 h-4" />
                         </button>
+                        <button z-button zType="destructive" zSize="sm" (click)="deleteCarePlan(carePlan.id)"
+                            title="Delete Care Plan">
+                            <z-icon zType="trash-2" class="w-4 h-4" />
+                        </button>
                     </div>
                 </div>
             </div>
@@ -142,6 +146,17 @@
                                     class="w-full px-3 py-2 border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary" />
                             </div>
 
+                            <!-- Activity Type -->
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium mb-1">Type</label>
+                                <select formControlName="activityType"
+                                    class="w-full px-3 py-2 border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary">
+                                    <option [value]="CareActivityType.PHYSICAL_ACTIVITY">Physical Activity</option>
+                                    <option [value]="CareActivityType.NUTRITION_PLAN">Nutrition Plan</option>
+                                </select>
+                            </div>
+
+                            @if (act.get('activityType')?.value === CareActivityType.PHYSICAL_ACTIVITY) {
                             <!-- Frequency -->
                             <div>
                                 <label class="block text-sm font-medium mb-1">Frequency</label>
@@ -155,6 +170,7 @@
                                 <input type="text" formControlName="duration" placeholder="e.g. 30 mins"
                                     class="w-full px-3 py-2 border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary" />
                             </div>
+                            }
 
                             <!-- Description -->
                             <div class="md:col-span-2">
@@ -209,32 +225,63 @@
                 </div>
 
                 <div class="space-y-4">
-                    <h3 class="font-semibold text-lg border-b pb-2">Activities</h3>
-                    
-                    @for (act of selectedCarePlan()?.activities; track act.id) {
-                    <div class="bg-muted/30 p-4 rounded-lg border">
-                        <div class="flex justify-between items-start mb-2">
-                            <h4 class="font-bold text-primary">{{ act.activityName }}</h4>
-                            <span class="text-xs px-2 py-1 rounded bg-secondary text-secondary-foreground">{{ act.completionStatus }}</span>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-4 text-sm mb-3">
-                            <div>
-                                <span class="text-muted-foreground block">Frequency:</span>
-                                <span>{{ act.frequency }}</span>
+                    @if (physicalActivities().length > 0) {
+                        <h3 class="font-semibold text-lg border-b pb-2">Physical Activities</h3>
+                        @for (act of physicalActivities(); track act.id) {
+                        <div class="bg-muted/30 p-4 rounded-lg border mb-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-bold text-primary">{{ act.activityName }}</h4>
+                                <div class="flex gap-2">
+                                    <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                                        Physical
+                                    </span>
+                                    <span class="text-xs px-2 py-1 rounded bg-secondary text-secondary-foreground">{{
+                                        act.completionStatus }}</span>
+                                </div>
                             </div>
-                            <div>
-                                <span class="text-muted-foreground block">Duration:</span>
-                                <span>{{ act.duration }}</span>
+                            
+                            <div class="grid grid-cols-2 gap-4 text-sm mb-3">
+                                <div>
+                                    <span class="text-muted-foreground block">Frequency:</span>
+                                    <span>{{ act.frequency }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-muted-foreground block">Duration:</span>
+                                    <span>{{ act.duration }}</span>
+                                </div>
                             </div>
-                        </div>
-                        
-                        @if (act.description) {
-                        <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded text-sm text-blue-800 dark:text-blue-200">
-                            <strong>Description:</strong> {{ act.description }}
+                            
+                            @if (act.description) {
+                            <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded text-sm text-blue-800 dark:text-blue-200">
+                                <strong>Description:</strong> {{ act.description }}
+                            </div>
+                            }
                         </div>
                         }
-                    </div>
+                    }
+
+                    @if (nutritionActivities().length > 0) {
+                        <h3 class="font-semibold text-lg border-b pb-2">Nutrition Plans</h3>
+                        @for (act of nutritionActivities(); track act.id) {
+                        <div class="bg-muted/30 p-4 rounded-lg border mb-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-bold text-primary">{{ act.activityName }}</h4>
+                                <div class="flex gap-2">
+                                    <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                                        Nutrition
+                                    </span>
+                                    <span class="text-xs px-2 py-1 rounded bg-secondary text-secondary-foreground">{{
+                                        act.completionStatus }}</span>
+                                </div>
+                            </div>
+                            
+                            @if (act.description) {
+                            <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded text-sm text-green-800 dark:text-green-200">
+                                <strong>Description:</strong> {{ act.description }}
+                            </div>
+                            }
+                        </div>
+                        }
                     }
                 </div>
             </div>

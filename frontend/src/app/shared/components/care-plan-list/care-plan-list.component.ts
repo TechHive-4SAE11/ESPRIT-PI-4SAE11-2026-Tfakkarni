@@ -1,9 +1,10 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardBadgeComponent } from '@/shared/components/badge';
-import { CarePlanResponseDTO } from '@/core/models/care-plan.model';
+import { CarePlanResponseDTO, CareActivityType, CareActivityResponseDTO } from '@/core/models/care-plan.model';
+import { UserApiService } from '@/core/services/user-api.service';
 
 @Component({
   selector: 'app-care-plan-list',
@@ -37,9 +38,18 @@ import { CarePlanResponseDTO } from '@/core/models/care-plan.model';
                     Care Plan #{{ plan.id }}
                   </p>
                 </div>
-                <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
-                  <z-icon zType="calendar" class="w-4 h-4 mr-1" />
-                  {{ plan.createdAt | date:'medium' }}
+                
+                <div class="flex flex-col gap-1 text-sm text-slate-500 dark:text-slate-400">
+                    <div class="flex items-center">
+                        <z-icon zType="calendar" class="w-4 h-4 mr-1" />
+                        {{ plan.createdAt | date:'medium' }}
+                    </div>
+                    @if (plan.doctorId && doctorNames.get(plan.doctorId)) {
+                        <div class="flex items-center text-primary font-medium">
+                            <z-icon zType="user" class="w-4 h-4 mr-1" />
+                            {{ doctorNames.get(plan.doctorId) }}
+                        </div>
+                    }
                 </div>
               </div>
               <z-badge zType="secondary">
@@ -48,45 +58,74 @@ import { CarePlanResponseDTO } from '@/core/models/care-plan.model';
             </div>
             
             @if (plan.activities && plan.activities.length > 0) {
-              <div class="space-y-3 mt-4">
-                @for (activity of plan.activities; track activity.id) {
-                  <div class="border-l-4 border-emerald-500 pl-4 py-3 bg-slate-50 dark:bg-slate-700/30 rounded-r-lg">
-                    <div class="flex items-start justify-between mb-2">
-                      <h4 class="font-bold text-base text-slate-800 dark:text-white">{{ activity.activityName }}</h4>
-                      <z-icon zType="activity" class="text-emerald-500 h-5 w-5" />
-                    </div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                      <div class="flex items-center gap-2">
-                        <z-icon zType="clock" class="h-4 w-4 text-slate-400" />
-                        <span class="text-slate-500 dark:text-slate-400">Frequency:</span>
-                        <span class="font-medium text-slate-700 dark:text-slate-200">{{ activity.frequency }}</span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <z-icon zType="calendar" class="h-4 w-4 text-slate-400" />
-                        <span class="text-slate-500 dark:text-slate-400">Duration:</span>
-                        <span class="font-medium text-slate-700 dark:text-slate-200">{{ activity.duration }}</span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <z-icon zType="check" class="h-4 w-4 text-slate-400" />
-                        <span class="text-slate-500 dark:text-slate-400">Status:</span>
-                        <span class="font-medium text-slate-700 dark:text-slate-200">{{ activity.completionStatus || 'Pending' }}</span>
-                      </div>
-                    </div>
-                    
-                    @if (activity.description) {
-                      <div class="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/50">
-                        <div class="flex items-start gap-2">
-                          <z-icon zType="info" class="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p class="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-1">Description</p>
-                            <p class="text-sm text-blue-800 dark:text-blue-200">{{ activity.description }}</p>
+              <div class="space-y-6 mt-4">
+                
+                <!-- Physical Activities Section -->
+                @if (getPhysicalActivities(plan).length > 0) {
+                  <div>
+                    <h4 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                       <z-icon zType="activity" class="h-4 w-4" /> Physical Activities
+                    </h4>
+                    <div class="space-y-3">
+                      @for (activity of getPhysicalActivities(plan); track activity.id) {
+                        <div class="border-l-4 border-emerald-500 pl-4 py-3 bg-slate-50 dark:bg-slate-700/30 rounded-r-lg">
+                          <div class="flex items-start justify-between mb-2">
+                              <h4 class="font-bold text-base text-slate-800 dark:text-white">{{ activity.activityName }}</h4>
+                              <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-100 text-emerald-800">
+                                  Physical
+                              </span>
                           </div>
+                          
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                            <div class="flex items-center gap-2">
+                              <span class="text-slate-500 dark:text-slate-400">Freq:</span>
+                              <span class="font-medium text-slate-700 dark:text-slate-200">{{ activity.frequency }}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                              <span class="text-slate-500 dark:text-slate-400">Duration:</span>
+                              <span class="font-medium text-slate-700 dark:text-slate-200">{{ activity.duration }}</span>
+                            </div>
+                          </div>
+                          
+                          @if (activity.description) {
+                            <div class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                              {{ activity.description }}
+                            </div>
+                          }
                         </div>
-                      </div>
-                    }
+                      }
+                    </div>
                   </div>
                 }
+
+                <!-- Nutrition Plans Section -->
+                @if (getNutritionActivities(plan).length > 0) {
+                  <div>
+                    <h4 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                       <z-icon zType="heart" class="h-4 w-4" /> Nutrition Plans
+                    </h4>
+                    <div class="space-y-3">
+                      @for (activity of getNutritionActivities(plan); track activity.id) {
+                        <div class="border-l-4 border-orange-500 pl-4 py-3 bg-slate-50 dark:bg-slate-700/30 rounded-r-lg">
+                          <div class="flex items-start justify-between mb-2">
+                              <h4 class="font-bold text-base text-slate-800 dark:text-white">{{ activity.activityName }}</h4>
+                              <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-orange-100 text-orange-800">
+                                  Nutrition
+                              </span>
+                          </div>
+                          
+                          @if (activity.description) {
+                            <div class="mt-2 p-3 bg-white dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-600/50">
+                              <p class="text-xs font-semibold text-slate-500 uppercase mb-1">Description</p>
+                              <p class="text-sm text-slate-700 dark:text-slate-300">{{ activity.description }}</p>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
               </div>
             } @else {
               <div class="text-center py-4 text-slate-500 dark:text-slate-400 italic flex items-center justify-center gap-2">
@@ -106,7 +145,45 @@ import { CarePlanResponseDTO } from '@/core/models/care-plan.model';
     }
   `
 })
-export class CarePlanListComponent {
+export class CarePlanListComponent implements OnInit, OnChanges {
   @Input() carePlans: CarePlanResponseDTO[] = [];
   @Input() isLoading = false;
+  
+  private userApiService = inject(UserApiService);
+  doctorNames = new Map<string, string>(); // doctorDbId -> Full Name
+
+  ngOnInit() {
+      this.fetchDoctorNames();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+      if (changes['carePlans']) {
+          this.fetchDoctorNames();
+      }
+  }
+
+  fetchDoctorNames() {
+      if (!this.carePlans || this.carePlans.length === 0) return;
+
+      const uniqueIds = new Set(this.carePlans.map(p => p.doctorId).filter(id => id && !this.doctorNames.has(id)));
+      
+      uniqueIds.forEach(id => {
+          this.userApiService.getUserById(id).subscribe({
+              next: (user) => {
+                  if (user) {
+                    this.doctorNames.set(id, `Dr. ${user.firstName} ${user.lastName}`);
+                  }
+              },
+              error: (err) => console.error(`Failed to load doctor info for ${id}`, err)
+          });
+      });
+  }
+
+  getPhysicalActivities(plan: CarePlanResponseDTO): CareActivityResponseDTO[] {
+    return plan.activities.filter(a => a.activityType === CareActivityType.PHYSICAL_ACTIVITY);
+  }
+
+  getNutritionActivities(plan: CarePlanResponseDTO): CareActivityResponseDTO[] {
+    return plan.activities.filter(a => a.activityType === CareActivityType.NUTRITION_PLAN);
+  }
 }

@@ -15,6 +15,7 @@ public class CarePlanResponseDTO {
     
     private Long id;
     private Long sessionId;
+    private String doctorId;
     private List<CareActivityResponseDTO> activities = new ArrayList<>();
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

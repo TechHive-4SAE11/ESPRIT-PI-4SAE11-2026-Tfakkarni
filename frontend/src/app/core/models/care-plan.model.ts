@@ -1,5 +1,11 @@
+export enum CareActivityType {
+  PHYSICAL_ACTIVITY = 'PHYSICAL_ACTIVITY',
+  NUTRITION_PLAN = 'NUTRITION_PLAN',
+}
+
 export interface CareActivityRequestDTO {
   activityName: string;
+  activityType: CareActivityType;
   description: string;
   frequency: string;
   duration: string;
@@ -9,6 +15,7 @@ export interface CareActivityRequestDTO {
 export interface CareActivityResponseDTO {
   id: number;
   activityName: string;
+  activityType: CareActivityType;
   description: string;
   frequency: string;
   duration: string;
@@ -24,6 +31,7 @@ export interface CarePlanRequestDTO {
 export interface CarePlanResponseDTO {
   id: number;
   sessionId: number;
+  doctorId: string; // The backend database ID of the doctor
   activities: CareActivityResponseDTO[];
   createdAt: string;
   updatedAt: string;

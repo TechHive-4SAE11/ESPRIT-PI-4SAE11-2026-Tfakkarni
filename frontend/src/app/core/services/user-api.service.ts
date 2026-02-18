@@ -32,4 +32,8 @@ export class UserApiService {
   getUserByKeycloakId(keycloakId: string): Observable<UserInfo> {
     return this.http.get<UserInfo>(`${this.baseUrl}/keycloak/${keycloakId}`);
   }
+  
+  getUserById(id: string | number): Observable<UserInfo> {
+    return this.http.get<UserInfo>(`${this.baseUrl}/${id}`);
+  }
 }

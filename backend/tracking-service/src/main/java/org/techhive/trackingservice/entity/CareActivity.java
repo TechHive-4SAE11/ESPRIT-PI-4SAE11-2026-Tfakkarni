@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import org.techhive.trackingservice.enums.CareActivityType;
+
 @Entity
 @Table(name = "care_activities")
 @Data
@@ -21,6 +23,10 @@ public class CareActivity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "care_plan_id", nullable = false)
     private CarePlan carePlan;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "activity_type")
+    private CareActivityType activityType; // e.g., PHYSICAL_ACTIVITY, NUTRITION_PLAN
 
     @Column(name = "activity_name", nullable = false)
     private String activityName;

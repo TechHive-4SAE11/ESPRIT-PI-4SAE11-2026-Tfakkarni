@@ -84,6 +84,32 @@ public class CarePlanController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateCarePlan(@PathVariable Long id, @RequestBody CarePlanRequestDTO requestDTO) {
+        try {
+            log.info("Received care plan update request: id={}, activitiesCount={}", 
+                id, requestDTO.getActivities() != null ? requestDTO.getActivities().size() : 0);
+
+            if (requestDTO.getActivities() == null || requestDTO.getActivities().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "At least one activity is required"));
+            }
+
+            CarePlan carePlanUpdates = new CarePlan();
+            List<CareActivity> activities = requestDTO.getActivities().stream()
+                    .map(carePlanMapper::toActivityEntity)
+                    .collect(Collectors.toList());
+            carePlanUpdates.setCareActivities(activities);
+
+            CarePlan updated = carePlanService.updateCarePlan(id, carePlanUpdates);
+            return ResponseEntity.ok(carePlanMapper.toResponseDTO(updated));
+        } catch (RuntimeException e) {
+            log.error("Error updating care plan", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to update care plan: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/session/{sessionId}")
     public ResponseEntity<List<CarePlanResponseDTO>> getCarePlansBySession(@PathVariable Long sessionId) {
         List<CarePlan> carePlans = carePlanService.getCarePlansBySession(sessionId);
@@ -112,6 +138,16 @@ public class CarePlanController {
         try {
             CareActivity updatedActivity = carePlanService.updateActivityStatus(activityId, status);
             return ResponseEntity.ok(carePlanMapper.toActivityResponseDTO(updatedActivity));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteCarePlan(@PathVariable Long id) {
+        try {
+            carePlanService.deleteCarePlan(id);
+            return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
