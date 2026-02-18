@@ -23,6 +23,7 @@ import { GameBuilderComponent } from './game-builder/game-builder.component';
 
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
+import { SuiviQuotidienComponent } from './suivi-quotidien/suivi-quotidien.component';
 import { UserApiService } from '@/core/services/user-api.service';
 
 @Component({
@@ -33,6 +34,12 @@ import { UserApiService } from '@/core/services/user-api.service';
     ZardCardComponent,
     ZardIconComponent,
     ZardButtonComponent,
+    ZardProgressBarComponent,
+    AddPlaceComponent,
+    MovieGameManagerComponent,
+    ZardTableImports,
+    SuiviQuotidienComponent,
+    PrescriptionListComponent,
     PrescriptionListComponent,
     DataLibraryComponent,
     TagManagerComponent,

@@ -7,7 +7,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { routes } from './app.routes';
 import { provideClientHydration } from '@angular/platform-browser';
 import { provideZard } from '@/shared/core/provider/providezard';
-import { environment } from '../environments/environment';
+import { environment } from '@/environments/environment';
 
 /**
  * Initializes Keycloak with the configuration for the esprit-realm.

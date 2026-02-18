@@ -3,7 +3,7 @@ import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { KeycloakService } from 'keycloak-angular';
 import { from, switchMap, of } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { environment } from '@/environments/environment';
 
 /**
  * Functional HTTP interceptor that attaches the Keycloak Bearer token
