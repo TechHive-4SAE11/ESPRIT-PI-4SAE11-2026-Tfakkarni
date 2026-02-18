@@ -33,6 +33,7 @@ import {
 } from '@/core/services/game.service';
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
+import { SuiviQuotidienComponent } from './suivi-quotidien/suivi-quotidien.component';
 import { UserApiService } from '@/core/services/user-api.service';
 
 @Component({
@@ -48,7 +49,8 @@ import { UserApiService } from '@/core/services/user-api.service';
     AddPlaceComponent,
     MovieGameManagerComponent,
     ZardTableImports,
-    PrescriptionListComponent
+    SuiviQuotidienComponent,
+    PrescriptionListComponent,
   ],
   templateUrl: './helper-view.component.html',
 })

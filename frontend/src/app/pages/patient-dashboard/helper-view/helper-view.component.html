@@ -63,6 +63,15 @@
             </div>
         </div>
     </z-card>
+    <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Suivi Quotidien')">
+        <div class="flex items-center gap-3">
+            <z-icon zType="file" class="text-primary h-10 w-10" />
+            <div>
+                <h3 class="font-semibold">Suivi Quotidien</h3>
+                <p class="text-sm text-muted-foreground">Alimentation, médicaments, activités & incidents</p>
+            </div>
+        </div>
+    </z-card>
     <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Places')">
         <div class="flex items-center gap-3">
             <z-icon zType="map-pin" class="text-primary h-10 w-10" />
@@ -297,5 +306,9 @@
 
 @case ('Movie Quiz') {
 <app-movie-game-manager [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
+}
+
+@case ('Suivi Quotidien') {
+<app-suivi-quotidien [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
 }
 }

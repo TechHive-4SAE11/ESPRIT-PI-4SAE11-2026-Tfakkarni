@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, Input, Output, EventEmitter, ViewChild, ElementRef, PLATFORM_ID, Inject, NgZone } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { PlaceService, type PlaceQuizResponse } from '@/core/services/place.service';
-import { environment } from '../../../../../environments/environment';
+import { environment } from '@/environments/environment';
 
 /** Dynamically load the Google Maps JS API (once) */
 function loadGoogleMapsApi(apiKey: string): Promise<void> {
@@ -253,7 +253,7 @@ export class GuessPlaceComponent implements OnInit {
       const sv = new google.maps.StreetViewService();
 
       // Check if Street View is available near the coordinates (radius 500m)
-      sv.getPanorama({ location, radius: 500 }, (data, status) => {
+      sv.getPanorama({ location, radius: 500 }, (data: google.maps.StreetViewPanoramaData | null, status: google.maps.StreetViewStatus) => {
         this.ngZone.run(() => {
           if (status === google.maps.StreetViewStatus.OK && data?.location?.latLng) {
             this.streetViewUnavailable.set(false);

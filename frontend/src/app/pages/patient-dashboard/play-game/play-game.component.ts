@@ -124,7 +124,7 @@ type GamePhase = 'loading' | 'playing' | 'results';
                       <z-icon zType="loader-2" class="mr-2 animate-spin" />
                       Submitting...
                     } @else {
-                      <z-icon zType="check-circle" class="mr-2" />
+                      <z-icon zType="check" class="mr-2" />
                       Submit Answers
                     }
                   </button>
@@ -170,11 +170,11 @@ type GamePhase = 'loading' | 'playing' | 'results';
                       <div class="flex-1">
                         <div class="flex items-center gap-2">
                           @if (r.correct) {
-                            <z-icon zType="check-circle" class="text-green-600" />
+                            <z-icon zType="check" class="text-green-600" />
                             <span class="font-medium">{{ r.correctName }}</span>
                             <z-badge zType="secondary" class="text-green-600">Correct!</z-badge>
                           } @else {
-                            <z-icon zType="x-circle" class="text-red-500" />
+                            <z-icon zType="x" class="text-red-500" />
                             <span class="font-medium line-through text-muted-foreground">{{ r.selectedName }}</span>
                             <z-icon zType="arrow-right" class="text-muted-foreground" />
                             <span class="font-medium text-green-600">{{ r.correctName }}</span>

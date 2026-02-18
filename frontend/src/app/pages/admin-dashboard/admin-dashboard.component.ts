@@ -40,7 +40,7 @@ import { GameService, type GameResponse, type OverviewStatsResponse } from '@/co
                   <p class="text-sm text-muted-foreground">Total Users</p>
                   <p class="text-3xl font-bold">{{ users().length }}</p>
                 </div>
-                <z-icon zType="users" class="text-primary h-8 w-8" />
+                <z-icon zType="user" class="text-primary h-8 w-8" />
               </div>
             </z-card>
             <z-card class="p-6">
