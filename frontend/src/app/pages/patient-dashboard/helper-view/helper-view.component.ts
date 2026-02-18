@@ -11,6 +11,7 @@ import { GameService, type GameResponse, type GameStatsResponse } from '@/core/s
 import { AddPlaceComponent } from './add-place/add-place.component';
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
+import { SuiviQuotidienComponent } from './suivi-quotidien/suivi-quotidien.component';
 
 @Component({
   selector: 'app-helper-view',
@@ -24,6 +25,7 @@ import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
     ZardProgressBarComponent,
     AddPlaceComponent,
     ZardTableImports,
+    SuiviQuotidienComponent,
   ],
   template: `
     @switch (currentPage()) {
@@ -88,6 +90,15 @@ import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
               <div>
                 <h3 class="font-semibold">Manage Games</h3>
                 <p class="text-sm text-muted-foreground">View and manage created games</p>
+              </div>
+            </div>
+          </z-card>
+          <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Suivi Quotidien')">
+            <div class="flex items-center gap-3">
+              <z-icon zType="file" class="text-primary h-10 w-10" />
+              <div>
+                <h3 class="font-semibold">Suivi Quotidien</h3>
+                <p class="text-sm text-muted-foreground">Alimentation, médicaments, activités & incidents</p>
               </div>
             </div>
           </z-card>
@@ -347,6 +358,13 @@ import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
 
       @case ('Places') {
         <app-add-place
+          [keycloakId]="keycloakId"
+          (goBack)="setPage('Home')"
+        />
+      }
+
+      @case ('Suivi Quotidien') {
+        <app-suivi-quotidien
           [keycloakId]="keycloakId"
           (goBack)="setPage('Home')"
         />

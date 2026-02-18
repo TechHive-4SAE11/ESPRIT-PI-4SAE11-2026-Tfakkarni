@@ -18,6 +18,7 @@ import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardBadgeComponent } from '@/shared/components/badge';
 import { PlaceService, type PlaceResponse, type CreatePlaceRequest } from '@/core/services/place.service';
 import * as L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 @Component({
   selector: 'app-add-place',
