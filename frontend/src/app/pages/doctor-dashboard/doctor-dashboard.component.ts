@@ -12,6 +12,7 @@ import { ZardProgressBarComponent } from '@/shared/components/progress-bar';
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 import { GameService, type GameStatsResponse } from '@/core/services/game.service';
 import { PrescriptionManagementComponent } from './prescription-management/prescription-management.component';
+import { CarePlanManagementComponent } from './care-plan-management/care-plan-management.component';
 
 @Component({
   selector: 'app-doctor-dashboard',
@@ -26,7 +27,8 @@ import { PrescriptionManagementComponent } from './prescription-management/presc
     ZardSkeletonComponent,
     ZardButtonComponent,
     ZardProgressBarComponent,
-    PrescriptionManagementComponent
+    PrescriptionManagementComponent,
+    CarePlanManagementComponent
   ],
   template: `
     <app-dashboard-layout
@@ -116,6 +118,10 @@ import { PrescriptionManagementComponent } from './prescription-management/presc
                              <button z-button zType="ghost" zSize="sm" (click)="managePrescriptions(patient)">
                                <z-icon zType="pill" class="mr-1" />
                                Rx
+                             </button>
+                             <button z-button zType="ghost" zSize="sm" (click)="manageCarePlans(patient)">
+                               <z-icon zType="activity" class="mr-1" />
+                               Plan
                              </button>
                           </div>
                         </td>
@@ -213,6 +219,29 @@ import { PrescriptionManagementComponent } from './prescription-management/presc
              </div>
           }
         }
+
+        @case ('CarePlans') {
+          @if (selectedPatient(); as patient) {
+             <div class="flex items-center gap-2 mb-6">
+              <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
+                <z-icon zType="arrow-left" class="mr-1" />
+                Back to List
+              </button>
+            </div>
+            
+            <app-care-plan-management [patient]="patient" [doctor]="currentDoctor()"></app-care-plan-management>
+          } @else {
+             <div class="space-y-4">
+               <h2 class="text-2xl font-bold">Manage Care Plans</h2>
+               <div class="p-8 border rounded-lg text-center bg-muted/20">
+                 <z-icon zType="users" class="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                 <h3 class="text-lg font-semibold mb-2">No Patient Selected</h3>
+                 <p class="text-muted-foreground mb-4">Please select a patient from the main list to manage their care plans.</p>
+                 <button z-button (click)="setPage('Home')">Go to Patient List</button>
+               </div>
+             </div>
+          }
+        }
       }
     </app-dashboard-layout>
   `,
@@ -237,6 +266,7 @@ export class DoctorDashboardComponent implements OnInit {
         { icon: 'users', label: 'Patients', action: () => this.setPage('Home') },
         { icon: 'bar-chart-3', label: 'Patient Progress', action: () => this.setPage('Patient Progress') },
         { icon: 'pill', label: 'Prescriptions', action: () => this.setPage('Prescriptions') },
+        { icon: 'activity', label: 'Care Plans', action: () => this.setPage('CarePlans') },
       ],
     },
   ];
@@ -288,6 +318,11 @@ export class DoctorDashboardComponent implements OnInit {
     this.selectedPatient.set(patient);
     this.setPage('Prescriptions');
   }
+  manageCarePlans(patient: UserInfo): void {
+    this.selectedPatient.set(patient);
+    this.setPage('CarePlans');
+  }
+
 
   retryLoadPatients(): void {
     this.loadPatients();

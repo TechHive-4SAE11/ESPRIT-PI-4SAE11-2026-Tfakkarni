@@ -8,6 +8,7 @@ import { catchError, finalize, of, tap } from 'rxjs';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
+import { ZardAlertDialogService } from '@/shared/components/alert-dialog/alert-dialog.service';
 
 import { UserInfo } from '@/core/services/user-api.service';
 import { PrescriptionService } from '@/core/services/prescription.service';
@@ -33,6 +34,7 @@ import {
 })
 export class PrescriptionManagementComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly alertDialog = inject(ZardAlertDialogService);
 
   @Input({ required: true }) patient!: UserInfo;
   @Input() doctor: UserInfo | null = null;
@@ -219,6 +221,30 @@ export class PrescriptionManagementComponent implements OnInit {
   viewPrescription(prescription: PrescriptionResponseDTO): void {
     this.selectedPrescription.set(prescription);
     this.showViewDialog.set(true);
+  }
+
+  deletePrescription(id: number): void {
+    this.alertDialog.confirm({
+      zTitle: 'Delete Prescription',
+      zDescription: 'Are you sure you want to delete this prescription? This action cannot be undone.',
+      zOkText: 'Delete',
+      zCancelText: 'Cancel',
+      zOkDestructive: true,
+      zOnOk: () => {
+        this.prescriptionService.deletePrescription(id)
+          .pipe(
+            tap(() => {
+              this.prescriptions.update(current => current.filter(p => p.id !== id));
+            }),
+            catchError(error => {
+              console.error('[PrescriptionManagement] Error deleting prescription:', error);
+              // Optionally show an error message
+              return of(null);
+            }),
+            takeUntilDestroyed(this.destroyRef)
+          ).subscribe();
+      },
+    });
   }
 
   closeViewDialog(): void {

@@ -78,8 +78,16 @@ public class UserController {
   @GetMapping("/keycloak/{keycloakId}")
   public ResponseEntity<?> getUserByKeycloakId(@PathVariable String keycloakId) {
     return userService.getUserByKeycloakId(keycloakId)
-        .<ResponseEntity<?>>map(ResponseEntity::ok)
+        .map(ResponseEntity::ok)
         .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(Map.of("error", "User not found")));
+            .body((User) null)); // Or Map.of("error", "User not found") but keeping type simple
+  }
+
+  @GetMapping("/{id}")
+  public ResponseEntity<?> getUserById(@PathVariable Long id) {
+    return userService.getUserById(id)
+        .map(ResponseEntity::ok)
+        .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body((User) null));
   }
 }

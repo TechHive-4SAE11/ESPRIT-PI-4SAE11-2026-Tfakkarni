@@ -99,6 +99,15 @@
             </div>
         </div>
     </z-card>
+    <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('CarePlans')">
+        <div class="flex items-center gap-3">
+            <z-icon zType="activity" class="text-primary h-10 w-10" />
+            <div>
+                <h3 class="font-semibold">Care Plans</h3>
+                <p class="text-sm text-muted-foreground">View daily activities and routines</p>
+            </div>
+        </div>
+    </z-card>
 </div>
 }
 
@@ -159,6 +168,18 @@
 </div>
 
 <app-prescription-list [prescriptions]="prescriptions()" [isLoading]="isLoadingPrescriptions()" />
+}
+
+@case ('CarePlans') {
+<div class="flex items-center gap-2 mb-6">
+    <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
+        <z-icon zType="arrow-left" class="mr-1" />
+        Back
+    </button>
+    <h2 class="text-2xl font-bold">Care Plans</h2>
+</div>
+
+<app-care-plan-list [carePlans]="carePlans()" [isLoading]="isLoadingCarePlans()" />
 }
 
 @case ('Create Game') {
