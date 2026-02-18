@@ -4,4 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.techhive.trackingservice.entity.MedicationIntakeLog;
 
 public interface MedicationIntakeLogRepository extends JpaRepository<MedicationIntakeLog, Long> {
+    void deleteByMedicationId(Long medicationId);
 }

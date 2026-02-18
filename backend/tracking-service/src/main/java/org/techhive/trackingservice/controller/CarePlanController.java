@@ -12,6 +12,8 @@ import org.techhive.trackingservice.entity.CarePlan;
 import org.techhive.trackingservice.mapper.CarePlanMapper;
 import org.techhive.trackingservice.service.CarePlanService;
 
+import jakarta.validation.Valid;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,24 +29,11 @@ public class CarePlanController {
     private final CarePlanMapper carePlanMapper;
 
     @PostMapping
-    public ResponseEntity<?> createCarePlan(@RequestBody CarePlanRequestDTO requestDTO) {
+    public ResponseEntity<?> createCarePlan(@Valid @RequestBody CarePlanRequestDTO requestDTO) {
         try {
             log.info("Received care plan creation request: sessionId={}, activitiesCount={}",
                 requestDTO.getSessionId(),
                 requestDTO.getActivities() != null ? requestDTO.getActivities().size() : 0);
-
-            // Validation
-            if (requestDTO.getSessionId() == null) {
-                log.warn("Session ID is missing in care plan request");
-                return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Session ID is required"));
-            }
-
-            if (requestDTO.getActivities() == null || requestDTO.getActivities().isEmpty()) {
-                log.warn("No activities provided in care plan request");
-                return ResponseEntity.badRequest()
-                    .body(Map.of("error", "At least one activity is required"));
-            }
             
             CarePlan carePlan = new CarePlan();
             
@@ -85,15 +74,10 @@ public class CarePlanController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateCarePlan(@PathVariable Long id, @RequestBody CarePlanRequestDTO requestDTO) {
+    public ResponseEntity<?> updateCarePlan(@PathVariable Long id, @Valid @RequestBody CarePlanRequestDTO requestDTO) {
         try {
             log.info("Received care plan update request: id={}, activitiesCount={}", 
                 id, requestDTO.getActivities() != null ? requestDTO.getActivities().size() : 0);
-
-            if (requestDTO.getActivities() == null || requestDTO.getActivities().isEmpty()) {
-                return ResponseEntity.badRequest()
-                    .body(Map.of("error", "At least one activity is required"));
-            }
 
             CarePlan carePlanUpdates = new CarePlan();
             List<CareActivity> activities = requestDTO.getActivities().stream()
