@@ -46,7 +46,7 @@ import { CarePlanManagementComponent } from './care-plan-management/care-plan-ma
                   <p class="text-sm text-muted-foreground">My Patients</p>
                   <p class="text-3xl font-bold">{{ patients().length }}</p>
                 </div>
-                <z-icon zType="users" class="text-primary h-8 w-8" />
+                <z-icon zType="user" class="text-primary h-8 w-8" />
               </div>
             </z-card>
             <z-card class="p-6">
@@ -131,7 +131,7 @@ import { CarePlanManagementComponent } from './care-plan-management/care-plan-ma
                 </table>
               } @else {
                 <div class="p-12 text-center text-muted-foreground bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                  <z-icon zType="users" class="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <z-icon zType="user" class="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p class="text-lg font-medium">No patients found</p>
                   <p class="text-sm mt-1">Patients assigned to you will appear here.</p>
                 </div>
@@ -211,7 +211,7 @@ import { CarePlanManagementComponent } from './care-plan-management/care-plan-ma
              <div class="space-y-4">
                <h2 class="text-2xl font-bold">Manage Prescriptions</h2>
                <div class="p-8 border rounded-lg text-center bg-muted/20">
-                 <z-icon zType="users" class="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                 <z-icon zType="user" class="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                  <h3 class="text-lg font-semibold mb-2">No Patient Selected</h3>
                  <p class="text-muted-foreground mb-4">Please select a patient from the main list to manage their prescriptions.</p>
                  <button z-button (click)="setPage('Home')">Go to Patient List</button>

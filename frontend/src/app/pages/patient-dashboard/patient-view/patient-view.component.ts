@@ -15,6 +15,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, finalize, of, tap, switchMap } from 'rxjs';
 
 import { GameService, type GameResponse, type GameStatsResponse } from '@/core/services/game.service';
+import { MovieGameService, type MovieGameResponse } from '@/core/services/movie-game.service';
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { CarePlanService } from '@/core/services/care-plan.service';
 import { UserApiService } from '@/core/services/user-api.service';
@@ -34,6 +35,7 @@ import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-p
 export class PatientViewComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly gameService = inject(GameService);
+  private readonly movieGameService = inject(MovieGameService);
   private readonly prescriptionService = inject(PrescriptionService);
   private readonly carePlanService = inject(CarePlanService);
   private readonly userApiService = inject(UserApiService);
@@ -46,12 +48,14 @@ export class PatientViewComponent implements OnInit {
   // State Signals
   currentPage = signal<string>('Home');
   games = signal<GameResponse[]>([]);
+  movieGames = signal<MovieGameResponse[]>([]);
   stats = signal<GameStatsResponse | null>(null);
   prescriptions = signal<PrescriptionResponseDTO[]>([]);
   carePlans = signal<CarePlanResponseDTO[]>([]);
 
   // Loading State Signals
   isLoadingGames = signal<boolean>(false);
+  isLoadingMovieGames = signal<boolean>(false);
   isLoadingStats = signal<boolean>(false);
   isLoadingPrescriptions = signal<boolean>(false);
   isLoadingCarePlans = signal<boolean>(false);
@@ -76,6 +80,10 @@ export class PatientViewComponent implements OnInit {
     this.router.navigate(['/patient/play', gameId]);
   }
 
+  playMovieGame(gameId: number): void {
+    this.router.navigate(['/patient/play-movie', gameId]);
+  }
+
   logout(): void {
     this.authService.logout();
   }
@@ -84,6 +92,7 @@ export class PatientViewComponent implements OnInit {
     if (!this.keycloakId) return;
 
     this.loadGames();
+    this.loadMovieGames();
     this.loadStats();
     this.loadPrescriptions();
     this.loadCarePlans();
@@ -99,6 +108,21 @@ export class PatientViewComponent implements OnInit {
           return of([]);
         }),
         finalize(() => this.isLoadingGames.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  private loadMovieGames(): void {
+    this.isLoadingMovieGames.set(true);
+    this.movieGameService.getPatientMovieGames(this.keycloakId)
+      .pipe(
+        tap(games => this.movieGames.set(games)),
+        catchError(err => {
+          console.error('[PatientView] Failed to load movie games', err);
+          return of([]);
+        }),
+        finalize(() => this.isLoadingMovieGames.set(false)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();

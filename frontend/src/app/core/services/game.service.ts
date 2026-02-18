@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { environment } from '@/environments/environment';
 
 export interface CreateGameRequest {
   title: string;
@@ -93,6 +93,22 @@ export interface OverviewStatsResponse {
   averageScorePercentage: number;
 }
 
+export interface EditGameRequest {
+  title: string;
+  description: string;
+  images: EditImageEntry[];
+}
+
+export interface EditImageEntry {
+  /** null for new images, non-null for existing */
+  id: number | null;
+  name: string;
+  /** Required only for new images */
+  imageBase64?: string;
+  /** Required only for new images */
+  contentType?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -127,6 +143,10 @@ export class GameService {
 
   deleteGame(gameId: number): Observable<any> {
     return this.http.delete(`${this.baseUrl}/${gameId}`);
+  }
+
+  editGame(gameId: number, request: EditGameRequest): Observable<GameDetailResponse> {
+    return this.http.put<GameDetailResponse>(`${this.baseUrl}/${gameId}`, request);
   }
 
   getAllGames(): Observable<GameResponse[]> {
