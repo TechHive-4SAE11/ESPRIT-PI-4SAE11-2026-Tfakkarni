@@ -1,4 +1,5 @@
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, signal, ViewChild, afterNextRender, PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { KeycloakService } from 'keycloak-angular';
@@ -66,6 +67,8 @@ const VIEW_MODE_KEY = 'tfk_view_mode';
   `,
 })
 export class PatientDashboardComponent implements OnInit {
+  private readonly platformId = inject(PLATFORM_ID);
+
   viewMode = signal<ViewMode>('patient');
   keycloakId = '';
 
@@ -78,28 +81,32 @@ export class PatientDashboardComponent implements OnInit {
     private readonly authService: AuthService,
     private readonly keycloakService: KeycloakService,
     private readonly router: Router,
-  ) {}
+  ) {
+    // Restore saved view mode AFTER hydration to avoid SSR mismatch
+    afterNextRender(() => {
+      try {
+        const saved = localStorage.getItem(VIEW_MODE_KEY);
+        if (saved === 'helper' || saved === 'patient') {
+          this.viewMode.set(saved);
+          this.buildMenuGroups();
+        }
+      } catch {}
+    });
+  }
 
   ngOnInit(): void {
     const kc = this.keycloakService.getKeycloakInstance();
     this.keycloakId = kc?.subject ?? kc?.tokenParsed?.['sub'] ?? '';
-
-    // Restore saved view mode
-    try {
-      const saved = localStorage.getItem(VIEW_MODE_KEY);
-      if (saved === 'helper' || saved === 'patient') {
-        this.viewMode.set(saved);
-      }
-    } catch {}
-
     this.buildMenuGroups();
   }
 
   switchView(mode: ViewMode): void {
     this.viewMode.set(mode);
-    try {
-      localStorage.setItem(VIEW_MODE_KEY, mode);
-    } catch {}
+    if (isPlatformBrowser(this.platformId)) {
+      try {
+        localStorage.setItem(VIEW_MODE_KEY, mode);
+      } catch {}
+    }
     this.buildMenuGroups();
   }
 
@@ -121,17 +128,15 @@ export class PatientDashboardComponent implements OnInit {
         label: 'Helper',
         items: [
           { icon: 'house', label: 'Home', action: () => this.helperView?.setPage('Home') },
-          { icon: 'gamepad-2', label: 'Manage Games', action: () => this.helperView?.setPage('My Games') },
-          { icon: 'bar-chart-3', label: 'Progress', action: () => this.helperView?.setPage('Progress') },
-          { icon: 'pill', label: 'My Prescriptions', action: () => this.helperView?.setPage('Prescriptions') },
+          { icon: 'pill', label: 'Prescriptions', action: () => this.helperView?.setPage('Prescriptions') },
         ],
       },
       {
-        label: 'Actions',
+        label: 'Game Builder',
         items: [
-          { icon: 'plus-circle', label: 'Create Game', action: () => this.helperView?.setPage('Create Game') },
-          { icon: 'map-pin', label: 'Guess the Place', action: () => this.helperView?.setPage('Places') },
-          { icon: 'play', label: 'Movie Characters', action: () => this.helperView?.setPage('Movie Quiz') },
+          { icon: 'folder', label: 'Data Library', action: () => this.helperView?.setPage('Data Library') },
+          { icon: 'search', label: 'Manage Tags', action: () => this.helperView?.setPage('Tags') },
+          { icon: 'zap', label: 'Build Game', action: () => this.helperView?.setPage('Game Builder') },
         ],
       },
     ];
