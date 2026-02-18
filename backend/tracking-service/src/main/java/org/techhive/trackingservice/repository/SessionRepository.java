@@ -12,4 +12,8 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
     List<Session> findByMedicalFolderId(Long medicalFolderId);
     
     List<Session> findByMedicalFolderIdOrderBySessionDateDesc(Long medicalFolderId);
+
+    List<Session> findByMedicalFolderIdAndPrescriptionsIsEmpty(Long medicalFolderId);
+
+    List<Session> findByMedicalFolderIdAndCarePlansIsEmpty(Long medicalFolderId);
 }

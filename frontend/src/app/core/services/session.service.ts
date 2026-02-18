@@ -31,6 +31,14 @@ export class SessionService {
     return this.http.get<SessionResponseDTO[]>(`${this.baseUrl}/medical-folder/${medicalFolderId}`);
   }
 
+  getSessionsWhereNoPrescription(medicalFolderId: number): Observable<SessionResponseDTO[]> {
+    return this.http.get<SessionResponseDTO[]>(`${this.baseUrl}/medical-folder/${medicalFolderId}/no-prescription`);
+  }
+
+  getSessionsWhereNoCarePlan(medicalFolderId: number): Observable<SessionResponseDTO[]> {
+    return this.http.get<SessionResponseDTO[]>(`${this.baseUrl}/medical-folder/${medicalFolderId}/no-care-plan`);
+  }
+
   createSession(session: SessionRequestDTO): Observable<SessionResponseDTO> {
     return this.http.post<SessionResponseDTO>(this.baseUrl, session);
   }
