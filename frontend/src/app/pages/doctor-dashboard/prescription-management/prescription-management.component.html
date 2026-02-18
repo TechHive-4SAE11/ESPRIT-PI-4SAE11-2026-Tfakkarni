@@ -119,13 +119,15 @@
                         Note: Only sessions without an existing prescription are listed here.
                     </p>
                     @if (sessions().length === 0 && !isLoadingSessions()) {
-                    <p class="text-xs text-destructive">No available sessions found. Please create a new consultation session.</p>
+                    <p class="text-xs text-destructive">No available sessions found. Please create a new consultation
+                        session.</p>
                     }
                     @if (isLoadingSessions()) {
                     <p class="text-xs text-muted-foreground">Loading sessions...</p>
                     }
                     @if (prescriptionForm.get('sessionId')?.invalid && prescriptionForm.get('sessionId')?.touched) {
-                    <p class="text-xs text-destructive">Session is required</p>
+                    <p class="text-xs text-destructive">{{ prescriptionForm.get('sessionId')?.errors?.['required'] ||
+                        'Session is required' }}</p>
                     }
                 </div>
 
@@ -153,7 +155,8 @@
                                         class="p-2 border rounded-md text-sm w-full" />
                                     @if (getMedicationControl($index, 'medicationName')?.invalid &&
                                     getMedicationControl($index, 'medicationName')?.touched) {
-                                    <p class="text-xs text-destructive mt-1">Required</p>
+                                    <p class="text-xs text-destructive mt-1">{{ getMedicationControl($index,
+                                        'medicationName')?.errors?.['required'] || 'Medication Name is required' }}</p>
                                     }
                                 </div>
                                 <div>
@@ -161,7 +164,8 @@
                                         class="p-2 border rounded-md text-sm w-full" />
                                     @if (getMedicationControl($index, 'dosage')?.invalid && getMedicationControl($index,
                                     'dosage')?.touched) {
-                                    <p class="text-xs text-destructive mt-1">Required</p>
+                                    <p class="text-xs text-destructive mt-1">{{ getMedicationControl($index,
+                                        'dosage')?.errors?.['required'] || 'Dosage is required' }}</p>
                                     }
                                 </div>
                             </div>
@@ -172,7 +176,8 @@
                                         class="p-2 border rounded-md text-sm w-full" />
                                     @if (getMedicationControl($index, 'frequency')?.invalid &&
                                     getMedicationControl($index, 'frequency')?.touched) {
-                                    <p class="text-xs text-destructive mt-1">Required</p>
+                                    <p class="text-xs text-destructive mt-1">{{ getMedicationControl($index,
+                                        'frequency')?.errors?.['required'] || 'Frequency is required' }}</p>
                                     }
                                 </div>
                                 <div>
@@ -180,7 +185,8 @@
                                         class="p-2 border rounded-md text-sm w-full" />
                                     @if (getMedicationControl($index, 'duration')?.invalid &&
                                     getMedicationControl($index, 'duration')?.touched) {
-                                    <p class="text-xs text-destructive mt-1">Required</p>
+                                    <p class="text-xs text-destructive mt-1">{{ getMedicationControl($index,
+                                        'duration')?.errors?.['required'] || 'Duration is required' }}</p>
                                     }
                                 </div>
                             </div>
