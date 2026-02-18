@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.techhive.medicalservice.dto.CreateMedicalFolderRequest;
 import org.techhive.medicalservice.dto.MedicalFolderResponse;
+import org.techhive.medicalservice.dto.UpdateMedicalFolderRequest;
 import org.techhive.medicalservice.entity.MedicalFolder;
 import org.techhive.medicalservice.exception.ResourceNotFoundException;
 import org.techhive.medicalservice.mapper.MedicalFolderMapper;
@@ -40,6 +41,23 @@ public class MedicalFolderServiceImpl implements MedicalFolderService {
 		MedicalFolder folder = medicalFolderRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Medical folder not found with id: " + id));
 		return medicalFolderMapper.toResponse(folder);
+	}
+
+	@Override
+	public MedicalFolderResponse updateMedicalFolder(Long id, UpdateMedicalFolderRequest request) {
+		log.debug("Updating medical folder with id: {}", id);
+		MedicalFolder folder = medicalFolderRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Medical folder not found with id: " + id));
+		MedicalFolder updatedFolder = medicalFolderMapper.toEntity(request, folder);
+		MedicalFolder savedFolder = medicalFolderRepository.save(updatedFolder);
+		log.info("Medical folder updated successfully with id: {}", id);
+		return medicalFolderMapper.toResponse(savedFolder);
+	}
+
+	@Override
+	public MedicalFolderResponse partialUpdateMedicalFolder(Long id, UpdateMedicalFolderRequest request) {
+		log.debug("Partially updating medical folder with id: {}", id);
+		return updateMedicalFolder(id, request);
 	}
 
 	@Override

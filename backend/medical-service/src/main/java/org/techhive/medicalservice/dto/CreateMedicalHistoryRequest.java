@@ -1,6 +1,6 @@
 package org.techhive.medicalservice.dto;
 
-import java.time.LocalDateTime;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateSessionRequest {
-
+public class CreateMedicalHistoryRequest {
+	@NotNull(message = "Medical folder ID cannot be null")
 	private Long medicalFolderId;
 
-	private LocalDateTime sessionDate;
-
-	private String notes;
+	private String allergies;
+	private String conditions;
+	private String surgeries;
 }

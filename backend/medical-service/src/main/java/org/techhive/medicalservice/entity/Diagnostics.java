@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,14 +19,15 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
-@Table(name = "medications")
+@Table(name = "diagnostics")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Medication implements Serializable {
+public class Diagnostics implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
@@ -33,28 +35,31 @@ public class Medication implements Serializable {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@NotNull(message = "Prescription cannot be null")
+	@NotNull(message = "Medical folder cannot be null")
 	@ManyToOne
-	@JoinColumn(name = "prescription_id", nullable = false)
-	private Prescription prescription;
+	@JoinColumn(name = "medical_folder_id", nullable = false)
+	@ToString.Exclude
+	private MedicalFolder medicalFolder;
 
-	@NotNull(message = "Medication name cannot be null")
-	@Column(nullable = false)
-	private String medicationName;
+	@NotNull(message = "Disease name cannot be null")
+	@Column(name = "disease_name", nullable = false)
+	private String diseaseName;
 
-	@Column
-	private String dosage;
+	@Column(name = "stage")
+	private String stage;
 
-	@Column
-	private String frequency;
+	@Column(name = "comorbidities", columnDefinition = "TEXT")
+	private String comorbidities;
 
-	@Column
-	private String duration;
-
-	@Column(columnDefinition = "TEXT")
-	private String instructions;
+	@NotNull(message = "Diagnosis date cannot be null")
+	@Column(name = "diagnosis_date", nullable = false)
+	private LocalDateTime diagnosisDate;
 
 	@CreationTimestamp
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
+
+	@UpdateTimestamp
+	@Column(nullable = false)
+	private LocalDateTime updatedAt;
 }

@@ -4,13 +4,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.techhive.medicalservice.dto.CreateMedicalFolderRequest;
 import org.techhive.medicalservice.dto.MedicalFolderResponse;
+import org.techhive.medicalservice.dto.UpdateMedicalFolderRequest;
 import org.techhive.medicalservice.service.MedicalFolderService;
 
 import jakarta.validation.Valid;
@@ -49,6 +52,38 @@ public class MedicalFolderController {
 	public ResponseEntity<MedicalFolderResponse> getMedicalFolderById(@PathVariable Long id) {
 		log.info("GET /api/medical-folders/{} - Fetching medical folder", id);
 		MedicalFolderResponse response = medicalFolderService.getMedicalFolderById(id);
+		return ResponseEntity.ok(response);
+	}
+
+	/**
+	 * Update a medical folder (Full update)
+	 * 
+	 * @param id the medical folder ID
+	 * @param request the update medical folder request
+	 * @return the updated medical folder response with status 200
+	 */
+	@PutMapping("/{id}")
+	public ResponseEntity<MedicalFolderResponse> updateMedicalFolder(
+			@PathVariable Long id,
+			@RequestBody UpdateMedicalFolderRequest request) {
+		log.info("PUT /api/medical-folders/{} - Updating medical folder", id);
+		MedicalFolderResponse response = medicalFolderService.updateMedicalFolder(id, request);
+		return ResponseEntity.ok(response);
+	}
+
+	/**
+	 * Partially update a medical folder
+	 * 
+	 * @param id the medical folder ID
+	 * @param request the update medical folder request
+	 * @return the updated medical folder response with status 200
+	 */
+	@PatchMapping("/{id}")
+	public ResponseEntity<MedicalFolderResponse> partialUpdateMedicalFolder(
+			@PathVariable Long id,
+			@RequestBody UpdateMedicalFolderRequest request) {
+		log.info("PATCH /api/medical-folders/{} - Partially updating medical folder", id);
+		MedicalFolderResponse response = medicalFolderService.partialUpdateMedicalFolder(id, request);
 		return ResponseEntity.ok(response);
 	}
 
