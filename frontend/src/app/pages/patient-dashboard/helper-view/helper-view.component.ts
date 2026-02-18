@@ -19,10 +19,18 @@ import { ZardBadgeComponent } from '@/shared/components/badge';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardProgressBarComponent } from '@/shared/components/progress-bar';
 import { ZardTableImports } from '@/shared/components/table/table.imports';
+import { ZardAlertDialogService } from '@/shared/components/alert-dialog';
 import { AddPlaceComponent } from './add-place/add-place.component';
+import { MovieGameManagerComponent } from './movie-game-manager/movie-game-manager.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
 
-import { GameService, type GameResponse, type GameStatsResponse } from '@/core/services/game.service';
+import {
+  GameService,
+  type GameResponse,
+  type GameStatsResponse,
+  type GameDetailResponse,
+  type EditImageEntry,
+} from '@/core/services/game.service';
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
 import { UserApiService } from '@/core/services/user-api.service';
@@ -38,6 +46,7 @@ import { UserApiService } from '@/core/services/user-api.service';
     ZardButtonComponent,
     ZardProgressBarComponent,
     AddPlaceComponent,
+    MovieGameManagerComponent,
     ZardTableImports,
     PrescriptionListComponent
   ],
@@ -49,6 +58,7 @@ export class HelperViewComponent implements OnInit {
   private readonly keycloakService = inject(KeycloakService);
   private readonly prescriptionService = inject(PrescriptionService);
   private readonly userApiService = inject(UserApiService);
+  private readonly alertDialog = inject(ZardAlertDialogService);
 
   @Input() keycloakId = '';
   @Output() pageChange = new EventEmitter<string>();
@@ -64,10 +74,11 @@ export class HelperViewComponent implements OnInit {
   isLoadingPrescriptions = signal<boolean>(false);
   creating = signal<boolean>(false);
 
-  // Form Signals
+  // Form Signals (shared for create & edit)
+  editingGameId = signal<number | null>(null);
   newGameTitle = signal<string>('');
   newGameDescription = signal<string>('');
-  uploadedImages = signal<{ name: string; base64: string; contentType: string; preview: string }[]>([]);
+  uploadedImages = signal<{ id?: number; name: string; base64: string; contentType: string; preview: string }[]>([]);
   errorMessage = signal<string>('');
   successMessage = signal<string>('');
 
@@ -152,13 +163,53 @@ export class HelperViewComponent implements OnInit {
   }
 
   deleteGame(gameId: number): void {
-    if (!confirm('Are you sure you want to delete this game?')) return;
+    const ref = this.alertDialog.confirm({
+      zTitle: 'Delete Game',
+      zDescription: 'Are you sure you want to delete this game? This action cannot be undone and all images will be permanently removed.',
+      zOkText: 'Delete',
+      zCancelText: 'Cancel',
+      zOkDestructive: true,
+      zOnOk: () => {
+        this.gameService.deleteGame(gameId)
+          .pipe(
+            tap(() => this.loadData()),
+            catchError(err => {
+              console.error('[HelperView] Failed to delete game', err);
+              return of(null);
+            }),
+            takeUntilDestroyed(this.destroyRef)
+          )
+          .subscribe();
+        ref.close();
+      },
+    });
+  }
 
-    this.gameService.deleteGame(gameId)
+  // ==================== Edit Game ====================
+
+  startEdit(gameId: number): void {
+    this.resetForm();
+    this.editingGameId.set(gameId);
+    this.currentPage.set('Create Game');
+
+    this.gameService.getGameDetail(gameId)
       .pipe(
-        tap(() => this.loadData()),
+        tap((detail: GameDetailResponse) => {
+          this.newGameTitle.set(detail.title);
+          this.newGameDescription.set(detail.description || '');
+          this.uploadedImages.set(
+            detail.images.map(img => ({
+              id: img.id,
+              name: img.name,
+              base64: img.imageBase64,
+              contentType: img.contentType,
+              preview: `data:${img.contentType};base64,${img.imageBase64}`,
+            }))
+          );
+        }),
         catchError(err => {
-          console.error('[HelperView] Failed to delete game', err);
+          console.error('[HelperView] Failed to load game for editing', err);
+          this.errorMessage.set('Failed to load game for editing.');
           return of(null);
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -210,6 +261,7 @@ export class HelperViewComponent implements OnInit {
   }
 
   resetForm(): void {
+    this.editingGameId.set(null);
     this.newGameTitle.set('');
     this.newGameDescription.set('');
     this.uploadedImages.set([]);
@@ -233,6 +285,38 @@ export class HelperViewComponent implements OnInit {
       console.warn('[HelperView] Token refresh warning:', e);
     }
 
+    // ── Edit Mode ──
+    if (this.editingGameId()) {
+      const images: EditImageEntry[] = this.uploadedImages().map(img => ({
+        id: img.id ?? null,
+        name: img.name,
+        imageBase64: img.id ? undefined : img.base64,
+        contentType: img.id ? undefined : img.contentType,
+      }));
+
+      this.gameService.editGame(this.editingGameId()!, {
+        title: this.newGameTitle(),
+        description: this.newGameDescription(),
+        images,
+      }).pipe(
+        tap(() => {
+          this.successMessage.set('Game updated successfully!');
+          this.resetForm();
+          this.loadData();
+          this.setPage('My Games');
+        }),
+        catchError(err => {
+          console.error('[HelperView] Game edit failed', err);
+          this.errorMessage.set('Failed to update game: ' + (err?.error?.error || err?.message || 'Unknown error'));
+          return of(null);
+        }),
+        finalize(() => this.creating.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe();
+      return;
+    }
+
+    // ── Create Mode ──
     // 1. Create Game
     this.gameService.createGame(this.keycloakId, {
       title: this.newGameTitle(),

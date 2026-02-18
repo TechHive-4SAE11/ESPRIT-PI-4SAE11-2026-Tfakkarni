@@ -43,6 +43,19 @@ public class MemoryPlaceService {
   }
 
   @Transactional
+  public PlaceResponse editPlace(Long id, CreatePlaceRequest request) {
+    MemoryPlace place = memoryPlaceRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Place not found: " + id));
+    place.setName(request.getName());
+    place.setLatitude(request.getLatitude());
+    place.setLongitude(request.getLongitude());
+    place.setHint(request.getHint());
+    place = memoryPlaceRepository.save(place);
+    log.info("Edited memory place '{}' (id={})", place.getName(), place.getId());
+    return toResponse(place);
+  }
+
+  @Transactional
   public void deletePlace(Long id) {
     memoryPlaceRepository.deleteById(id);
     log.info("Deleted memory place id={}", id);
