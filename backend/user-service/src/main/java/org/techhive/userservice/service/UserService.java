@@ -36,6 +36,10 @@ public class UserService {
     return userRepository.findByKeycloakId(keycloakId);
   }
 
+  public Optional<User> getUserById(Long id) {
+    return userRepository.findById(id);
+  }
+
   public Optional<User> getUserByEmail(String email) {
     return userRepository.findByEmail(email);
   }

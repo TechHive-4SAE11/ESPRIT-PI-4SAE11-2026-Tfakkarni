@@ -11,12 +11,12 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PrescriptionResponseDTO {
+public class CarePlanResponseDTO {
     
     private Long id;
     private Long sessionId;
     private String doctorId;
-    private List<MedicationResponseDTO> medications = new ArrayList<>();
+    private List<CareActivityResponseDTO> activities = new ArrayList<>();
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

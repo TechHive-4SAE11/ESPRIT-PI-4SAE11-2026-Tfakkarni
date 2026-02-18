@@ -26,6 +26,7 @@ export interface PrescriptionRequestDTO {
 export interface PrescriptionResponseDTO {
   id: number;
   sessionId: number;
+  doctorId: string; // The backend database ID of the doctor
   medications: MedicationResponseDTO[];
   createdAt: string;
   updatedAt: string;
