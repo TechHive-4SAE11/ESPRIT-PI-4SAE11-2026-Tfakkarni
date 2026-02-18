@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.techhive.gameservice.dto.*;
 import org.techhive.gameservice.entity.GameImage;
 import org.techhive.gameservice.entity.MiniGame;
-import org.techhive.gameservice.repository.GameImageRepository;
 import org.techhive.gameservice.repository.MiniGameRepository;
 
 import java.util.Base64;
@@ -20,7 +19,6 @@ import java.util.stream.Collectors;
 public class GameService {
 
     private final MiniGameRepository miniGameRepository;
-    private final GameImageRepository gameImageRepository;
 
     /**
      * Create a new minigame for a patient.

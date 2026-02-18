@@ -7,11 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.techhive.gameservice.dto.GameStatsResponse;
 import org.techhive.gameservice.dto.OverviewStatsResponse;
 import org.techhive.gameservice.dto.ScoreAnalyticsResponse;
-import org.techhive.gameservice.entity.GameAttempt;
-import org.techhive.gameservice.repository.GameAttemptRepository;
 import org.techhive.gameservice.service.GameStatsService;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -20,7 +16,6 @@ import java.util.List;
 public class GameStatsController {
 
     private final GameStatsService gameStatsService;
-    private final GameAttemptRepository gameAttemptRepository;
 
     /**
      * Get stats for a specific patient/player.
@@ -45,21 +40,5 @@ public class GameStatsController {
     @GetMapping("/analytics/{keycloakId}")
     public ResponseEntity<ScoreAnalyticsResponse> getScoreAnalytics(@PathVariable String keycloakId) {
         return ResponseEntity.ok(gameStatsService.getScoreAnalytics(keycloakId));
-    }
-
-    /**
-     * Get all attempts for a specific patient (doctor/admin view).
-     */
-    @GetMapping("/attempts/player/{keycloakId}")
-    public ResponseEntity<List<GameAttempt>> getPlayerAttempts(@PathVariable String keycloakId) {
-        return ResponseEntity.ok(gameAttemptRepository.findByPlayerKeycloakId(keycloakId));
-    }
-
-    /**
-     * Get all attempts for a specific game.
-     */
-    @GetMapping("/attempts/game/{gameId}")
-    public ResponseEntity<List<GameAttempt>> getGameAttempts(@PathVariable Long gameId) {
-        return ResponseEntity.ok(gameAttemptRepository.findByMiniGameId(gameId));
     }
 }

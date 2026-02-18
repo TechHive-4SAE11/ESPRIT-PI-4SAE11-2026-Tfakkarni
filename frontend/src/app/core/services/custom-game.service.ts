@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import type { DataPointType, DataPointSummary } from './data-point.service';
@@ -147,8 +147,10 @@ export class CustomGameService {
     return this.http.get<UnifiedPlayData>(`${this.baseUrl}/play/random/${keycloakId}`, { params });
   }
 
-  submitResults(request: UnifiedSubmitRequest): Observable<UnifiedPlayResult> {
-    return this.http.post<UnifiedPlayResult>(`${this.baseUrl}/play/submit`, request);
+  submitResults(keycloakId: string, request: UnifiedSubmitRequest): Observable<UnifiedPlayResult> {
+    return this.http.post<UnifiedPlayResult>(`${this.baseUrl}/play/submit`, request, {
+      headers: new HttpHeaders({ 'X-User-Id': keycloakId }),
+    });
   }
 
   // ── Stats ──

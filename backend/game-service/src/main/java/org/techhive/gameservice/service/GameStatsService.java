@@ -19,7 +19,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GameStatsService {
 
+    // Game definition repositories (for counting created games)
     private final MiniGameRepository miniGameRepository;
+    private final CustomGameRepository customGameRepository;
+    private final MovieGameRepository movieGameRepository;
+    private final PersonalQuestionGameRepository personalQuestionGameRepository;
+
+    // Attempt repositories (for counting played games / scores)
     private final GameAttemptRepository gameAttemptRepository;
     private final CustomGameAttemptRepository customGameAttemptRepository;
     private final MovieGameAttemptRepository movieGameAttemptRepository;
@@ -33,7 +39,12 @@ public class GameStatsService {
     public GameStatsResponse getPlayerStats(String keycloakId) {
         GameStatsResponse stats = new GameStatsResponse();
         stats.setPlayerKeycloakId(keycloakId);
-        stats.setTotalGamesCreated((int) miniGameRepository.countByPatientKeycloakId(keycloakId));
+        // Count games created across ALL game types
+        long miniGames = miniGameRepository.countByPatientKeycloakId(keycloakId);
+        long customGames = customGameRepository.countByPatientKeycloakId(keycloakId);
+        long movieGames = movieGameRepository.countByPatientKeycloakId(keycloakId);
+        long personalGames = personalQuestionGameRepository.countByPatientKeycloakId(keycloakId);
+        stats.setTotalGamesCreated((int) (miniGames + customGames + movieGames + personalGames));
 
         // Count attempts across ALL game types
         long miniAttempts = gameAttemptRepository.countByPlayerKeycloakId(keycloakId);
@@ -84,8 +95,10 @@ public class GameStatsService {
      */
     public OverviewStatsResponse getOverviewStats() {
         OverviewStatsResponse stats = new OverviewStatsResponse();
-        stats.setTotalGames(miniGameRepository.count());
-        stats.setTotalAttempts(gameAttemptRepository.count());
+        stats.setTotalGames(miniGameRepository.count() + customGameRepository.count()
+                + movieGameRepository.count() + personalQuestionGameRepository.count());
+        stats.setTotalAttempts(gameAttemptRepository.count() + customGameAttemptRepository.count()
+                + movieGameAttemptRepository.count() + personalQuestionAttemptRepository.count());
         stats.setTotalPlayers(gameAttemptRepository.countDistinctPlayers());
 
         if (stats.getTotalAttempts() > 0) {

@@ -54,7 +54,7 @@ import { PatientAnalyticsComponent } from './patient-analytics/patient-analytics
             <z-card class="p-6">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm text-muted-foreground">Active Games</p>
+                  <p class="text-sm text-muted-foreground">Games Played</p>
                   <p class="text-3xl font-bold">{{ totalPatientGames }}</p>
                 </div>
                 <z-icon zType="gamepad-2" class="text-primary h-8 w-8" />
@@ -66,7 +66,7 @@ import { PatientAnalyticsComponent } from './patient-analytics/patient-analytics
                   <p class="text-sm text-muted-foreground">Avg Patient Score</p>
                   <p class="text-3xl font-bold">{{ avgPatientScore | number:'1.0-0' }}%</p>
                 </div>
-                <z-icon zType="trending-up" class="text-primary h-8 w-8" />
+                <z-icon zType="bar-chart-3" class="text-primary h-8 w-8" />
               </div>
             </z-card>
           </div>
@@ -302,6 +302,9 @@ export class DoctorDashboardComponent implements OnInit {
               this.patientStats.set(map);
               this.computeAggregates();
             },
+            error: err => {
+              console.warn(`Failed to load game stats for patient ${patient.keycloakId}`, err);
+            },
           });
         }
       },
@@ -315,7 +318,7 @@ export class DoctorDashboardComponent implements OnInit {
 
   private computeAggregates(): void {
     const stats = Array.from(this.patientStats().values());
-    this.totalPatientGames = stats.reduce((sum, s) => sum + s.totalGamesCreated, 0);
+    this.totalPatientGames = stats.reduce((sum, s) => sum + s.totalGamesPlayed, 0);
     const withScores = stats.filter(s => s.totalAttempts > 0);
     this.avgPatientScore = withScores.length > 0
       ? withScores.reduce((sum, s) => sum + s.averageScore, 0) / withScores.length

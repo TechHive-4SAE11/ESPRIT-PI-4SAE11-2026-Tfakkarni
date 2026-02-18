@@ -6,6 +6,7 @@ import { KeycloakService } from 'keycloak-angular';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, of, tap } from 'rxjs';
 import { environment } from '@/environments/environment';
+import { AuthService } from '@/core/auth/auth.service';
 
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
@@ -396,6 +397,7 @@ export class PlayMemoryGameComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly keycloakService = inject(KeycloakService);
+  private readonly authService = inject(AuthService);
   private readonly customGameService = inject(CustomGameService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly ngZone = inject(NgZone);
@@ -445,6 +447,7 @@ export class PlayMemoryGameComponent implements OnInit, OnDestroy {
 
   private gameId: string = '';
   private isRandom = false;
+  private playerKeycloakId = '';
 
   ngOnInit() {
     this.gameId = this.route.snapshot.paramMap.get('gameId') || '';
@@ -460,10 +463,13 @@ export class PlayMemoryGameComponent implements OnInit, OnDestroy {
   private loadGame() {
     this.phase.set('loading');
 
-    const keycloakId = this.keycloakService.getKeycloakInstance()?.subject || '';
+    this.playerKeycloakId = this.authService.getKeycloakId();
+    if (!this.playerKeycloakId) {
+      console.warn('[PlayMemoryGame] keycloakId is empty — Keycloak may not be initialized yet');
+    }
 
     const obs = this.isRandom
-      ? this.customGameService.getRandomPlayData(keycloakId, 10)
+      ? this.customGameService.getRandomPlayData(this.playerKeycloakId, 10)
       : this.customGameService.getPlayData(Number.parseInt(this.gameId, 10));
 
     obs.pipe(
@@ -590,7 +596,15 @@ export class PlayMemoryGameComponent implements OnInit, OnDestroy {
     const data = this.playData();
     if (!data) return;
 
-    this.customGameService.submitResults({
+    // Re-read keycloakId in case it wasn't available at loadGame() time
+    if (!this.playerKeycloakId) {
+      this.playerKeycloakId = this.authService.getKeycloakId();
+    }
+    if (!this.playerKeycloakId) {
+      console.error('[PlayMemoryGame] Cannot submit — player keycloakId is empty');
+    }
+
+    this.customGameService.submitResults(this.playerKeycloakId, {
       gameId: data.gameId,
       score: 0, // server calculates
       totalQuestions: data.totalQuestions,
