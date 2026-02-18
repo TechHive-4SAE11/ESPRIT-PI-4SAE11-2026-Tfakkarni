@@ -22,6 +22,13 @@ import {
 
 type Phase = 'loading' | 'playing' | 'revealed' | 'results';
 
+interface RevealedState {
+  playerAnswer: string;
+  correctAnswer: string;
+  isCorrect: boolean;
+  skipped: boolean;
+}
+
 @Component({
   selector: 'app-play-memory-game',
   standalone: true,
@@ -74,20 +81,9 @@ type Phase = 'loading' | 'playing' | 'revealed' | 'results';
                     }
                     <div class="p-6 text-center">
                       <h2 class="text-2xl font-bold mb-2">Who is this?</h2>
-                      <p class="text-muted-foreground">Select the correct name</p>
+                      <p class="text-muted-foreground">Type the name of this person</p>
                     </div>
                   </z-card>
-                  <div class="grid grid-cols-2 gap-4">
-                    @for (choice of item.choices; track choice) {
-                      <button (click)="selectAnswer(choice)"
-                        class="p-6 rounded-xl text-lg font-semibold text-center border-2 transition-all"
-                        [class]="selectedAnswer() === choice
-                          ? 'border-primary bg-primary/10 text-primary scale-[1.02]'
-                          : 'border-border hover:border-primary/50 hover:bg-muted'">
-                        {{ choice }}
-                      </button>
-                    }
-                  </div>
                 }
 
                 <!-- ═══ PLACE ═══ -->
@@ -101,24 +97,13 @@ type Phase = 'loading' | 'playing' | 'revealed' | 'results';
                       }
                     </div>
                   </z-card>
-                  <div class="grid grid-cols-2 gap-4">
-                    @for (choice of item.choices; track choice) {
-                      <button (click)="selectAnswer(choice)"
-                        class="p-6 rounded-xl text-lg font-semibold text-center border-2 transition-all"
-                        [class]="selectedAnswer() === choice
-                          ? 'border-primary bg-primary/10 text-primary scale-[1.02]'
-                          : 'border-border hover:border-primary/50 hover:bg-muted'">
-                        {{ choice }}
-                      </button>
-                    }
-                  </div>
                 }
 
                 <!-- ═══ MOVIE ═══ -->
                 @case ('MOVIE') {
                   <z-card class="p-0 overflow-hidden mb-8">
                     @if (item.posterUrl) {
-                      <img [src]="'https://image.tmdb.org/t/p/w400' + item.posterUrl"
+                      <img [src]="item.posterUrl"
                         alt="Movie poster" class="w-full h-80 object-contain bg-muted" />
                     }
                     <div class="p-6 text-center">
@@ -126,17 +111,6 @@ type Phase = 'loading' | 'playing' | 'revealed' | 'results';
                       <p class="text-muted-foreground">{{ item.movieTitle }}</p>
                     </div>
                   </z-card>
-                  <div class="grid grid-cols-2 gap-4">
-                    @for (choice of item.choices; track choice) {
-                      <button (click)="selectAnswer(choice)"
-                        class="p-6 rounded-xl text-lg font-semibold text-center border-2 transition-all"
-                        [class]="selectedAnswer() === choice
-                          ? 'border-primary bg-primary/10 text-primary scale-[1.02]'
-                          : 'border-border hover:border-primary/50 hover:bg-muted'">
-                        {{ choice }}
-                      </button>
-                    }
-                  </div>
                 }
 
                 <!-- ═══ QUESTION ═══ -->
@@ -148,58 +122,107 @@ type Phase = 'loading' | 'playing' | 'revealed' | 'results';
                       <p class="text-muted-foreground">Type your answer below</p>
                     </div>
                   </z-card>
-                  <div class="max-w-md mx-auto">
-                    <input type="text" [(ngModel)]="questionInput" placeholder="Your answer..."
-                      class="w-full rounded-xl border-2 border-border bg-background px-6 py-4 text-lg text-center focus:border-primary transition-colors"
-                      (keydown.enter)="revealQuestionAnswer()" />
-                    <button z-button class="w-full mt-4" [disabled]="!questionInput.trim()" (click)="revealQuestionAnswer()">
-                      Check Answer
-                    </button>
-                  </div>
                 }
               }
 
-              <!-- Next button (MCQ types) -->
-              @if (item.type !== 'QUESTION' && selectedAnswer()) {
-                <div class="mt-8 text-center">
-                  <z-button (click)="submitAndNext()">
-                    {{ isLastItem() ? 'Finish Game' : 'Next Question' }}
-                    <z-icon zType="chevron-right" class="ml-2 h-4 w-4" />
-                  </z-button>
+              <!-- Unified answer input for ALL types -->
+              <div class="max-w-md mx-auto">
+                <input type="text" [(ngModel)]="answerInput" placeholder="Type your answer..."
+                  class="w-full rounded-xl border-2 border-border bg-background px-6 py-4 text-lg text-center focus:border-primary focus:outline-none transition-colors"
+                  (keydown.enter)="submitAnswer()" />
+                <div class="flex gap-3 mt-4">
+                  <button z-button zType="outline" class="flex-1" (click)="skipAnswer()">
+                    <z-icon zType="chevron-right" class="mr-2 h-4 w-4" />
+                    I don't know
+                  </button>
+                  <button z-button class="flex-1" [disabled]="!answerInput.trim()" (click)="submitAnswer()">
+                    <z-icon zType="check" class="mr-2 h-4 w-4" />
+                    Submit Answer
+                  </button>
                 </div>
-              }
+              </div>
             }
           }
 
-          <!-- ═══ REVEALED (for QUESTION type) ═══ -->
+          <!-- ═══ REVEALED — feedback after answer ═══ -->
           @case ('revealed') {
             @if (currentItem(); as item) {
-              <z-card class="p-8 text-center mb-6">
-                <span class="text-5xl mb-4 block">🧠</span>
-                <h2 class="text-xl font-bold mb-2">{{ item.questionText }}</h2>
-                <p class="text-muted-foreground mb-6">Your answer: <strong>{{ questionInput }}</strong></p>
-                <div class="bg-muted rounded-xl p-6 mb-6">
-                  <p class="text-sm text-muted-foreground mb-1">Correct answer</p>
-                  <p class="text-2xl font-bold text-primary">{{ item.correctAnswer }}</p>
-                </div>
-                <p class="text-sm text-muted-foreground mb-4">Did you get it right?</p>
-                <div class="flex justify-center gap-4">
-                  <z-button variant="outline" (click)="selfAssess(false)">
-                    <z-icon zType="x" class="mr-2 h-4 w-4" /> Wrong
-                  </z-button>
-                  <z-button (click)="selfAssess(true)">
-                    <z-icon zType="check" class="mr-2 h-4 w-4" /> Correct
-                  </z-button>
-                </div>
-              </z-card>
+              @if (revealedState(); as rev) {
+                <z-progress-bar [progress]="progressPercent()" class="mb-8 h-2" />
+
+                <!-- Show the question context again -->
+                @switch (item.type) {
+                  @case ('PHOTO') {
+                    <z-card class="p-0 overflow-hidden mb-6">
+                      @if (item.imageBase64 && item.imageContentType) {
+                        <img [src]="'data:' + item.imageContentType + ';base64,' + item.imageBase64"
+                          alt="Photo" class="w-full h-60 object-contain bg-muted" />
+                      }
+                    </z-card>
+                  }
+                  @case ('MOVIE') {
+                    <z-card class="p-0 overflow-hidden mb-6">
+                      @if (item.posterUrl) {
+                        <img [src]="item.posterUrl"
+                          alt="Movie poster" class="w-full h-60 object-contain bg-muted" />
+                      }
+                      <div class="p-4 text-center">
+                        <p class="text-muted-foreground">{{ item.movieTitle }}</p>
+                      </div>
+                    </z-card>
+                  }
+                  @case ('PLACE') {
+                    <z-card class="p-4 mb-6 text-center">
+                      <span class="text-4xl block mb-2">📍</span>
+                      @if (item.hint) {
+                        <p class="text-muted-foreground italic">"{{ item.hint }}"</p>
+                      }
+                    </z-card>
+                  }
+                  @case ('QUESTION') {
+                    <z-card class="p-4 mb-6 text-center">
+                      <span class="text-4xl block mb-2">🧠</span>
+                      <p class="font-semibold">{{ item.questionText }}</p>
+                    </z-card>
+                  }
+                }
+
+                <!-- Result feedback card -->
+                <z-card class="p-8 text-center mb-6">
+                  @if (rev.skipped) {
+                    <span class="text-5xl mb-4 block">⏭️</span>
+                    <h2 class="text-2xl font-bold text-muted-foreground mb-2">Skipped</h2>
+                    <p class="text-muted-foreground mb-6">You chose to skip this one</p>
+                  } @else if (rev.isCorrect) {
+                    <span class="text-5xl mb-4 block">✅</span>
+                    <h2 class="text-2xl font-bold text-green-600 mb-2">Correct!</h2>
+                    <p class="text-muted-foreground mb-6">Your answer: <strong class="text-green-600">{{ rev.playerAnswer }}</strong></p>
+                  } @else {
+                    <span class="text-5xl mb-4 block">❌</span>
+                    <h2 class="text-2xl font-bold text-red-500 mb-2">Incorrect</h2>
+                    <p class="text-muted-foreground mb-6">Your answer: <strong class="text-red-500">{{ rev.playerAnswer }}</strong></p>
+                  }
+
+                  <div class="bg-muted rounded-xl p-6 mb-6">
+                    <p class="text-sm text-muted-foreground mb-1">Correct answer</p>
+                    <p class="text-2xl font-bold text-primary">{{ rev.correctAnswer }}</p>
+                  </div>
+
+                  <button z-button class="min-w-[200px]" (click)="nextAfterReveal()">
+                    {{ isLastItem() ? 'See Results' : 'Next Question' }}
+                    <z-icon zType="chevron-right" class="ml-2 h-4 w-4" />
+                  </button>
+                </z-card>
+              }
             }
           }
 
           <!-- ═══ RESULTS ═══ -->
           @case ('results') {
             @if (results(); as r) {
-              <div class="max-w-lg mx-auto text-center">
-                <z-card class="p-8 mb-8">
+              <div class="max-w-2xl mx-auto">
+                <!-- Score banner -->
+                <z-card class="p-8 text-center mb-8">
                   <span class="text-6xl mb-6 block">
                     {{ r.percentage >= 80 ? '🎉' : r.percentage >= 50 ? '👍' : '💪' }}
                   </span>
@@ -210,33 +233,68 @@ type Phase = 'loading' | 'playing' | 'revealed' | 'results';
                     You scored {{ r.score }} out of {{ r.totalQuestions }}
                   </p>
                   <z-progress-bar [progress]="r.percentage" class="mb-4 h-4" />
-                  <p class="text-2xl font-bold text-primary">{{ r.percentage | number:'1.0-0' }}%</p>
+                  <p class="text-2xl font-bold text-primary mb-2">{{ r.percentage | number:'1.0-0' }}%</p>
+                  <p class="text-sm text-muted-foreground">
+                    Completed in {{ formatTime(r.durationSeconds || 0) }}
+                  </p>
                 </z-card>
 
-                <!-- Per-item results -->
+                <!-- Detailed per-item results -->
                 @if (r.results && r.results.length > 0) {
-                  <div class="space-y-2 mb-8 text-left">
-                    @for (item of r.results; track $index) {
-                      <div class="flex items-center gap-3 p-3 rounded-lg bg-muted">
-                        <span class="text-xl">{{ item.correct ? '✅' : '❌' }}</span>
-                        <div class="flex-1 min-w-0">
-                          <p class="text-sm font-medium truncate">{{ item.label }}</p>
-                          @if (!item.correct && item.correctAnswer) {
-                            <p class="text-xs text-muted-foreground">Correct: {{ item.correctAnswer }}</p>
-                          }
+                  <h3 class="text-xl font-semibold mb-4">Detailed Results</h3>
+                  <div class="space-y-3 mb-8">
+                    @for (item of r.results; track $index; let i = $index) {
+                      <z-card class="p-4">
+                        <div class="flex items-start gap-4">
+                          <!-- Number badge -->
+                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                               [class]="item.correct ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+                            {{ i + 1 }}
+                          </div>
+                          <!-- Details -->
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                              <span class="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                {{ getTypeEmoji(item.type) }} {{ item.type }}
+                              </span>
+                              @if (item.correct) {
+                                <z-badge zType="secondary" class="text-green-600">Correct</z-badge>
+                              } @else if (item.selectedAnswer === 'I don\\'t know' || !item.selectedAnswer) {
+                                <z-badge zType="secondary" class="text-yellow-600">Skipped</z-badge>
+                              } @else {
+                                <z-badge zType="secondary" class="text-red-500">Wrong</z-badge>
+                              }
+                            </div>
+                            <p class="text-sm font-medium mb-1">{{ item.label }}</p>
+                            <div class="text-sm">
+                              @if (item.selectedAnswer === 'I don\\'t know' || !item.selectedAnswer) {
+                                <p class="text-yellow-600">Skipped</p>
+                              } @else {
+                                <p [class]="item.correct ? 'text-green-600' : 'text-red-500'">
+                                  Your answer: {{ item.selectedAnswer }}
+                                </p>
+                              }
+                              @if (!item.correct) {
+                                <p class="text-green-600 font-medium">Correct answer: {{ item.correctAnswer }}</p>
+                              }
+                            </div>
+                          </div>
+                          <!-- Status icon -->
+                          <span class="text-xl flex-shrink-0">{{ item.correct ? '✅' : (item.selectedAnswer === 'I don\\'t know' || !item.selectedAnswer) ? '⏭️' : '❌' }}</span>
                         </div>
-                      </div>
+                      </z-card>
                     }
                   </div>
                 }
 
+                <!-- Actions -->
                 <div class="flex justify-center gap-4">
-                  <z-button variant="outline" (click)="goBack()">
-                    <z-icon zType="arrow-left" class="mr-2 h-4 w-4" /> Back
-                  </z-button>
-                  <z-button (click)="replayGame()">
+                  <button z-button zType="outline" (click)="goBack()">
+                    <z-icon zType="arrow-left" class="mr-2 h-4 w-4" /> Back to Dashboard
+                  </button>
+                  <button z-button (click)="replayGame()">
                     <z-icon zType="rotate-ccw" class="mr-2 h-4 w-4" /> Play Again
-                  </z-button>
+                  </button>
                 </div>
               </div>
             }
@@ -256,10 +314,10 @@ export class PlayMemoryGameComponent implements OnInit {
   phase = signal<Phase>('loading');
   playData = signal<UnifiedPlayData | null>(null);
   currentIndex = signal(0);
-  selectedAnswer = signal<string>('');
-  questionInput = '';
+  answerInput = '';
   answers = signal<AnswerEntry[]>([]);
   results = signal<UnifiedPlayResult | null>(null);
+  revealedState = signal<RevealedState | null>(null);
 
   // Timer
   elapsedSeconds = signal(0);
@@ -306,8 +364,8 @@ export class PlayMemoryGameComponent implements OnInit {
         this.playData.set(data);
         this.currentIndex.set(0);
         this.answers.set([]);
-        this.selectedAnswer.set('');
-        this.questionInput = '';
+        this.answerInput = '';
+        this.revealedState.set(null);
         this.phase.set('playing');
         this.startTimer();
       }),
@@ -329,58 +387,63 @@ export class PlayMemoryGameComponent implements OnInit {
     this.loadGame();
   }
 
-  // ── MCQ answer ──
+  // ── Submit typed answer ──
 
-  selectAnswer(choice: string) {
-    this.selectedAnswer.set(choice);
-  }
-
-  submitAndNext() {
+  submitAnswer() {
     const item = this.currentItem();
-    if (!item || !this.selectedAnswer()) return;
+    if (!item || !this.answerInput.trim()) return;
 
+    const playerAnswer = this.answerInput.trim();
+    const correctAnswer = item.correctAnswer || '';
+    const isCorrect = playerAnswer.toLowerCase() === correctAnswer.toLowerCase();
+
+    // Record answer
     this.answers.update(a => [...a, {
       type: item.type,
       itemId: item.itemId,
-      selectedAnswer: this.selectedAnswer(),
+      selectedAnswer: playerAnswer,
     }]);
 
-    this.advance();
-  }
-
-  // ── Question type ──
-
-  revealQuestionAnswer() {
-    if (!this.questionInput.trim()) return;
+    // Show feedback
+    this.revealedState.set({ playerAnswer, correctAnswer, isCorrect, skipped: false });
     this.phase.set('revealed');
   }
 
-  selfAssess(correct: boolean) {
+  // ── Skip / I don't know ──
+
+  skipAnswer() {
     const item = this.currentItem();
     if (!item) return;
 
+    const correctAnswer = item.correctAnswer || '';
+
+    // Record as skipped (empty answer)
     this.answers.update(a => [...a, {
       type: item.type,
       itemId: item.itemId,
-      selectedAnswer: this.questionInput.trim(),
-      selfAssessedCorrect: correct,
+      selectedAnswer: '',
     }]);
 
-    this.questionInput = '';
-    this.phase.set('playing');
-    this.advance();
+    // Show feedback
+    this.revealedState.set({ playerAnswer: '', correctAnswer, isCorrect: false, skipped: true });
+    this.phase.set('revealed');
   }
 
-  // ── Flow control ──
+  // ── Move to next after seeing feedback ──
 
-  private advance() {
-    this.selectedAnswer.set('');
+  nextAfterReveal() {
+    this.answerInput = '';
+    this.revealedState.set(null);
+
     if (this.isLastItem()) {
       this.finishGame();
     } else {
       this.currentIndex.update(i => i + 1);
+      this.phase.set('playing');
     }
   }
+
+  // ── Finish and submit ──
 
   private finishGame() {
     this.stopTimer();
@@ -399,21 +462,51 @@ export class PlayMemoryGameComponent implements OnInit {
         this.phase.set('results');
       }),
       catchError(() => {
-        // Fallback: show basic results
+        // Fallback: compute results locally
+        const localResults = this.answers().map((ans, i) => {
+          const item = data.items[i];
+          const correct = !!ans.selectedAnswer &&
+            ans.selectedAnswer.toLowerCase() === (item?.correctAnswer || '').toLowerCase();
+          return {
+            type: ans.type,
+            itemId: ans.itemId,
+            correct,
+            correctAnswer: item?.correctAnswer || '?',
+            selectedAnswer: ans.selectedAnswer || "I don't know",
+            label: this.getItemLabel(item),
+          };
+        });
+        const score = localResults.filter(r => r.correct).length;
         this.results.set({
           attemptId: 0,
-          score: 0,
+          score,
           totalQuestions: data.totalQuestions,
-          percentage: 0,
+          percentage: data.totalQuestions > 0 ? Math.round(score / data.totalQuestions * 100) : 0,
           durationSeconds: this.elapsedSeconds(),
           completedAt: new Date().toISOString(),
-          results: [],
+          results: localResults,
         });
         this.phase.set('results');
         return of(null);
       }),
       takeUntilDestroyed(this.destroyRef),
     ).subscribe();
+  }
+
+  private getItemLabel(item: UnifiedPlayItem | undefined): string {
+    if (!item) return 'Unknown';
+    switch (item.type) {
+      case 'PHOTO': return item.correctAnswer || 'Photo';
+      case 'PLACE': return item.correctAnswer || 'Place';
+      case 'MOVIE': return item.movieTitle || 'Movie';
+      case 'QUESTION': return item.questionText || 'Question';
+      default: return 'Item';
+    }
+  }
+
+  getTypeEmoji(type: string): string {
+    const map: Record<string, string> = { PHOTO: '📷', PLACE: '📍', MOVIE: '🎬', QUESTION: '🧠' };
+    return map[type] || '📄';
   }
 
   // ── Timer ──

@@ -1,5 +1,6 @@
 import {
   Component, Input, Output, EventEmitter, signal, inject, DestroyRef, OnInit,
+  AfterViewInit, OnDestroy, ViewChild, ElementRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -14,6 +15,7 @@ import { ZardBadgeComponent } from '@/shared/components/badge';
 import { DataPointService, type DataPointSummary, type DataPointType } from '@/core/services/data-point.service';
 import { MemoryTagService, type TagResponse } from '@/core/services/memory-tag.service';
 import { MovieGameService, type TmdbMovie } from '@/core/services/movie-game.service';
+import * as L from 'leaflet';
 
 type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question';
 
@@ -74,7 +76,7 @@ type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question';
                 <span class="text-xs">Add Photo</span>
               </div>
             </z-button>
-            <z-button variant="outline" class="h-auto py-3" (click)="view.set('add-place')">
+            <z-button variant="outline" class="h-auto py-3" (click)="view.set('add-place'); initPlaceMap()">
               <div class="flex flex-col items-center gap-1">
                 <span class="text-xl">📍</span>
                 <span class="text-xs">Add Place</span>
@@ -194,28 +196,35 @@ type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question';
         @case ('add-place') {
           <z-card class="p-6">
             <div class="flex items-center gap-2 mb-4">
-              <button (click)="view.set('list')" class="text-muted-foreground hover:text-foreground">
+              <button (click)="view.set('list'); destroyPlaceMap()" class="text-muted-foreground hover:text-foreground">
                 <z-icon zType="arrow-left" class="h-5 w-5" />
               </button>
               <h3 class="text-lg font-semibold">📍 Add Place</h3>
             </div>
+            <p class="text-sm text-muted-foreground mb-3">
+              <z-icon zType="map-pin" class="inline mr-1" />
+              Click on the map to pin a location
+            </p>
+            <!-- Leaflet Map -->
+            <div
+              #placeMapContainer
+              class="w-full h-[350px] rounded-lg border border-border mb-4 z-0"
+            ></div>
+            @if (placeLat !== null && placeLng !== null) {
+              <div class="flex gap-3 mb-4">
+                <span class="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground">
+                  Lat: {{ placeLat!.toFixed(5) }}
+                </span>
+                <span class="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground">
+                  Lng: {{ placeLng!.toFixed(5) }}
+                </span>
+              </div>
+            }
             <div class="space-y-4">
               <div>
                 <label class="text-sm font-medium block mb-1">Place Name</label>
                 <input type="text" [(ngModel)]="placeName" placeholder="e.g., Childhood Home"
                   class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="text-sm font-medium block mb-1">Latitude</label>
-                  <input type="number" step="any" [(ngModel)]="placeLat"
-                    class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
-                </div>
-                <div>
-                  <label class="text-sm font-medium block mb-1">Longitude</label>
-                  <input type="number" step="any" [(ngModel)]="placeLng"
-                    class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
-                </div>
               </div>
               <div>
                 <label class="text-sm font-medium block mb-1">Hint (optional)</label>
@@ -235,7 +244,7 @@ type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question';
                   }
                 </div>
               </div>
-              <button z-button (click)="submitPlace()" [disabled]="!placeName.trim() || !placeLat || !placeLng || isSaving()">
+              <button z-button (click)="submitPlace()" [disabled]="!placeName.trim() || placeLat === null || placeLng === null || isSaving()">
                 @if (isSaving()) { Saving... } @else { <z-icon zType="map-pin" class="mr-2 h-4 w-4" /> Save Place }
               </button>
             </div>
@@ -370,9 +379,10 @@ type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question';
     </div>
   `,
 })
-export class DataLibraryComponent implements OnInit {
+export class DataLibraryComponent implements OnInit, OnDestroy {
   @Input({ required: true }) keycloakId!: string;
   @Output() goBack = new EventEmitter<void>();
+  @ViewChild('placeMapContainer') placeMapContainer!: ElementRef;
 
   private readonly dataPointService = inject(DataPointService);
   private readonly tagService = inject(MemoryTagService);
@@ -403,6 +413,8 @@ export class DataLibraryComponent implements OnInit {
   placeLat: number | null = null;
   placeLng: number | null = null;
   placeHint = '';
+  private placeMap: L.Map | null = null;
+  private placeMarker: L.Marker | null = null;
 
   // Movie form
   movieSearchQuery = '';
@@ -439,6 +451,10 @@ export class DataLibraryComponent implements OnInit {
     this.loadTags();
     this.loadData();
     this.setupMovieSearch();
+  }
+
+  ngOnDestroy() {
+    this.destroyPlaceMap();
   }
 
   private loadTags() {
@@ -520,9 +536,55 @@ export class DataLibraryComponent implements OnInit {
 
   // ── Place ──
 
+  initPlaceMap() {
+    // Defer to next tick so the DOM element is rendered
+    setTimeout(() => {
+      if (this.placeMap || !this.placeMapContainer?.nativeElement) return;
+
+      const iconDefault = L.icon({
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      });
+      L.Marker.prototype.options.icon = iconDefault;
+
+      this.placeMap = L.map(this.placeMapContainer.nativeElement).setView([36.8, 10.18], 12);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+      }).addTo(this.placeMap);
+
+      this.placeMap.on('click', (e: L.LeafletMouseEvent) => {
+        const { lat, lng } = e.latlng;
+        this.placeLat = lat;
+        this.placeLng = lng;
+
+        if (this.placeMarker) {
+          this.placeMarker.setLatLng(e.latlng);
+        } else {
+          this.placeMarker = L.marker(e.latlng).addTo(this.placeMap!);
+        }
+      });
+    }, 0);
+  }
+
+  destroyPlaceMap() {
+    if (this.placeMap) {
+      this.placeMap.remove();
+      this.placeMap = null;
+      this.placeMarker = null;
+    }
+  }
+
   submitPlace() {
     if (!this.placeName.trim() || !this.placeLat || !this.placeLng) return;
     this.isSaving.set(true);
+    this.destroyPlaceMap();
     this.dataPointService.createPlace(this.keycloakId, {
       name: this.placeName.trim(),
       latitude: this.placeLat,
@@ -624,6 +686,7 @@ export class DataLibraryComponent implements OnInit {
   private resetForm() {
     this.photoName = ''; this.photoBase64.set(''); this.photoPreview.set('');
     this.placeName = ''; this.placeLat = null; this.placeLng = null; this.placeHint = '';
+    this.destroyPlaceMap();
     this.movieSearchQuery = ''; this.selectedMovie.set(null); this.movieCharacterName = '';
     this.questionText = ''; this.questionAnswer = '';
     this.selectedTagIds.set(new Set());

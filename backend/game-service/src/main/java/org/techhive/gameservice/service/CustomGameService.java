@@ -220,22 +220,18 @@ public class CustomGameService {
     switch (type) {
       case PHOTO -> {
         return photoRepo.findById(dataPointId).map(photo -> {
-          List<String> otherNames = photoRepo.findOtherNames(keycloakId, photo.getId());
-          List<String> choices = buildChoices(photo.getName(), otherNames);
           return UnifiedPlayData.UnifiedPlayItem.builder()
               .index(index)
               .type(DataPointType.PHOTO)
               .itemId(photo.getId())
               .imageBase64(Base64.getEncoder().encodeToString(photo.getImageData()))
               .imageContentType(photo.getImageContentType())
-              .choices(choices)
+              .correctAnswer(photo.getName())
               .build();
         }).orElse(null);
       }
       case PLACE -> {
         return placeRepo.findById(dataPointId).map(place -> {
-          List<String> otherNames = placeRepo.findOtherNames(keycloakId, place.getId());
-          List<String> choices = buildChoices(place.getName(), otherNames);
           return UnifiedPlayData.UnifiedPlayItem.builder()
               .index(index)
               .type(DataPointType.PLACE)
@@ -243,14 +239,12 @@ public class CustomGameService {
               .latitude(place.getLatitude())
               .longitude(place.getLongitude())
               .hint(place.getHint())
-              .choices(choices)
+              .correctAnswer(place.getName())
               .build();
         }).orElse(null);
       }
       case MOVIE -> {
         return movieRepo.findById(dataPointId).map(movie -> {
-          List<String> otherAnswers = movieRepo.findOtherAnswers(keycloakId, movie.getId());
-          List<String> choices = buildChoices(movie.getCorrectAnswer(), otherAnswers);
           String posterUrl = movie.getPosterPath() != null
               ? "https://image.tmdb.org/t/p/w300" + movie.getPosterPath()
               : null;
@@ -260,7 +254,7 @@ public class CustomGameService {
               .itemId(movie.getId())
               .posterUrl(posterUrl)
               .movieTitle(movie.getOriginalTitle())
-              .choices(choices)
+              .correctAnswer(movie.getCorrectAnswer())
               .build();
         }).orElse(null);
       }
@@ -303,23 +297,6 @@ public class CustomGameService {
   }
 
   private UnifiedPlayResult.ItemResult validateAnswer(UnifiedSubmitRequest.AnswerEntry answer) {
-    if (answer.getType() == DataPointType.QUESTION) {
-      // Self-assessed
-      boolean correct = Boolean.TRUE.equals(answer.getSelfAssessedCorrect());
-      String correctAnswer = questionRepo.findById(answer.getItemId())
-          .map(QuestionMemory::getCorrectAnswer).orElse("?");
-      return UnifiedPlayResult.ItemResult.builder()
-          .type(answer.getType())
-          .itemId(answer.getItemId())
-          .correct(correct)
-          .correctAnswer(correctAnswer)
-          .selectedAnswer(answer.getSelectedAnswer())
-          .label(questionRepo.findById(answer.getItemId())
-              .map(QuestionMemory::getQuestionText).orElse("Question"))
-          .build();
-    }
-
-    // Server-validated: compare selectedAnswer against correct
     String correctAnswer = "";
     String label = "";
 
@@ -345,9 +322,18 @@ public class CustomGameService {
           label = movie.getOriginalTitle();
         }
       }
+      case QUESTION -> {
+        var q = questionRepo.findById(answer.getItemId()).orElse(null);
+        if (q != null) {
+          correctAnswer = q.getCorrectAnswer();
+          label = q.getQuestionText();
+        }
+      }
     }
 
+    // Server-validated: compare selectedAnswer against correct (case-insensitive)
     boolean correct = answer.getSelectedAnswer() != null
+        && !answer.getSelectedAnswer().isBlank()
         && answer.getSelectedAnswer().trim().equalsIgnoreCase(correctAnswer.trim());
 
     return UnifiedPlayResult.ItemResult.builder()
@@ -355,7 +341,7 @@ public class CustomGameService {
         .itemId(answer.getItemId())
         .correct(correct)
         .correctAnswer(correctAnswer)
-        .selectedAnswer(answer.getSelectedAnswer())
+        .selectedAnswer(answer.getSelectedAnswer() != null ? answer.getSelectedAnswer() : "I don't know")
         .label(label)
         .build();
   }
