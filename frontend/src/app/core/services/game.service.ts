@@ -93,6 +93,27 @@ export interface OverviewStatsResponse {
   averageScorePercentage: number;
 }
 
+export interface AttemptPoint {
+  attemptId: number;
+  gameType: string; // "CUSTOM" | "MINI" | "MOVIE" | "PERSONAL"
+  gameTitle: string;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  durationSeconds: number | null;
+  completedAt: string;
+}
+
+export interface ScoreAnalyticsResponse {
+  patientKeycloakId: string;
+  totalGamesPlayed: number;
+  gamesLast7Days: number;
+  averageScore: number;
+  averageScoreLast7Days: number;
+  bestScore: number;
+  scoreHistory: AttemptPoint[];
+}
+
 export interface EditGameRequest {
   title: string;
   description: string;
@@ -177,5 +198,9 @@ export class GameService {
 
   getPlayerAttempts(keycloakId: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/stats/attempts/player/${keycloakId}`);
+  }
+
+  getScoreAnalytics(keycloakId: string): Observable<ScoreAnalyticsResponse> {
+    return this.http.get<ScoreAnalyticsResponse>(`${this.baseUrl}/stats/analytics/${keycloakId}`);
   }
 }

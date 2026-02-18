@@ -24,6 +24,7 @@ public class CustomGameService {
   private final MovieMemoryRepository movieRepo;
   private final QuestionMemoryRepository questionRepo;
   private final MemoryTagRepository tagRepo;
+  private final DataPointPerformanceRepository perfRepo;
 
   // ===================== CRUD =====================
 
@@ -111,24 +112,75 @@ public class CustomGameService {
   public UnifiedPlayData getRandomPlayData(String keycloakId, Integer limit) {
     int max = limit != null ? limit : 10;
 
-    List<UnifiedPlayData.UnifiedPlayItem> allItems = new ArrayList<>();
-
-    // Gather all data points
+    // Gather all data points as references
     List<PhotoMemory> photos = photoRepo.findByPatientKeycloakId(keycloakId);
     List<PlaceMemory> places = placeRepo.findByPatientKeycloakId(keycloakId);
     List<MovieMemory> movies = movieRepo.findByPatientKeycloakId(keycloakId);
     List<QuestionMemory> questions = questionRepo.findByPatientKeycloakId(keycloakId);
 
-    // Build raw item references
-    List<long[]> refs = new ArrayList<>(); // [0]=type ordinal, [1]=id
-    photos.forEach(p -> refs.add(new long[] { DataPointType.PHOTO.ordinal(), p.getId() }));
-    places.forEach(p -> refs.add(new long[] { DataPointType.PLACE.ordinal(), p.getId() }));
-    movies.forEach(m -> refs.add(new long[] { DataPointType.MOVIE.ordinal(), m.getId() }));
-    questions.forEach(q -> refs.add(new long[] { DataPointType.QUESTION.ordinal(), q.getId() }));
+    List<long[]> allRefs = new ArrayList<>(); // [0]=type ordinal, [1]=id
+    photos.forEach(p -> allRefs.add(new long[] { DataPointType.PHOTO.ordinal(), p.getId() }));
+    places.forEach(p -> allRefs.add(new long[] { DataPointType.PLACE.ordinal(), p.getId() }));
+    movies.forEach(m -> allRefs.add(new long[] { DataPointType.MOVIE.ordinal(), m.getId() }));
+    questions.forEach(q -> allRefs.add(new long[] { DataPointType.QUESTION.ordinal(), q.getId() }));
 
-    Collections.shuffle(refs);
-    List<long[]> selected = refs.subList(0, Math.min(max, refs.size()));
+    // Load performance history for this patient
+    List<DataPointPerformance> perfRecords = perfRepo.findByPatientKeycloakId(keycloakId);
+    Map<String, DataPointPerformance> perfMap = new HashMap<>();
+    for (DataPointPerformance perf : perfRecords) {
+      String key = perf.getDataType().name() + ":" + perf.getDataPointId();
+      perfMap.put(key, perf);
+    }
 
+    // Categorize into 3 tiers:
+    // Tier 1 (highest priority): Never answered before
+    // Tier 2: Last answer was WRONG
+    // Tier 3 (lowest priority): Last answer was CORRECT
+    List<long[]> tier1New = new ArrayList<>();
+    List<long[]> tier2Wrong = new ArrayList<>();
+    List<long[]> tier3Correct = new ArrayList<>();
+
+    for (long[] ref : allRefs) {
+      DataPointType type = DataPointType.values()[(int) ref[0]];
+      String key = type.name() + ":" + ref[1];
+      DataPointPerformance perf = perfMap.get(key);
+
+      if (perf == null) {
+        tier1New.add(ref); // Never seen before
+      } else if (!perf.isLastCorrect()) {
+        tier2Wrong.add(ref); // Last attempt was wrong
+      } else {
+        tier3Correct.add(ref); // Last attempt was correct
+      }
+    }
+
+    // Shuffle within each tier for variety
+    Collections.shuffle(tier1New);
+    Collections.shuffle(tier2Wrong);
+    Collections.shuffle(tier3Correct);
+
+    // Select items prioritizing Tier 1 → Tier 2 → Tier 3
+    List<long[]> selected = new ArrayList<>();
+    for (long[] ref : tier1New) {
+      if (selected.size() >= max)
+        break;
+      selected.add(ref);
+    }
+    for (long[] ref : tier2Wrong) {
+      if (selected.size() >= max)
+        break;
+      selected.add(ref);
+    }
+    for (long[] ref : tier3Correct) {
+      if (selected.size() >= max)
+        break;
+      selected.add(ref);
+    }
+
+    // Final shuffle so the tiers aren't played in strict order
+    Collections.shuffle(selected);
+
+    List<UnifiedPlayData.UnifiedPlayItem> allItems = new ArrayList<>();
     for (int i = 0; i < selected.size(); i++) {
       long[] ref = selected.get(i);
       DataPointType type = DataPointType.values()[(int) ref[0]];
@@ -137,6 +189,9 @@ public class CustomGameService {
         allItems.add(item);
       }
     }
+
+    log.info("Smart random mix for {}: {} new, {} wrong, {} correct → selected {}",
+        keycloakId, tier1New.size(), tier2Wrong.size(), tier3Correct.size(), selected.size());
 
     return UnifiedPlayData.builder()
         .gameId(null)
@@ -177,6 +232,15 @@ public class CustomGameService {
     attempt.setCompletedAt(LocalDateTime.now());
     attempt = attemptRepo.save(attempt);
 
+    // Update per-data-point performance records for spaced repetition
+    if (req.getAnswers() != null) {
+      for (int i = 0; i < req.getAnswers().size(); i++) {
+        UnifiedSubmitRequest.AnswerEntry answer = req.getAnswers().get(i);
+        boolean correct = i < results.size() && results.get(i).isCorrect();
+        updatePerformance(playerKeycloakId, answer.getType(), answer.getItemId(), correct);
+      }
+    }
+
     double pct = req.getTotalQuestions() > 0
         ? (serverScore * 100.0 / req.getTotalQuestions())
         : 0;
@@ -190,6 +254,24 @@ public class CustomGameService {
         .completedAt(attempt.getCompletedAt())
         .results(results)
         .build();
+  }
+
+  /**
+   * Update (or create) the performance record for a data point after an answer.
+   * If the patient got a previously-correct item wrong, it moves to the "wrong"
+   * tier.
+   * If the patient got a previously-wrong item right, it moves to the "correct"
+   * tier.
+   */
+  private void updatePerformance(String keycloakId, DataPointType type, Long dataPointId, boolean correct) {
+    var existing = perfRepo.findByPatientKeycloakIdAndDataTypeAndDataPointId(keycloakId, type, dataPointId);
+    if (existing.isPresent()) {
+      DataPointPerformance perf = existing.get();
+      perf.recordResult(correct); // Updates lastCorrect, increments correct/incorrect count
+      perfRepo.save(perf);
+    } else {
+      perfRepo.save(new DataPointPerformance(keycloakId, type, dataPointId, correct));
+    }
   }
 
   // ===================== STATS =====================
