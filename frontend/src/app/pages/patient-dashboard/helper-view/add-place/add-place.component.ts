@@ -9,6 +9,7 @@ import {
   AfterViewInit,
   ElementRef,
   ViewChild,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KeycloakService } from 'keycloak-angular';
@@ -16,6 +17,7 @@ import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardBadgeComponent } from '@/shared/components/badge';
+import { ZardAlertDialogService } from '@/shared/components/alert-dialog';
 import { PlaceService, type PlaceResponse, type CreatePlaceRequest } from '@/core/services/place.service';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -39,9 +41,9 @@ import 'leaflet/dist/leaflet.css';
       <h2 class="text-2xl font-bold">Guess the Place — Manage Places</h2>
     </div>
 
-    <!-- Add new place form -->
+    <!-- Add / Edit place form -->
     <z-card class="p-6 mb-6">
-      <h3 class="font-semibold mb-4">Add a New Place</h3>
+      <h3 class="font-semibold mb-4">{{ editingPlaceId() ? 'Edit Place' : 'Add a New Place' }}</h3>
       <p class="text-sm text-muted-foreground mb-4">
         Click on the map to select a location, then enter a name and save.
       </p>
@@ -106,11 +108,11 @@ import 'leaflet/dist/leaflet.css';
             <z-icon zType="loader-2" class="mr-2 animate-spin" />
             Saving...
           } @else {
-            <z-icon zType="save" class="mr-2" />
-            Save Place
+            <z-icon zType="check" class="mr-2" />
+            {{ editingPlaceId() ? 'Save Changes' : 'Save Place' }}
           }
         </button>
-        <button z-button zType="outline" (click)="resetForm()">Clear</button>
+        <button z-button zType="outline" (click)="resetForm()">{{ editingPlaceId() ? 'Cancel Edit' : 'Clear' }}</button>
       </div>
     </z-card>
 
@@ -136,10 +138,16 @@ import 'leaflet/dist/leaflet.css';
             <p class="text-xs text-muted-foreground mb-3">
               Added {{ place.createdAt | date:'mediumDate' }}
             </p>
-            <button z-button zType="destructive" zSize="sm" (click)="deletePlace(place.id)">
-              <z-icon zType="trash-2" class="mr-1" />
-              Remove
-            </button>
+            <div class="flex gap-2">
+              <button z-button zSize="sm" (click)="startEdit(place)">
+                <z-icon zType="settings" class="mr-1" />
+                Edit
+              </button>
+              <button z-button zType="destructive" zSize="sm" (click)="deletePlace(place.id)">
+                <z-icon zType="trash-2" class="mr-1" />
+                Remove
+              </button>
+            </div>
           </z-card>
         }
       </div>
@@ -160,7 +168,9 @@ export class AddPlaceComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private map: L.Map | null = null;
   private marker: L.Marker | null = null;
+  private readonly alertDialog = inject(ZardAlertDialogService);
 
+  editingPlaceId = signal<number | null>(null);
   placeName = signal('');
   placeHint = signal('');
   selectedLat = signal<number | null>(null);
@@ -256,10 +266,14 @@ export class AddPlaceComponent implements OnInit, AfterViewInit, OnDestroy {
       hint: this.placeHint(),
     };
 
-    this.placeService.createPlace(this.keycloakId, request).subscribe({
+    const request$ = this.editingPlaceId()
+      ? this.placeService.editPlace(this.editingPlaceId()!, request)
+      : this.placeService.createPlace(this.keycloakId, request);
+
+    request$.subscribe({
       next: () => {
         this.saving.set(false);
-        this.successMessage.set('Place saved successfully!');
+        this.successMessage.set(this.editingPlaceId() ? 'Place updated successfully!' : 'Place saved successfully!');
         this.resetForm();
         this.loadPlaces();
       },
@@ -280,14 +294,49 @@ export class AddPlaceComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  startEdit(place: PlaceResponse): void {
+    this.editingPlaceId.set(place.id);
+    this.placeName.set(place.name);
+    this.placeHint.set(place.hint || '');
+    this.selectedLat.set(place.latitude);
+    this.selectedLng.set(place.longitude);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    // Update the map marker
+    if (this.map) {
+      const latlng = L.latLng(place.latitude, place.longitude);
+      if (this.marker) {
+        this.marker.setLatLng(latlng);
+      } else {
+        this.marker = L.marker(latlng).addTo(this.map);
+      }
+      this.map.setView(latlng, 14);
+    }
+
+    // Scroll to top of form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   deletePlace(id: number): void {
-    this.placeService.deletePlace(id).subscribe({
-      next: () => this.loadPlaces(),
-      error: err => console.error('Failed to delete place', err),
+    const ref = this.alertDialog.confirm({
+      zTitle: 'Delete Place',
+      zDescription: 'Are you sure you want to remove this place? This action cannot be undone.',
+      zOkText: 'Delete',
+      zCancelText: 'Cancel',
+      zOkDestructive: true,
+      zOnOk: () => {
+        this.placeService.deletePlace(id).subscribe({
+          next: () => this.loadPlaces(),
+          error: err => console.error('Failed to delete place', err),
+        });
+        ref.close();
+      },
     });
   }
 
   resetForm(): void {
+    this.editingPlaceId.set(null);
     this.placeName.set('');
     this.placeHint.set('');
     this.selectedLat.set(null);
