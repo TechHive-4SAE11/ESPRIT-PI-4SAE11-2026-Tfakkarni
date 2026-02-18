@@ -70,7 +70,11 @@
                         </button>
                         <button z-button zType="outline" zSize="sm" (click)="openEditDialog(prescription)"
                             title="Edit Prescription">
-                            <z-icon zType="save" class="w-4 h-4" />
+                            <z-icon zType="edit" class="w-4 h-4" />
+                        </button>
+                        <button z-button zType="destructive" zSize="sm" (click)="deletePrescription(prescription.id!)"
+                            title="Delete Prescription">
+                            <z-icon zType="trash-2" class="w-4 h-4" />
                         </button>
                     </div>
                 </div>

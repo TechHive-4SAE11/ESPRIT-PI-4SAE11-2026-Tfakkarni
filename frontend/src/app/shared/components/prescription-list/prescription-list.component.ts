@@ -1,9 +1,10 @@
-import { Component, Input, computed } from '@angular/core';
+import { Component, Input, computed, OnInit, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardBadgeComponent } from '@/shared/components/badge';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
+import { UserApiService } from '@/core/services/user-api.service';
 
 @Component({
   selector: 'app-prescription-list',
@@ -37,9 +38,17 @@ import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
                     Prescription #{{ prescription.id }}
                   </p>
                 </div>
-                <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
-                  <z-icon zType="calendar" class="w-4 h-4 mr-1" />
-                  {{ prescription.createdAt | date:'medium' }}
+                <div class="flex flex-col gap-1 text-sm text-slate-500 dark:text-slate-400">
+                  <div class="flex items-center">
+                    <z-icon zType="calendar" class="w-4 h-4 mr-1" />
+                    {{ prescription.createdAt | date:'medium' }}
+                  </div>
+                  @if (prescription.doctorId && doctorNames.get(prescription.doctorId)) {
+                    <div class="flex items-center text-primary font-medium">
+                        <z-icon zType="user" class="w-4 h-4 mr-1" />
+                        {{ doctorNames.get(prescription.doctorId) }}
+                    </div>
+                  }
                 </div>
               </div>
               <z-badge zType="secondary">
@@ -110,7 +119,37 @@ import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
     }
   `
 })
-export class PrescriptionListComponent {
+export class PrescriptionListComponent implements OnInit, OnChanges {
   @Input({ required: true }) prescriptions: PrescriptionResponseDTO[] = [];
   @Input() isLoading = false;
+  
+  private userApiService = inject(UserApiService);
+  doctorNames = new Map<string, string>(); // doctorDbId -> Full Name
+
+  ngOnInit() {
+      this.fetchDoctorNames();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+      if (changes['prescriptions']) {
+          this.fetchDoctorNames();
+      }
+  }
+
+  fetchDoctorNames() {
+      if (!this.prescriptions || this.prescriptions.length === 0) return;
+
+      const uniqueIds = new Set(this.prescriptions.map(p => p.doctorId).filter(id => id && !this.doctorNames.has(id)));
+      
+      uniqueIds.forEach(id => {
+          this.userApiService.getUserById(id).subscribe({
+              next: (user) => {
+                  if (user) {
+                    this.doctorNames.set(id, `Dr. ${user.firstName} ${user.lastName}`);
+                  }
+              },
+              error: (err) => console.error(`Failed to load doctor info for ${id}`, err)
+          });
+      });
+  }
 }

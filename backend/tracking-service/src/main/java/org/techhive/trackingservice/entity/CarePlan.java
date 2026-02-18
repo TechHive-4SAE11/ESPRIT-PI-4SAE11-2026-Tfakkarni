@@ -10,25 +10,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "sessions")
+@Table(name = "care_plans")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Session {
+public class CarePlan {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "medical_folder_id", nullable = false)
-    private MedicalFolder medicalFolder;
+    @JoinColumn(name = "session_id", nullable = false)
+    private Session session;
 
-    @Column(name = "session_date", nullable = false)
-    private LocalDateTime sessionDate;
-
-    @Column(name = "notes", columnDefinition = "TEXT")
-    private String notes;
+    @OneToMany(mappedBy = "carePlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CareActivity> careActivities = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -36,19 +33,10 @@ public class Session {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Prescription> prescriptions = new ArrayList<>();
-
-    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CarePlan> carePlans = new ArrayList<>();
-
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (sessionDate == null) {
-            sessionDate = LocalDateTime.now();
-        }
     }
 
     @PreUpdate
