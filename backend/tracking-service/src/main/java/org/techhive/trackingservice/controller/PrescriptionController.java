@@ -12,6 +12,8 @@ import org.techhive.trackingservice.entity.Prescription;
 import org.techhive.trackingservice.mapper.PrescriptionMapper;
 import org.techhive.trackingservice.service.PrescriptionService;
 
+import jakarta.validation.Valid;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,24 +29,11 @@ public class PrescriptionController {
     private final PrescriptionMapper prescriptionMapper;
 
     @PostMapping
-    public ResponseEntity<?> createPrescription(@RequestBody PrescriptionRequestDTO requestDTO) {
+    public ResponseEntity<?> createPrescription(@Valid @RequestBody PrescriptionRequestDTO requestDTO) {
         try {
             log.info("Received prescription creation request: sessionId={}, medicationsCount={}",
                 requestDTO.getSessionId(),
                 requestDTO.getMedications() != null ? requestDTO.getMedications().size() : 0);
-
-            // Validation
-            if (requestDTO.getSessionId() == null) {
-                log.warn("Session ID is missing in prescription request");
-                return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Session ID is required"));
-            }
-
-            if (requestDTO.getMedications() == null || requestDTO.getMedications().isEmpty()) {
-                log.warn("No medications provided in prescription request");
-                return ResponseEntity.badRequest()
-                    .body(Map.of("error", "At least one medication is required"));
-            }
             
             Prescription prescription = new Prescription();
             
@@ -105,7 +94,7 @@ public class PrescriptionController {
     @PutMapping("/{id}")
     public ResponseEntity<PrescriptionResponseDTO> updatePrescription(
             @PathVariable Long id,
-            @RequestBody PrescriptionRequestDTO requestDTO) {
+            @Valid @RequestBody PrescriptionRequestDTO requestDTO) {
         Prescription prescription = new Prescription();
         
         // Convert medication DTOs to entities

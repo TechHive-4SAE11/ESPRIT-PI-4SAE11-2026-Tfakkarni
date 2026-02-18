@@ -62,10 +62,10 @@ export class PrescriptionManagementComponent implements OnInit {
 
   // Zod Schemas
   private readonly medicationFieldSchemas = {
-    medicationName: z.string().min(1, { message: 'Medication name is required' }),
-    dosage: z.string().min(1, { message: 'Dosage is required' }),
-    frequency: z.string().min(1, { message: 'Frequency is required' }),
-    duration: z.string().min(1, { message: 'Duration is required' }),
+    medicationName: z.string().min(1, { message: 'Please enter the medication name' }),
+    dosage: z.string().min(1, { message: 'Please specify the dosage (e.g., 500mg, 2 tablets)' }),
+    frequency: z.string().min(1, { message: 'Please specify how often to take (e.g., 2x/day, every 8 hours)' }),
+    duration: z.string().min(1, { message: 'Please specify treatment duration (e.g., 7 days, 2 weeks)' }),
     instructions: z.string().optional()
   };
 
@@ -73,7 +73,7 @@ export class PrescriptionManagementComponent implements OnInit {
     sessionId: z.union([
       z.number(),
       z.string().min(1)
-    ]).refine(val => val !== null && val !== '', { message: 'Session is required' }),
+    ]).refine(val => val !== null && val !== '', { message: 'Please select a consultation session' }),
     medications: z.array(z.any()).min(1, { message: 'At least one medication is required' })
   });
 
@@ -110,6 +110,31 @@ export class PrescriptionManagementComponent implements OnInit {
   getMedicationControl(index: number, controlName: string): AbstractControl | null {
     const medicationGroup = this.medications.at(index) as FormGroup;
     return medicationGroup?.get(controlName);
+  }
+
+  // Get the first validation error message for a form control
+  getErrorMessage(control: AbstractControl | null): string {
+    if (!control || !control.errors) {
+      return '';
+    }
+    const errors = control.errors;
+    // Zod validator stores the message in the 'zodError' key
+    if (errors['zodError']) {
+      return errors['zodError'];
+    }
+    // Fallback to standard Angular validators
+    if (errors['required']) {
+      return 'This field is required';
+    }
+    if (errors['minlength']) {
+      return `Minimum length is ${errors['minlength'].requiredLength}`;
+    }
+    return 'Invalid value';
+  }
+
+  // Check if control should show error (invalid and touched)
+  shouldShowError(control: AbstractControl | null): boolean {
+    return !!(control && control.invalid && control.touched);
   }
 
   // ==================== Data Loading ====================
@@ -301,10 +326,15 @@ export class PrescriptionManagementComponent implements OnInit {
   }
 
   onSubmit(): void {
+    // Mark all fields as touched to show validation errors
+    this.prescriptionForm.markAllAsTouched();
+    this.medications.controls.forEach(control => {
+      control.markAllAsTouched();
+    });
+
     if (this.prescriptionForm.invalid) {
       console.error('[PrescriptionManagement] Form is invalid');
-      this.prescriptionForm.markAllAsTouched();
-      this.errorMessage.set('Please fill in all required fields');
+      this.errorMessage.set('Please correct the errors below before submitting');
       return;
     }
 

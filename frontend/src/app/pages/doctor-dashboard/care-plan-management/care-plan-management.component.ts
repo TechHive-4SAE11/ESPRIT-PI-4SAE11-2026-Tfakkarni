@@ -77,18 +77,18 @@ export class CarePlanManagementComponent implements OnInit {
 
   // Zod Schemas
   private readonly activityFieldSchemas = {
-    activityName: z.string().min(1, { message: 'Activity name is required' }),
-    description: z.string().min(1, { message: 'Description is required' }),
-    frequency: z.string().min(1, { message: 'Frequency is required' }),
-    duration: z.string().min(1, { message: 'Duration is required' })
+    activityName: z.string().min(1, { message: 'Please enter the activity name' }),
+    description: z.string().min(1, { message: 'Please provide a description of the activity' }),
+    frequency: z.string().min(1, { message: 'Please specify how often (e.g., Daily, 3x/week)' }),
+    duration: z.string().min(1, { message: 'Please specify duration (e.g., 30 mins, 1 hour)' })
   };
 
   private readonly carePlanSchema = z.object({
     sessionId: z.union([
       z.number(),
       z.string().min(1)
-    ]).refine(val => val !== null && val !== '', { message: 'Session is required' }),
-    activities: z.array(z.any()).min(1, { message: 'At least one activity is required' })
+    ]).refine(val => val !== null && val !== '', { message: 'Please select a consultation session' }),
+    activities: z.array(z.any()).min(1, { message: 'At least one care activity is required' })
   });
 
   ngOnInit(): void {
@@ -99,6 +99,37 @@ export class CarePlanManagementComponent implements OnInit {
 
   get activities(): FormArray {
     return this.carePlanForm.get('activities') as FormArray;
+  }
+
+  // Helper method to get activity control
+  getActivityControl(index: number, controlName: string): AbstractControl | null {
+    const activityGroup = this.activities.at(index) as FormGroup;
+    return activityGroup?.get(controlName);
+  }
+
+  // Get the first validation error message for a form control
+  getErrorMessage(control: AbstractControl | null): string {
+    if (!control || !control.errors) {
+      return '';
+    }
+    const errors = control.errors;
+    // Zod validator stores the message in the 'zodError' key
+    if (errors['zodError']) {
+      return errors['zodError'];
+    }
+    // Fallback to standard Angular validators
+    if (errors['required']) {
+      return 'This field is required';
+    }
+    if (errors['minlength']) {
+      return `Minimum length is ${errors['minlength'].requiredLength}`;
+    }
+    return 'Invalid value';
+  }
+
+  // Check if control should show error (invalid and touched)
+  shouldShowError(control: AbstractControl | null): boolean {
+    return !!(control && control.invalid && control.touched);
   }
 
   // ==================== Form Creation ====================
@@ -283,8 +314,14 @@ export class CarePlanManagementComponent implements OnInit {
   }
 
   saveCarePlan(): void {
+    // Mark all fields as touched to show validation errors
+    this.carePlanForm.markAllAsTouched();
+    this.activities.controls.forEach(control => {
+      control.markAllAsTouched();
+    });
+
     if (this.carePlanForm.invalid) {
-      this.carePlanForm.markAllAsTouched();
+      this.errorMessage.set('Please correct the errors below before submitting');
       return;
     }
 
