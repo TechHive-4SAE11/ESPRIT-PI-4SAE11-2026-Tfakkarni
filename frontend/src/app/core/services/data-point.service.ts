@@ -47,6 +47,20 @@ export interface DataPointSummary {
   createdAt: string;
   imagePreview?: string;
   posterPath?: string;
+  correctAnswer?: string;
+  latitude?: number;
+  longitude?: number;
+  hint?: string;
+}
+
+export interface UpdateDataPointRequest {
+  name?: string;
+  hint?: string;
+  latitude?: number;
+  longitude?: number;
+  correctAnswer?: string;
+  questionText?: string;
+  tagIds?: number[];
 }
 
 export interface DataPointCounts {
@@ -74,6 +88,10 @@ export class DataPointService {
     return this.http.delete<void>(`${this.baseUrl}/photos/${id}`);
   }
 
+  updatePhoto(id: number, request: UpdateDataPointRequest): Observable<DataPointSummary> {
+    return this.http.put<DataPointSummary>(`${this.baseUrl}/photos/${id}`, request);
+  }
+
   // ── Places ──
 
   createPlace(keycloakId: string, request: CreatePlaceRequest): Observable<DataPointSummary> {
@@ -82,6 +100,10 @@ export class DataPointService {
 
   deletePlace(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/places/${id}`);
+  }
+
+  updatePlace(id: number, request: UpdateDataPointRequest): Observable<DataPointSummary> {
+    return this.http.put<DataPointSummary>(`${this.baseUrl}/places/${id}`, request);
   }
 
   // ── Movies ──
@@ -94,6 +116,10 @@ export class DataPointService {
     return this.http.delete<void>(`${this.baseUrl}/movies/${id}`);
   }
 
+  updateMovie(id: number, request: UpdateDataPointRequest): Observable<DataPointSummary> {
+    return this.http.put<DataPointSummary>(`${this.baseUrl}/movies/${id}`, request);
+  }
+
   // ── Questions ──
 
   createQuestion(keycloakId: string, request: CreateQuestionRequest): Observable<DataPointSummary> {
@@ -102,6 +128,10 @@ export class DataPointService {
 
   deleteQuestion(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/questions/${id}`);
+  }
+
+  updateQuestion(id: number, request: UpdateDataPointRequest): Observable<DataPointSummary> {
+    return this.http.put<DataPointSummary>(`${this.baseUrl}/questions/${id}`, request);
   }
 
   // ── Listing ──

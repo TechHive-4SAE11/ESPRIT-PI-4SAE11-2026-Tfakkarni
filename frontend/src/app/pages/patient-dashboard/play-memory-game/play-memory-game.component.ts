@@ -1,10 +1,11 @@
-import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, signal, computed, inject, DestroyRef, ViewChild, ElementRef, PLATFORM_ID, NgZone } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { KeycloakService } from 'keycloak-angular';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, of, tap } from 'rxjs';
+import { environment } from '@/environments/environment';
 
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
@@ -20,12 +21,28 @@ import {
   type AnswerEntry,
 } from '@/core/services/custom-game.service';
 
+/** Dynamically load the Google Maps JS API (once) */
+function loadGoogleMapsApi(apiKey: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (typeof google !== 'undefined' && google.maps) { resolve(); return; }
+    const existing = document.getElementById('google-maps-script');
+    if (existing) { existing.addEventListener('load', () => resolve()); return; }
+    const script = document.createElement('script');
+    script.id = 'google-maps-script';
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=streetView`;
+    script.async = true; script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load Google Maps API'));
+    document.head.appendChild(script);
+  });
+}
+
 type Phase = 'loading' | 'playing' | 'revealed' | 'results';
 
 interface RevealedState {
   playerAnswer: string;
   correctAnswer: string;
-  isCorrect: boolean;
+  isCorrect: boolean | null;   // null = not yet assessed
   skipped: boolean;
 }
 
@@ -88,9 +105,31 @@ interface RevealedState {
 
                 <!-- ═══ PLACE ═══ -->
                 @case ('PLACE') {
-                  <z-card class="p-6 mb-8">
-                    <div class="text-center">
-                      <span class="text-5xl mb-4 block">📍</span>
+                  <z-card class="p-0 overflow-hidden mb-8">
+                    <!-- Street View -->
+                    <div class="relative">
+                      <div #streetViewContainer
+                        class="w-full h-[350px] bg-muted"></div>
+                      @if (panoramaLoading()) {
+                        <div class="absolute inset-0 flex flex-col items-center justify-center bg-muted">
+                          <z-icon zType="loader-2" class="h-10 w-10 animate-spin text-primary mb-3" />
+                          <p class="text-muted-foreground">Loading Street View...</p>
+                        </div>
+                      }
+                      @if (streetViewUnavailable()) {
+                        <div class="absolute inset-0 flex flex-col items-center justify-center bg-muted">
+                          <span class="text-5xl mb-3">🗺️</span>
+                          <p class="font-medium text-muted-foreground">Street View not available here</p>
+                          <p class="text-sm text-muted-foreground mt-1">Try to guess from the hint!</p>
+                        </div>
+                      }
+                    </div>
+                    @if (!streetViewUnavailable() && !panoramaLoading()) {
+                      <div class="bg-muted/50 border-b border-border px-4 py-2 text-center text-sm text-muted-foreground">
+                        👆 Drag to look around the Street View
+                      </div>
+                    }
+                    <div class="p-6 text-center">
                       <h2 class="text-2xl font-bold mb-2">Can you name this place?</h2>
                       @if (item.hint) {
                         <p class="text-muted-foreground italic">"{{ item.hint }}"</p>
@@ -172,11 +211,14 @@ interface RevealedState {
                     </z-card>
                   }
                   @case ('PLACE') {
-                    <z-card class="p-4 mb-6 text-center">
-                      <span class="text-4xl block mb-2">📍</span>
-                      @if (item.hint) {
-                        <p class="text-muted-foreground italic">"{{ item.hint }}"</p>
-                      }
+                    <z-card class="p-0 overflow-hidden mb-6">
+                      <div #streetViewRevealContainer
+                        class="w-full h-[250px] bg-muted"></div>
+                      <div class="p-4 text-center">
+                        @if (item.hint) {
+                          <p class="text-muted-foreground italic">"{{ item.hint }}"</p>
+                        }
+                      </div>
                     </z-card>
                   }
                   @case ('QUESTION') {
@@ -192,26 +234,72 @@ interface RevealedState {
                   @if (rev.skipped) {
                     <span class="text-5xl mb-4 block">⏭️</span>
                     <h2 class="text-2xl font-bold text-muted-foreground mb-2">Skipped</h2>
-                    <p class="text-muted-foreground mb-6">You chose to skip this one</p>
+                    <p class="text-muted-foreground mb-4">You chose to skip this one</p>
+
+                    <div class="bg-muted rounded-xl p-6 mb-6">
+                      <p class="text-sm text-muted-foreground mb-1">Correct answer</p>
+                      <p class="text-2xl font-bold text-primary">{{ rev.correctAnswer || '—' }}</p>
+                    </div>
+
+                    <button z-button class="min-w-[200px]" (click)="nextAfterReveal()">
+                      {{ isLastItem() ? 'See Results' : 'Next Question' }}
+                      <z-icon zType="chevron-right" class="ml-2 h-4 w-4" />
+                    </button>
+                  } @else if (rev.isCorrect === null) {
+                    <!-- Awaiting self-assessment -->
+                    <span class="text-5xl mb-4 block">🤔</span>
+                    <h2 class="text-2xl font-bold mb-4">Compare your answer</h2>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                      <div class="bg-muted rounded-xl p-5">
+                        <p class="text-sm text-muted-foreground mb-1">Your answer</p>
+                        <p class="text-xl font-bold">{{ rev.playerAnswer }}</p>
+                      </div>
+                      <div class="bg-primary/10 rounded-xl p-5 border border-primary/20">
+                        <p class="text-sm text-muted-foreground mb-1">Expected answer</p>
+                        <p class="text-xl font-bold text-primary">{{ rev.correctAnswer || '—' }}</p>
+                      </div>
+                    </div>
+
+                    <p class="text-muted-foreground mb-4">Were you correct? (different language or spelling still counts!)</p>
+
+                    <div class="flex gap-4 justify-center">
+                      <button z-button zType="outline" class="min-w-[140px] border-red-300 text-red-600 hover:bg-red-50" (click)="selfAssess(false)">
+                        ❌ I was wrong
+                      </button>
+                      <button z-button class="min-w-[140px] bg-green-600 hover:bg-green-700" (click)="selfAssess(true)">
+                        ✅ I was correct
+                      </button>
+                    </div>
                   } @else if (rev.isCorrect) {
                     <span class="text-5xl mb-4 block">✅</span>
                     <h2 class="text-2xl font-bold text-green-600 mb-2">Correct!</h2>
                     <p class="text-muted-foreground mb-6">Your answer: <strong class="text-green-600">{{ rev.playerAnswer }}</strong></p>
+
+                    <div class="bg-muted rounded-xl p-6 mb-6">
+                      <p class="text-sm text-muted-foreground mb-1">Expected answer</p>
+                      <p class="text-2xl font-bold text-primary">{{ rev.correctAnswer || '—' }}</p>
+                    </div>
+
+                    <button z-button class="min-w-[200px]" (click)="nextAfterReveal()">
+                      {{ isLastItem() ? 'See Results' : 'Next Question' }}
+                      <z-icon zType="chevron-right" class="ml-2 h-4 w-4" />
+                    </button>
                   } @else {
                     <span class="text-5xl mb-4 block">❌</span>
                     <h2 class="text-2xl font-bold text-red-500 mb-2">Incorrect</h2>
                     <p class="text-muted-foreground mb-6">Your answer: <strong class="text-red-500">{{ rev.playerAnswer }}</strong></p>
+
+                    <div class="bg-muted rounded-xl p-6 mb-6">
+                      <p class="text-sm text-muted-foreground mb-1">Correct answer</p>
+                      <p class="text-2xl font-bold text-primary">{{ rev.correctAnswer || '—' }}</p>
+                    </div>
+
+                    <button z-button class="min-w-[200px]" (click)="nextAfterReveal()">
+                      {{ isLastItem() ? 'See Results' : 'Next Question' }}
+                      <z-icon zType="chevron-right" class="ml-2 h-4 w-4" />
+                    </button>
                   }
-
-                  <div class="bg-muted rounded-xl p-6 mb-6">
-                    <p class="text-sm text-muted-foreground mb-1">Correct answer</p>
-                    <p class="text-2xl font-bold text-primary">{{ rev.correctAnswer }}</p>
-                  </div>
-
-                  <button z-button class="min-w-[200px]" (click)="nextAfterReveal()">
-                    {{ isLastItem() ? 'See Results' : 'Next Question' }}
-                    <z-icon zType="chevron-right" class="ml-2 h-4 w-4" />
-                  </button>
                 </z-card>
               }
             }
@@ -304,12 +392,18 @@ interface RevealedState {
     </div>
   `,
 })
-export class PlayMemoryGameComponent implements OnInit {
+export class PlayMemoryGameComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly keycloakService = inject(KeycloakService);
   private readonly customGameService = inject(CustomGameService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly ngZone = inject(NgZone);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
+
+  @ViewChild('streetViewContainer') streetViewContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('streetViewRevealContainer') streetViewRevealContainer!: ElementRef<HTMLDivElement>;
 
   phase = signal<Phase>('loading');
   playData = signal<UnifiedPlayData | null>(null);
@@ -318,6 +412,14 @@ export class PlayMemoryGameComponent implements OnInit {
   answers = signal<AnswerEntry[]>([]);
   results = signal<UnifiedPlayResult | null>(null);
   revealedState = signal<RevealedState | null>(null);
+
+  // Street View
+  panoramaLoading = signal(false);
+  streetViewUnavailable = signal(false);
+  private panorama: google.maps.StreetViewPanorama | null = null;
+  private revealPanorama: google.maps.StreetViewPanorama | null = null;
+  private mapsApiLoaded = false;
+  private readonly apiKey = environment.googleMapsApiKey;
 
   // Timer
   elapsedSeconds = signal(0);
@@ -350,6 +452,11 @@ export class PlayMemoryGameComponent implements OnInit {
     this.loadGame();
   }
 
+  ngOnDestroy() {
+    this.destroyPanorama();
+    this.stopTimer();
+  }
+
   private loadGame() {
     this.phase.set('loading');
 
@@ -368,6 +475,8 @@ export class PlayMemoryGameComponent implements OnInit {
         this.revealedState.set(null);
         this.phase.set('playing');
         this.startTimer();
+        // Init Street View if first item is PLACE
+        this.initStreetViewForCurrentItem();
       }),
       catchError(() => {
         this.goBack();
@@ -395,18 +504,18 @@ export class PlayMemoryGameComponent implements OnInit {
 
     const playerAnswer = this.answerInput.trim();
     const correctAnswer = item.correctAnswer || '';
-    const isCorrect = playerAnswer.toLowerCase() === correctAnswer.toLowerCase();
 
-    // Record answer
-    this.answers.update(a => [...a, {
-      type: item.type,
-      itemId: item.itemId,
-      selectedAnswer: playerAnswer,
-    }]);
+    // Destroy playing panorama before switching to revealed
+    this.destroyPanorama();
 
-    // Show feedback
-    this.revealedState.set({ playerAnswer, correctAnswer, isCorrect, skipped: false });
+    // Show both answers — do NOT auto-judge (isCorrect = null means "awaiting self-assessment")
+    this.revealedState.set({ playerAnswer, correctAnswer, isCorrect: null, skipped: false });
     this.phase.set('revealed');
+
+    // Init reveal panorama for PLACE
+    if (item.type === 'PLACE' && item.latitude && item.longitude) {
+      this.initStreetViewForReveal(item.latitude, item.longitude);
+    }
   }
 
   // ── Skip / I don't know ──
@@ -417,16 +526,44 @@ export class PlayMemoryGameComponent implements OnInit {
 
     const correctAnswer = item.correctAnswer || '';
 
-    // Record as skipped (empty answer)
+    // Record as skipped
     this.answers.update(a => [...a, {
       type: item.type,
       itemId: item.itemId,
       selectedAnswer: '',
+      selfAssessedCorrect: false,
     }]);
 
-    // Show feedback
+    // Destroy playing panorama before switching to revealed
+    this.destroyPanorama();
+
+    // Show feedback (skipped — no self-assessment needed)
     this.revealedState.set({ playerAnswer: '', correctAnswer, isCorrect: false, skipped: true });
     this.phase.set('revealed');
+
+    // Init reveal panorama for PLACE
+    if (item.type === 'PLACE' && item.latitude && item.longitude) {
+      this.initStreetViewForReveal(item.latitude, item.longitude);
+    }
+  }
+
+  // ── Self-assessment: patient decides if they were correct ──
+
+  selfAssess(correct: boolean) {
+    const item = this.currentItem();
+    const rev = this.revealedState();
+    if (!item || !rev) return;
+
+    // Now record the answer with self-assessment
+    this.answers.update(a => [...a, {
+      type: item.type,
+      itemId: item.itemId,
+      selectedAnswer: rev.playerAnswer,
+      selfAssessedCorrect: correct,
+    }]);
+
+    // Update revealed state with the decision
+    this.revealedState.set({ ...rev, isCorrect: correct });
   }
 
   // ── Move to next after seeing feedback ──
@@ -434,12 +571,15 @@ export class PlayMemoryGameComponent implements OnInit {
   nextAfterReveal() {
     this.answerInput = '';
     this.revealedState.set(null);
+    this.destroyPanorama();
 
     if (this.isLastItem()) {
       this.finishGame();
     } else {
       this.currentIndex.update(i => i + 1);
       this.phase.set('playing');
+      // Init Street View if next item is PLACE
+      this.initStreetViewForCurrentItem();
     }
   }
 
@@ -462,16 +602,15 @@ export class PlayMemoryGameComponent implements OnInit {
         this.phase.set('results');
       }),
       catchError(() => {
-        // Fallback: compute results locally
+        // Fallback: compute results locally using self-assessment
         const localResults = this.answers().map((ans, i) => {
           const item = data.items[i];
-          const correct = !!ans.selectedAnswer &&
-            ans.selectedAnswer.toLowerCase() === (item?.correctAnswer || '').toLowerCase();
+          const correct = ans.selfAssessedCorrect === true;
           return {
             type: ans.type,
             itemId: ans.itemId,
             correct,
-            correctAnswer: item?.correctAnswer || '?',
+            correctAnswer: item?.correctAnswer || '—',
             selectedAnswer: ans.selectedAnswer || "I don't know",
             label: this.getItemLabel(item),
           };
@@ -507,6 +646,78 @@ export class PlayMemoryGameComponent implements OnInit {
   getTypeEmoji(type: string): string {
     const map: Record<string, string> = { PHOTO: '📷', PLACE: '📍', MOVIE: '🎬', QUESTION: '🧠' };
     return map[type] || '📄';
+  }
+
+  // ── Street View ──
+
+  private initStreetViewForCurrentItem() {
+    const item = this.currentItem();
+    if (item?.type === 'PLACE' && item.latitude && item.longitude) {
+      this.panoramaLoading.set(true);
+      this.streetViewUnavailable.set(false);
+      setTimeout(() => this.initPanorama(item.latitude!, item.longitude!, 'playing'), 0);
+    }
+  }
+
+  private initStreetViewForReveal(lat: number, lng: number) {
+    setTimeout(() => this.initPanorama(lat, lng, 'reveal'), 0);
+  }
+
+  private async initPanorama(lat: number, lng: number, target: 'playing' | 'reveal'): Promise<void> {
+    if (!this.isBrowser) return;
+
+    try {
+      if (!this.mapsApiLoaded) {
+        await loadGoogleMapsApi(this.apiKey);
+        this.mapsApiLoaded = true;
+      }
+
+      const container = target === 'playing'
+        ? this.streetViewContainer?.nativeElement
+        : this.streetViewRevealContainer?.nativeElement;
+      if (!container) { this.panoramaLoading.set(false); return; }
+
+      const location = { lat, lng };
+      const sv = new google.maps.StreetViewService();
+
+      sv.getPanorama({ location, radius: 500 }, (data: google.maps.StreetViewPanoramaData | null, status: google.maps.StreetViewStatus) => {
+        this.ngZone.run(() => {
+          if (status === google.maps.StreetViewStatus.OK && data?.location?.latLng) {
+            this.streetViewUnavailable.set(false);
+            this.panoramaLoading.set(false);
+            const pano = new google.maps.StreetViewPanorama(container, {
+              position: data.location.latLng,
+              pov: { heading: 0, pitch: 0 },
+              zoom: 1,
+              addressControl: false,
+              showRoadLabels: false,
+              linksControl: false,
+              fullscreenControl: false,
+              enableCloseButton: false,
+              panControl: true,
+              zoomControl: true,
+              motionTracking: false,
+              motionTrackingControl: false,
+            });
+            if (target === 'playing') { this.panorama = pano; }
+            else { this.revealPanorama = pano; }
+          } else {
+            this.panoramaLoading.set(false);
+            this.streetViewUnavailable.set(true);
+          }
+        });
+      });
+    } catch {
+      this.panoramaLoading.set(false);
+      this.streetViewUnavailable.set(true);
+    }
+  }
+
+  private destroyPanorama() {
+    if (this.panorama) { this.panorama = null; }
+    if (this.revealPanorama) { this.revealPanorama = null; }
+    this.panoramaLoading.set(false);
+    this.streetViewUnavailable.set(false);
   }
 
   // ── Timer ──

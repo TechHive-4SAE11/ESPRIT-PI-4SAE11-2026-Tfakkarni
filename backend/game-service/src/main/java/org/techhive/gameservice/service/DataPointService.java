@@ -112,6 +112,64 @@ public class DataPointService {
     questionRepo.deleteById(id);
   }
 
+  // ===================== UPDATE =====================
+
+  @Transactional
+  public DataPointSummary updatePhoto(Long id, UpdateDataPointRequest req) {
+    PhotoMemory photo = photoRepo.findById(id)
+        .orElseThrow(() -> new RuntimeException("Photo not found: " + id));
+    if (req.getName() != null)
+      photo.setName(req.getName());
+    if (req.getTagIds() != null)
+      photo.setTags(new HashSet<>(tagRepo.findAllById(req.getTagIds())));
+    photo = photoRepo.save(photo);
+    return toSummary(photo);
+  }
+
+  @Transactional
+  public DataPointSummary updatePlace(Long id, UpdateDataPointRequest req) {
+    PlaceMemory place = placeRepo.findById(id)
+        .orElseThrow(() -> new RuntimeException("Place not found: " + id));
+    if (req.getName() != null)
+      place.setName(req.getName());
+    if (req.getHint() != null)
+      place.setHint(req.getHint());
+    if (req.getLatitude() != null)
+      place.setLatitude(req.getLatitude());
+    if (req.getLongitude() != null)
+      place.setLongitude(req.getLongitude());
+    if (req.getTagIds() != null)
+      place.setTags(new HashSet<>(tagRepo.findAllById(req.getTagIds())));
+    place = placeRepo.save(place);
+    return toSummary(place);
+  }
+
+  @Transactional
+  public DataPointSummary updateMovie(Long id, UpdateDataPointRequest req) {
+    MovieMemory movie = movieRepo.findById(id)
+        .orElseThrow(() -> new RuntimeException("Movie not found: " + id));
+    if (req.getCorrectAnswer() != null)
+      movie.setCorrectAnswer(req.getCorrectAnswer());
+    if (req.getTagIds() != null)
+      movie.setTags(new HashSet<>(tagRepo.findAllById(req.getTagIds())));
+    movie = movieRepo.save(movie);
+    return toSummary(movie);
+  }
+
+  @Transactional
+  public DataPointSummary updateQuestion(Long id, UpdateDataPointRequest req) {
+    QuestionMemory question = questionRepo.findById(id)
+        .orElseThrow(() -> new RuntimeException("Question not found: " + id));
+    if (req.getQuestionText() != null)
+      question.setQuestionText(req.getQuestionText());
+    if (req.getCorrectAnswer() != null)
+      question.setCorrectAnswer(req.getCorrectAnswer());
+    if (req.getTagIds() != null)
+      question.setTags(new HashSet<>(tagRepo.findAllById(req.getTagIds())));
+    question = questionRepo.save(question);
+    return toSummary(question);
+  }
+
   // ===================== LIST ALL =====================
 
   public List<DataPointSummary> getAllDataPoints(String keycloakId, List<DataPointType> types, List<Long> tagIds) {
@@ -176,6 +234,7 @@ public class DataPointService {
         .type(DataPointType.PHOTO)
         .label(p.getName())
         .subtitle("Photo")
+        .correctAnswer(p.getName())
         .tags(tagsToResponse(p.getTags()))
         .createdAt(p.getCreatedAt())
         .imagePreview(Base64.getEncoder().encodeToString(p.getImageData()))
@@ -188,6 +247,10 @@ public class DataPointService {
         .type(DataPointType.PLACE)
         .label(p.getName())
         .subtitle(p.getHint() != null ? p.getHint() : String.format("%.4f, %.4f", p.getLatitude(), p.getLongitude()))
+        .correctAnswer(p.getName())
+        .latitude(p.getLatitude())
+        .longitude(p.getLongitude())
+        .hint(p.getHint())
         .tags(tagsToResponse(p.getTags()))
         .createdAt(p.getCreatedAt())
         .build();
@@ -198,7 +261,8 @@ public class DataPointService {
         .id(m.getId())
         .type(DataPointType.MOVIE)
         .label(m.getOriginalTitle())
-        .subtitle("Character: " + m.getCorrectAnswer())
+        .subtitle("Character: " + (m.getCorrectAnswer() != null ? m.getCorrectAnswer() : ""))
+        .correctAnswer(m.getCorrectAnswer())
         .tags(tagsToResponse(m.getTags()))
         .createdAt(m.getCreatedAt())
         .posterPath(m.getPosterPath())
@@ -210,7 +274,8 @@ public class DataPointService {
         .id(q.getId())
         .type(DataPointType.QUESTION)
         .label(q.getQuestionText())
-        .subtitle("Answer: " + q.getCorrectAnswer())
+        .subtitle("Answer: " + (q.getCorrectAnswer() != null ? q.getCorrectAnswer() : ""))
+        .correctAnswer(q.getCorrectAnswer())
         .tags(tagsToResponse(q.getTags()))
         .createdAt(q.getCreatedAt())
         .build();

@@ -331,16 +331,14 @@ public class CustomGameService {
       }
     }
 
-    // Server-validated: compare selectedAnswer against correct (case-insensitive)
-    boolean correct = answer.getSelectedAnswer() != null
-        && !answer.getSelectedAnswer().isBlank()
-        && answer.getSelectedAnswer().trim().equalsIgnoreCase(correctAnswer.trim());
+    // Use patient self-assessment (supports multi-language answers)
+    boolean correct = Boolean.TRUE.equals(answer.getSelfAssessedCorrect());
 
     return UnifiedPlayResult.ItemResult.builder()
         .type(answer.getType())
         .itemId(answer.getItemId())
         .correct(correct)
-        .correctAnswer(correctAnswer)
+        .correctAnswer(correctAnswer != null ? correctAnswer : "")
         .selectedAnswer(answer.getSelectedAnswer() != null ? answer.getSelectedAnswer() : "I don't know")
         .label(label)
         .build();

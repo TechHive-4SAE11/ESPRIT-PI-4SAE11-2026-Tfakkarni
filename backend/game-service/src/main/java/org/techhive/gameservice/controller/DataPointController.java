@@ -34,6 +34,13 @@ public class DataPointController {
     return ResponseEntity.noContent().build();
   }
 
+  @PutMapping("/photos/{id}")
+  public ResponseEntity<DataPointSummary> updatePhoto(
+      @PathVariable Long id,
+      @RequestBody UpdateDataPointRequest request) {
+    return ResponseEntity.ok(dataPointService.updatePhoto(id, request));
+  }
+
   // ===================== PLACE =====================
 
   @PostMapping("/places/{keycloakId}")
@@ -47,6 +54,13 @@ public class DataPointController {
   public ResponseEntity<Void> deletePlace(@PathVariable Long id) {
     dataPointService.deletePlace(id);
     return ResponseEntity.noContent().build();
+  }
+
+  @PutMapping("/places/{id}")
+  public ResponseEntity<DataPointSummary> updatePlace(
+      @PathVariable Long id,
+      @RequestBody UpdateDataPointRequest request) {
+    return ResponseEntity.ok(dataPointService.updatePlace(id, request));
   }
 
   // ===================== MOVIE =====================
@@ -64,6 +78,13 @@ public class DataPointController {
     return ResponseEntity.noContent().build();
   }
 
+  @PutMapping("/movies/{id}")
+  public ResponseEntity<DataPointSummary> updateMovie(
+      @PathVariable Long id,
+      @RequestBody UpdateDataPointRequest request) {
+    return ResponseEntity.ok(dataPointService.updateMovie(id, request));
+  }
+
   // ===================== QUESTION =====================
 
   @PostMapping("/questions/{keycloakId}")
@@ -77,6 +98,13 @@ public class DataPointController {
   public ResponseEntity<Void> deleteQuestion(@PathVariable Long id) {
     dataPointService.deleteQuestion(id);
     return ResponseEntity.noContent().build();
+  }
+
+  @PutMapping("/questions/{id}")
+  public ResponseEntity<DataPointSummary> updateQuestion(
+      @PathVariable Long id,
+      @RequestBody UpdateDataPointRequest request) {
+    return ResponseEntity.ok(dataPointService.updateQuestion(id, request));
   }
 
   // ===================== LIST ALL =====================

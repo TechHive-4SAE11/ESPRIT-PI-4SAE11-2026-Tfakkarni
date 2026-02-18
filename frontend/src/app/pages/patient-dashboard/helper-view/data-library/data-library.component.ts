@@ -12,12 +12,12 @@ import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardBadgeComponent } from '@/shared/components/badge';
 
-import { DataPointService, type DataPointSummary, type DataPointType } from '@/core/services/data-point.service';
+import { DataPointService, type DataPointSummary, type DataPointType, type UpdateDataPointRequest } from '@/core/services/data-point.service';
 import { MemoryTagService, type TagResponse } from '@/core/services/memory-tag.service';
 import { MovieGameService, type TmdbMovie } from '@/core/services/movie-game.service';
 import * as L from 'leaflet';
 
-type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question';
+type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question' | 'edit';
 
 @Component({
   selector: 'app-data-library',
@@ -115,6 +115,10 @@ type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question';
                       [class]="getTypeBadgeClass(item.type)">
                       {{ getTypeEmoji(item.type) }} {{ item.type }}
                     </span>
+                    <button (click)="openEdit(item)"
+                      class="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all">
+                      <z-icon zType="edit" class="h-4 w-4" />
+                    </button>
                     <button (click)="deleteItem(item)"
                       class="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all">
                       <z-icon zType="trash-2" class="h-4 w-4" />
@@ -132,6 +136,9 @@ type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question';
                   <!-- Label -->
                   <p class="font-semibold text-sm truncate">{{ item.label }}</p>
                   <p class="text-xs text-muted-foreground truncate">{{ item.subtitle }}</p>
+                  @if (item.correctAnswer) {
+                    <p class="text-xs text-primary mt-1 truncate">🎯 Answer: {{ item.correctAnswer }}</p>
+                  }
                   <!-- Tags -->
                   @if (item.tags && item.tags.length > 0) {
                     <div class="flex flex-wrap gap-1 mt-2">
@@ -375,6 +382,96 @@ type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question';
             </div>
           </z-card>
         }
+
+        <!-- ════════ EDIT DATA POINT ════════ -->
+        @case ('edit') {
+          @if (editingItem(); as ei) {
+            <z-card class="p-6">
+              <div class="flex items-center gap-2 mb-4">
+                <button (click)="destroyEditMap(); view.set('list'); editingItem.set(null)" class="text-muted-foreground hover:text-foreground">
+                  <z-icon zType="arrow-left" class="h-5 w-5" />
+                </button>
+                <h3 class="text-lg font-semibold">{{ getTypeEmoji(ei.type) }} Edit {{ ei.type | titlecase }}</h3>
+              </div>
+
+              <!-- Preview (read-only) -->
+              @if (ei.type === 'PHOTO' && ei.imagePreview) {
+                <img [src]="'data:image/jpeg;base64,' + ei.imagePreview"
+                  class="w-full h-40 object-contain rounded-md mb-4 bg-muted" />
+              }
+              @if (ei.type === 'MOVIE' && ei.posterPath) {
+                <img [src]="'https://image.tmdb.org/t/p/w200' + ei.posterPath"
+                  class="w-full h-40 object-contain rounded-md mb-4 bg-muted" />
+              }
+
+              <div class="space-y-4">
+                <!-- Name (PHOTO & PLACE) -->
+                @if (ei.type === 'PHOTO' || ei.type === 'PLACE') {
+                  <div>
+                    <label class="text-sm font-medium block mb-1">Name / Label (this is the game answer)</label>
+                    <input type="text" [(ngModel)]="editName"
+                      class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                  </div>
+                }
+
+                <!-- Hint (PLACE only) -->
+                @if (ei.type === 'PLACE') {
+                  <div>
+                    <label class="text-sm font-medium block mb-1">Hint</label>
+                    <input type="text" [(ngModel)]="editHint" placeholder="A clue about this place..."
+                      class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                  </div>
+
+                  <!-- Map for editing pin location -->
+                  <div>
+                    <label class="text-sm font-medium block mb-1">📍 Pin Location (click to move)</label>
+                    <div #editMapContainer class="w-full h-64 rounded-md border border-border z-0"></div>
+                    @if (editLat != null && editLng != null) {
+                      <p class="text-xs text-muted-foreground mt-1">📌 {{ editLat | number:'1.4-4' }}, {{ editLng | number:'1.4-4' }}</p>
+                    }
+                  </div>
+                }
+
+                <!-- Movie title (read-only) -->
+                @if (ei.type === 'MOVIE') {
+                  <div>
+                    <label class="text-sm font-medium block mb-1">Movie</label>
+                    <p class="text-sm font-semibold px-3 py-2 bg-muted rounded-md">{{ ei.label }}</p>
+                  </div>
+                }
+
+                <!-- Question text (QUESTION) -->
+                @if (ei.type === 'QUESTION') {
+                  <div>
+                    <label class="text-sm font-medium block mb-1">Question</label>
+                    <input type="text" [(ngModel)]="editQuestionText"
+                      class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                  </div>
+                }
+
+                <!-- Correct Answer (MOVIE & QUESTION) -->
+                @if (ei.type === 'MOVIE' || ei.type === 'QUESTION') {
+                  <div>
+                    <label class="text-sm font-medium block mb-1">
+                      {{ ei.type === 'MOVIE' ? 'Character Name (game answer)' : 'Correct Answer' }}
+                    </label>
+                    <input type="text" [(ngModel)]="editCorrectAnswer"
+                      class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                      [class.border-red-500]="!editCorrectAnswer.trim()"
+                      [placeholder]="ei.type === 'MOVIE' ? 'e.g., Jack Dawson' : 'e.g., Tunis'" />
+                    @if (!editCorrectAnswer.trim()) {
+                      <p class="text-xs text-red-500 mt-1">⚠️ Answer is required — this is what the patient must guess!</p>
+                    }
+                  </div>
+                }
+
+                <button z-button (click)="submitEdit()" [disabled]="isEditInvalid() || isSaving()">
+                  @if (isSaving()) { Saving... } @else { <z-icon zType="save" class="mr-2 h-4 w-4" /> Save Changes }
+                </button>
+              </div>
+            </z-card>
+          }
+        }
       }
     </div>
   `,
@@ -383,6 +480,7 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
   @Input({ required: true }) keycloakId!: string;
   @Output() goBack = new EventEmitter<void>();
   @ViewChild('placeMapContainer') placeMapContainer!: ElementRef;
+  @ViewChild('editMapContainer') editMapContainer!: ElementRef;
 
   private readonly dataPointService = inject(DataPointService);
   private readonly tagService = inject(MemoryTagService);
@@ -427,6 +525,17 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
   questionText = '';
   questionAnswer = '';
 
+  // Edit form
+  editingItem = signal<DataPointSummary | null>(null);
+  editName = '';
+  editCorrectAnswer = '';
+  editHint = '';
+  editQuestionText = '';
+  editLat: number | null = null;
+  editLng: number | null = null;
+  private editMap: L.Map | null = null;
+  private editMarker: L.Marker | null = null;
+
   typeFilters = [
     { type: 'PHOTO' as DataPointType, emoji: '📷', label: 'Photos' },
     { type: 'PLACE' as DataPointType, emoji: '📍', label: 'Places' },
@@ -455,6 +564,7 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.destroyPlaceMap();
+    this.destroyEditMap();
   }
 
   private loadTags() {
@@ -581,6 +691,57 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
     }
   }
 
+  initEditPlaceMap() {
+    setTimeout(() => {
+      if (this.editMap || !this.editMapContainer?.nativeElement) return;
+
+      const iconDefault = L.icon({
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      });
+      L.Marker.prototype.options.icon = iconDefault;
+
+      const lat = this.editLat ?? 36.8;
+      const lng = this.editLng ?? 10.18;
+      this.editMap = L.map(this.editMapContainer.nativeElement).setView([lat, lng], 14);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+      }).addTo(this.editMap);
+
+      // Place existing marker
+      if (this.editLat != null && this.editLng != null) {
+        this.editMarker = L.marker([this.editLat, this.editLng]).addTo(this.editMap);
+      }
+
+      this.editMap.on('click', (e: L.LeafletMouseEvent) => {
+        const { lat, lng } = e.latlng;
+        this.editLat = lat;
+        this.editLng = lng;
+
+        if (this.editMarker) {
+          this.editMarker.setLatLng(e.latlng);
+        } else {
+          this.editMarker = L.marker(e.latlng).addTo(this.editMap!);
+        }
+      });
+    }, 0);
+  }
+
+  destroyEditMap() {
+    if (this.editMap) {
+      this.editMap.remove();
+      this.editMap = null;
+      this.editMarker = null;
+    }
+  }
+
   submitPlace() {
     if (!this.placeName.trim() || !this.placeLat || !this.placeLng) return;
     this.isSaving.set(true);
@@ -657,6 +818,64 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
       tagIds: Array.from(this.selectedTagIds()),
     }).pipe(
       tap(() => { this.resetForm(); this.view.set('list'); this.loadData(); }),
+      catchError(() => of(null)),
+      finalize(() => this.isSaving.set(false)),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe();
+  }
+
+  // ── Edit ──
+
+  openEdit(item: DataPointSummary) {
+    this.editingItem.set(item);
+    this.editName = item.label;
+    this.editCorrectAnswer = item.correctAnswer || '';
+    this.editHint = item.hint || '';
+    this.editQuestionText = item.type === 'QUESTION' ? item.label : '';
+    this.editLat = item.latitude ?? null;
+    this.editLng = item.longitude ?? null;
+    this.view.set('edit');
+    if (item.type === 'PLACE') {
+      this.initEditPlaceMap();
+    }
+  }
+
+  isEditInvalid(): boolean {
+    const ei = this.editingItem();
+    if (!ei) return true;
+    if (ei.type === 'PHOTO' && !this.editName.trim()) return true;
+    if (ei.type === 'PLACE' && !this.editName.trim()) return true;
+    if (ei.type === 'MOVIE' && !this.editCorrectAnswer.trim()) return true;
+    if (ei.type === 'QUESTION' && (!this.editQuestionText.trim() || !this.editCorrectAnswer.trim())) return true;
+    return false;
+  }
+
+  submitEdit() {
+    const ei = this.editingItem();
+    if (!ei || this.isEditInvalid()) return;
+    this.isSaving.set(true);
+    let obs: any;
+    switch (ei.type) {
+      case 'PHOTO':
+        obs = this.dataPointService.updatePhoto(ei.id, { name: this.editName.trim() });
+        break;
+      case 'PLACE':
+        obs = this.dataPointService.updatePlace(ei.id, {
+          name: this.editName.trim(),
+          hint: this.editHint.trim(),
+          ...(this.editLat != null && this.editLng != null ? { latitude: this.editLat, longitude: this.editLng } : {}),
+        });
+        break;
+      case 'MOVIE':
+        obs = this.dataPointService.updateMovie(ei.id, { correctAnswer: this.editCorrectAnswer.trim() });
+        break;
+      case 'QUESTION':
+        obs = this.dataPointService.updateQuestion(ei.id, { questionText: this.editQuestionText.trim(), correctAnswer: this.editCorrectAnswer.trim() });
+        break;
+      default: return;
+    }
+    obs.pipe(
+      tap(() => { this.destroyEditMap(); this.editingItem.set(null); this.view.set('list'); this.loadData(); }),
       catchError(() => of(null)),
       finalize(() => this.isSaving.set(false)),
       takeUntilDestroyed(this.destroyRef),

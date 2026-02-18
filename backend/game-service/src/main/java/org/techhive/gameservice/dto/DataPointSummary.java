@@ -24,4 +24,12 @@ public class DataPointSummary {
   private String imagePreview;
   /** Only for MOVIE — poster URL */
   private String posterPath;
+  /** The expected correct answer for the game (all types) */
+  private String correctAnswer;
+  /** Only for PLACE */
+  private Double latitude;
+  /** Only for PLACE */
+  private Double longitude;
+  /** Only for PLACE */
+  private String hint;
 }
