@@ -90,8 +90,8 @@
     </div>
     }
 
-    <!-- Create/Edit Care Plan Dialog -->
-    @if (showCreateDialog()) {
+    <!-- Create/Edit Care Plan Dialog (rendered at body level via CDK Portal) -->
+    <ng-template #createDialogTpl>
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
         <div class="bg-background rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col relative">
             <div class="flex items-center justify-between p-6 pb-4 border-b">
@@ -291,10 +291,10 @@
             </form>
         </div>
     </div>
-    }
+    </ng-template>
 
-    <!-- View Care Plan Dialog -->
-    @if (showViewDialog() && selectedCarePlan()) {
+    <!-- View Care Plan Dialog (rendered at body level via CDK Portal) -->
+    <ng-template #viewDialogTpl>
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
         <div class="bg-background rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative">
             <button class="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
@@ -379,5 +379,5 @@
             </div>
         </div>
     </div>
-    }
+    </ng-template>
 </div>
