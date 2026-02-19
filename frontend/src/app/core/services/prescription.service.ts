@@ -2,6 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '@/environments/environment';
 import {
   PrescriptionRequestDTO,
   PrescriptionResponseDTO,
@@ -11,9 +12,9 @@ import {
   providedIn: 'root',
 })
 export class PrescriptionService {
-  private readonly baseUrl = 'http://localhost:9090/api/prescriptions';
+  private readonly baseUrl = `${environment.apiBaseUrl}/api/prescriptions`;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) { }
 
   getAllPrescriptions(): Observable<PrescriptionResponseDTO[]> {
     return this.http.get<PrescriptionResponseDTO[]>(this.baseUrl);

@@ -59,8 +59,17 @@ public class UserController {
    * List users by role (e.g., /api/users/role/patient).
    */
   @GetMapping("/role/{role}")
-  public ResponseEntity<List<User>> getUsersByRole(@PathVariable String role) {
-    return ResponseEntity.ok(userService.getUsersByRole(role));
+  public ResponseEntity<?> getUsersByRole(@PathVariable String role) {
+    try {
+      log.info("Fetching users with role: {}", role);
+      List<User> users = userService.getUsersByRole(role);
+      log.info("Found {} users with role: {}", users.size(), role);
+      return ResponseEntity.ok(users);
+    } catch (Exception e) {
+      log.error("Error fetching users by role: {}", role, e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(Map.of("error", "Failed to fetch users: " + e.getMessage()));
+    }
   }
 
   /**
@@ -69,8 +78,16 @@ public class UserController {
   @GetMapping("/keycloak/{keycloakId}")
   public ResponseEntity<?> getUserByKeycloakId(@PathVariable String keycloakId) {
     return userService.getUserByKeycloakId(keycloakId)
-        .<ResponseEntity<?>>map(ResponseEntity::ok)
+        .map(ResponseEntity::ok)
         .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(Map.of("error", "User not found")));
+            .body((User) null)); // Or Map.of("error", "User not found") but keeping type simple
+  }
+
+  @GetMapping("/{id}")
+  public ResponseEntity<?> getUserById(@PathVariable Long id) {
+    return userService.getUserById(id)
+        .map(ResponseEntity::ok)
+        .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body((User) null));
   }
 }

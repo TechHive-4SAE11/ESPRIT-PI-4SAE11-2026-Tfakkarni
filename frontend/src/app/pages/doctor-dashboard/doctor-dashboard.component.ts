@@ -12,6 +12,7 @@ import { ZardProgressBarComponent } from '@/shared/components/progress-bar';
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 import { GameService, type GameStatsResponse } from '@/core/services/game.service';
 import { PrescriptionManagementComponent } from './prescription-management/prescription-management.component';
+import { CarePlanManagementComponent } from './care-plan-management/care-plan-management.component';
 
 @Component({
   selector: 'app-doctor-dashboard',
@@ -26,7 +27,8 @@ import { PrescriptionManagementComponent } from './prescription-management/presc
     ZardSkeletonComponent,
     ZardButtonComponent,
     ZardProgressBarComponent,
-    PrescriptionManagementComponent
+    PrescriptionManagementComponent,
+    CarePlanManagementComponent
   ],
   template: `
     <app-dashboard-layout
@@ -44,7 +46,7 @@ import { PrescriptionManagementComponent } from './prescription-management/presc
                   <p class="text-sm text-muted-foreground">My Patients</p>
                   <p class="text-3xl font-bold">{{ patients().length }}</p>
                 </div>
-                <z-icon zType="users" class="text-primary h-8 w-8" />
+                <z-icon zType="user" class="text-primary h-8 w-8" />
               </div>
             </z-card>
             <z-card class="p-6">
@@ -70,7 +72,15 @@ import { PrescriptionManagementComponent } from './prescription-management/presc
           <z-card>
             <div class="p-6">
               <h3 class="text-lg font-semibold mb-4">Patients Overview</h3>
-              @if (patients().length > 0) {
+              @if (isLoading()) {
+                <z-skeleton class="h-32 w-full" />
+              } @else if (error()) {
+                <div class="p-8 text-center text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <p class="font-semibold text-lg mb-2">Error loading patients</p>
+                  <p class="mb-4">{{ error() }}</p>
+                  <button z-button (click)="retryLoadPatients()">Retry</button>
+                </div>
+              } @else if (patients().length > 0) {
                 <table z-table>
                   <thead z-table-header>
                     <tr z-table-row>
@@ -109,6 +119,10 @@ import { PrescriptionManagementComponent } from './prescription-management/presc
                                <z-icon zType="pill" class="mr-1" />
                                Rx
                              </button>
+                             <button z-button zType="ghost" zSize="sm" (click)="manageCarePlans(patient)">
+                               <z-icon zType="activity" class="mr-1" />
+                               Plan
+                             </button>
                           </div>
                         </td>
                       </tr>
@@ -116,7 +130,11 @@ import { PrescriptionManagementComponent } from './prescription-management/presc
                   </tbody>
                 </table>
               } @else {
-                <z-skeleton class="h-32 w-full" />
+                <div class="p-12 text-center text-muted-foreground bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                  <z-icon zType="user" class="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p class="text-lg font-medium">No patients found</p>
+                  <p class="text-sm mt-1">Patients assigned to you will appear here.</p>
+                </div>
               }
             </div>
           </z-card>
@@ -193,9 +211,32 @@ import { PrescriptionManagementComponent } from './prescription-management/presc
              <div class="space-y-4">
                <h2 class="text-2xl font-bold">Manage Prescriptions</h2>
                <div class="p-8 border rounded-lg text-center bg-muted/20">
-                 <z-icon zType="users" class="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                 <z-icon zType="user" class="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                  <h3 class="text-lg font-semibold mb-2">No Patient Selected</h3>
                  <p class="text-muted-foreground mb-4">Please select a patient from the main list to manage their prescriptions.</p>
+                 <button z-button (click)="setPage('Home')">Go to Patient List</button>
+               </div>
+             </div>
+          }
+        }
+
+        @case ('CarePlans') {
+          @if (selectedPatient(); as patient) {
+             <div class="flex items-center gap-2 mb-6">
+              <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
+                <z-icon zType="arrow-left" class="mr-1" />
+                Back to List
+              </button>
+            </div>
+            
+            <app-care-plan-management [patient]="patient" [doctor]="currentDoctor()"></app-care-plan-management>
+          } @else {
+             <div class="space-y-4">
+               <h2 class="text-2xl font-bold">Manage Care Plans</h2>
+               <div class="p-8 border rounded-lg text-center bg-muted/20">
+                 <z-icon zType="users" class="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                 <h3 class="text-lg font-semibold mb-2">No Patient Selected</h3>
+                 <p class="text-muted-foreground mb-4">Please select a patient from the main list to manage their care plans.</p>
                  <button z-button (click)="setPage('Home')">Go to Patient List</button>
                </div>
              </div>
@@ -212,6 +253,8 @@ export class DoctorDashboardComponent implements OnInit {
   selectedPatient = signal<UserInfo | null>(null);
   selectedPatientStats = signal<GameStatsResponse | null>(null);
   currentDoctor = signal<UserInfo | null>(null);
+  isLoading = signal(true);
+  error = signal<string | null>(null);
   totalPatientGames = 0;
   avgPatientScore = 0;
 
@@ -223,6 +266,7 @@ export class DoctorDashboardComponent implements OnInit {
         { icon: 'users', label: 'Patients', action: () => this.setPage('Home') },
         { icon: 'bar-chart-3', label: 'Patient Progress', action: () => this.setPage('Patient Progress') },
         { icon: 'pill', label: 'Prescriptions', action: () => this.setPage('Prescriptions') },
+        { icon: 'activity', label: 'Care Plans', action: () => this.setPage('CarePlans') },
       ],
     },
   ];
@@ -248,7 +292,7 @@ export class DoctorDashboardComponent implements OnInit {
           error: err => console.error('Failed to load doctor info', err)
         });
       }
-      
+
       this.loadPatients();
     }
   }
@@ -274,11 +318,24 @@ export class DoctorDashboardComponent implements OnInit {
     this.selectedPatient.set(patient);
     this.setPage('Prescriptions');
   }
+  manageCarePlans(patient: UserInfo): void {
+    this.selectedPatient.set(patient);
+    this.setPage('CarePlans');
+  }
+
+
+  retryLoadPatients(): void {
+    this.loadPatients();
+  }
 
   private loadPatients(): void {
+    this.isLoading.set(true);
+    this.error.set(null);
+
     this.userApiService.getUsersByRole('patient').subscribe({
       next: patients => {
         this.patients.set(patients);
+        this.isLoading.set(false);
         // Load stats for each patient
         for (const patient of patients) {
           this.gameService.getPlayerStats(patient.keycloakId).subscribe({
@@ -291,7 +348,11 @@ export class DoctorDashboardComponent implements OnInit {
           });
         }
       },
-      error: err => console.error('Failed to load patients', err),
+      error: err => {
+        console.error('Failed to load patients', err);
+        this.error.set('Unable to load patients. Please check the backend connection.');
+        this.isLoading.set(false);
+      },
     });
   }
 

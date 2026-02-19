@@ -62,6 +62,23 @@ public class MemoryPlaceController {
   }
 
   /**
+   * Edit an existing memory place.
+   */
+  @PutMapping("/{id}")
+  public ResponseEntity<?> editPlace(
+      @PathVariable Long id,
+      @RequestBody CreatePlaceRequest request) {
+    try {
+      PlaceResponse place = memoryPlaceService.editPlace(id, request);
+      return ResponseEntity.ok(place);
+    } catch (Exception e) {
+      log.error("Error editing memory place {}", id, e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(Map.of("error", "Failed to edit place: " + e.getMessage()));
+    }
+  }
+
+  /**
    * Delete a memory place.
    */
   @DeleteMapping("/{id}")

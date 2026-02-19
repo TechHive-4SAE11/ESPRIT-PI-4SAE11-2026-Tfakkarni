@@ -61,6 +61,15 @@ export const routes: Routes = [
     data: { roles: ['patient'] },
   },
   {
+    path: 'patient/play-movie/:gameId',
+    loadComponent: () =>
+      import(
+        '@/pages/patient-dashboard/play-movie-game/play-movie-game.component'
+      ).then((m) => m.PlayMovieGameComponent),
+    canActivate: [AuthGuard],
+    data: { roles: ['patient'] },
+  },
+  {
     path: 'access-denied',
     loadComponent: () =>
       import('@/pages/access-denied/access-denied.component').then(

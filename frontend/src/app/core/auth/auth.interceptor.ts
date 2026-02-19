@@ -3,6 +3,7 @@ import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { KeycloakService } from 'keycloak-angular';
 import { from, switchMap, of } from 'rxjs';
+import { environment } from '@/environments/environment';
 
 /**
  * Functional HTTP interceptor that attaches the Keycloak Bearer token
@@ -20,7 +21,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   // Only attach tokens to API requests (adjust the prefix as needed)
-  const apiUrls = ['/api', 'http://localhost:9090'];
+  const apiUrls = ['/api', environment.apiBaseUrl];
   const isApiRequest = apiUrls.some((url) => req.url.startsWith(url));
 
   if (!isApiRequest || !keycloakService.isLoggedIn()) {

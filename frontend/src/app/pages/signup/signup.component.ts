@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '@/environments/environment';
 import { ZardButtonComponent } from '@/shared/components/button/button.component';
 import { ZardCardComponent } from '@/shared/components/card/card.component';
 import { ZardInputDirective } from '@/shared/components/input/input.directive';
@@ -34,12 +35,12 @@ export class SignupComponent {
   isLoading = false;
   private readonly platformId = inject(PLATFORM_ID);
 
-  private readonly API_URL = 'http://localhost:9090/api/users';
+  private readonly API_URL = `${environment.apiBaseUrl}/api/users`;
 
   constructor(
     private readonly http: HttpClient,
     private readonly router: Router
-  ) {}
+  ) { }
 
   async onSubmit(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) {

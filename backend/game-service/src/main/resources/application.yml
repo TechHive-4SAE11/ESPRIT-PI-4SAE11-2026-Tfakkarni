@@ -28,3 +28,6 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
+
+tmdb:
+  api-key: bac4726f178ccc49f4659a52479b4725

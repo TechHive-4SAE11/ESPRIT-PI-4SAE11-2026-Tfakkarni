@@ -15,6 +15,7 @@ public class PrescriptionResponseDTO {
     
     private Long id;
     private Long sessionId;
+    private String doctorId;
     private List<MedicationResponseDTO> medications = new ArrayList<>();
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

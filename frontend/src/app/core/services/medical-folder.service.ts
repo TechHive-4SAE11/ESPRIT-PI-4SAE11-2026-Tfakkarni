@@ -2,6 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '@/environments/environment';
 
 export interface MedicalFolderResponseDTO {
   id: number;
@@ -15,9 +16,9 @@ export interface MedicalFolderResponseDTO {
   providedIn: 'root',
 })
 export class MedicalFolderService {
-  private readonly baseUrl = 'http://localhost:9090/api/medical-folders';
+  private readonly baseUrl = `${environment.apiBaseUrl}/api/medical-folders`;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) { }
 
   getMedicalFoldersByPatient(patientId: string): Observable<MedicalFolderResponseDTO[]> {
     return this.http.get<MedicalFolderResponseDTO[]>(`${this.baseUrl}/patient/${patientId}`);

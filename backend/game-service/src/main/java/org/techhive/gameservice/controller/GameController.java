@@ -76,6 +76,23 @@ public class GameController {
     }
 
     /**
+     * Edit an existing minigame (title, description, images).
+     */
+    @PutMapping("/{gameId}")
+    public ResponseEntity<?> editGame(
+            @PathVariable Long gameId,
+            @RequestBody EditGameRequest request) {
+        try {
+            GameDetailResponse detail = gameService.editGame(gameId, request);
+            return ResponseEntity.ok(detail);
+        } catch (Exception e) {
+            log.error("Error editing game {}", gameId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to edit game: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Delete a minigame.
      */
     @DeleteMapping("/{gameId}")
