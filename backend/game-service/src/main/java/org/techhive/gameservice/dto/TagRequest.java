@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class TagRequest {
 
   @NotBlank(message = "Tag name is required")
-  @Size(max = 10, message = "Tag name must be at most 10 characters")
+  @Size(min = 3, max = 10, message = "Tag name must be between 3 and 10 characters")
   @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "Tag name must contain only letters and numbers")
   private String name;
 

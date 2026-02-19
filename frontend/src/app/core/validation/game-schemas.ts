@@ -14,7 +14,7 @@ function base64DecodedSize(base64: string): number {
 
 export const tagNameSchema = z
   .string()
-  .min(1, 'Tag name is required')
+  .min(3, 'Tag name must be at least 3 characters')
   .max(10, 'Tag name must be at most 10 characters')
   .regex(/^[a-zA-Z0-9]+$/, 'Tag name must contain only letters and numbers');
 
@@ -27,7 +27,7 @@ export const tagSchema = z.object({
 
 export const gameTitleSchema = z
   .string()
-  .min(1, 'Title is required')
+  .min(3, 'Title must be at least 3 characters')
   .max(20, 'Title must be at most 20 characters')
   .regex(/^[a-zA-Z0-9 ]+$/, 'Title can only contain letters, numbers, and spaces');
 

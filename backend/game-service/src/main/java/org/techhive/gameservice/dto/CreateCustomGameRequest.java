@@ -19,7 +19,7 @@ import java.util.List;
 public class CreateCustomGameRequest {
 
   @NotBlank(message = "Title is required")
-  @Size(max = 20, message = "Title must be at most 20 characters")
+  @Size(min = 3, max = 20, message = "Title must be between 3 and 20 characters")
   @Pattern(regexp = "^[a-zA-Z0-9 ]+$", message = "Title can only contain letters, numbers, and spaces")
   private String title;
 
