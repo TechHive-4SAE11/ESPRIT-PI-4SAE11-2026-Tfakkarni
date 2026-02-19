@@ -4,6 +4,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { z } from 'zod';
 
 import { ZardCardComponent }                        from '@/shared/components/card';
 import { ZardIconComponent, type ZardIcon }        from '@/shared/components/icon';
@@ -22,7 +23,10 @@ import {
 
 // ─── Date helpers ──────────────────────────────────────────────────────────────
 
-function todayIso(): string { return new Date().toISOString().split('T')[0]; }
+function todayIso(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 
 function addDaysIso(iso: string, n: number): string {
   const d = new Date(iso + 'T12:00:00');
@@ -78,6 +82,43 @@ const INC_ICONS: Record<IncidentType, ZardIcon> = {
 };
 
 const PAGE_SIZE = 5;
+
+// ─── Zod Validation Schemas ────────────────────────────────────────────────────
+
+const NutritionSchema = z.object({
+  mealType: z.enum(['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK']),
+  description: z.string().min(1, 'La description est obligatoire').trim(),
+  quantity: z.enum(['RIEN', 'PEU', 'DEMI', 'COMPLET']),
+  appetite: z.enum(['FAIBLE', 'MOYEN', 'BON']),
+  entryTime: z.string().optional(),
+  hydrationMl: z.number().int().min(0, 'La valeur doit être ≥ 0').max(10000, 'Max 10 000 ml').optional(),
+  notes: z.string().optional(),
+});
+
+const MedicationSchema = z.object({
+  medicationId: z.number().or(z.string()).refine(v => v !== undefined && v !== '', 'Le médicament est obligatoire'),
+  takenAt: z.string().min(1, 'L\'heure est obligatoire'),
+  status: z.enum(['PRIS', 'OUBLIE', 'REFUSE', 'EN_RETARD']),
+  notes: z.string().optional(),
+});
+
+const ActivitySchema = z.object({
+  activityType: z.enum(['PHYSIQUE', 'COGNITIVE', 'SOCIALE', 'HYGIENE', 'PROMENADE', 'AUTRE']),
+  description: z.string().min(1, 'La description est obligatoire').trim(),
+  intensity: z.enum(['FAIBLE', 'MODERE', 'ELEVE']),
+  durationMinutes: z.number().int().min(1, 'La durée doit être ≥ 1').max(1440, 'Max 1440 min').optional(),
+  startTime: z.string().optional(),
+});
+
+const IncidentSchema = z.object({
+  incidentType: z.enum(['CHUTE', 'CONFUSION', 'AGITATION', 'DEAMBULATION', 'CRISE', 'AUTRE']),
+  description: z.string().min(1, 'La description est obligatoire').trim(),
+  severity: z.enum(['LEGER', 'MODERE', 'GRAVE']),
+  occurredAt: z.string().optional(),
+  location: z.string().optional(),
+  injuryDetails: z.string().optional(),
+  actionTaken: z.string().optional(),
+});
 
 // ─── Validation helper ─────────────────────────────────────────────────────────
 
@@ -326,9 +367,11 @@ function isNumericOrEmpty(v: string): boolean {
           <option value="type">Type repas</option>
           <option value="quantity">Quantité</option>
         </select>
-        <button z-button zType="outline" zSize="sm" (click)="openNutritionForm()">
-          <z-icon zType="plus" class="h-3.5 w-3.5 mr-1" /> Ajouter
-        </button>
+        @if (!readOnly) {
+          <button z-button zType="outline" zSize="sm" (click)="openNutritionForm()">
+            <z-icon zType="plus" class="h-3.5 w-3.5 mr-1" /> Ajouter
+          </button>
+        }
       </div>
       @if (nSearch()) {
         <p class="text-xs text-muted-foreground">{{ nFiltered().length }} résultat(s)
@@ -353,10 +396,12 @@ function isNumericOrEmpty(v: string): boolean {
                 @if (e.notes) { <p class="text-xs italic text-muted-foreground mt-1">{{ e.notes }}</p> }
               </div>
             </div>
-            <div class="flex gap-1 shrink-0">
-              <button z-button zType="ghost" zSize="sm" (click)="editNutrition(e)"><z-icon zType="edit" class="h-3.5 w-3.5" /></button>
-              <button z-button zType="ghost" zSize="sm" class="text-destructive" (click)="deleteNutrition(e.id)"><z-icon zType="trash-2" class="h-3.5 w-3.5" /></button>
-            </div>
+            @if (!readOnly) {
+              <div class="flex gap-1 shrink-0">
+                <button z-button zType="ghost" zSize="sm" (click)="editNutrition(e)"><z-icon zType="edit" class="h-3.5 w-3.5" /></button>
+                <button z-button zType="ghost" zSize="sm" class="text-destructive" (click)="deleteNutrition(e.id)"><z-icon zType="trash-2" class="h-3.5 w-3.5" /></button>
+              </div>
+            }
           </div>
         </z-card>
       }
@@ -383,9 +428,11 @@ function isNumericOrEmpty(v: string): boolean {
           <option value="status">Statut</option>
           <option value="time">Heure</option>
         </select>
-        <button z-button zType="outline" zSize="sm" (click)="openMedForm()">
-          <z-icon zType="plus" class="h-3.5 w-3.5 mr-1" /> Ajouter
-        </button>
+        @if (!readOnly) {
+          <button z-button zType="outline" zSize="sm" (click)="openMedForm()">
+            <z-icon zType="plus" class="h-3.5 w-3.5 mr-1" /> Ajouter
+          </button>
+        }
       </div>
       @if (mSearch()) {
         <p class="text-xs text-muted-foreground">{{ mFiltered().length }} résultat(s)
@@ -409,10 +456,12 @@ function isNumericOrEmpty(v: string): boolean {
                 @if (e.notes) { <p class="text-xs italic text-muted-foreground mt-1">{{ e.notes }}</p> }
               </div>
             </div>
-            <div class="flex gap-1 shrink-0">
-              <button z-button zType="ghost" zSize="sm" (click)="editMedication(e)"><z-icon zType="edit" class="h-3.5 w-3.5" /></button>
-              <button z-button zType="ghost" zSize="sm" class="text-destructive" (click)="deleteMedication(e.id)"><z-icon zType="trash-2" class="h-3.5 w-3.5" /></button>
-            </div>
+            @if (!readOnly) {
+              <div class="flex gap-1 shrink-0">
+                <button z-button zType="ghost" zSize="sm" (click)="editMedication(e)"><z-icon zType="edit" class="h-3.5 w-3.5" /></button>
+                <button z-button zType="ghost" zSize="sm" class="text-destructive" (click)="deleteMedication(e.id)"><z-icon zType="trash-2" class="h-3.5 w-3.5" /></button>
+              </div>
+            }
           </div>
         </z-card>
       }
@@ -440,9 +489,11 @@ function isNumericOrEmpty(v: string): boolean {
           <option value="intensity">Intensité</option>
           <option value="time">Heure</option>
         </select>
-        <button z-button zType="outline" zSize="sm" (click)="openActivityForm()">
-          <z-icon zType="plus" class="h-3.5 w-3.5 mr-1" /> Ajouter
-        </button>
+        @if (!readOnly) {
+          <button z-button zType="outline" zSize="sm" (click)="openActivityForm()">
+            <z-icon zType="plus" class="h-3.5 w-3.5 mr-1" /> Ajouter
+          </button>
+        }
       </div>
       @if (aSearch()) {
         <p class="text-xs text-muted-foreground">{{ aFiltered().length }} résultat(s)
@@ -468,10 +519,12 @@ function isNumericOrEmpty(v: string): boolean {
                 </div>
               </div>
             </div>
-            <div class="flex gap-1 shrink-0">
-              <button z-button zType="ghost" zSize="sm" (click)="editActivity(e)"><z-icon zType="edit" class="h-3.5 w-3.5" /></button>
-              <button z-button zType="ghost" zSize="sm" class="text-destructive" (click)="deleteActivity(e.id)"><z-icon zType="trash-2" class="h-3.5 w-3.5" /></button>
-            </div>
+            @if (!readOnly) {
+              <div class="flex gap-1 shrink-0">
+                <button z-button zType="ghost" zSize="sm" (click)="editActivity(e)"><z-icon zType="edit" class="h-3.5 w-3.5" /></button>
+                <button z-button zType="ghost" zSize="sm" class="text-destructive" (click)="deleteActivity(e.id)"><z-icon zType="trash-2" class="h-3.5 w-3.5" /></button>
+              </div>
+            }
           </div>
         </z-card>
       }
@@ -498,10 +551,12 @@ function isNumericOrEmpty(v: string): boolean {
           <option value="type">Type</option>
           <option value="time">Heure</option>
         </select>
-        <button z-button zType="outline" zSize="sm"
-          class="border-red-200 text-red-600 hover:bg-red-50" (click)="openIncidentForm()">
-          <z-icon zType="triangle-alert" class="h-3.5 w-3.5 mr-1" /> Signaler
-        </button>
+        @if (!readOnly) {
+          <button z-button zType="outline" zSize="sm"
+            class="border-red-200 text-red-600 hover:bg-red-50" (click)="openIncidentForm()">
+            <z-icon zType="triangle-alert" class="h-3.5 w-3.5 mr-1" /> Signaler
+          </button>
+        }
       </div>
       @if (iSearch()) {
         <p class="text-xs text-muted-foreground">{{ iFiltered().length }} résultat(s)
@@ -526,10 +581,12 @@ function isNumericOrEmpty(v: string): boolean {
                 @if (e.actionTaken) { <p class="text-xs text-green-700 mt-1">✓ {{ e.actionTaken }}</p> }
               </div>
             </div>
-            <div class="flex gap-1 shrink-0">
-              <button z-button zType="ghost" zSize="sm" (click)="editIncident(e)"><z-icon zType="edit" class="h-3.5 w-3.5" /></button>
-              <button z-button zType="ghost" zSize="sm" class="text-destructive" (click)="deleteIncident(e.id)"><z-icon zType="trash-2" class="h-3.5 w-3.5" /></button>
-            </div>
+            @if (!readOnly) {
+              <div class="flex gap-1 shrink-0">
+                <button z-button zType="ghost" zSize="sm" (click)="editIncident(e)"><z-icon zType="edit" class="h-3.5 w-3.5" /></button>
+                <button z-button zType="ghost" zSize="sm" class="text-destructive" (click)="deleteIncident(e.id)"><z-icon zType="trash-2" class="h-3.5 w-3.5" /></button>
+              </div>
+            }
           </div>
         </z-card>
       }
@@ -570,7 +627,7 @@ function isNumericOrEmpty(v: string): boolean {
 <!-- ══ MODAL OVERLAY ══                                   -->
 <!-- ══════════════════════════════════════════════════════ -->
 
-@if (activeModal()) {
+@if (activeModal() && (activeModal() === 'day' || !readOnly)) {
   <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm"
     (click)="closeModal()">
 
@@ -981,6 +1038,8 @@ function isNumericOrEmpty(v: string): boolean {
 })
 export class SuiviQuotidienComponent implements OnInit {
   @Input() keycloakId = '';
+  /** Mode lecture seule (vue médecin) — masque les boutons d'ajout/édition/suppression */
+  @Input() readOnly = false;
   @Output() goBack = new EventEmitter<void>();
 
   readonly today    = todayIso();
@@ -1012,6 +1071,12 @@ export class SuiviQuotidienComponent implements OnInit {
   mForm: MedicationIntakeLogRequest = this.emptyM();
   aForm: ActivityEntryRequest       = this.emptyA();
   iForm: IncidentEntryRequest       = this.emptyI();
+
+  // ── Zod Validation Errors ──────────────────────────────────────────────
+  nErrors = signal<Record<string, string>>({});
+  mErrors = signal<Record<string, string>>({});
+  aErrors = signal<Record<string, string>>({});
+  iErrors = signal<Record<string, string>>({});
 
   // ── Number fields as strings (pour détecter les lettres) ──────────────
   /** Hydratation (Nutrition) – chaîne brute saisie par l'utilisateur */
@@ -1477,7 +1542,21 @@ export class SuiviQuotidienComponent implements OnInit {
   saveNutrition(){
     const logId=this.log()?.id; if(!logId) return;
     // Injecter la valeur hydratation parsée
-    this.nForm.hydrationMl = parseInt(this.nHydroRaw(), 10);
+    this.nForm.hydrationMl = this.nHydroRaw() ? parseInt(this.nHydroRaw(), 10) : undefined;
+    
+    // Valider avec Zod
+    const result = NutritionSchema.safeParse(this.nForm);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach((e: any) => {
+        const path = e.path.join('.');
+        errors[path] = e.message;
+      });
+      this.nErrors.set(errors);
+      return;
+    }
+    
+    this.nErrors.set({}); // Clear errors
     this.saving.set(true);
     const id=this.editNId();
     (id?this.svc.updateNutrition(logId,id,this.nForm):this.svc.addNutrition(logId,this.nForm))
@@ -1492,6 +1571,20 @@ export class SuiviQuotidienComponent implements OnInit {
 
   saveMedication(){
     const logId=this.log()?.id; if(!logId) return;
+    
+    // Valider avec Zod
+    const result = MedicationSchema.safeParse(this.mForm);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach((e: any) => {
+        const path = e.path.join('.');
+        errors[path] = e.message;
+      });
+      this.mErrors.set(errors);
+      return;
+    }
+    
+    this.mErrors.set({}); // Clear errors
     this.saving.set(true);
     const id=this.editMId();
     (id?this.svc.updateMedicationIntake(logId,id,this.mForm):this.svc.addMedicationIntake(logId,this.mForm))
@@ -1507,7 +1600,21 @@ export class SuiviQuotidienComponent implements OnInit {
   saveActivity(){
     const logId=this.log()?.id; if(!logId) return;
     // Injecter la valeur durée parsée
-    this.aForm.durationMinutes = parseInt(this.aDurRaw(), 10);
+    this.aForm.durationMinutes = this.aDurRaw() ? parseInt(this.aDurRaw(), 10) : undefined;
+    
+    // Valider avec Zod
+    const result = ActivitySchema.safeParse(this.aForm);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach((e: any) => {
+        const path = e.path.join('.');
+        errors[path] = e.message;
+      });
+      this.aErrors.set(errors);
+      return;
+    }
+    
+    this.aErrors.set({}); // Clear errors
     this.saving.set(true);
     const id=this.editAId();
     (id?this.svc.updateActivity(logId,id,this.aForm):this.svc.addActivity(logId,this.aForm))
@@ -1522,6 +1629,20 @@ export class SuiviQuotidienComponent implements OnInit {
 
   saveIncident(){
     const logId=this.log()?.id; if(!logId) return;
+    
+    // Valider avec Zod
+    const result = IncidentSchema.safeParse(this.iForm);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach((e: any) => {
+        const path = e.path.join('.');
+        errors[path] = e.message;
+      });
+      this.iErrors.set(errors);
+      return;
+    }
+    
+    this.iErrors.set({}); // Clear errors
     this.saving.set(true);
     const id=this.editIId();
     (id?this.svc.updateIncident(logId,id,this.iForm):this.svc.addIncident(logId,this.iForm))

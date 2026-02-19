@@ -26,7 +26,6 @@ import {
     CommonModule,
     ReactiveFormsModule,
     ZardButtonComponent,
-    ZardCardComponent,
     ZardIconComponent
   ],
   templateUrl: './prescription-management.component.html',

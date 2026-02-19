@@ -12,6 +12,7 @@ import { ZardProgressBarComponent } from '@/shared/components/progress-bar';
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 import { GameService, type GameStatsResponse } from '@/core/services/game.service';
 import { PrescriptionManagementComponent } from './prescription-management/prescription-management.component';
+import { SuiviQuotidienComponent } from '@/pages/patient-dashboard/helper-view/suivi-quotidien/suivi-quotidien.component';
 
 @Component({
   selector: 'app-doctor-dashboard',
@@ -21,12 +22,12 @@ import { PrescriptionManagementComponent } from './prescription-management/presc
     DashboardLayoutComponent,
     ZardCardComponent,
     ZardIconComponent,
-    ZardBadgeComponent,
     ZardTableImports,
     ZardSkeletonComponent,
     ZardButtonComponent,
     ZardProgressBarComponent,
-    PrescriptionManagementComponent
+    PrescriptionManagementComponent,
+    SuiviQuotidienComponent,
   ],
   template: `
     <app-dashboard-layout
@@ -117,6 +118,10 @@ import { PrescriptionManagementComponent } from './prescription-management/presc
                                <z-icon zType="pill" class="mr-1" />
                                Rx
                              </button>
+                             <button z-button zType="ghost" zSize="sm" (click)="viewDailyLog(patient)">
+                               <z-icon zType="file" class="mr-1" />
+                               Journal
+                             </button>
                           </div>
                         </td>
                       </tr>
@@ -188,6 +193,15 @@ import { PrescriptionManagementComponent } from './prescription-management/presc
             }
           } @else {
             <p class="text-muted-foreground">Select a patient from the Patients list to view their progress.</p>
+          }
+        }
+
+        @case ('Daily Log') {
+          @if (selectedPatient(); as patient) {
+            <app-suivi-quotidien
+              [keycloakId]="patient.keycloakId"
+              [readOnly]="true"
+              (goBack)="setPage('Home')" />
           }
         }
 
@@ -287,6 +301,11 @@ export class DoctorDashboardComponent implements OnInit {
   managePrescriptions(patient: UserInfo): void {
     this.selectedPatient.set(patient);
     this.setPage('Prescriptions');
+  }
+
+  viewDailyLog(patient: UserInfo): void {
+    this.selectedPatient.set(patient);
+    this.setPage('Daily Log');
   }
 
   retryLoadPatients(): void {
