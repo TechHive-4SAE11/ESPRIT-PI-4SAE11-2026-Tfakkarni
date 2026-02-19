@@ -1,6 +1,7 @@
-import { Component, Input, OnInit, signal, computed, DestroyRef, inject } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, signal, computed, DestroyRef, inject, ViewChild, TemplateRef, ViewContainerRef, ApplicationRef, Injector, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { DomPortalOutlet, TemplatePortal } from '@angular/cdk/portal';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormArray, AbstractControl, Validators } from '@angular/forms';
 import { catchError, finalize, of, tap } from 'rxjs';
 import { z } from 'zod';
@@ -33,11 +34,21 @@ import {
   ],
   templateUrl: './prescription-management.component.html',
 })
-export class PrescriptionManagementComponent implements OnInit {
+export class PrescriptionManagementComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly alertDialog = inject(ZardAlertDialogService);
   private readonly fb = inject(FormBuilder);
   private readonly prescriptionService = inject(PrescriptionService);
+
+  // CDK Portal - render dialogs at body level to escape overflow:auto containers
+  private readonly appRef = inject(ApplicationRef);
+  private readonly injector = inject(Injector);
+  private readonly viewContainerRef = inject(ViewContainerRef);
+  private readonly platformId = inject(PLATFORM_ID);
+  @ViewChild('createDialogTpl') private createDialogTpl!: TemplateRef<any>;
+  @ViewChild('viewDialogTpl') private viewDialogTpl!: TemplateRef<any>;
+  private createDialogPortal: DomPortalOutlet | null = null;
+  private viewDialogPortal: DomPortalOutlet | null = null;
   private readonly medicalFolderService = inject(MedicalFolderService);
   private readonly sessionService = inject(SessionService);
 
@@ -227,6 +238,27 @@ export class PrescriptionManagementComponent implements OnInit {
       .subscribe();
   }
 
+  // ==================== Portal Helpers ====================
+
+  private getOrCreatePortal(): DomPortalOutlet | null {
+    if (isPlatformBrowser(this.platformId)) {
+      return new DomPortalOutlet(document.body, null as any, this.appRef, this.injector);
+    }
+    return null;
+  }
+
+  private attachPortal(templateRef: TemplateRef<any>, outlet: DomPortalOutlet | null): DomPortalOutlet | null {
+    if (!outlet) outlet = this.getOrCreatePortal();
+    if (!outlet) return null;
+    if (outlet.hasAttached()) outlet.detach();
+    outlet.attach(new TemplatePortal(templateRef, this.viewContainerRef));
+    return outlet;
+  }
+
+  private detachPortal(outlet: DomPortalOutlet | null): void {
+    if (outlet?.hasAttached()) outlet.detach();
+  }
+
   // ==================== Actions ====================
 
   openCreateDialog(): void {
@@ -238,6 +270,7 @@ export class PrescriptionManagementComponent implements OnInit {
       this.addMedication();
       this.errorMessage.set(null);
       this.showCreateDialog.set(true);
+      this.createDialogPortal = this.attachPortal(this.createDialogTpl, this.createDialogPortal);
     } catch (error) {
       console.error('PrescriptionManagement: Error opening create dialog', error);
       this.errorMessage.set('An error occurred while opening the dialog');
@@ -269,9 +302,11 @@ export class PrescriptionManagementComponent implements OnInit {
 
     this.errorMessage.set(null);
     this.showCreateDialog.set(true);
+    this.createDialogPortal = this.attachPortal(this.createDialogTpl, this.createDialogPortal);
   }
 
   closeCreateDialog(): void {
+    this.detachPortal(this.createDialogPortal);
     this.showCreateDialog.set(false);
     this.prescriptionForm.reset();
     this.medications.clear();
@@ -281,9 +316,11 @@ export class PrescriptionManagementComponent implements OnInit {
   viewPrescription(prescription: PrescriptionResponseDTO): void {
     this.selectedPrescription.set(prescription);
     this.showViewDialog.set(true);
+    this.viewDialogPortal = this.attachPortal(this.viewDialogTpl, this.viewDialogPortal);
   }
 
   closeViewDialog(): void {
+    this.detachPortal(this.viewDialogPortal);
     this.showViewDialog.set(false);
     this.selectedPrescription.set(null);
   }
@@ -375,5 +412,10 @@ export class PrescriptionManagementComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
+  }
+
+  ngOnDestroy(): void {
+    this.createDialogPortal?.dispose();
+    this.viewDialogPortal?.dispose();
   }
 }
