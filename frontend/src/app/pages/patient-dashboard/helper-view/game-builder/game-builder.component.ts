@@ -370,7 +370,7 @@ export class GameBuilderComponent implements OnInit {
           detail.items.forEach(item => ids.add(`${item.type}-${item.id}`));
           this.selectedIds.set(ids);
           this.applyFilter();
-          this.step.set(2);
+          this.step.set(1);
           this.view.set('build');
         }),
         catchError(() => of(null)),

@@ -25,6 +25,9 @@ public class CustomGame {
   @OrderBy("displayOrder ASC")
   private List<CustomGameItem> items = new ArrayList<>();
 
+  @OneToMany(mappedBy = "customGame", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+  private List<CustomGameAttempt> attempts = new ArrayList<>();
+
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
@@ -83,6 +86,14 @@ public class CustomGame {
 
   public void setItems(List<CustomGameItem> items) {
     this.items = items;
+  }
+
+  public List<CustomGameAttempt> getAttempts() {
+    return attempts;
+  }
+
+  public void setAttempts(List<CustomGameAttempt> attempts) {
+    this.attempts = attempts;
   }
 
   public LocalDateTime getCreatedAt() {
