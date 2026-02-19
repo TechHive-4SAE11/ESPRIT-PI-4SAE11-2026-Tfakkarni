@@ -71,6 +71,22 @@
                     <p class="text-purple-100 text-sm sm:text-base">View your medications</p>
                 </div>
             </button>
+            <button (click)="setPage('Quizzes')"
+                class="w-full flex items-center gap-5 p-6 sm:p-8 rounded-2xl bg-indigo-500 hover:bg-indigo-600 active:scale-[0.98] text-white shadow-lg shadow-indigo-500/25 transition-all">
+                <span class="text-4xl sm:text-5xl">📝</span>
+                <div class="text-left">
+                    <p class="text-xl sm:text-2xl font-bold">Quizzes</p>
+                    <p class="text-indigo-100 text-sm sm:text-base">Test your memory</p>
+                </div>
+            </button>
+            <button (click)="setPage('Equipment')"
+                class="w-full flex items-center gap-5 p-6 sm:p-8 rounded-2xl bg-teal-500 hover:bg-teal-600 active:scale-[0.98] text-white shadow-lg shadow-teal-500/25 transition-all">
+                <span class="text-4xl sm:text-5xl">🏥</span>
+                <div class="text-left">
+                    <p class="text-xl sm:text-2xl font-bold">Equipment</p>
+                    <p class="text-teal-100 text-sm sm:text-base">Medical equipment</p>
+                </div>
+            </button>
         </div>
 
         <!-- Quick stats -->
@@ -218,6 +234,28 @@
 
         <app-prescription-list [prescriptions]="prescriptions()" [isLoading]="isLoadingPrescriptions()" />
         }
+
+        @case ('Quizzes') {
+        <!-- Back button -->
+        <button (click)="setPage('Home')"
+            class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
+            <span class="text-2xl">←</span>
+            <span>Back</span>
+        </button>
+
+        <app-patient-quiz [keycloakId]="keycloakId" />
+        }
+
+        @case ('Equipment') {
+        <!-- Back button -->
+        <button (click)="setPage('Home')"
+            class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
+            <span class="text-2xl">←</span>
+            <span>Back</span>
+        </button>
+
+        <app-patient-equipment [keycloakId]="keycloakId" />
+        }
         }
     </main>
 
@@ -259,6 +297,13 @@
           : 'text-slate-400 dark:text-slate-500'">
                 <span class="text-2xl">💊</span>
                 <span class="text-xs font-medium">Rx</span>
+            </button>
+            <button (click)="setPage('Quizzes')"
+                class="flex-1 flex flex-col items-center gap-1 py-3 transition-colors" [class]="currentPage() === 'Quizzes'
+          ? 'text-indigo-600 dark:text-indigo-400'
+          : 'text-slate-400 dark:text-slate-500'">
+                <span class="text-2xl">📝</span>
+                <span class="text-xs font-medium">Quiz</span>
             </button>
         </div>
     </nav>

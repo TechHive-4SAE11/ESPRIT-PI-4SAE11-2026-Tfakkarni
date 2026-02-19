@@ -26,7 +26,8 @@ public class Answer {
     @JoinColumn(name = "question_id")
     private Question question;
 
-
-
+    public boolean isCorrect() {
+        return Boolean.TRUE.equals(isCorrect);
+    }
 
 }

@@ -4,11 +4,12 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '@/core/auth';
 import { ZardButtonComponent } from '@/shared/components/button/button.component';
 import { ZardIconComponent } from '@/shared/components/icon';
+import { PublicQuizComponent } from './public-quiz/public-quiz.component';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, RouterLink, ZardButtonComponent, ZardIconComponent],
+  imports: [CommonModule, RouterLink, ZardButtonComponent, ZardIconComponent, PublicQuizComponent],
   template: `
     <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <!-- Navbar -->
@@ -57,6 +58,18 @@ import { ZardIconComponent } from '@/shared/components/icon';
               </button>
             </a>
           </div>
+        </section>
+
+        <!-- Public Quiz Section -->
+        <section class="py-16 md:py-24">
+          <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">Take Our Free Assessment</h2>
+            <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Evaluate potential signs of Alzheimer's disease with our quick assessment quiz.
+              No account required - get instant results.
+            </p>
+          </div>
+          <app-public-quiz />
         </section>
 
         <!-- Features Section -->

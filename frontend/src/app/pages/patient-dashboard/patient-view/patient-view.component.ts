@@ -21,11 +21,13 @@ import { type PrescriptionResponseDTO } from '@/core/models/prescription.model';
 import { AuthService } from '@/core/auth';
 import { GuessPlaceComponent } from './guess-place/guess-place.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
+import { PatientQuizComponent } from '../patient-quiz/patient-quiz.component';
+import { PatientEquipmentComponent } from '../patient-equipment/patient-equipment.component';
 
 @Component({
   selector: 'app-patient-view',
   standalone: true,
-  imports: [CommonModule, GuessPlaceComponent, PrescriptionListComponent],
+  imports: [CommonModule, GuessPlaceComponent, PrescriptionListComponent, PatientQuizComponent, PatientEquipmentComponent],
   templateUrl: './patient-view.component.html',
 })
 export class PatientViewComponent implements OnInit {

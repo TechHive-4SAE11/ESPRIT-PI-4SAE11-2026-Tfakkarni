@@ -21,6 +21,8 @@ import { ZardProgressBarComponent } from '@/shared/components/progress-bar';
 import { ZardTableImports } from '@/shared/components/table/table.imports';
 import { AddPlaceComponent } from './add-place/add-place.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
+import { QuizManagementComponent } from '../quiz-management/quiz-management.component';
+import { EquipmentManagementComponent } from '../equipment-management/equipment-management.component';
 
 import { GameService, type GameResponse, type GameStatsResponse } from '@/core/services/game.service';
 import { PrescriptionService } from '@/core/services/prescription.service';
@@ -39,7 +41,9 @@ import { UserApiService } from '@/core/services/user-api.service';
     ZardProgressBarComponent,
     AddPlaceComponent,
     ZardTableImports,
-    PrescriptionListComponent
+    PrescriptionListComponent,
+    QuizManagementComponent,
+    EquipmentManagementComponent
   ],
   templateUrl: './helper-view.component.html',
 })

@@ -52,6 +52,10 @@ public class SecurityConfig {
             .pathMatchers("/actuator/**").permitAll()
             .pathMatchers("/api/users/register").permitAll()
             .pathMatchers("/api/games/play/**").permitAll()
+            .pathMatchers(HttpMethod.GET, "/api/games/quiz/1").permitAll() // Public quiz endpoint
+            .pathMatchers(HttpMethod.GET, "/api/games/quiz/**").permitAll() // Public quiz read endpoints
+            .pathMatchers(HttpMethod.GET, "/api/games/quiz/questions/**").permitAll() // Public quiz questions
+            .pathMatchers(HttpMethod.GET, "/api/games/quiz/answer/**").permitAll() // Public quiz answers
             // All other endpoints require authentication
             .anyExchange().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2

@@ -17,3 +17,6 @@
 *.class
 *.jar
 *.war
+frontend/angular.json
+backend/user-service/src/main/java/org/techhive/userservice/entity/User.java
+frontend/angular.json

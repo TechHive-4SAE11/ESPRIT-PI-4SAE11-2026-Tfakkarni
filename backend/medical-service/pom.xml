@@ -41,7 +41,12 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>jakarta.platform</groupId>
+            <artifactId>jakarta.jakartaee-web-api</artifactId>
+            <version>9.1.0</version>
+        </dependency>
+    </dependencies>
 	<build>
 		<plugins>
 			<plugin>
@@ -54,7 +59,7 @@
 							<artifactId>lombok</artifactId>
 							<version>1.18.30</version>
 						</path>
-					</annotationProcessorPaths>
+					</annotationProcessorPaths><source>5</source><target>5</target>
 				</configuration>
 			</plugin>
 			<plugin>
