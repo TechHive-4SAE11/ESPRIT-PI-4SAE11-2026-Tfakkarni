@@ -16,7 +16,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateCustomGameRequest {
+public class EditCustomGameRequest {
 
   @NotBlank(message = "Title is required")
   @Size(max = 20, message = "Title must be at most 20 characters")

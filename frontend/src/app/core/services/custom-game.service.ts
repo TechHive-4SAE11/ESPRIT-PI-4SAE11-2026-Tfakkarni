@@ -17,6 +17,12 @@ export interface CreateCustomGameRequest {
   items: GameItemEntry[];
 }
 
+export interface EditCustomGameRequest {
+  title: string;
+  description: string;
+  items: GameItemEntry[];
+}
+
 export interface CustomGameResponse {
   id: number;
   title: string;
@@ -133,6 +139,10 @@ export class CustomGameService {
 
   deleteGame(gameId: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${gameId}`);
+  }
+
+  editGame(gameId: number, request: EditCustomGameRequest): Observable<CustomGameResponse> {
+    return this.http.put<CustomGameResponse>(`${this.baseUrl}/${gameId}`, request);
   }
 
   // ── Play ──

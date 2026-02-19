@@ -10,6 +10,7 @@ import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { MemoryTagService, type TagResponse } from '@/core/services/memory-tag.service';
+import { tagNameSchema } from '@/core/validation/game-schemas';
 
 const PRESET_COLORS = [
   '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
@@ -37,10 +38,14 @@ const PRESET_COLORS = [
         <h3 class="text-lg font-semibold mb-4">Create New Tag</h3>
         <div class="flex flex-wrap gap-3 items-end">
           <div class="flex-1 min-w-[200px]">
-            <label class="text-sm font-medium text-foreground mb-1 block">Name</label>
-            <input type="text" [(ngModel)]="newTagName"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-              placeholder="e.g., Work, School, Vacation..." />
+            <label class="text-sm font-medium text-foreground mb-1 block">Name <span class="text-muted-foreground font-normal">(max 10, letters & numbers)</span></label>
+            <input type="text" [(ngModel)]="newTagName" maxlength="10"
+              class="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              [class]="createError() ? 'border-red-500' : 'border-border'"
+              placeholder="e.g., Work, School..." />
+            @if (createError()) {
+              <p class="text-xs text-red-500 mt-1">{{ createError() }}</p>
+            }
           </div>
           <div>
             <label class="text-sm font-medium text-foreground mb-1 block">Color</label>
@@ -74,10 +79,14 @@ const PRESET_COLORS = [
               <div class="group relative inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-background hover:bg-muted transition-colors">
                 <span class="w-3 h-3 rounded-full" [style.background-color]="tag.color"></span>
                 @if (editingTagId() === tag.id) {
-                  <input type="text" [(ngModel)]="editTagName"
+                  <input type="text" [(ngModel)]="editTagName" maxlength="10"
                     class="bg-transparent border-none text-sm font-medium focus:outline-none w-24"
+                    [class.text-red-500]="editError()"
                     (keydown.enter)="saveEdit(tag.id)"
                     (keydown.escape)="cancelEdit()" />
+                  @if (editError()) {
+                    <span class="text-[10px] text-red-500">{{ editError() }}</span>
+                  }
                   <button (click)="saveEdit(tag.id)" class="text-green-500 hover:text-green-700">
                     <z-icon zType="check" class="h-3.5 w-3.5" />
                   </button>
@@ -119,6 +128,8 @@ export class TagManagerComponent implements OnInit {
   editingTagId = signal<number | null>(null);
   editTagName = '';
   editTagColor = '';
+  createError = signal<string | null>(null);
+  editError = signal<string | null>(null);
 
   ngOnInit() {
     this.loadTags();
@@ -135,7 +146,12 @@ export class TagManagerComponent implements OnInit {
   }
 
   createTag() {
-    if (!this.newTagName.trim()) return;
+    const result = tagNameSchema.safeParse(this.newTagName.trim());
+    if (!result.success) {
+      this.createError.set(result.error.issues[0]?.message || 'Invalid tag name');
+      return;
+    }
+    this.createError.set(null);
     this.isCreating.set(true);
     this.tagService.createTag(this.keycloakId, { name: this.newTagName.trim(), color: this.newTagColor }).pipe(
       tap(tag => {
@@ -156,9 +172,16 @@ export class TagManagerComponent implements OnInit {
 
   cancelEdit() {
     this.editingTagId.set(null);
+    this.editError.set(null);
   }
 
   saveEdit(tagId: number) {
+    const result = tagNameSchema.safeParse(this.editTagName.trim());
+    if (!result.success) {
+      this.editError.set(result.error.issues[0]?.message || 'Invalid tag name');
+      return;
+    }
+    this.editError.set(null);
     const tag = this.tags().find(t => t.id === tagId);
     if (!tag) return;
     this.tagService.updateTag(tagId, { name: this.editTagName.trim(), color: tag.color }).pipe(

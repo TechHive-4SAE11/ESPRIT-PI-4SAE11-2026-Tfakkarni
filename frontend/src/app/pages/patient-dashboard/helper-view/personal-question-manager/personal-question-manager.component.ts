@@ -25,6 +25,8 @@ import {
   type PersonalQuestionGameResponse,
   type EditQuestionItemEntry,
 } from '@/core/services/personal-question.service';
+import { gameTitleSchema, gameDescriptionSchema, getFieldErrors } from '@/core/validation/game-schemas';
+import { z } from 'zod';
 
 @Component({
   selector: 'app-personal-question-manager',
@@ -115,20 +117,30 @@ import {
       <h3 class="font-semibold mb-4">Quiz Details</h3>
       <div class="space-y-4">
         <div>
-          <label class="text-sm font-medium mb-1 block">Title</label>
+          <label class="text-sm font-medium mb-1 block">Title <span class="text-muted-foreground font-normal">(max 20)</span></label>
           <input
-            class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            class="w-full px-3 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            [class]="validationErrors()['title'] ? 'border-red-500' : 'border-border'"
+            maxlength="20"
             [value]="gameTitle()"
             (input)="gameTitle.set($any($event.target).value)"
             placeholder="e.g., Family & Childhood Memories" />
+          @if (validationErrors()['title']) {
+            <p class="text-xs text-red-500 mt-1">{{ validationErrors()['title'] }}</p>
+          }
         </div>
         <div>
-          <label class="text-sm font-medium mb-1 block">Description</label>
+          <label class="text-sm font-medium mb-1 block">Description <span class="text-muted-foreground font-normal">(max 100)</span></label>
           <input
-            class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            class="w-full px-3 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            [class]="validationErrors()['description'] ? 'border-red-500' : 'border-border'"
+            maxlength="100"
             [value]="gameDescription()"
             (input)="gameDescription.set($any($event.target).value)"
             placeholder="e.g., Questions about personal life and family" />
+          @if (validationErrors()['description']) {
+            <p class="text-xs text-red-500 mt-1">{{ validationErrors()['description'] }}</p>
+          }
         </div>
       </div>
     </z-card>
@@ -157,7 +169,7 @@ import {
 
       <div class="space-y-3">
         <div>
-          <label class="text-sm font-medium mb-1 block">Question</label>
+          <label class="text-sm font-medium mb-1 block">Question <span class="text-muted-foreground font-normal">(max 500)</span></label>
           <input
             class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             [value]="pendingQuestion()"
@@ -165,7 +177,7 @@ import {
             placeholder="e.g., Where were you born?" />
         </div>
         <div>
-          <label class="text-sm font-medium mb-1 block">Correct Answer</label>
+          <label class="text-sm font-medium mb-1 block">Correct Answer <span class="text-muted-foreground font-normal">(max 500)</span></label>
           <input
             class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             [value]="pendingAnswer()"
@@ -268,6 +280,7 @@ export class PersonalQuestionManagerComponent implements OnInit {
   saving = signal<boolean>(false);
   errorMessage = signal<string>('');
   successMessage = signal<string>('');
+  validationErrors = signal<Record<string, string>>({});
 
   // Suggested question templates
   suggestions = [
@@ -367,6 +380,15 @@ export class PersonalQuestionManagerComponent implements OnInit {
   async saveGame(): Promise<void> {
     if (!this.canSave()) return;
 
+    // Zod validation
+    const detailsSchema = z.object({ title: gameTitleSchema, description: gameDescriptionSchema });
+    const valResult = detailsSchema.safeParse({ title: this.gameTitle().trim(), description: this.gameDescription().trim() });
+    if (!valResult.success) {
+      this.validationErrors.set(getFieldErrors(valResult));
+      return;
+    }
+    this.validationErrors.set({});
+
     this.saving.set(true);
     this.errorMessage.set('');
     this.successMessage.set('');
@@ -464,6 +486,7 @@ export class PersonalQuestionManagerComponent implements OnInit {
     this.pendingQuestion.set('');
     this.pendingAnswer.set('');
     this.errorMessage.set('');
+    this.validationErrors.set({});
   }
 
   private loadGames(): void {

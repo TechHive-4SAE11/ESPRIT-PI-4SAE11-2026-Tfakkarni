@@ -14,6 +14,7 @@ import { ZardBadgeComponent } from '@/shared/components/badge';
 import {
   CustomGameService,
   type CustomGameResponse,
+  type EditCustomGameRequest,
 } from '@/core/services/custom-game.service';
 import {
   DataPointService,
@@ -21,6 +22,8 @@ import {
   type DataPointType,
 } from '@/core/services/data-point.service';
 import { MemoryTagService, type TagResponse } from '@/core/services/memory-tag.service';
+import { gameTitleSchema, gameDescriptionSchema, getFieldErrors } from '@/core/validation/game-schemas';
+import { z } from 'zod';
 
 type View = 'list' | 'build';
 
@@ -61,10 +64,16 @@ type View = 'list' | 'build';
                 <z-card class="p-5 relative group">
                   <div class="flex items-start justify-between mb-2">
                     <h3 class="font-semibold text-lg">{{ game.title }}</h3>
-                    <button (click)="deleteGame(game.id)"
-                      class="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all">
-                      <z-icon zType="trash-2" class="h-4 w-4" />
-                    </button>
+                    <div class="flex gap-1">
+                      <button (click)="startEdit(game.id)"
+                        class="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all">
+                        <z-icon zType="edit" class="h-4 w-4" />
+                      </button>
+                      <button (click)="deleteGame(game.id)"
+                        class="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all">
+                        <z-icon zType="trash-2" class="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                   @if (game.description) {
                     <p class="text-sm text-muted-foreground mb-3">{{ game.description }}</p>
@@ -108,18 +117,26 @@ type View = 'list' | 'build';
                 <h3 class="text-lg font-semibold mb-4">Game Details</h3>
                 <div class="space-y-4">
                   <div>
-                    <label class="text-sm font-medium block mb-1">Title *</label>
-                    <input type="text" [(ngModel)]="gameTitle" placeholder="e.g., Family Memories"
-                      class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                    <label class="text-sm font-medium block mb-1">Title * <span class="text-muted-foreground font-normal">(max 20)</span></label>
+                    <input type="text" [(ngModel)]="gameTitle" placeholder="e.g., Family Memories" maxlength="20"
+                      class="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                      [class]="validationErrors()['title'] ? 'border-red-500' : 'border-border'" />
+                    @if (validationErrors()['title']) {
+                      <p class="text-xs text-red-500 mt-1">{{ validationErrors()['title'] }}</p>
+                    }
                   </div>
                   <div>
-                    <label class="text-sm font-medium block mb-1">Description</label>
-                    <input type="text" [(ngModel)]="gameDescription" placeholder="Optional description"
-                      class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                    <label class="text-sm font-medium block mb-1">Description <span class="text-muted-foreground font-normal">(max 100)</span></label>
+                    <input type="text" [(ngModel)]="gameDescription" placeholder="Optional description" maxlength="100"
+                      class="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                      [class]="validationErrors()['description'] ? 'border-red-500' : 'border-border'" />
+                    @if (validationErrors()['description']) {
+                      <p class="text-xs text-red-500 mt-1">{{ validationErrors()['description'] }}</p>
+                    }
                   </div>
                   <div class="flex gap-2">
-                    <z-button variant="outline" (click)="view.set('list')">Cancel</z-button>
-                    <button z-button [disabled]="!gameTitle.trim()" (click)="step.set(2); loadDataPoints()">Next</button>
+                    <z-button variant="outline" (click)="cancelBuild()">Cancel</z-button>
+                    <button z-button [disabled]="!gameTitle.trim()" (click)="validateAndNext()">Next</button>
                   </div>
                 </div>
               </z-card>
@@ -243,7 +260,7 @@ type View = 'list' | 'build';
                 <div class="flex gap-2">
                   <z-button variant="outline" (click)="step.set(2)">Back</z-button>
                   <button z-button [disabled]="isSaving()" (click)="saveGame()">
-                    @if (isSaving()) { Saving... } @else { <z-icon zType="save" class="mr-2 h-4 w-4" /> Create Game }
+                    @if (isSaving()) { Saving... } @else { <z-icon zType="save" class="mr-2 h-4 w-4" /> {{ editingGameId() ? 'Save Changes' : 'Create Game' }} }
                   </button>
                 </div>
               </z-card>
@@ -269,6 +286,8 @@ export class GameBuilderComponent implements OnInit {
   games = signal<CustomGameResponse[]>([]);
   isLoading = signal(false);
   isSaving = signal(false);
+  editingGameId = signal<number | null>(null);
+  validationErrors = signal<Record<string, string>>({});
 
   // Build state
   gameTitle = '';
@@ -326,8 +345,63 @@ export class GameBuilderComponent implements OnInit {
     this.gameTitle = '';
     this.gameDescription = '';
     this.selectedIds.set(new Set());
+    this.editingGameId.set(null);
+    this.validationErrors.set({});
     this.step.set(1);
     this.view.set('build');
+  }
+
+  startEdit(gameId: number) {
+    this.editingGameId.set(gameId);
+    this.validationErrors.set({});
+    this.isLoading.set(true);
+
+    // Load data points first, then load game detail
+    this.dataPointService.getAllDataPoints(this.keycloakId).pipe(
+      tap(data => this.allDataPoints.set(data)),
+      catchError(() => { this.allDataPoints.set([]); return of([]); }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(() => {
+      this.customGameService.getGameDetail(gameId).pipe(
+        tap(detail => {
+          this.gameTitle = detail.title;
+          this.gameDescription = detail.description || '';
+          const ids = new Set<string>();
+          detail.items.forEach(item => ids.add(`${item.type}-${item.id}`));
+          this.selectedIds.set(ids);
+          this.applyFilter();
+          this.step.set(2);
+          this.view.set('build');
+        }),
+        catchError(() => of(null)),
+        finalize(() => this.isLoading.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      ).subscribe();
+    });
+  }
+
+  cancelBuild() {
+    this.editingGameId.set(null);
+    this.validationErrors.set({});
+    this.view.set('list');
+  }
+
+  validateAndNext() {
+    const detailsSchema = z.object({
+      title: gameTitleSchema,
+      description: gameDescriptionSchema,
+    });
+    const result = detailsSchema.safeParse({
+      title: this.gameTitle.trim(),
+      description: this.gameDescription.trim(),
+    });
+    if (!result.success) {
+      this.validationErrors.set(getFieldErrors(result));
+      return;
+    }
+    this.validationErrors.set({});
+    this.step.set(2);
+    if (this.allDataPoints().length === 0) this.loadDataPoints();
   }
 
   loadDataPoints() {
@@ -409,12 +483,19 @@ export class GameBuilderComponent implements OnInit {
       dataPointId: i.id,
     }));
 
-    this.customGameService.createGame(this.keycloakId, {
+    const payload = {
       title: this.gameTitle.trim(),
       description: this.gameDescription.trim(),
       items,
-    }).pipe(
+    };
+
+    const request$ = this.editingGameId()
+      ? this.customGameService.editGame(this.editingGameId()!, payload)
+      : this.customGameService.createGame(this.keycloakId, payload);
+
+    request$.pipe(
       tap(() => {
+        this.editingGameId.set(null);
         this.view.set('list');
         this.loadGames();
       }),

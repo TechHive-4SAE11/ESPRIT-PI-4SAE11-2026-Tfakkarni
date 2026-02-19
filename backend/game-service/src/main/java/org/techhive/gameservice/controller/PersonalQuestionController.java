@@ -1,5 +1,6 @@
 package org.techhive.gameservice.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -24,7 +25,7 @@ public class PersonalQuestionController {
   @PostMapping
   public ResponseEntity<?> createGame(
       @RequestHeader("X-User-Id") String patientKeycloakId,
-      @RequestBody CreatePersonalQuestionGameRequest request) {
+      @Valid @RequestBody CreatePersonalQuestionGameRequest request) {
     try {
       PersonalQuestionGameResponse game = personalQuestionService.createGame(patientKeycloakId, request);
       return ResponseEntity.status(HttpStatus.CREATED).body(game);
@@ -53,7 +54,7 @@ public class PersonalQuestionController {
   @PutMapping("/{gameId}")
   public ResponseEntity<?> editGame(
       @PathVariable Long gameId,
-      @RequestBody EditPersonalQuestionGameRequest request) {
+      @Valid @RequestBody EditPersonalQuestionGameRequest request) {
     try {
       PersonalQuestionGameResponse game = personalQuestionService.editGame(gameId, request);
       return ResponseEntity.ok(game);

@@ -22,14 +22,20 @@ public class DataPointService {
   private final QuestionMemoryRepository questionRepo;
   private final MemoryTagRepository tagRepo;
 
+  private static final long MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+
   // ===================== PHOTO =====================
 
   @Transactional
   public DataPointSummary createPhoto(String keycloakId, CreatePhotoRequest req) {
+    byte[] imageData = Base64.getDecoder().decode(req.getImageBase64());
+    if (imageData.length > MAX_IMAGE_SIZE) {
+      throw new IllegalArgumentException("Image size exceeds 5MB limit");
+    }
     PhotoMemory photo = new PhotoMemory();
     photo.setPatientKeycloakId(keycloakId);
     photo.setName(req.getName());
-    photo.setImageData(Base64.getDecoder().decode(req.getImageBase64()));
+    photo.setImageData(imageData);
     photo.setImageContentType(req.getContentType());
     if (req.getTagIds() != null && !req.getTagIds().isEmpty()) {
       photo.setTags(new HashSet<>(tagRepo.findAllById(req.getTagIds())));

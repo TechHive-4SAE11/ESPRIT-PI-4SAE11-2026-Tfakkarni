@@ -1,5 +1,6 @@
 package org.techhive.gameservice.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -33,7 +34,7 @@ public class MovieGameController {
   @PostMapping
   public ResponseEntity<?> createMovieGame(
       @RequestHeader("X-User-Id") String patientKeycloakId,
-      @RequestBody CreateMovieGameRequest request) {
+      @Valid @RequestBody CreateMovieGameRequest request) {
     try {
       MovieGameResponse game = movieGameService.createMovieGame(patientKeycloakId, request);
       return ResponseEntity.status(HttpStatus.CREATED).body(game);
@@ -62,7 +63,7 @@ public class MovieGameController {
   @PutMapping("/{gameId}")
   public ResponseEntity<?> editGame(
       @PathVariable Long gameId,
-      @RequestBody EditMovieGameRequest request) {
+      @Valid @RequestBody EditMovieGameRequest request) {
     try {
       MovieGameResponse game = movieGameService.editGame(gameId, request);
       return ResponseEntity.ok(game);

@@ -20,6 +20,8 @@ public class GameService {
 
     private final MiniGameRepository miniGameRepository;
 
+    private static final long MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+
     /**
      * Create a new minigame for a patient.
      */
@@ -44,6 +46,9 @@ public class GameService {
 
         for (GameImageUpload upload : uploads) {
             byte[] imageData = Base64.getDecoder().decode(upload.getImageBase64());
+            if (imageData.length > MAX_IMAGE_SIZE) {
+                throw new IllegalArgumentException("Image '" + upload.getName() + "' exceeds 5MB limit");
+            }
             GameImage image = new GameImage(game, upload.getName(), imageData, upload.getContentType(), currentOrder++);
             game.getImages().add(image);
         }
@@ -123,6 +128,9 @@ public class GameService {
                 } else {
                     // New image
                     byte[] imageData = Base64.getDecoder().decode(entry.getImageBase64());
+                    if (imageData.length > MAX_IMAGE_SIZE) {
+                        throw new IllegalArgumentException("Image '" + entry.getName() + "' exceeds 5MB limit");
+                    }
                     GameImage newImg = new GameImage(game, entry.getName(), imageData,
                             entry.getContentType(), order);
                     game.getImages().add(newImg);

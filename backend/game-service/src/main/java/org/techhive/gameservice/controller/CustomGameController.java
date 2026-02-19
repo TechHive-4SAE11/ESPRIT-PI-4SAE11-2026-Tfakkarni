@@ -1,5 +1,6 @@
 package org.techhive.gameservice.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.techhive.gameservice.dto.*;
@@ -23,8 +24,15 @@ public class CustomGameController {
     @PostMapping("/{keycloakId}")
     public ResponseEntity<CustomGameResponse> createGame(
             @PathVariable String keycloakId,
-            @RequestBody CreateCustomGameRequest request) {
+            @Valid @RequestBody CreateCustomGameRequest request) {
         return ResponseEntity.ok(gameService.createGame(keycloakId, request));
+    }
+
+    @PutMapping("/{gameId}")
+    public ResponseEntity<CustomGameResponse> editGame(
+            @PathVariable Long gameId,
+            @Valid @RequestBody EditCustomGameRequest request) {
+        return ResponseEntity.ok(gameService.updateGame(gameId, request));
     }
 
     @GetMapping("/patient/{keycloakId}")

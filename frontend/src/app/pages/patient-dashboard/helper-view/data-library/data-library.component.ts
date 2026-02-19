@@ -15,6 +15,7 @@ import { ZardBadgeComponent } from '@/shared/components/badge';
 import { DataPointService, type DataPointSummary, type DataPointType, type UpdateDataPointRequest } from '@/core/services/data-point.service';
 import { MemoryTagService, type TagResponse } from '@/core/services/memory-tag.service';
 import { MovieGameService, type TmdbMovie } from '@/core/services/movie-game.service';
+import { photoSchema, placeSchema, movieMemorySchema, questionMemorySchema, getFieldErrors } from '@/core/validation/game-schemas';
 import * as L from 'leaflet';
 
 type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question' | 'edit';
@@ -167,14 +168,21 @@ type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question' | 
             </div>
             <div class="space-y-4">
               <div>
-                <label class="text-sm font-medium block mb-1">Name / Label</label>
-                <input type="text" [(ngModel)]="photoName" placeholder="e.g., Grandma Sara"
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                <label class="text-sm font-medium block mb-1">Name / Label <span class="text-muted-foreground font-normal">(max 20)</span></label>
+                <input type="text" [(ngModel)]="photoName" placeholder="e.g., Grandma Sara" maxlength="20"
+                  class="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  [class]="formErrors()['name'] ? 'border-red-500' : 'border-border'" />
+                @if (formErrors()['name']) {
+                  <p class="text-xs text-red-500 mt-1">{{ formErrors()['name'] }}</p>
+                }
               </div>
               <div>
-                <label class="text-sm font-medium block mb-1">Image</label>
+                <label class="text-sm font-medium block mb-1">Image <span class="text-muted-foreground font-normal">(max 5MB)</span></label>
                 <input type="file" accept="image/*" (change)="onPhotoSelected($event)"
                   class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
+                @if (formErrors()['imageBase64']) {
+                  <p class="text-xs text-red-500 mt-1">{{ formErrors()['imageBase64'] }}</p>
+                }
                 @if (photoPreview()) {
                   <img [src]="photoPreview()" class="mt-2 max-h-40 rounded-md" />
                 }
@@ -229,14 +237,22 @@ type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question' | 
             }
             <div class="space-y-4">
               <div>
-                <label class="text-sm font-medium block mb-1">Place Name</label>
-                <input type="text" [(ngModel)]="placeName" placeholder="e.g., Childhood Home"
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                <label class="text-sm font-medium block mb-1">Place Name <span class="text-muted-foreground font-normal">(max 20)</span></label>
+                <input type="text" [(ngModel)]="placeName" placeholder="e.g., Childhood Home" maxlength="20"
+                  class="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  [class]="formErrors()['name'] ? 'border-red-500' : 'border-border'" />
+                @if (formErrors()['name']) {
+                  <p class="text-xs text-red-500 mt-1">{{ formErrors()['name'] }}</p>
+                }
               </div>
               <div>
-                <label class="text-sm font-medium block mb-1">Hint (optional)</label>
-                <input type="text" [(ngModel)]="placeHint" placeholder="A clue about this place..."
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                <label class="text-sm font-medium block mb-1">Hint (optional) <span class="text-muted-foreground font-normal">(max 100)</span></label>
+                <input type="text" [(ngModel)]="placeHint" placeholder="A clue about this place..." maxlength="100"
+                  class="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  [class]="formErrors()['hint'] ? 'border-red-500' : 'border-border'" />
+                @if (formErrors()['hint']) {
+                  <p class="text-xs text-red-500 mt-1">{{ formErrors()['hint'] }}</p>
+                }
               </div>
               <div>
                 <label class="text-sm font-medium block mb-1">Tags</label>
@@ -306,9 +322,13 @@ type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question' | 
                   </button>
                 </div>
                 <div>
-                  <label class="text-sm font-medium block mb-1">Character Name (correct answer)</label>
-                  <input type="text" [(ngModel)]="movieCharacterName" placeholder="e.g., Jack Dawson"
-                    class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                  <label class="text-sm font-medium block mb-1">Character Name (correct answer) <span class="text-muted-foreground font-normal">(max 20)</span></label>
+                  <input type="text" [(ngModel)]="movieCharacterName" placeholder="e.g., Jack Dawson" maxlength="20"
+                    class="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    [class]="formErrors()['correctAnswer'] ? 'border-red-500' : 'border-border'" />
+                  @if (formErrors()['correctAnswer']) {
+                    <p class="text-xs text-red-500 mt-1">{{ formErrors()['correctAnswer'] }}</p>
+                  }
                 </div>
               }
               <div>
@@ -354,14 +374,22 @@ type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question' | 
                 </div>
               </div>
               <div>
-                <label class="text-sm font-medium block mb-1">Question</label>
+                <label class="text-sm font-medium block mb-1">Question <span class="text-muted-foreground font-normal">(max 500)</span></label>
                 <input type="text" [(ngModel)]="questionText" placeholder="e.g., Where were you born?"
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                  class="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  [class]="formErrors()['questionText'] ? 'border-red-500' : 'border-border'" />
+                @if (formErrors()['questionText']) {
+                  <p class="text-xs text-red-500 mt-1">{{ formErrors()['questionText'] }}</p>
+                }
               </div>
               <div>
-                <label class="text-sm font-medium block mb-1">Correct Answer</label>
+                <label class="text-sm font-medium block mb-1">Correct Answer <span class="text-muted-foreground font-normal">(max 500)</span></label>
                 <input type="text" [(ngModel)]="questionAnswer" placeholder="e.g., Tunis"
-                  class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                  class="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  [class]="formErrors()['correctAnswer'] ? 'border-red-500' : 'border-border'" />
+                @if (formErrors()['correctAnswer']) {
+                  <p class="text-xs text-red-500 mt-1">{{ formErrors()['correctAnswer'] }}</p>
+                }
               </div>
               <div>
                 <label class="text-sm font-medium block mb-1">Tags</label>
@@ -492,6 +520,7 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
   tags = signal<TagResponse[]>([]);
   isLoading = signal(false);
   isSaving = signal(false);
+  formErrors = signal<Record<string, string>>({});
 
   // Filters
   activeTypeFilter = signal<DataPointType | null>(null);
@@ -618,6 +647,11 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
   onPhotoSelected(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      this.formErrors.set({ imageBase64: 'Image must be under 5MB' });
+      return;
+    }
+    this.formErrors.update(e => { const { imageBase64, ...rest } = e; return rest; });
     this.photoContentType.set(file.type);
     const reader = new FileReader();
     reader.onload = () => {
@@ -629,7 +663,16 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
   }
 
   submitPhoto() {
-    if (!this.photoName.trim() || !this.photoBase64()) return;
+    const result = photoSchema.safeParse({
+      name: this.photoName.trim(),
+      imageBase64: this.photoBase64(),
+      contentType: this.photoContentType(),
+    });
+    if (!result.success) {
+      this.formErrors.set(getFieldErrors(result));
+      return;
+    }
+    this.formErrors.set({});
     this.isSaving.set(true);
     this.dataPointService.createPhoto(this.keycloakId, {
       name: this.photoName.trim(),
@@ -743,13 +786,23 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
   }
 
   submitPlace() {
-    if (!this.placeName.trim() || !this.placeLat || !this.placeLng) return;
+    const result = placeSchema.safeParse({
+      name: this.placeName.trim(),
+      latitude: this.placeLat,
+      longitude: this.placeLng,
+      hint: this.placeHint.trim() || '',
+    });
+    if (!result.success) {
+      this.formErrors.set(getFieldErrors(result));
+      return;
+    }
+    this.formErrors.set({});
     this.isSaving.set(true);
     this.destroyPlaceMap();
     this.dataPointService.createPlace(this.keycloakId, {
       name: this.placeName.trim(),
-      latitude: this.placeLat,
-      longitude: this.placeLng,
+      latitude: this.placeLat!,
+      longitude: this.placeLng!,
       hint: this.placeHint.trim() || undefined,
       tagIds: Array.from(this.selectedTagIds()),
     }).pipe(
@@ -790,7 +843,16 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
 
   submitMovie() {
     const movie = this.selectedMovie();
-    if (!movie || !this.movieCharacterName.trim()) return;
+    if (!movie) return;
+    const result = movieMemorySchema.safeParse({
+      originalTitle: movie.title,
+      correctAnswer: this.movieCharacterName.trim(),
+    });
+    if (!result.success) {
+      this.formErrors.set(getFieldErrors(result));
+      return;
+    }
+    this.formErrors.set({});
     this.isSaving.set(true);
     this.dataPointService.createMovie(this.keycloakId, {
       tmdbId: movie.id,
@@ -810,7 +872,15 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
   // ── Question ──
 
   submitQuestion() {
-    if (!this.questionText.trim() || !this.questionAnswer.trim()) return;
+    const result = questionMemorySchema.safeParse({
+      questionText: this.questionText.trim(),
+      correctAnswer: this.questionAnswer.trim(),
+    });
+    if (!result.success) {
+      this.formErrors.set(getFieldErrors(result));
+      return;
+    }
+    this.formErrors.set({});
     this.isSaving.set(true);
     this.dataPointService.createQuestion(this.keycloakId, {
       questionText: this.questionText.trim(),
@@ -909,6 +979,7 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
     this.movieSearchQuery = ''; this.selectedMovie.set(null); this.movieCharacterName = '';
     this.questionText = ''; this.questionAnswer = '';
     this.selectedTagIds.set(new Set());
+    this.formErrors.set({});
   }
 
   getTypeEmoji(type: DataPointType): string {

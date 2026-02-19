@@ -1,5 +1,6 @@
 package org.techhive.gameservice.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.techhive.gameservice.dto.*;
@@ -24,7 +25,7 @@ public class DataPointController {
   @PostMapping("/photos/{keycloakId}")
   public ResponseEntity<DataPointSummary> createPhoto(
       @PathVariable String keycloakId,
-      @RequestBody CreatePhotoRequest request) {
+      @Valid @RequestBody CreatePhotoRequest request) {
     return ResponseEntity.ok(dataPointService.createPhoto(keycloakId, request));
   }
 
@@ -46,7 +47,7 @@ public class DataPointController {
   @PostMapping("/places/{keycloakId}")
   public ResponseEntity<DataPointSummary> createPlace(
       @PathVariable String keycloakId,
-      @RequestBody CreateMemoryPlaceRequest request) {
+      @Valid @RequestBody CreateMemoryPlaceRequest request) {
     return ResponseEntity.ok(dataPointService.createPlace(keycloakId, request));
   }
 
@@ -68,7 +69,7 @@ public class DataPointController {
   @PostMapping("/movies/{keycloakId}")
   public ResponseEntity<DataPointSummary> createMovie(
       @PathVariable String keycloakId,
-      @RequestBody CreateMovieMemoryRequest request) {
+      @Valid @RequestBody CreateMovieMemoryRequest request) {
     return ResponseEntity.ok(dataPointService.createMovie(keycloakId, request));
   }
 
@@ -90,7 +91,7 @@ public class DataPointController {
   @PostMapping("/questions/{keycloakId}")
   public ResponseEntity<DataPointSummary> createQuestion(
       @PathVariable String keycloakId,
-      @RequestBody CreateQuestionMemoryRequest request) {
+      @Valid @RequestBody CreateQuestionMemoryRequest request) {
     return ResponseEntity.ok(dataPointService.createQuestion(keycloakId, request));
   }
 

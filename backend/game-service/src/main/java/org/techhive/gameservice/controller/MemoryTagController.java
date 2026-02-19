@@ -1,5 +1,6 @@
 package org.techhive.gameservice.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.techhive.gameservice.dto.TagRequest;
@@ -33,14 +34,14 @@ public class MemoryTagController {
   @PostMapping("/{keycloakId}")
   public ResponseEntity<TagResponse> createTag(
       @PathVariable String keycloakId,
-      @RequestBody TagRequest request) {
+      @Valid @RequestBody TagRequest request) {
     return ResponseEntity.ok(tagService.createTag(keycloakId, request));
   }
 
   @PutMapping("/{tagId}")
   public ResponseEntity<TagResponse> updateTag(
       @PathVariable Long tagId,
-      @RequestBody TagRequest request) {
+      @Valid @RequestBody TagRequest request) {
     return ResponseEntity.ok(tagService.updateTag(tagId, request));
   }
 

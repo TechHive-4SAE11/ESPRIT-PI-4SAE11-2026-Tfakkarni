@@ -46,6 +46,28 @@ public class CustomGameService {
     return toResponse(game);
   }
 
+  @Transactional
+  public CustomGameResponse updateGame(Long gameId, EditCustomGameRequest req) {
+    CustomGame game = gameRepo.findById(gameId)
+        .orElseThrow(() -> new IllegalArgumentException("Game not found: " + gameId));
+
+    game.setTitle(req.getTitle());
+    game.setDescription(req.getDescription());
+
+    // Clear existing items (orphanRemoval will delete them)
+    game.getItems().clear();
+
+    // Add new items from the request
+    for (int i = 0; i < req.getItems().size(); i++) {
+      var entry = req.getItems().get(i);
+      game.getItems().add(new CustomGameItem(game, entry.getDataType(), entry.getDataPointId(), i));
+    }
+
+    game = gameRepo.save(game);
+    log.info("Updated custom game '{}' (id={}) with {} items", game.getTitle(), gameId, req.getItems().size());
+    return toResponse(game);
+  }
+
   public List<CustomGameResponse> getGamesForPatient(String keycloakId) {
     return gameRepo.findByPatientKeycloakId(keycloakId).stream()
         .map(this::toResponse)
