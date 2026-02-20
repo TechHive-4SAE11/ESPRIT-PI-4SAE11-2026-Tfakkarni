@@ -1,10 +1,14 @@
-import { Component, Input, computed, OnInit, OnChanges, SimpleChanges, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, computed, OnInit, OnChanges, SimpleChanges, inject, DestroyRef, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { catchError, tap, of } from 'rxjs';
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardBadgeComponent } from '@/shared/components/badge';
+import { ZardButtonComponent } from '@/shared/components/button';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
 import { UserApiService } from '@/core/services/user-api.service';
+import { PrescriptionService } from '@/core/services/prescription.service';
 
 @Component({
   selector: 'app-prescription-list',
@@ -13,7 +17,8 @@ import { UserApiService } from '@/core/services/user-api.service';
     CommonModule,
     ZardCardComponent,
     ZardIconComponent,
-    ZardBadgeComponent
+    ZardBadgeComponent,
+    ZardButtonComponent
   ],
   template: `
     @if (isLoading) {
@@ -51,9 +56,14 @@ import { UserApiService } from '@/core/services/user-api.service';
                   }
                 </div>
               </div>
-              <z-badge zType="secondary">
-                {{ prescription.medications.length || 0 }} medication(s)
-              </z-badge>
+              <div class="flex items-center gap-2">
+                <button z-button zType="outline" zSize="sm" (click)="downloadPdf(prescription.id!)" title="Download PDF">
+                    <z-icon zType="download" class="w-4 h-4" />
+                </button>
+                <z-badge zType="secondary">
+                  {{ prescription.medications.length || 0 }} medication(s)
+                </z-badge>
+              </div>
             </div>
             
             @if (prescription.medications && prescription.medications.length > 0) {
@@ -124,6 +134,10 @@ export class PrescriptionListComponent implements OnInit, OnChanges {
   @Input() isLoading = false;
   
   private userApiService = inject(UserApiService);
+  private prescriptionService = inject(PrescriptionService);
+  private destroyRef = inject(DestroyRef);
+  private platformId = inject(PLATFORM_ID);
+  
   doctorNames = new Map<string, string>(); // doctorDbId -> Full Name
 
   ngOnInit() {
@@ -152,4 +166,26 @@ export class PrescriptionListComponent implements OnInit, OnChanges {
           });
       });
   }
+
+  downloadPdf(id: number): void {
+      if (!isPlatformBrowser(this.platformId)) return;
+
+      this.prescriptionService.downloadPrescriptionPdf(id)
+        .pipe(
+          tap((blob: Blob) => {
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `prescription_${id}.pdf`;
+            link.click();
+            window.URL.revokeObjectURL(url);
+          }),
+          catchError(error => {
+            console.error('Error downloading PDF', error);
+            return of(null);
+          }),
+          takeUntilDestroyed(this.destroyRef)
+        )
+        .subscribe();
+    }
 }
