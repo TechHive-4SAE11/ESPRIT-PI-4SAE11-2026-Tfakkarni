@@ -6,7 +6,7 @@ import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardBadgeComponent } from '@/shared/components/badge';
 import { ZardButtonComponent } from '@/shared/components/button';
-import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
+import { PrescriptionResponseDTO, MedicationStatus } from '@/core/models/prescription.model';
 import { UserApiService } from '@/core/services/user-api.service';
 import { PrescriptionService } from '@/core/services/prescription.service';
 
@@ -71,11 +71,17 @@ import { PrescriptionService } from '@/core/services/prescription.service';
                 @for (med of prescription.medications; track med.id) {
                   <div class="border-l-4 border-purple-500 pl-4 py-3 bg-slate-50 dark:bg-slate-700/30 rounded-r-lg">
                     <div class="flex items-start justify-between mb-2">
-                      <h4 class="font-bold text-base text-slate-800 dark:text-white">{{ med.medicationName }}</h4>
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <h4 class="font-bold text-base text-slate-800 dark:text-white">{{ med.medicationName }}</h4>
+                        <z-badge [zType]="getStatusBadgeType(med.status)" class="flex items-center gap-1">
+                          <z-icon [zType]="getStatusIcon(med.status)" class="h-3 w-3" />
+                          <span>{{ getStatusLabel(med.status) }}</span>
+                        </z-badge>
+                      </div>
                       <z-icon zType="pill" class="text-purple-500 h-5 w-5" />
                     </div>
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                       <div class="flex items-center gap-2">
                         <z-icon zType="circle" class="h-4 w-4 text-slate-400" />
                         <span class="text-slate-500 dark:text-slate-400">Dosage:</span>
@@ -91,6 +97,20 @@ import { PrescriptionService } from '@/core/services/prescription.service';
                         <span class="text-slate-500 dark:text-slate-400">Duration:</span>
                         <span class="font-medium text-slate-700 dark:text-slate-200">{{ med.duration }}</span>
                       </div>
+                      @if (med.startDate) {
+                        <div class="flex items-center gap-2">
+                          <z-icon zType="play" class="h-4 w-4 text-green-500" />
+                          <span class="text-slate-500 dark:text-slate-400">Start:</span>
+                          <span class="font-medium text-slate-700 dark:text-slate-200">{{ med.startDate | date:'mediumDate' }}</span>
+                        </div>
+                      }
+                      @if (med.endDate) {
+                        <div class="flex items-center gap-2">
+                          <z-icon zType="calendar" class="h-4 w-4 text-red-500" />
+                          <span class="text-slate-500 dark:text-slate-400">End:</span>
+                          <span class="font-medium text-slate-700 dark:text-slate-200">{{ med.endDate | date:'mediumDate' }}</span>
+                        </div>
+                      }
                     </div>
                     
                     @if (med.instructions) {
@@ -139,6 +159,52 @@ export class PrescriptionListComponent implements OnInit, OnChanges {
   private platformId = inject(PLATFORM_ID);
   
   doctorNames = new Map<string, string>(); // doctorDbId -> Full Name
+
+  // Helper methods for medication status display
+  getStatusBadgeType(status: MedicationStatus): 'default' | 'secondary' | 'destructive' | 'outline' {
+    switch (status) {
+      case MedicationStatus.ACTIVE:
+        return 'default';
+      case MedicationStatus.ONGOING:
+        return 'secondary';
+      case MedicationStatus.EXPIRED:
+        return 'destructive';
+      case MedicationStatus.DISCONTINUED:
+        return 'outline';
+      default:
+        return 'outline';
+    }
+  }
+
+  getStatusLabel(status: MedicationStatus): string {
+    switch (status) {
+      case MedicationStatus.ACTIVE:
+        return 'Active';
+      case MedicationStatus.ONGOING:
+        return 'Ongoing';
+      case MedicationStatus.EXPIRED:
+        return 'Expired';
+      case MedicationStatus.DISCONTINUED:
+        return 'Discontinued';
+      default:
+        return status;
+    }
+  }
+
+  getStatusIcon(status: MedicationStatus): 'check' | 'activity' | 'x' | 'alert-triangle' | 'info' {
+    switch (status) {
+      case MedicationStatus.ACTIVE:
+        return 'check';
+      case MedicationStatus.ONGOING:
+        return 'activity';
+      case MedicationStatus.EXPIRED:
+        return 'x';
+      case MedicationStatus.DISCONTINUED:
+        return 'alert-triangle';
+      default:
+        return 'info';
+    }
+  }
 
   ngOnInit() {
       this.fetchDoctorNames();
