@@ -48,10 +48,12 @@
                         <!-- Medication list preview -->
                         <div class="flex flex-wrap gap-2">
                             @for (med of prescription.medications.slice(0, 3); track med.id) {
-                            <span
-                                class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                                {{ med.medicationName }} — {{ med.dosage }}
-                            </span>
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                <span>{{ med.medicationName }} — {{ med.dosage }}</span>
+                                <z-badge [zType]="getStatusBadgeType(med.status)" class="text-[10px] px-1.5 py-0.5">
+                                    {{ getStatusLabel(med.status) }}
+                                </z-badge>
+                            </div>
                             }
                             @if (prescription.medications.length > 3) {
                             <span
@@ -90,24 +92,30 @@
     </div>
     }
 
-    <!-- Create/Edit Prescription Dialog -->
-    @if (showCreateDialog()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div class="bg-background rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative">
-            <button class="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
-                (click)="closeCreateDialog()">
-                <z-icon zType="x" class="w-5 h-5" />
-            </button>
+    <!-- Create/Edit Prescription Dialog (rendered at body level via CDK Portal) -->
+    <ng-template #createDialogTpl>
+    <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-background rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col relative">
+            <div class="flex items-center justify-between p-6 pb-4 border-b">
+                <h2 class="text-xl font-bold">{{ editingPrescriptionId() ? 'Edit Prescription' : 'New Prescription' }}</h2>
+                <button class="text-muted-foreground hover:text-foreground" (click)="closeCreateDialog()">
+                    <z-icon zType="x" class="w-5 h-5" />
+                </button>
+            </div>
 
-            <h2 class="text-xl font-bold mb-4">{{ editingPrescriptionId() ? 'Edit Prescription' : 'New Prescription' }}
-            </h2>
-
-            <form [formGroup]="prescriptionForm" (ngSubmit)="onSubmit()" class="space-y-4">
+            <form [formGroup]="prescriptionForm" (ngSubmit)="onSubmit()" class="flex flex-col flex-1 min-h-0">
+                <div class="overflow-y-auto p-6 space-y-4">
 
                 <!-- Session Selection -->
+                @if (!editingPrescriptionId()) {
                 <div class="space-y-2">
-                    <label class="text-sm font-medium">Session *</label>
-                    <select formControlName="sessionId" class="w-full p-2 border rounded-md bg-background">
+                    <label class="text-sm font-medium">
+                        Session 
+                        <span class="text-destructive">*</span>
+                    </label>
+                    <select formControlName="sessionId" 
+                        [class]="'w-full p-2 border rounded-md bg-background transition-colors' + 
+                                 (shouldShowError(prescriptionForm.get('sessionId')) ? ' border-destructive focus:ring-destructive' : ' border-input')">
                         <option [ngValue]="null" disabled>Select a session</option>
                         @for (session of sessions(); track session.id) {
                         <option [value]="session.id">
@@ -115,22 +123,32 @@
                         </option>
                         }
                     </select>
-                    @if (sessions().length === 0 && !isLoadingSessions()) {
-                    <p class="text-xs text-destructive">No sessions found. Please create a consultation session first.
+                    <p class="text-xs text-slate-500 italic">
+                        Note: Only sessions without an existing prescription are listed here.
                     </p>
+                    @if (sessions().length === 0 && !isLoadingSessions()) {
+                    <p class="text-xs text-destructive">No available sessions found. Please create a new consultation
+                        session.</p>
                     }
                     @if (isLoadingSessions()) {
                     <p class="text-xs text-muted-foreground">Loading sessions...</p>
                     }
-                    @if (prescriptionForm.get('sessionId')?.invalid && prescriptionForm.get('sessionId')?.touched) {
-                    <p class="text-xs text-destructive">Session is required</p>
+                    @if (shouldShowError(prescriptionForm.get('sessionId'))) {
+                    <p class="text-xs text-destructive font-medium flex items-center gap-1">
+                        <z-icon zType="alert-triangle" class="w-3 h-3" />
+                        {{ getErrorMessage(prescriptionForm.get('sessionId')) }}
+                    </p>
                     }
                 </div>
+                }
 
                 <!-- Medications List -->
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
-                        <label class="text-sm font-medium">Medications *</label>
+                        <label class="text-sm font-medium">
+                            Medications 
+                            <span class="text-destructive">*</span>
+                        </label>
                         <button type="button" z-button zType="outline" zSize="sm" (click)="addMedication()">
                             <z-icon zType="plus" class="mr-1" /> Add Medication
                         </button>
@@ -147,58 +165,112 @@
 
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
-                                    <input type="text" formControlName="medicationName" placeholder="Medication Name *"
-                                        class="p-2 border rounded-md text-sm w-full" />
-                                    @if (getMedicationControl($index, 'medicationName')?.invalid &&
-                                    getMedicationControl($index, 'medicationName')?.touched) {
-                                    <p class="text-xs text-destructive mt-1">Required</p>
+                                    <label class="text-xs font-medium text-muted-foreground mb-1 block">
+                                        Medication Name <span class="text-destructive">*</span>
+                                    </label>
+                                    <input type="text" 
+                                        formControlName="medicationName" 
+                                        placeholder="e.g., Aspirin"
+                                        [class]="'p-2 border rounded-md text-sm w-full transition-colors' + 
+                                                 (shouldShowError(getMedicationControl($index, 'medicationName')) ? ' border-destructive focus:ring-destructive' : ' border-input')" />
+                                    @if (shouldShowError(getMedicationControl($index, 'medicationName'))) {
+                                    <p class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
+                                        <z-icon zType="alert-triangle" class="w-3 h-3" />
+                                        {{ getErrorMessage(getMedicationControl($index, 'medicationName')) }}
+                                    </p>
                                     }
                                 </div>
                                 <div>
-                                    <input type="text" formControlName="dosage" placeholder="Dosage (e.g. 500mg) *"
-                                        class="p-2 border rounded-md text-sm w-full" />
-                                    @if (getMedicationControl($index, 'dosage')?.invalid && getMedicationControl($index,
-                                    'dosage')?.touched) {
-                                    <p class="text-xs text-destructive mt-1">Required</p>
+                                    <label class="text-xs font-medium text-muted-foreground mb-1 block">
+                                        Dosage <span class="text-destructive">*</span>
+                                    </label>
+                                    <input type="text" 
+                                        formControlName="dosage" 
+                                        placeholder="e.g., 500mg, 2 tablets"
+                                        [class]="'p-2 border rounded-md text-sm w-full transition-colors' + 
+                                                 (shouldShowError(getMedicationControl($index, 'dosage')) ? ' border-destructive focus:ring-destructive' : ' border-input')" />
+                                    @if (shouldShowError(getMedicationControl($index, 'dosage'))) {
+                                    <p class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
+                                        <z-icon zType="alert-triangle" class="w-3 h-3" />
+                                        {{ getErrorMessage(getMedicationControl($index, 'dosage')) }}
+                                    </p>
                                     }
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
-                                    <input type="text" formControlName="frequency"
-                                        placeholder="Frequency (e.g. 2x/day) *"
-                                        class="p-2 border rounded-md text-sm w-full" />
-                                    @if (getMedicationControl($index, 'frequency')?.invalid &&
-                                    getMedicationControl($index, 'frequency')?.touched) {
-                                    <p class="text-xs text-destructive mt-1">Required</p>
+                                    <label class="text-xs font-medium text-muted-foreground mb-1 block">
+                                        Frequency <span class="text-destructive">*</span>
+                                    </label>
+                                    <input type="text" 
+                                        formControlName="frequency"
+                                        placeholder="e.g., 2x/day, every 8h"
+                                        [class]="'p-2 border rounded-md text-sm w-full transition-colors' + 
+                                                 (shouldShowError(getMedicationControl($index, 'frequency')) ? ' border-destructive focus:ring-destructive' : ' border-input')" />
+                                    @if (shouldShowError(getMedicationControl($index, 'frequency'))) {
+                                    <p class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
+                                        <z-icon zType="alert-triangle" class="w-3 h-3" />
+                                        {{ getErrorMessage(getMedicationControl($index, 'frequency')) }}
+                                    </p>
                                     }
                                 </div>
                                 <div>
-                                    <input type="text" formControlName="duration" placeholder="Duration (e.g. 7 days) *"
-                                        class="p-2 border rounded-md text-sm w-full" />
-                                    @if (getMedicationControl($index, 'duration')?.invalid &&
-                                    getMedicationControl($index, 'duration')?.touched) {
-                                    <p class="text-xs text-destructive mt-1">Required</p>
+                                    <label class="text-xs font-medium text-muted-foreground mb-1 block">
+                                        Duration <span class="text-destructive">*</span>
+                                    </label>
+                                    <input type="text" 
+                                        formControlName="duration" 
+                                        placeholder="e.g., 7 days, 2 weeks, 1 month, ongoing"
+                                        [class]="'p-2 border rounded-md text-sm w-full transition-colors' + 
+                                                 (shouldShowError(getMedicationControl($index, 'duration')) ? ' border-destructive focus:ring-destructive' : ' border-input')" />
+                                    @if (shouldShowError(getMedicationControl($index, 'duration'))) {
+                                    <p class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
+                                        <z-icon zType="alert-triangle" class="w-3 h-3" />
+                                        {{ getErrorMessage(getMedicationControl($index, 'duration')) }}
+                                    </p>
+                                    } @else {
+                                    <p class="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                        <z-icon zType="info" class="w-3 h-3" />
+                                        <span>Format: "number unit" - Valid units: days, weeks, months. Or use "ongoing"</span>
+                                    </p>
                                     }
                                 </div>
                             </div>
-                            <textarea formControlName="instructions" placeholder="Special Instructions (optional)"
-                                rows="2" class="p-2 border rounded-md text-sm w-full"></textarea>
+                            <div>
+                                <label class="text-xs font-medium text-muted-foreground mb-1 block">
+                                    Special Instructions <span class="text-muted-foreground text-xs">(optional)</span>
+                                </label>
+                                <textarea 
+                                    formControlName="instructions" 
+                                    placeholder="e.g., Take with food, avoid alcohol"
+                                    rows="2" 
+                                    class="p-2 border border-input rounded-md text-sm w-full"></textarea>
+                            </div>
                         </div>
                         }
                     </div>
                     @if (medications.length === 0) {
-                    <p class="text-xs text-destructive">At least one medication is required</p>
+                    <p class="text-xs text-destructive font-medium flex items-center gap-1 p-3 bg-destructive/10 rounded-md">
+                        <z-icon zType="alert-triangle" class="w-4 h-4" />
+                        Please add at least one medication to create a prescription
+                    </p>
                     }
                 </div>
 
                 @if (errorMessage()) {
-                <div class="p-3 bg-destructive/10 border border-destructive rounded-md text-sm text-destructive">
-                    {{ errorMessage() }}
+                <div class="p-3 bg-destructive/10 border border-destructive rounded-md">
+                    <div class="flex items-start gap-2">
+                        <z-icon zType="alert-triangle" class="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-destructive">Validation Error</p>
+                            <p class="text-sm text-destructive mt-1">{{ errorMessage() }}</p>
+                        </div>
+                    </div>
                 </div>
                 }
+                </div>
 
-                <div class="flex justify-end gap-2 mt-6">
+                <div class="flex justify-end gap-2 p-6 pt-4 border-t bg-background">
                     <button type="button" z-button zType="ghost" (click)="closeCreateDialog()">Cancel</button>
                     <button type="submit" z-button [disabled]="prescriptionForm.invalid || isSubmitting()">
                         @if (isSubmitting()) { <z-icon zType="loader-2" class="animate-spin mr-2" /> }
@@ -208,11 +280,11 @@
             </form>
         </div>
     </div>
-    }
+    </ng-template>
 
-    <!-- View Detail Dialog -->
-    @if (showViewDialog() && selectedPrescription()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <!-- View Detail Dialog (rendered at body level via CDK Portal) -->
+    <ng-template #viewDialogTpl>
+    <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm">
         <div class="bg-background rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative">
             <button class="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
                 (click)="closeViewDialog()">
@@ -247,20 +319,52 @@
                         @for (m of p.medications; track m.id) {
                         <div class="border border-primary/20 bg-primary/5 rounded-lg p-4 space-y-2">
                             <div class="flex items-start justify-between">
-                                <div>
-                                    <h4 class="font-semibold text-lg">{{ m.medicationName }}</h4>
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 flex-wrap mb-1">
+                                        <h4 class="font-semibold text-lg">{{ m.medicationName }}</h4>
+                                        <z-badge [zType]="getStatusBadgeType(m.status)" class="flex items-center gap-1">
+                                            <z-icon [zType]="getStatusIcon(m.status)" class="h-3 w-3" />
+                                            <span>{{ getStatusLabel(m.status) }}</span>
+                                        </z-badge>
+                                    </div>
                                     <p class="text-sm text-muted-foreground">{{ m.dosage }}</p>
                                 </div>
-                                <span
-                                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">
-                                    {{ m.frequency }}
-                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span
+                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">
+                                        {{ m.frequency }}
+                                    </span>
+                                    @if (m.status !== 'DISCONTINUED') {
+                                    <button z-button zType="outline" zSize="sm" 
+                                            (click)="discontinueMedication(m.id)"
+                                            title="Discontinue this medication">
+                                        <z-icon zType="x" class="w-3 h-3 mr-1" />
+                                        Discontinue
+                                    </button>
+                                    }
+                                </div>
                             </div>
 
-                            <div class="flex items-center gap-2 text-sm">
-                                <z-icon zType="clock" class="w-4 h-4 text-muted-foreground" />
-                                <span class="text-muted-foreground">Duration:</span>
-                                <span class="font-medium">{{ m.duration }}</span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                                <div class="flex items-center gap-2">
+                                    <z-icon zType="clock" class="w-4 h-4 text-muted-foreground" />
+                                    <span class="text-muted-foreground">Duration:</span>
+                                    <span class="font-medium">{{ m.duration }}</span>
+                                </div>
+                                @if (m.startDate) {
+                                <div class="flex items-center gap-2">
+                                    <z-icon zType="play" class="w-4 h-4 text-green-500" />
+                                    <span class="text-muted-foreground">Start:</span>
+                                    <span class="font-medium">{{ m.startDate | date:'mediumDate' }}</span>
+                                </div>
+                                }
+                                @if (m.endDate) {
+                                <div class="flex items-center gap-2">
+                                    <z-icon zType="calendar" class="w-4 h-4 text-red-500" />
+                                    <span class="text-muted-foreground">End:</span>
+                                    <span class="font-medium">{{ m.endDate | date:'mediumDate' }}</span>
+                                </div>
+                                }
                             </div>
 
                             @if (m.instructions) {
@@ -287,6 +391,66 @@
                         Edit Prescription
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+    </ng-template>
+
+    <!-- Discontinue Medication Dialog -->
+    @if (showDiscontinueDialog()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-background rounded-lg shadow-lg w-full max-w-lg p-6 relative">
+            <button class="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+                (click)="closeDiscontinueDialog()">
+                <z-icon zType="x" class="w-5 h-5" />
+            </button>
+
+            <h2 class="text-xl font-bold mb-2 flex items-center gap-2">
+                <z-icon zType="alert-triangle" class="w-6 h-6 text-destructive" />
+                Discontinue Medication
+            </h2>
+            <p class="text-sm text-muted-foreground mb-6">
+                Please provide a reason for discontinuing this medication. This will be added to the medication record.
+            </p>
+
+            <div class="space-y-4 mb-6">
+                <div class="space-y-2">
+                    <label for="discontinue-reason" class="text-sm font-medium text-foreground">
+                        Reason for Discontinuation
+                    </label>
+                    <textarea 
+                        id="discontinue-reason"
+                        z-input
+                        rows="4"
+                        placeholder="e.g., Patient experienced side effects, allergic reaction, medication switch, treatment completed..."
+                        [value]="discontinueReason()"
+                        (input)="discontinueReason.set($any($event.target).value)"
+                        class="resize-none"></textarea>
+                    <p class="text-xs text-muted-foreground flex items-start gap-1">
+                        <z-icon zType="info" class="w-3 h-3 mt-0.5 flex-shrink-0" />
+                        <span>This reason will be permanently added to the medication's instruction field.</span>
+                    </p>
+                </div>
+                
+                <div class="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                    <p class="text-xs text-destructive-foreground flex items-start gap-2">
+                        <z-icon zType="alert-triangle" class="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <span>
+                            <strong>Warning:</strong> Discontinuing this medication will mark it as stopped and set the end date to today. 
+                            The patient will no longer be prompted to take this medication.
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button z-button zType="outline" (click)="closeDiscontinueDialog()">
+                    Cancel
+                </button>
+                <button z-button zType="destructive" (click)="confirmDiscontinue()">
+                    <z-icon zType="x" class="mr-2 w-4 h-4" />
+                    Discontinue
+                </button>
             </div>
         </div>
     </div>

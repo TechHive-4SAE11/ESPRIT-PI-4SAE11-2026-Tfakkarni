@@ -50,6 +50,9 @@ public class PrescriptionMapper {
                 medication.getFrequency(),
                 medication.getDuration(),
                 medication.getInstructions(),
+                medication.getStatus(),
+                medication.getStartDate(),
+                medication.getEndDate(),
                 medication.getCreatedAt()
         );
     }

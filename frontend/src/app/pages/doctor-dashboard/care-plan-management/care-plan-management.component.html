@@ -31,7 +31,8 @@
                             <div class="flex items-center gap-2 text-sm">
                                 <z-icon zType="calendar" class="w-4 h-4 text-muted-foreground" />
                                 <span class="font-medium">{{ carePlan.createdAt | date:'MMM d, y' }}</span>
-                                <span class="text-muted-foreground">at {{ carePlan.createdAt | date:'shortTime' }}</span>
+                                <span class="text-muted-foreground">at {{ carePlan.createdAt | date:'shortTime'
+                                    }}</span>
                             </div>
                         </div>
 
@@ -89,22 +90,29 @@
     </div>
     }
 
-    <!-- Create/Edit Care Plan Dialog -->
-    @if (showCreateDialog()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div class="bg-background rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative">
-            <button class="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
-                (click)="closeCreateDialog()">
-                <z-icon zType="x" class="w-5 h-5" />
-            </button>
+    <!-- Create/Edit Care Plan Dialog (rendered at body level via CDK Portal) -->
+    <ng-template #createDialogTpl>
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-background rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col relative">
+            <div class="flex items-center justify-between p-6 pb-4 border-b">
+                <h2 class="text-xl font-bold">{{ editingCarePlanId() ? 'Edit Care Plan' : 'New Care Plan' }}</h2>
+                <button class="text-muted-foreground hover:text-foreground" (click)="closeCreateDialog()">
+                    <z-icon zType="x" class="w-5 h-5" />
+                </button>
+            </div>
 
-            <h2 class="text-xl font-bold mb-4">{{ editingCarePlanId() ? 'Edit Care Plan' : 'New Care Plan' }}</h2>
-
-            <form [formGroup]="carePlanForm" (ngSubmit)="saveCarePlan()" class="space-y-6">
+            <form [formGroup]="carePlanForm" (ngSubmit)="saveCarePlan()" class="flex flex-col flex-1 min-h-0">
+                <div class="overflow-y-auto p-6 space-y-6">
                 <!-- Session Selection -->
+                @if (!editingCarePlanId()) {
                 <div class="space-y-2">
-                    <label class="text-sm font-medium">Session *</label>
-                    <select formControlName="sessionId" class="w-full p-2 border rounded-md bg-background">
+                    <label class="text-sm font-medium">
+                        Session 
+                        <span class="text-destructive">*</span>
+                    </label>
+                    <select formControlName="sessionId" 
+                        [class]="'w-full p-2 border rounded-md bg-background transition-colors' + 
+                                 (shouldShowError(carePlanForm.get('sessionId')) ? ' border-destructive focus:ring-destructive' : ' border-input')">
                         <option [ngValue]="null" disabled>Select a session</option>
                         @for (session of sessions(); track session.id) {
                         <option [value]="session.id">
@@ -112,19 +120,32 @@
                         </option>
                         }
                     </select>
-                    @if (sessions().length === 0 && !isLoadingSessions()) {
-                    <p class="text-xs text-destructive">No sessions found. Please create a consultation session first.
+                    <p class="text-xs text-slate-500 italic">
+                        Note: Only sessions without an existing care plan are listed here.
                     </p>
+                    @if (sessions().length === 0 && !isLoadingSessions()) {
+                    <p class="text-xs text-destructive">No available sessions found. Please create a new consultation
+                        session.</p>
                     }
                     @if (isLoadingSessions()) {
                     <p class="text-xs text-muted-foreground">Loading sessions...</p>
                     }
+                    @if (shouldShowError(carePlanForm.get('sessionId'))) {
+                    <p class="text-xs text-destructive font-medium flex items-center gap-1">
+                        <z-icon zType="alert-triangle" class="w-3 h-3" />
+                        {{ getErrorMessage(carePlanForm.get('sessionId')) }}
+                    </p>
+                    }
                 </div>
+                }
 
                 <!-- Activities List -->
                 <div formArrayName="activities" class="space-y-4">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold">Activities</h3>
+                        <h3 class="text-lg font-semibold">
+                            Activities 
+                            <span class="text-destructive">*</span>
+                        </h3>
                         <button type="button" z-button zType="secondary" zSize="sm" (click)="addCareActivity()">
                             <z-icon zType="plus" class="w-4 h-4 mr-1" />
                             Add Activity
@@ -133,7 +154,8 @@
 
                     @for (act of activities.controls; track i; let i = $index) {
                     <div [formGroupName]="i" class="border rounded-lg p-4 bg-muted/30 relative">
-                        <button type="button" class="absolute top-2 right-2 text-destructive hover:bg-destructive/10 p-1 rounded"
+                        <button type="button"
+                            class="absolute top-2 right-2 text-destructive hover:bg-destructive/10 p-1 rounded"
                             (click)="removeCareActivity(i)" *ngIf="activities.length > 1">
                             <z-icon zType="trash-2" class="w-4 h-4" />
                         </button>
@@ -141,16 +163,31 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Activity Name -->
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-medium mb-1">Activity Name</label>
-                                <input type="text" formControlName="activityName" placeholder="e.g. Morning Walk"
-                                    class="w-full px-3 py-2 border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary" />
+                                <label class="block text-sm font-medium mb-1">
+                                    Activity Name 
+                                    <span class="text-destructive">*</span>
+                                </label>
+                                <input type="text" 
+                                    formControlName="activityName" 
+                                    placeholder="e.g., Morning Walk, Puzzle Game"
+                                    [class]="'w-full px-3 py-2 border rounded-md bg-background focus:ring-2 transition-colors' +
+                                             (shouldShowError(getActivityControl(i, 'activityName')) ? ' border-destructive focus:ring-destructive' : ' border-input focus:ring-primary focus:border-primary')" />
+                                @if (shouldShowError(getActivityControl(i, 'activityName'))) {
+                                <p class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
+                                    <z-icon zType="alert-triangle" class="w-3 h-3" />
+                                    {{ getErrorMessage(getActivityControl(i, 'activityName')) }}
+                                </p>
+                                }
                             </div>
 
                             <!-- Activity Type -->
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-medium mb-1">Type</label>
+                                <label class="block text-sm font-medium mb-1">
+                                    Type 
+                                    <span class="text-destructive">*</span>
+                                </label>
                                 <select formControlName="activityType"
-                                    class="w-full px-3 py-2 border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary">
+                                    class="w-full px-3 py-2 border border-input rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary">
                                     <option [value]="CareActivityType.PHYSICAL_ACTIVITY">Physical Activity</option>
                                     <option [value]="CareActivityType.NUTRITION_PLAN">Nutrition Plan</option>
                                 </select>
@@ -159,39 +196,88 @@
                             @if (act.get('activityType')?.value === CareActivityType.PHYSICAL_ACTIVITY) {
                             <!-- Frequency -->
                             <div>
-                                <label class="block text-sm font-medium mb-1">Frequency</label>
-                                <input type="text" formControlName="frequency" placeholder="e.g. Daily"
-                                    class="w-full px-3 py-2 border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary" />
+                                <label class="block text-sm font-medium mb-1">
+                                    Frequency 
+                                    <span class="text-destructive">*</span>
+                                </label>
+                                <input type="text" 
+                                    formControlName="frequency" 
+                                    placeholder="e.g., Daily, 3x/week"
+                                    [class]="'w-full px-3 py-2 border rounded-md bg-background focus:ring-2 transition-colors' +
+                                             (shouldShowError(getActivityControl(i, 'frequency')) ? ' border-destructive focus:ring-destructive' : ' border-input focus:ring-primary focus:border-primary')" />
+                                @if (shouldShowError(getActivityControl(i, 'frequency'))) {
+                                <p class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
+                                    <z-icon zType="alert-triangle" class="w-3 h-3" />
+                                    {{ getErrorMessage(getActivityControl(i, 'frequency')) }}
+                                </p>
+                                }
                             </div>
 
                             <!-- Duration -->
                             <div>
-                                <label class="block text-sm font-medium mb-1">Duration</label>
-                                <input type="text" formControlName="duration" placeholder="e.g. 30 mins"
-                                    class="w-full px-3 py-2 border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary" />
+                                <label class="block text-sm font-medium mb-1">
+                                    Duration 
+                                    <span class="text-destructive">*</span>
+                                </label>
+                                <input type="text" 
+                                    formControlName="duration" 
+                                    placeholder="e.g., 30 mins, 1 hour"
+                                    [class]="'w-full px-3 py-2 border rounded-md bg-background focus:ring-2 transition-colors' +
+                                             (shouldShowError(getActivityControl(i, 'duration')) ? ' border-destructive focus:ring-destructive' : ' border-input focus:ring-primary focus:border-primary')" />
+                                @if (shouldShowError(getActivityControl(i, 'duration'))) {
+                                <p class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
+                                    <z-icon zType="alert-triangle" class="w-3 h-3" />
+                                    {{ getErrorMessage(getActivityControl(i, 'duration')) }}
+                                </p>
+                                }
                             </div>
                             }
 
                             <!-- Description -->
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-medium mb-1">Description</label>
-                                <textarea formControlName="description" rows="2" placeholder="Describe the activity..."
-                                    class="w-full px-3 py-2 border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary"></textarea>
+                                <label class="block text-sm font-medium mb-1">
+                                    Description 
+                                    <span class="text-destructive">*</span>
+                                </label>
+                                <textarea 
+                                    formControlName="description" 
+                                    rows="2" 
+                                    placeholder="Describe the activity in detail..."
+                                    [class]="'w-full px-3 py-2 border rounded-md bg-background focus:ring-2 transition-colors' +
+                                             (shouldShowError(getActivityControl(i, 'description')) ? ' border-destructive focus:ring-destructive' : ' border-input focus:ring-primary focus:border-primary')"></textarea>
+                                @if (shouldShowError(getActivityControl(i, 'description'))) {
+                                <p class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
+                                    <z-icon zType="alert-triangle" class="w-3 h-3" />
+                                    {{ getErrorMessage(getActivityControl(i, 'description')) }}
+                                </p>
+                                }
                             </div>
                         </div>
                     </div>
                     }
 
                     @if (activities.length === 0) {
-                    <p class="text-destructive text-sm">At least one activity is required.</p>
+                    <p class="text-xs text-destructive font-medium flex items-center gap-1 p-3 bg-destructive/10 rounded-md">
+                        <z-icon zType="alert-triangle" class="w-4 h-4" />
+                        At least one activity is required
+                    </p>
                     }
                 </div>
 
                 @if (errorMessage()) {
-                <div class="text-destructive text-sm">{{ errorMessage() }}</div>
+                <div class="p-3 bg-destructive/10 border border-destructive rounded-md">
+                    <div class="flex items-start gap-2">
+                        <z-icon zType="alert-triangle" class="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-destructive">Validation Error</p>
+                            <p class="text-sm text-destructive mt-1">{{ errorMessage() }}</p>
+                        </div>
+                    </div>
+                </div>
                 }
+                </div>
 
-                <div class="flex justify-end gap-3 pt-4 border-t">
+                <div class="flex justify-end gap-3 p-6 pt-4 border-t bg-background">
                     <button type="button" z-button zType="outline" (click)="closeCreateDialog()">Cancel</button>
                     <button type="submit" z-button [disabled]="isSubmitting() || carePlanForm.invalid">
                         @if (isSubmitting()) {
@@ -205,10 +291,10 @@
             </form>
         </div>
     </div>
-    }
+    </ng-template>
 
-    <!-- View Care Plan Dialog -->
-    @if (showViewDialog() && selectedCarePlan()) {
+    <!-- View Care Plan Dialog (rendered at body level via CDK Portal) -->
+    <ng-template #viewDialogTpl>
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
         <div class="bg-background rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative">
             <button class="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
@@ -217,7 +303,7 @@
             </button>
 
             <h2 class="text-xl font-bold mb-4">Care Plan Details</h2>
-            
+
             <div class="space-y-6">
                 <div class="flex items-center gap-2 text-sm text-muted-foreground">
                     <z-icon zType="calendar" class="w-4 h-4" />
@@ -226,62 +312,64 @@
 
                 <div class="space-y-4">
                     @if (physicalActivities().length > 0) {
-                        <h3 class="font-semibold text-lg border-b pb-2">Physical Activities</h3>
-                        @for (act of physicalActivities(); track act.id) {
-                        <div class="bg-muted/30 p-4 rounded-lg border mb-4">
-                            <div class="flex justify-between items-start mb-2">
-                                <h4 class="font-bold text-primary">{{ act.activityName }}</h4>
-                                <div class="flex gap-2">
-                                    <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                                        Physical
-                                    </span>
-                                    <span class="text-xs px-2 py-1 rounded bg-secondary text-secondary-foreground">{{
-                                        act.completionStatus }}</span>
-                                </div>
+                    <h3 class="font-semibold text-lg border-b pb-2">Physical Activities</h3>
+                    @for (act of physicalActivities(); track act.id) {
+                    <div class="bg-muted/30 p-4 rounded-lg border mb-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold text-primary">{{ act.activityName }}</h4>
+                            <div class="flex gap-2">
+                                <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                                    Physical
+                                </span>
+                                <span class="text-xs px-2 py-1 rounded bg-secondary text-secondary-foreground">{{
+                                    act.completionStatus }}</span>
                             </div>
-                            
-                            <div class="grid grid-cols-2 gap-4 text-sm mb-3">
-                                <div>
-                                    <span class="text-muted-foreground block">Frequency:</span>
-                                    <span>{{ act.frequency }}</span>
-                                </div>
-                                <div>
-                                    <span class="text-muted-foreground block">Duration:</span>
-                                    <span>{{ act.duration }}</span>
-                                </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 text-sm mb-3">
+                            <div>
+                                <span class="text-muted-foreground block">Frequency:</span>
+                                <span>{{ act.frequency }}</span>
                             </div>
-                            
-                            @if (act.description) {
-                            <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded text-sm text-blue-800 dark:text-blue-200">
-                                <strong>Description:</strong> {{ act.description }}
+                            <div>
+                                <span class="text-muted-foreground block">Duration:</span>
+                                <span>{{ act.duration }}</span>
                             </div>
-                            }
+                        </div>
+
+                        @if (act.description) {
+                        <div
+                            class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded text-sm text-blue-800 dark:text-blue-200">
+                            <strong>Description:</strong> {{ act.description }}
                         </div>
                         }
+                    </div>
+                    }
                     }
 
                     @if (nutritionActivities().length > 0) {
-                        <h3 class="font-semibold text-lg border-b pb-2">Nutrition Plans</h3>
-                        @for (act of nutritionActivities(); track act.id) {
-                        <div class="bg-muted/30 p-4 rounded-lg border mb-4">
-                            <div class="flex justify-between items-start mb-2">
-                                <h4 class="font-bold text-primary">{{ act.activityName }}</h4>
-                                <div class="flex gap-2">
-                                    <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
-                                        Nutrition
-                                    </span>
-                                    <span class="text-xs px-2 py-1 rounded bg-secondary text-secondary-foreground">{{
-                                        act.completionStatus }}</span>
-                                </div>
+                    <h3 class="font-semibold text-lg border-b pb-2">Nutrition Plans</h3>
+                    @for (act of nutritionActivities(); track act.id) {
+                    <div class="bg-muted/30 p-4 rounded-lg border mb-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold text-primary">{{ act.activityName }}</h4>
+                            <div class="flex gap-2">
+                                <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                                    Nutrition
+                                </span>
+                                <span class="text-xs px-2 py-1 rounded bg-secondary text-secondary-foreground">{{
+                                    act.completionStatus }}</span>
                             </div>
-                            
-                            @if (act.description) {
-                            <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded text-sm text-green-800 dark:text-green-200">
-                                <strong>Description:</strong> {{ act.description }}
-                            </div>
-                            }
+                        </div>
+
+                        @if (act.description) {
+                        <div
+                            class="bg-green-50 dark:bg-green-900/20 p-3 rounded text-sm text-green-800 dark:text-green-200">
+                            <strong>Description:</strong> {{ act.description }}
                         </div>
                         }
+                    </div>
+                    }
                     }
                 </div>
             </div>
@@ -291,5 +379,5 @@
             </div>
         </div>
     </div>
-    }
+    </ng-template>
 </div>

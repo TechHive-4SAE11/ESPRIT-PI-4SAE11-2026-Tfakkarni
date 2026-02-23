@@ -1,9 +1,12 @@
-import { Component, Input, OnInit, signal, computed, DestroyRef, inject } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, signal, computed, DestroyRef, inject, ViewChild, TemplateRef, ViewContainerRef, ApplicationRef, Injector, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormArray, AbstractControl } from '@angular/forms';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { DomPortalOutlet, TemplatePortal } from '@angular/cdk/portal';
+import { FormBuilder, FormGroup, ReactiveFormsModule, FormArray, AbstractControl, Validators } from '@angular/forms';
 import { catchError, finalize, of, tap } from 'rxjs';
+import { z } from 'zod';
 
+import { createZodValidator } from '@/core/utils/zod-validator';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
@@ -32,9 +35,23 @@ import {
   ],
   templateUrl: './care-plan-management.component.html',
 })
-export class CarePlanManagementComponent implements OnInit {
+export class CarePlanManagementComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly alertDialog = inject(ZardAlertDialogService);
+  private readonly fb = inject(FormBuilder);
+
+  // CDK Portal - render dialogs at body level to escape overflow:auto containers
+  private readonly appRef = inject(ApplicationRef);
+  private readonly injector = inject(Injector);
+  private readonly viewContainerRef = inject(ViewContainerRef);
+  private readonly platformId = inject(PLATFORM_ID);
+  @ViewChild('createDialogTpl') private createDialogTpl!: TemplateRef<any>;
+  @ViewChild('viewDialogTpl') private viewDialogTpl!: TemplateRef<any>;
+  private createDialogPortal: DomPortalOutlet | null = null;
+  private viewDialogPortal: DomPortalOutlet | null = null;
+  private readonly carePlanService = inject(CarePlanService);
+  private readonly medicalFolderService = inject(MedicalFolderService);
+  private readonly sessionService = inject(SessionService);
 
   @Input({ required: true }) patient!: UserInfo;
   @Input() doctor: UserInfo | null = null;
@@ -44,61 +61,102 @@ export class CarePlanManagementComponent implements OnInit {
   sessions = signal<SessionResponseDTO[]>([]);
   selectedCarePlan = signal<CarePlanResponseDTO | null>(null);
 
-  physicalActivities = computed(() => 
-    this.selectedCarePlan()?.activities.filter(a => a.activityType === CareActivityType.PHYSICAL_ACTIVITY) ?? []
-  );
+  isLoadingCarePlans = signal(false);
+  isLoadingSessions = signal(false);
+  isSubmitting = signal(false);
 
-  nutritionActivities = computed(() => 
-    this.selectedCarePlan()?.activities.filter(a => a.activityType === CareActivityType.NUTRITION_PLAN) ?? []
-  );
+  editingCarePlanId = signal<number | null>(null);
+  showCreateDialog = signal(false);
+  showViewDialog = signal(false);
+  errorMessage = signal<string | null>(null);
+
+  carePlanForm!: FormGroup;
 
   // Constants
   CareActivityType = CareActivityType;
 
-  // UI state signals
-  showCreateDialog = signal(false);
-  showViewDialog = signal(false);
-  isLoadingCarePlans = signal(false);
-  isLoadingSessions = signal(false);
-  isSubmitting = signal(false);
-  editingCarePlanId = signal<number | null>(null);
-  errorMessage = signal<string | null>(null);
+  // Computed properties for template
+  physicalActivities = computed(() => {
+    const plan = this.selectedCarePlan();
+    return plan ? plan.activities.filter(a => a.activityType === CareActivityType.PHYSICAL_ACTIVITY) : [];
+  });
 
-  // Form
-  carePlanForm: FormGroup;
+  nutritionActivities = computed(() => {
+    const plan = this.selectedCarePlan();
+    return plan ? plan.activities.filter(a => a.activityType === CareActivityType.NUTRITION_PLAN) : [];
+  });
 
-  constructor(
-    private readonly fb: FormBuilder,
-    private readonly carePlanService: CarePlanService,
-    private readonly medicalFolderService: MedicalFolderService,
-    private readonly sessionService: SessionService
-  ) {
+  // Zod Schemas
+  private readonly activityFieldSchemas = {
+    activityName: z.string().min(1, { message: 'Please enter the activity name' }),
+    description: z.string().min(1, { message: 'Please provide a description of the activity' }),
+    frequency: z.string().min(1, { message: 'Please specify how often (e.g., Daily, 3x/week)' }),
+    duration: z.string().min(1, { message: 'Please specify duration (e.g., 30 mins, 1 hour)' })
+  };
+
+  private readonly carePlanSchema = z.object({
+    sessionId: z.union([
+      z.number(),
+      z.string().min(1)
+    ]).refine(val => val !== null && val !== '', { message: 'Please select a consultation session' }),
+    activities: z.array(z.any()).min(1, { message: 'At least one care activity is required' })
+  });
+
+  ngOnInit(): void {
     this.carePlanForm = this.createCarePlanForm();
+    this.loadCarePlans();
+    this.loadSessions();
   }
 
   get activities(): FormArray {
     return this.carePlanForm.get('activities') as FormArray;
   }
 
-  ngOnInit(): void {
-    this.loadCarePlans();
-    this.loadSessions();
+  // Helper method to get activity control
+  getActivityControl(index: number, controlName: string): AbstractControl | null {
+    const activityGroup = this.activities.at(index) as FormGroup;
+    return activityGroup?.get(controlName);
+  }
+
+  // Get the first validation error message for a form control
+  getErrorMessage(control: AbstractControl | null): string {
+    if (!control || !control.errors) {
+      return '';
+    }
+    const errors = control.errors;
+    // Zod validator stores the message in the 'zodError' key
+    if (errors['zodError']) {
+      return errors['zodError'];
+    }
+    // Fallback to standard Angular validators
+    if (errors['required']) {
+      return 'This field is required';
+    }
+    if (errors['minlength']) {
+      return `Minimum length is ${errors['minlength'].requiredLength}`;
+    }
+    return 'Invalid value';
+  }
+
+  // Check if control should show error (invalid and touched)
+  shouldShowError(control: AbstractControl | null): boolean {
+    return !!(control && control.invalid && control.touched);
   }
 
   // ==================== Form Creation ====================
 
   private createCarePlanForm(): FormGroup {
     return this.fb.group({
-      sessionId: [null, Validators.required],
-      activities: this.fb.array([], [Validators.required, Validators.minLength(1)])
+      sessionId: [null, createZodValidator(this.carePlanSchema.shape.sessionId)],
+      activities: this.fb.array([], [createZodValidator(this.carePlanSchema.shape.activities)])
     });
   }
 
   private createCareActivityFormGroup(activity?: CareActivityRequestDTO): FormGroup {
     const group = this.fb.group({
-      activityName: [activity?.activityName || '', Validators.required],
-      activityType: [activity?.activityType || CareActivityType.PHYSICAL_ACTIVITY, Validators.required],
-      description: [activity?.description || '', Validators.required],
+      activityName: [activity?.activityName || '', createZodValidator(this.activityFieldSchemas.activityName)],
+      activityType: [activity?.activityType || CareActivityType.PHYSICAL_ACTIVITY],
+      description: [activity?.description || '', createZodValidator(this.activityFieldSchemas.description)],
       frequency: [activity?.frequency || ''],
       duration: [activity?.duration || ''],
       completionStatus: [activity?.completionStatus || 'Pending']
@@ -108,7 +166,7 @@ export class CarePlanManagementComponent implements OnInit {
     this.updateActivityValidators(group);
 
     // Subscribe to changes
-    group.get('activityType')?.valueChanges.subscribe(() => {
+    group.get('activityType')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.updateActivityValidators(group);
     });
 
@@ -120,15 +178,14 @@ export class CarePlanManagementComponent implements OnInit {
     const freqControl = group.get('frequency');
     const durControl = group.get('duration');
 
+    const requiredValidator = createZodValidator(z.string().min(1, { message: 'Required' }));
+
     if (type === CareActivityType.PHYSICAL_ACTIVITY) {
-      freqControl?.setValidators([Validators.required]);
-      durControl?.setValidators([Validators.required]);
+      freqControl?.setValidators([requiredValidator]);
+      durControl?.setValidators([requiredValidator]);
     } else {
       freqControl?.clearValidators();
       durControl?.clearValidators();
-      // Optionally clear values if switching to Nutrition, but maybe not necessary
-      freqControl?.setValue('');
-      durControl?.setValue('');
     }
     freqControl?.updateValueAndValidity();
     durControl?.updateValueAndValidity();
@@ -158,34 +215,20 @@ export class CarePlanManagementComponent implements OnInit {
   }
 
   loadSessions(): void {
-    if (!this.patient?.id) {
-      console.warn('[CarePlanManagement] No patient ID available');
-      return;
-    }
-
-    if (!this.doctor) {
-      console.warn('[CarePlanManagement] No doctor info available');
-      return;
-    }
+    if (!this.patient?.id) return;
+    if (!this.doctor) return;
 
     this.isLoadingSessions.set(true);
     const currentDoctorDbId = String(this.doctor.id);
     const patientDbId = String(this.patient.id);
 
-    console.log('[CarePlanManagement] Loading sessions for patient:', patientDbId, 'doctor:', currentDoctorDbId);
-
     this.medicalFolderService.getMedicalFoldersByPatient(patientDbId)
       .pipe(
         tap(folders => {
-          console.log('[CarePlanManagement] Medical folders:', folders);
-
           const matchingFolder = folders.find(f => f.idDoctor === currentDoctorDbId);
-
           if (matchingFolder) {
-            console.log('[CarePlanManagement] Found matching folder:', matchingFolder);
             this.loadSessionsForFolder(matchingFolder.id);
           } else {
-            console.warn('[CarePlanManagement] No matching folder found');
             this.sessions.set([]);
             this.isLoadingSessions.set(false);
           }
@@ -202,12 +245,9 @@ export class CarePlanManagementComponent implements OnInit {
   }
 
   private loadSessionsForFolder(folderId: number): void {
-    this.sessionService.getSessionsByMedicalFolder(folderId)
+    this.sessionService.getSessionsWhereNoCarePlan(folderId)
       .pipe(
-        tap(sessions => {
-          console.log('[CarePlanManagement] Loaded sessions:', sessions);
-          this.sessions.set(sessions);
-        }),
+        tap(sessions => this.sessions.set(sessions)),
         catchError(error => {
           console.error('[CarePlanManagement] Error loading sessions:', error);
           this.sessions.set([]);
@@ -219,14 +259,42 @@ export class CarePlanManagementComponent implements OnInit {
       .subscribe();
   }
 
+  // ==================== Portal Helpers ====================
+
+  private getOrCreatePortal(): DomPortalOutlet | null {
+    if (isPlatformBrowser(this.platformId)) {
+      return new DomPortalOutlet(document.body, null as any, this.appRef, this.injector);
+    }
+    return null;
+  }
+
+  private attachPortal(templateRef: TemplateRef<any>, outlet: DomPortalOutlet | null): DomPortalOutlet | null {
+    if (!outlet) outlet = this.getOrCreatePortal();
+    if (!outlet) return null;
+    if (outlet.hasAttached()) outlet.detach();
+    outlet.attach(new TemplatePortal(templateRef, this.viewContainerRef));
+    return outlet;
+  }
+
+  private detachPortal(outlet: DomPortalOutlet | null): void {
+    if (outlet?.hasAttached()) outlet.detach();
+  }
+
   // ==================== Actions ====================
 
   openCreateDialog(): void {
-    this.editingCarePlanId.set(null);
-    this.carePlanForm.reset();
-    this.activities.clear();
-    this.addCareActivity(); // Add one empty activity
-    this.showCreateDialog.set(true);
+    console.log('CarePlanManagement: openCreateDialog called');
+    try {
+      this.editingCarePlanId.set(null);
+      this.carePlanForm.reset();
+      this.activities.clear();
+      this.addCareActivity(); // Add one empty activity
+      this.showCreateDialog.set(true);
+      this.createDialogPortal = this.attachPortal(this.createDialogTpl, this.createDialogPortal);
+    } catch (error) {
+      console.error('CarePlanManagement: Error opening create dialog', error);
+      this.errorMessage.set('An error occurred while opening the dialog');
+    }
   }
 
   openEditDialog(carePlan: CarePlanResponseDTO): void {
@@ -236,14 +304,26 @@ export class CarePlanManagementComponent implements OnInit {
     });
 
     this.activities.clear();
+    // Correctly using 'activities' from response DTO
     carePlan.activities.forEach(activity => {
-      this.activities.push(this.createCareActivityFormGroup(activity));
+      // Create stub DTO from response for form creation
+      const requestDto: CareActivityRequestDTO = {
+        activityName: activity.activityName,
+        activityType: activity.activityType,
+        description: activity.description,
+        frequency: activity.frequency,
+        duration: activity.duration,
+        completionStatus: activity.completionStatus
+      };
+      this.activities.push(this.createCareActivityFormGroup(requestDto));
     });
 
     this.showCreateDialog.set(true);
+    this.createDialogPortal = this.attachPortal(this.createDialogTpl, this.createDialogPortal);
   }
 
   closeCreateDialog(): void {
+    this.detachPortal(this.createDialogPortal);
     this.showCreateDialog.set(false);
     this.carePlanForm.reset();
     this.activities.clear();
@@ -261,16 +341,24 @@ export class CarePlanManagementComponent implements OnInit {
   viewCarePlan(carePlan: CarePlanResponseDTO): void {
     this.selectedCarePlan.set(carePlan);
     this.showViewDialog.set(true);
+    this.viewDialogPortal = this.attachPortal(this.viewDialogTpl, this.viewDialogPortal);
   }
 
   closeViewDialog(): void {
+    this.detachPortal(this.viewDialogPortal);
     this.showViewDialog.set(false);
     this.selectedCarePlan.set(null);
   }
 
   saveCarePlan(): void {
+    // Mark all fields as touched to show validation errors
+    this.carePlanForm.markAllAsTouched();
+    this.activities.controls.forEach(control => {
+      control.markAllAsTouched();
+    });
+
     if (this.carePlanForm.invalid) {
-      this.carePlanForm.markAllAsTouched();
+      this.errorMessage.set('Please correct the errors below before submitting');
       return;
     }
 
@@ -325,5 +413,10 @@ export class CarePlanManagementComponent implements OnInit {
           .subscribe();
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.createDialogPortal?.dispose();
+    this.viewDialogPortal?.dispose();
   }
 }

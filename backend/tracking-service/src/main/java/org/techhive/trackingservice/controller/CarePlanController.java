@@ -12,6 +12,8 @@ import org.techhive.trackingservice.entity.CarePlan;
 import org.techhive.trackingservice.mapper.CarePlanMapper;
 import org.techhive.trackingservice.service.CarePlanService;
 
+import jakarta.validation.Valid;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,27 +29,14 @@ public class CarePlanController {
     private final CarePlanMapper carePlanMapper;
 
     @PostMapping
-    public ResponseEntity<?> createCarePlan(@RequestBody CarePlanRequestDTO requestDTO) {
+    public ResponseEntity<?> createCarePlan(@Valid @RequestBody CarePlanRequestDTO requestDTO) {
         try {
             log.info("Received care plan creation request: sessionId={}, activitiesCount={}",
-                requestDTO.getSessionId(),
-                requestDTO.getActivities() != null ? requestDTO.getActivities().size() : 0);
+                    requestDTO.getSessionId(),
+                    requestDTO.getActivities() != null ? requestDTO.getActivities().size() : 0);
 
-            // Validation
-            if (requestDTO.getSessionId() == null) {
-                log.warn("Session ID is missing in care plan request");
-                return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Session ID is required"));
-            }
-
-            if (requestDTO.getActivities() == null || requestDTO.getActivities().isEmpty()) {
-                log.warn("No activities provided in care plan request");
-                return ResponseEntity.badRequest()
-                    .body(Map.of("error", "At least one activity is required"));
-            }
-            
             CarePlan carePlan = new CarePlan();
-            
+
             // Map activities
             List<CareActivity> activities = requestDTO.getActivities().stream()
                     .map(carePlanMapper::toActivityEntity)
@@ -60,11 +49,11 @@ public class CarePlanController {
         } catch (IllegalArgumentException e) {
             log.error("Validation error creating care plan: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", e.getMessage()));
         } catch (RuntimeException e) {
             log.error("Error creating care plan", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to create care plan: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to create care plan: " + e.getMessage()));
         }
     }
 
@@ -85,15 +74,10 @@ public class CarePlanController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateCarePlan(@PathVariable Long id, @RequestBody CarePlanRequestDTO requestDTO) {
+    public ResponseEntity<?> updateCarePlan(@PathVariable Long id, @Valid @RequestBody CarePlanRequestDTO requestDTO) {
         try {
-            log.info("Received care plan update request: id={}, activitiesCount={}", 
-                id, requestDTO.getActivities() != null ? requestDTO.getActivities().size() : 0);
-
-            if (requestDTO.getActivities() == null || requestDTO.getActivities().isEmpty()) {
-                return ResponseEntity.badRequest()
-                    .body(Map.of("error", "At least one activity is required"));
-            }
+            log.info("Received care plan update request: id={}, activitiesCount={}",
+                    id, requestDTO.getActivities() != null ? requestDTO.getActivities().size() : 0);
 
             CarePlan carePlanUpdates = new CarePlan();
             List<CareActivity> activities = requestDTO.getActivities().stream()
@@ -106,7 +90,7 @@ public class CarePlanController {
         } catch (RuntimeException e) {
             log.error("Error updating care plan", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to update care plan: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to update care plan: " + e.getMessage()));
         }
     }
 
@@ -129,12 +113,13 @@ public class CarePlanController {
     }
 
     @PatchMapping("/activities/{activityId}/status")
-    public ResponseEntity<?> updateActivityStatus(@PathVariable Long activityId, @RequestBody Map<String, String> statusMap) {
+    public ResponseEntity<?> updateActivityStatus(@PathVariable Long activityId,
+            @RequestBody Map<String, String> statusMap) {
         String status = statusMap.get("status");
         if (status == null || status.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Status is required"));
         }
-        
+
         try {
             CareActivity updatedActivity = carePlanService.updateActivityStatus(activityId, status);
             return ResponseEntity.ok(carePlanMapper.toActivityResponseDTO(updatedActivity));

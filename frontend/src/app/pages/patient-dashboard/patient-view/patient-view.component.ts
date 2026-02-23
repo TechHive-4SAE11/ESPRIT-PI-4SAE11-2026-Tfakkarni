@@ -14,21 +14,25 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, finalize, of, tap, switchMap } from 'rxjs';
 
 import { PrescriptionService } from '@/core/services/prescription.service';
+import { CarePlanService } from '@/core/services/care-plan.service';
 import { UserApiService } from '@/core/services/user-api.service';
 import { CustomGameService, type CustomGameResponse } from '@/core/services/custom-game.service';
 import { type PrescriptionResponseDTO } from '@/core/models/prescription.model';
+import { type CarePlanResponseDTO } from '@/core/models/care-plan.model';
 import { AuthService } from '@/core/auth';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
+import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-plan-list.component';
 
 @Component({
   selector: 'app-patient-view',
   standalone: true,
-  imports: [CommonModule, PrescriptionListComponent],
+  imports: [CommonModule, PrescriptionListComponent, CarePlanListComponent],
   templateUrl: './patient-view.component.html',
 })
 export class PatientViewComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly prescriptionService = inject(PrescriptionService);
+  private readonly carePlanService = inject(CarePlanService);
   private readonly userApiService = inject(UserApiService);
   private readonly customGameService = inject(CustomGameService);
   private readonly router = inject(Router);
@@ -41,10 +45,12 @@ export class PatientViewComponent implements OnInit {
   currentPage = signal<string>('Home');
   customGames = signal<CustomGameResponse[]>([]);
   prescriptions = signal<PrescriptionResponseDTO[]>([]);
+  carePlans = signal<CarePlanResponseDTO[]>([]);
 
   // Loading State Signals
   isLoadingCustomGames = signal<boolean>(false);
   isLoadingPrescriptions = signal<boolean>(false);
+  isLoadingCarePlans = signal<boolean>(false);
 
   // User Info
   userNeonDbId = signal<number | null>(null);
@@ -68,6 +74,7 @@ export class PatientViewComponent implements OnInit {
 
     this.loadCustomGames();
     this.loadPrescriptions();
+    this.loadCarePlans();
   }
 
   private loadPrescriptions(): void {
@@ -107,6 +114,32 @@ export class PatientViewComponent implements OnInit {
           return of([]);
         }),
         finalize(() => this.isLoadingCustomGames.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  private loadCarePlans(): void {
+    if (!this.keycloakId) {
+      return;
+    }
+
+    this.isLoadingCarePlans.set(true);
+
+    this.userApiService.getUserByKeycloakId(this.keycloakId)
+      .pipe(
+        switchMap(userInfo => {
+          const neonDbId = userInfo.id.toString();
+          return this.carePlanService.getCarePlansByPatient(neonDbId);
+        }),
+        tap(plans => {
+          this.carePlans.set(plans);
+        }),
+        catchError(err => {
+          console.error('[PatientView] Failed to load care plans', err);
+          return of([]);
+        }),
+        finalize(() => this.isLoadingCarePlans.set(false)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();

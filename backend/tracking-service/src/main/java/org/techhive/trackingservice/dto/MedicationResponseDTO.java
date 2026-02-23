@@ -3,7 +3,9 @@ package org.techhive.trackingservice.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.techhive.trackingservice.enums.MedicationStatus;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -16,5 +18,8 @@ public class MedicationResponseDTO {
     private String frequency;
     private String duration;
     private String instructions;
+    private MedicationStatus status;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private LocalDateTime createdAt;
 }
