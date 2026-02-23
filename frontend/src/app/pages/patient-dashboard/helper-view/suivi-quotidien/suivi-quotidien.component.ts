@@ -1,6 +1,6 @@
 import {
   Component, Input, Output, EventEmitter, OnInit,
-  signal, computed, effect
+  signal, computed, effect, inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -12,6 +12,9 @@ import { ZardBadgeComponent }                      from '@/shared/components/bad
 import { ZardButtonComponent }                     from '@/shared/components/button';
 import { ZardTabGroupComponent, ZardTabComponent } from '@/shared/components/tabs';
 import { DailyMonitoringService }                  from '@/core/services/daily-monitoring.service';
+import { HealthScoreService }                      from '@/core/services/health-score.service';
+import { DailyLogStateService }                    from '@/core/services/daily-log-state.service';
+import { HealthScoreResponse }                     from '@/core/models/health-score.model';
 import {
   DailyLogResponse, AvailableMedication,
   NutritionEntryRequest, NutritionEntryResponse,
@@ -39,6 +42,11 @@ function getMondayOf(iso: string): string {
   const day = d.getDay();
   d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
   return d.toISOString().split('T')[0];
+}
+
+function nowTime(): string {
+  const d = new Date();
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 }
 
 interface WeekDay { iso: string; shortLabel: string; dayNum: number; isFuture: boolean; isToday: boolean; }
@@ -189,6 +197,55 @@ function isNumericOrEmpty(v: string): boolean {
     <p class="text-sm text-muted-foreground">Chargement du journal...</p>
   </div>
 } @else {
+
+<!-- ══ DAILY HEALTH SCORE (API-driven, aucun calcul frontend) ══ -->
+@if (healthScore(); as hs) {
+  <z-card class="p-5 mb-6 border-2 overflow-hidden"
+    [style.border-left-color]="hs.colorCode" style="border-left-width: 6px;">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-20 h-20 rounded-2xl flex flex-col items-center justify-center font-bold text-2xl shrink-0"
+          [style.background]="hs.colorCode + '20'" [style.color]="hs.colorCode">
+          {{ hs.totalScore }}<span class="text-sm font-normal opacity-80">/{{ hs.adjustedMaxScore }}</span>
+        </div>
+        <div>
+          <h3 class="font-semibold text-base">Score Santé Quotidien</h3>
+          <p class="text-xs text-muted-foreground mt-0.5">Calculé à partir des données du jour</p>
+          @if (hs.missingCategories && hs.missingCategories.length) {
+            <p class="text-xs text-amber-600 mt-1">Certaines données manquantes</p>
+          }
+          <span class="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-xs font-medium"
+            [style.background]="hs.colorCode + '25'" [style.color]="hs.colorCode">
+            @if (hs.riskLevel === 'Excellent') { 🟢 }
+            @if (hs.riskLevel === 'Stable') { 🟢 }
+            @if (hs.riskLevel === 'Risque moyen') { 🟠 }
+            @if (hs.riskLevel === 'Risque élevé') { 🔴 }
+            @if (hs.riskLevel === 'Données insuffisantes') { ⚪ }
+            {{ hs.riskLevel }}
+          </span>
+        </div>
+      </div>
+      @if (hs.breakdown && hs.breakdown.length) {
+        <div class="flex flex-wrap gap-2">
+          @for (b of hs.breakdown; track b.category) {
+            <span class="text-[10px] px-2 py-0.5 rounded-md"
+              [class]="b.excluded ? 'bg-muted/40 text-muted-foreground italic' : 'bg-muted/60 text-muted-foreground'"
+              [title]="b.rawValue">
+              {{ b.label }}: {{ b.excluded ? '—' : b.score + '/' + b.maxScore }}
+            </span>
+          }
+        </div>
+      }
+    </div>
+  </z-card>
+} @else if (healthScoreLoading()) {
+  <z-card class="p-5 mb-6">
+    <div class="flex items-center gap-3">
+      <z-icon zType="loader-2" class="h-6 w-6 text-primary animate-spin" />
+      <span class="text-sm text-muted-foreground">Calcul du score santé...</span>
+    </div>
+  </z-card>
+}
 
 <!-- ══ SUMMARY CARDS ══ -->
 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -1048,8 +1105,24 @@ export class SuiviQuotidienComponent implements OnInit {
   // ── Core ───────────────────────────────────────────────────────────────
   selectedDate  = signal(todayIso());
   weekStart     = signal(getMondayOf(todayIso()));
-  log           = signal<DailyLogResponse | null>(null);
-  loading       = signal(false);
+  // ── Source partagée (aujourd'hui) / état local (jours passés) ──────
+  private readonly logState      = inject(DailyLogStateService);
+  private readonly _localLog     = signal<DailyLogResponse | null>(null);
+  private readonly _loadingLocal = signal(false);
+
+  /** Pour aujourd'hui : lit depuis le service partagé (sync avec patient-view) */
+  log = computed<DailyLogResponse | null>(() =>
+    this.selectedDate() === this.today ? this.logState.todayLog() : this._localLog()
+  );
+  /** Loading : partagé pour aujourd'hui, local sinon */
+  loading = computed<boolean>(() =>
+    this.selectedDate() === this.today ? this.logState.loading() : this._loadingLocal()
+  );
+
+  // ── Toggle rapide médicament (sans ouvrir le modal) ───────────────────
+  _togglingMedId = signal<number | null>(null);
+  healthScore   = signal<HealthScoreResponse | null>(null);
+  healthScoreLoading = signal(false);
   saving        = signal(false);
   pdfLoading    = signal(false);
   errorMsg      = signal('');
@@ -1476,15 +1549,43 @@ export class SuiviQuotidienComponent implements OnInit {
   }
 
   // ── Data loading ───────────────────────────────────────────────────────
-  constructor(private readonly svc: DailyMonitoringService) {}
+  constructor(
+    private readonly svc: DailyMonitoringService,
+    private readonly healthScoreSvc: HealthScoreService,
+  ) {}
 
   ngOnInit(){ this.loadLog(); this.loadAvailableMeds(); }
 
   loadLog(){
-    this.loading.set(true);
-    this.svc.getOrCreateLogForDate(this.keycloakId, this.selectedDate()).subscribe({
-      next: log=>{ this.log.set(log); this.logCache.update(c=>({...c,[log.logDate]:log})); this.loading.set(false); },
-      error: ()=>{ this.log.set(null); this.loading.set(false); },
+    if (this.selectedDate() === this.today) {
+      // Pour aujourd'hui : service partagé → synchronise automatiquement patient-view
+      this.logState.loadTodayLog(this.keycloakId, true).subscribe({
+        next: log => {
+          if (log) this.logCache.update(c => ({...c, [log.logDate]: log}));
+          this.loadHealthScore();
+        },
+        error: () => {},
+      });
+    } else {
+      // Pour les jours passés : état local indépendant
+      this._loadingLocal.set(true);
+      this.svc.getOrCreateLogForDate(this.keycloakId, this.selectedDate()).subscribe({
+        next: log => {
+          this._localLog.set(log);
+          this.logCache.update(c => ({...c, [log.logDate]: log}));
+          this._loadingLocal.set(false);
+          this.loadHealthScore();
+        },
+        error: () => { this._localLog.set(null); this._loadingLocal.set(false); },
+      });
+    }
+  }
+
+  loadHealthScore(){
+    this.healthScoreLoading.set(true);
+    this.healthScoreSvc.getDailyScore(this.keycloakId, this.selectedDate()).subscribe({
+      next: hs=>{ this.healthScore.set(hs); this.healthScoreLoading.set(false); },
+      error: ()=>{ this.healthScore.set(null); this.healthScoreLoading.set(false); },
     });
   }
 
@@ -1537,6 +1638,28 @@ export class SuiviQuotidienComponent implements OnInit {
   editMedication(e:MedicationIntakeLogResponse) { this.openMedForm(e); }
   editActivity(e:ActivityEntryResponse)         { this.openActivityForm(e); }
   editIncident(e:IncidentEntryResponse)         { this.openIncidentForm(e); }
+
+  // ── Toggle rapide PRIS ↔ OUBLIÉ (synchronise les deux vues) ──────────
+  toggleMedStatus(med: MedicationIntakeLogResponse): void {
+    const logId = this.log()?.id;
+    if (!logId || this._togglingMedId() !== null) return;
+    const newStatus: IntakeStatus = med.status === 'PRIS' ? 'OUBLIE' : 'PRIS';
+    this._togglingMedId.set(med.id);
+    if (this.selectedDate() === this.today) {
+      // Service partagé → patient-view voit le changement instantanément
+      this.logState.toggleMedication(logId, med, newStatus, newStatus === 'PRIS' ? nowTime() : undefined)
+        .subscribe({ next: () => this._togglingMedId.set(null), error: () => this._togglingMedId.set(null) });
+    } else {
+      const dto: MedicationIntakeLogRequest = {
+        medicationId: med.medicationId,
+        takenAt: newStatus === 'PRIS' ? nowTime() : (med.takenAt ?? ''),
+        status: newStatus,
+        notes: med.notes,
+      };
+      this.svc.updateMedicationIntake(logId, med.id, dto)
+        .subscribe({ next: () => { this._togglingMedId.set(null); this.loadLog(); }, error: () => this._togglingMedId.set(null) });
+    }
+  }
 
   // ── Save methods ───────────────────────────────────────────────────────
   saveNutrition(){

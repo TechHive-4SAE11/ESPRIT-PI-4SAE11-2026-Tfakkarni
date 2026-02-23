@@ -67,6 +67,14 @@ spring:
           uri: lb://tracking-service
           predicates:
             - Path=/api/daily-monitoring/**
+        - id: health-score
+          uri: lb://tracking-service
+          predicates:
+            - Path=/api/health-score/**
+        - id: statistics
+          uri: lb://tracking-service
+          predicates:
+            - Path=/api/statistics/**
   security:
     oauth2:
       resourceserver:
