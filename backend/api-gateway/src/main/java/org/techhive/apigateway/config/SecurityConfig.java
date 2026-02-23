@@ -1,5 +1,11 @@
 package org.techhive.apigateway.config;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -16,12 +22,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
@@ -31,7 +31,8 @@ public class SecurityConfig {
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowedOrigins(List.of("http://localhost:4200"));
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-    config.setAllowedHeaders(List.of("*"));
+    config.setAllowedHeaders(
+        List.of("Authorization", "Content-Type", "X-User-Id", "Accept", "Origin", "X-Requested-With"));
     config.setAllowCredentials(true);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -53,6 +54,8 @@ public class SecurityConfig {
             .pathMatchers("/api/users/register").permitAll()
             .pathMatchers("/api/games/play/**").permitAll()
             .pathMatchers("/api/games/movies/play/**").permitAll()
+            // Admin health check endpoint (for monitoring/testing)
+            .pathMatchers("/api/admin/medication-status/health").permitAll()
             // All other endpoints require authentication
             .anyExchange().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2

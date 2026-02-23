@@ -59,6 +59,15 @@
           </div>
         </button>
 
+        <button (click)="playRandomMix()"
+          class="w-full flex items-center gap-5 p-6 sm:p-7 rounded-2xl bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 active:scale-[0.98] text-white shadow-lg shadow-pink-500/25 transition-all">
+          <span class="text-4xl sm:text-5xl shrink-0">🎲</span>
+          <div class="text-left">
+            <p class="text-xl sm:text-2xl font-bold">Random Mix</p>
+            <p class="text-pink-100 text-sm sm:text-base">Mélange aléatoire de tout</p>
+          </div>
+        </button>
+
         <button (click)="setPage('My Scores')"
           class="w-full flex items-center gap-5 p-6 sm:p-7 rounded-2xl bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white shadow-lg shadow-amber-500/25 transition-all">
           <span class="text-4xl sm:text-5xl shrink-0">🏆</span>
@@ -92,6 +101,15 @@
           <div class="text-left">
             <p class="text-xl sm:text-2xl font-bold">Mes Ordonnances</p>
             <p class="text-purple-100 text-sm sm:text-base">Voir vos médicaments prescrits</p>
+          </div>
+        </button>
+
+        <button (click)="setPage('My Care Plans')"
+          class="w-full flex items-center gap-5 p-6 sm:p-7 rounded-2xl bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white shadow-lg shadow-emerald-500/25 transition-all">
+          <span class="text-4xl sm:text-5xl shrink-0">📅</span>
+          <div class="text-left">
+            <p class="text-xl sm:text-2xl font-bold">Mes Plans de Soins</p>
+            <p class="text-emerald-100 text-sm sm:text-base">Vos activités et routines quotidiennes</p>
           </div>
         </button>
       </div>
@@ -292,6 +310,18 @@
       </button>
       <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-2">🎮 Choisir un jeu</h1>
       <p class="text-lg text-slate-500 dark:text-slate-400 mb-6">Appuyez sur un jeu pour commencer</p>
+
+      <!-- Random mix -->
+      <button (click)="playRandomMix()"
+        class="w-full flex items-center gap-4 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-pink-500 to-orange-500 text-white shadow-md hover:shadow-lg active:scale-[0.98] transition-all mb-6 text-left">
+        <span class="text-3xl sm:text-4xl shrink-0">🎲</span>
+        <div class="flex-1 min-w-0">
+          <p class="text-lg sm:text-xl font-bold">Random Mix</p>
+          <p class="text-sm text-pink-100">Mélange aléatoire de toutes les catégories</p>
+        </div>
+        <span class="text-3xl shrink-0">▶</span>
+      </button>
+
       @if (playableGames().length > 0) {
         <div class="space-y-4">
           @for (game of playableGames(); track game.id) {
@@ -409,6 +439,17 @@
       <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-2">📋 Mes Ordonnances</h1>
       <p class="text-lg text-slate-500 dark:text-slate-400 mb-6">Vos médicaments prescrits</p>
       <app-prescription-list [prescriptions]="prescriptions()" [isLoading]="isLoadingPrescriptions()" />
+    }
+
+    <!-- ─────────────────── MY CARE PLANS ─────────────────── -->
+    @case ('My Care Plans') {
+      <button (click)="setPage('Home')"
+        class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
+        <span class="text-2xl">←</span><span>Retour</span>
+      </button>
+      <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-2">📅 Mes Plans de Soins</h1>
+      <p class="text-lg text-slate-500 dark:text-slate-400 mb-6">Vos activités et routines quotidiennes</p>
+      <app-care-plan-list [carePlans]="carePlans()" [isLoading]="isLoadingCarePlans()" />
     }
 
     } <!-- /switch -->

@@ -17,6 +17,17 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+  task:
+    scheduling:
+      pool:
+        size: 5  # Thread pool size for scheduled tasks
+
+# Medication status scheduler configuration
+medication:
+  scheduler:
+    enabled: true
+    daily-update-cron: "0 0 0 * * *"          # Midnight daily
+    periodic-update-cron: "0 0 */6 * * *"     # Every 6 hours
 
 eureka:
   client:

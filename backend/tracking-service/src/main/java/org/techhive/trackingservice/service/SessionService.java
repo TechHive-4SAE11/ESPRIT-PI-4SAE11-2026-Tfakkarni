@@ -46,6 +46,16 @@ public class SessionService {
         return sessionRepository.findByMedicalFolderIdOrderBySessionDateDesc(medicalFolderId);
     }
 
+    @Transactional(readOnly = true)
+    public List<Session> getSessionsWithoutPrescriptions(Long medicalFolderId) {
+        return sessionRepository.findByMedicalFolderIdAndPrescriptionsIsEmpty(medicalFolderId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Session> getSessionsWithoutCarePlans(Long medicalFolderId) {
+        return sessionRepository.findByMedicalFolderIdAndCarePlansIsEmpty(medicalFolderId);
+    }
+
     public Session updateSession(Long id, Session session) {
         return sessionRepository.findById(id)
                 .map(existing -> {

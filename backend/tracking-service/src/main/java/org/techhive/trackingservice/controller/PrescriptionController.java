@@ -1,5 +1,10 @@
 package org.techhive.trackingservice.controller;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.techhive.trackingservice.service.PrescriptionPdfService;
+import com.lowagie.text.DocumentException;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -11,6 +16,8 @@ import org.techhive.trackingservice.entity.Medication;
 import org.techhive.trackingservice.entity.Prescription;
 import org.techhive.trackingservice.mapper.PrescriptionMapper;
 import org.techhive.trackingservice.service.PrescriptionService;
+
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.Map;
@@ -25,26 +32,14 @@ public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
     private final PrescriptionMapper prescriptionMapper;
+    private final PrescriptionPdfService prescriptionPdfService;
 
     @PostMapping
-    public ResponseEntity<?> createPrescription(@RequestBody PrescriptionRequestDTO requestDTO) {
+    public ResponseEntity<?> createPrescription(@Valid @RequestBody PrescriptionRequestDTO requestDTO) {
         try {
             log.info("Received prescription creation request: sessionId={}, medicationsCount={}",
                 requestDTO.getSessionId(),
                 requestDTO.getMedications() != null ? requestDTO.getMedications().size() : 0);
-
-            // Validation
-            if (requestDTO.getSessionId() == null) {
-                log.warn("Session ID is missing in prescription request");
-                return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Session ID is required"));
-            }
-
-            if (requestDTO.getMedications() == null || requestDTO.getMedications().isEmpty()) {
-                log.warn("No medications provided in prescription request");
-                return ResponseEntity.badRequest()
-                    .body(Map.of("error", "At least one medication is required"));
-            }
             
             Prescription prescription = new Prescription();
             
@@ -105,7 +100,7 @@ public class PrescriptionController {
     @PutMapping("/{id}")
     public ResponseEntity<PrescriptionResponseDTO> updatePrescription(
             @PathVariable Long id,
-            @RequestBody PrescriptionRequestDTO requestDTO) {
+            @Valid @RequestBody PrescriptionRequestDTO requestDTO) {
         Prescription prescription = new Prescription();
         
         // Convert medication DTOs to entities
@@ -128,5 +123,24 @@ public class PrescriptionController {
     public ResponseEntity<Void> deletePrescription(@PathVariable Long id) {
         prescriptionService.deletePrescription(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<byte[]> getPrescriptionPdf(@PathVariable Long id) {
+        if (prescriptionService.getPrescriptionById(id).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Prescription prescription = prescriptionService.getPrescriptionById(id).get();
+        try {
+            byte[] pdfBytes = prescriptionPdfService.generatePrescriptionPdf(prescription);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "prescription_" + id + ".pdf");
+            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+        } catch (DocumentException | IOException e) {
+            log.error("Error generating PDF for prescription {}", id, e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

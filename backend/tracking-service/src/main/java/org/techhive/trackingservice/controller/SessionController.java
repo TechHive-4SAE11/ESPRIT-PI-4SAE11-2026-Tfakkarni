@@ -59,6 +59,24 @@ public class SessionController {
         return ResponseEntity.ok(responseDTOs);
     }
 
+    @GetMapping("/medical-folder/{medicalFolderId}/no-prescription")
+    public ResponseEntity<List<SessionResponseDTO>> getSessionsWithoutPrescriptions(@PathVariable Long medicalFolderId) {
+        List<Session> sessions = sessionService.getSessionsWithoutPrescriptions(medicalFolderId);
+        List<SessionResponseDTO> responseDTOs = sessions.stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(responseDTOs);
+    }
+
+    @GetMapping("/medical-folder/{medicalFolderId}/no-care-plan")
+    public ResponseEntity<List<SessionResponseDTO>> getSessionsWithoutCarePlans(@PathVariable Long medicalFolderId) {
+        List<Session> sessions = sessionService.getSessionsWithoutCarePlans(medicalFolderId);
+        List<SessionResponseDTO> responseDTOs = sessions.stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(responseDTOs);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<SessionResponseDTO> updateSession(
             @PathVariable Long id,

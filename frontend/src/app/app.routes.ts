@@ -52,20 +52,11 @@ export const routes: Routes = [
     data: { roles: ['patient'] },
   },
   {
-    path: 'patient/play/:gameId',
-    loadComponent: () =>
-      import('@/pages/patient-dashboard/play-game/play-game.component').then(
-        (m) => m.PlayGameComponent
-      ),
-    canActivate: [AuthGuard],
-    data: { roles: ['patient'] },
-  },
-  {
-    path: 'patient/play-movie/:gameId',
+    path: 'patient/play-memory/:gameId',
     loadComponent: () =>
       import(
-        '@/pages/patient-dashboard/play-movie-game/play-movie-game.component'
-      ).then((m) => m.PlayMovieGameComponent),
+        '@/pages/patient-dashboard/play-memory-game/play-memory-game.component'
+      ).then((m) => m.PlayMemoryGameComponent),
     canActivate: [AuthGuard],
     data: { roles: ['patient'] },
   },

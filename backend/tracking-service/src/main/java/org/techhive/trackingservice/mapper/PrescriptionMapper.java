@@ -25,6 +25,7 @@ public class PrescriptionMapper {
         return new PrescriptionResponseDTO(
                 prescription.getId(),
                 prescription.getSession().getId(),
+                prescription.getSession().getMedicalFolder() != null ? prescription.getSession().getMedicalFolder().getIdDoctor() : null,
                 medicationDTOs,
                 prescription.getCreatedAt(),
                 prescription.getUpdatedAt()
@@ -49,6 +50,9 @@ public class PrescriptionMapper {
                 medication.getFrequency(),
                 medication.getDuration(),
                 medication.getInstructions(),
+                medication.getStatus(),
+                medication.getStartDate(),
+                medication.getEndDate(),
                 medication.getCreatedAt()
         );
     }

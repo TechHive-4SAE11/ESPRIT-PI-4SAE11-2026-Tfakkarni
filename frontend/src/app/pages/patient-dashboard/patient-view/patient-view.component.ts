@@ -10,13 +10,17 @@ import { catchError, finalize, of, tap, switchMap } from 'rxjs';
 import { GameService, type GameResponse, type GameStatsResponse } from '@/core/services/game.service';
 import { MovieGameService, type MovieGameResponse } from '@/core/services/movie-game.service';
 import { PrescriptionService } from '@/core/services/prescription.service';
+import { CarePlanService } from '@/core/services/care-plan.service';
 import { UserApiService } from '@/core/services/user-api.service';
+import { CustomGameService, type CustomGameResponse } from '@/core/services/custom-game.service';
 import { DailyLogStateService } from '@/core/services/daily-log-state.service';
 import { type PrescriptionResponseDTO } from '@/core/models/prescription.model';
+import { type CarePlanResponseDTO } from '@/core/models/care-plan.model';
 import { type IntakeStatus, type MedicationIntakeLogResponse } from '@/core/models/daily-monitoring.model';
 import { AuthService } from '@/core/auth';
 import { GuessPlaceComponent } from './guess-place/guess-place.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
+import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-plan-list.component';
 
 function nowTime(): string {
   const d = new Date();
@@ -27,7 +31,7 @@ function nowTime(): string {
   selector: 'app-patient-view',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, GuessPlaceComponent, PrescriptionListComponent],
+  imports: [CommonModule, GuessPlaceComponent, PrescriptionListComponent, CarePlanListComponent],
   templateUrl: './patient-view.component.html',
 })
 export class PatientViewComponent implements OnInit {
@@ -35,7 +39,9 @@ export class PatientViewComponent implements OnInit {
   private readonly gameService           = inject(GameService);
   private readonly movieGameService      = inject(MovieGameService);
   private readonly prescriptionService   = inject(PrescriptionService);
+  private readonly carePlanService       = inject(CarePlanService);
   private readonly userApiService        = inject(UserApiService);
+  private readonly customGameService     = inject(CustomGameService);
   private readonly router                = inject(Router);
   private readonly authService           = inject(AuthService);
 
@@ -52,13 +58,17 @@ export class PatientViewComponent implements OnInit {
   games      = signal<GameResponse[]>([]);
   movieGames = signal<MovieGameResponse[]>([]);
   stats      = signal<GameStatsResponse | null>(null);
+  customGames = signal<CustomGameResponse[]>([]);
   prescriptions = signal<PrescriptionResponseDTO[]>([]);
+  carePlans = signal<CarePlanResponseDTO[]>([]);
 
   // ── Loading flags ──────────────────────────────────────────────────────────
   isLoadingGames        = signal(false);
   isLoadingMovieGames   = signal(false);
   isLoadingStats        = signal(false);
+  isLoadingCustomGames  = signal<boolean>(false);
   isLoadingPrescriptions = signal(false);
+  isLoadingCarePlans    = signal<boolean>(false);
 
   // ── Médicaments — lus depuis le service partagé ────────────────────────────
   /** Proxy computed vers les signaux du service partagé */
@@ -93,7 +103,9 @@ export class PatientViewComponent implements OnInit {
     this.loadGames();
     this.loadMovieGames();
     this.loadStats();
+    this.loadCustomGames();
     this.loadPrescriptions();
+    this.loadCarePlans();
     // Médicaments : charger via le service partagé (évite un double-fetch si déjà chargé)
     this.logState.loadTodayLog(this.keycloakId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -146,6 +158,16 @@ export class PatientViewComponent implements OnInit {
     return map[status] ?? status;
   }
 
+  // ── Custom Games ───────────────────────────────────────────────────────────
+
+  playCustomGame(gameId: number): void {
+    this.router.navigate(['/patient/play-memory', gameId]);
+  }
+
+  playRandomMix(): void {
+    this.router.navigate(['/patient/play-memory', 'random']);
+  }
+
   // ── Private loaders ────────────────────────────────────────────────────────
 
   private loadGames(): void {
@@ -181,6 +203,21 @@ export class PatientViewComponent implements OnInit {
       ).subscribe();
   }
 
+  private loadCustomGames(): void {
+    this.isLoadingCustomGames.set(true);
+    this.customGameService.getGames(this.keycloakId)
+      .pipe(
+        tap(games => this.customGames.set(games)),
+        catchError(err => {
+          console.error('[PatientView] Failed to load custom games', err);
+          return of([]);
+        }),
+        finalize(() => this.isLoadingCustomGames.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
   private loadPrescriptions(): void {
     if (!this.keycloakId) return;
     this.isLoadingPrescriptions.set(true);
@@ -193,5 +230,29 @@ export class PatientViewComponent implements OnInit {
         finalize(() => this.isLoadingPrescriptions.set(false)),
         takeUntilDestroyed(this.destroyRef),
       ).subscribe();
+  }
+
+  private loadCarePlans(): void {
+    if (!this.keycloakId) return;
+
+    this.isLoadingCarePlans.set(true);
+
+    this.userApiService.getUserByKeycloakId(this.keycloakId)
+      .pipe(
+        switchMap(userInfo => {
+          const neonDbId = userInfo.id.toString();
+          return this.carePlanService.getCarePlansByPatient(neonDbId);
+        }),
+        tap(plans => {
+          this.carePlans.set(plans);
+        }),
+        catchError(err => {
+          console.error('[PatientView] Failed to load care plans', err);
+          return of([]);
+        }),
+        finalize(() => this.isLoadingCarePlans.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
   }
 }

@@ -1,10 +1,25 @@
 package org.techhive.gameservice.dto;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
 import java.util.List;
 
 public class CreateMovieGameRequest {
+
+  @NotBlank(message = "Title is required")
+  @Size(min = 3, max = 20, message = "Title must be between 3 and 20 characters")
+  @Pattern(regexp = "^[a-zA-Z0-9 ]+$", message = "Title can only contain letters, numbers, and spaces")
   private String title;
+
+  @Size(max = 100, message = "Description must be at most 100 characters")
   private String description;
+
+  @NotEmpty(message = "At least one movie is required")
+  @Valid
   private List<MovieItemRequest> movies;
 
   public CreateMovieGameRequest() {
@@ -39,6 +54,9 @@ public class CreateMovieGameRequest {
     private String originalTitle;
     private String posterPath;
     private String releaseDate;
+
+    @NotBlank(message = "Character name (correct answer) is required")
+    @Size(max = 20, message = "Character name must be at most 20 characters")
     private String correctAnswer;
 
     public MovieItemRequest() {

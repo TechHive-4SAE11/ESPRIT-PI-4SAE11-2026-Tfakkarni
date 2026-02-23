@@ -20,7 +20,13 @@ spring:
               - DELETE
               - PATCH
               - OPTIONS
-            allowedHeaders: "*"
+            allowedHeaders:
+              - "Authorization"
+              - "Content-Type"
+              - "X-User-Id"
+              - "Accept"
+              - "Origin"
+              - "X-Requested-With"
             allowCredentials: true
       discovery:
         locator:
@@ -43,6 +49,10 @@ spring:
           uri: lb://tracking-service
           predicates:
             - Path=/api/medical-folders/**
+        - id: care-plans
+          uri: lb://tracking-service
+          predicates:
+            - Path=/api/care-plans/**
         - id: prescriptions
           uri: lb://tracking-service
           predicates:
@@ -51,6 +61,14 @@ spring:
           uri: lb://tracking-service
           predicates:
             - Path=/api/sessions/**
+        - id: medications
+          uri: lb://tracking-service
+          predicates:
+            - Path=/api/medications/**
+        - id: admin-medication-status
+          uri: lb://tracking-service
+          predicates:
+            - Path=/api/admin/**
         - id: alert-service
           uri: lb://alert-service
           predicates:
