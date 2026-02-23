@@ -26,6 +26,8 @@ import {
   type MovieGameResponse,
   type EditMovieItemEntry,
 } from '@/core/services/movie-game.service';
+import { gameTitleSchema, gameDescriptionSchema, getFieldErrors } from '@/core/validation/game-schemas';
+import { z } from 'zod';
 
 @Component({
   selector: 'app-movie-game-manager',
@@ -116,20 +118,30 @@ import {
       <h3 class="font-semibold mb-4">Quiz Details</h3>
       <div class="space-y-4">
         <div>
-          <label class="text-sm font-medium mb-1 block">Title</label>
+          <label class="text-sm font-medium mb-1 block">Title <span class="text-muted-foreground font-normal">(max 20)</span></label>
           <input
-            class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            class="w-full px-3 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            [class]="validationErrors()['title'] ? 'border-red-500' : 'border-border'"
+            maxlength="20"
             [value]="gameTitle()"
             (input)="gameTitle.set($any($event.target).value)"
             placeholder="e.g., Classic Movie Characters" />
+          @if (validationErrors()['title']) {
+            <p class="text-xs text-red-500 mt-1">{{ validationErrors()['title'] }}</p>
+          }
         </div>
         <div>
-          <label class="text-sm font-medium mb-1 block">Description</label>
+          <label class="text-sm font-medium mb-1 block">Description <span class="text-muted-foreground font-normal">(max 100)</span></label>
           <input
-            class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            class="w-full px-3 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            [class]="validationErrors()['description'] ? 'border-red-500' : 'border-border'"
+            maxlength="100"
             [value]="gameDescription()"
             (input)="gameDescription.set($any($event.target).value)"
             placeholder="e.g., Name a character from these famous movies" />
+          @if (validationErrors()['description']) {
+            <p class="text-xs text-red-500 mt-1">{{ validationErrors()['description'] }}</p>
+          }
         </div>
       </div>
     </z-card>
@@ -199,9 +211,10 @@ import {
         <div class="flex-1">
           <p class="font-semibold text-lg">{{ pendingMovie()!.title }}</p>
           <p class="text-sm text-muted-foreground mb-3">{{ pendingMovie()!.release_date }}</p>
-          <label class="text-sm font-medium mb-1 block">Character Name (answer)</label>
+          <label class="text-sm font-medium mb-1 block">Character Name (answer) <span class="text-muted-foreground font-normal">(max 20)</span></label>
           <input
             class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary mb-3"
+            maxlength="20"
             [value]="pendingAnswer()"
             (input)="pendingAnswer.set($any($event.target).value)"
             placeholder="e.g., Simba, Jack Sparrow, Elsa..." />
@@ -309,6 +322,7 @@ export class MovieGameManagerComponent implements OnInit {
   saving = signal<boolean>(false);
   errorMessage = signal<string>('');
   successMessage = signal<string>('');
+  validationErrors = signal<Record<string, string>>({});
 
   ngOnInit(): void {
     this.loadGames();
@@ -437,6 +451,15 @@ export class MovieGameManagerComponent implements OnInit {
   async saveGame(): Promise<void> {
     if (!this.canSave()) return;
 
+    // Zod validation
+    const detailsSchema = z.object({ title: gameTitleSchema, description: gameDescriptionSchema });
+    const valResult = detailsSchema.safeParse({ title: this.gameTitle().trim(), description: this.gameDescription().trim() });
+    if (!valResult.success) {
+      this.validationErrors.set(getFieldErrors(valResult));
+      return;
+    }
+    this.validationErrors.set({});
+
     this.saving.set(true);
     this.errorMessage.set('');
     this.successMessage.set('');
@@ -539,6 +562,7 @@ export class MovieGameManagerComponent implements OnInit {
     this.searchQuery.set('');
     this.searchResults.set([]);
     this.errorMessage.set('');
+    this.validationErrors.set({});
   }
 
   private loadGames(): void {

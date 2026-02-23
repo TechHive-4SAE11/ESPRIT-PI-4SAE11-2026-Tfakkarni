@@ -13,6 +13,7 @@ import { UserApiService, type UserInfo } from '@/core/services/user-api.service'
 import { GameService, type GameStatsResponse } from '@/core/services/game.service';
 import { PrescriptionManagementComponent } from './prescription-management/prescription-management.component';
 import { CarePlanManagementComponent } from './care-plan-management/care-plan-management.component';
+import { PatientAnalyticsComponent } from './patient-analytics/patient-analytics.component';
 
 @Component({
   selector: 'app-doctor-dashboard',
@@ -28,7 +29,8 @@ import { CarePlanManagementComponent } from './care-plan-management/care-plan-ma
     ZardButtonComponent,
     ZardProgressBarComponent,
     PrescriptionManagementComponent,
-    CarePlanManagementComponent
+    CarePlanManagementComponent,
+    PatientAnalyticsComponent
   ],
   template: `
     <app-dashboard-layout
@@ -52,7 +54,7 @@ import { CarePlanManagementComponent } from './care-plan-management/care-plan-ma
             <z-card class="p-6">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm text-muted-foreground">Active Games</p>
+                  <p class="text-sm text-muted-foreground">Games Played</p>
                   <p class="text-3xl font-bold">{{ totalPatientGames }}</p>
                 </div>
                 <z-icon zType="gamepad-2" class="text-primary h-8 w-8" />
@@ -64,7 +66,7 @@ import { CarePlanManagementComponent } from './care-plan-management/care-plan-ma
                   <p class="text-sm text-muted-foreground">Avg Patient Score</p>
                   <p class="text-3xl font-bold">{{ avgPatientScore | number:'1.0-0' }}%</p>
                 </div>
-                <z-icon zType="trending-up" class="text-primary h-8 w-8" />
+                <z-icon zType="bar-chart-3" class="text-primary h-8 w-8" />
               </div>
             </z-card>
           </div>
@@ -150,48 +152,7 @@ import { CarePlanManagementComponent } from './care-plan-management/care-plan-ma
               <h2 class="text-2xl font-bold">{{ selectedPatient()!.firstName }} {{ selectedPatient()!.lastName }}'s Progress</h2>
             </div>
 
-            @if (selectedPatientStats(); as stat) {
-              <div class="grid gap-4 md:grid-cols-4 mb-8">
-                <z-card class="p-6">
-                  <p class="text-sm text-muted-foreground">Games Created</p>
-                  <p class="text-3xl font-bold">{{ stat.totalGamesCreated }}</p>
-                </z-card>
-                <z-card class="p-6">
-                  <p class="text-sm text-muted-foreground">Games Played</p>
-                  <p class="text-3xl font-bold">{{ stat.totalGamesPlayed }}</p>
-                </z-card>
-                <z-card class="p-6">
-                  <p class="text-sm text-muted-foreground">Total Attempts</p>
-                  <p class="text-3xl font-bold">{{ stat.totalAttempts }}</p>
-                </z-card>
-                <z-card class="p-6">
-                  <p class="text-sm text-muted-foreground">Average Score</p>
-                  <p class="text-3xl font-bold">{{ stat.averageScore | number:'1.0-0' }}%</p>
-                </z-card>
-              </div>
-
-              <z-card class="p-6">
-                <h3 class="text-lg font-semibold mb-4">Performance Overview</h3>
-                <div class="space-y-4">
-                  <div>
-                    <div class="flex justify-between text-sm mb-1">
-                      <span>Average Score</span>
-                      <span>{{ stat.averageScore | number:'1.0-0' }}%</span>
-                    </div>
-                    <z-progress-bar [progress]="stat.averageScore" />
-                  </div>
-                  <div>
-                    <div class="flex justify-between text-sm mb-1">
-                      <span>Best Score</span>
-                      <span>{{ stat.bestScore }}</span>
-                    </div>
-                    <z-progress-bar [progress]="stat.totalGamesCreated > 0 ? (stat.bestScore / stat.totalGamesCreated * 100) : 0" />
-                  </div>
-                </div>
-              </z-card>
-            } @else {
-              <z-skeleton class="h-48 w-full" />
-            }
+            <app-patient-analytics [patientKeycloakId]="selectedPatient()!.keycloakId"></app-patient-analytics>
           } @else {
             <p class="text-muted-foreground">Select a patient from the Patients list to view their progress.</p>
           }
@@ -307,10 +268,6 @@ export class DoctorDashboardComponent implements OnInit {
 
   viewPatientProgress(patient: UserInfo): void {
     this.selectedPatient.set(patient);
-    this.gameService.getPlayerStats(patient.keycloakId).subscribe({
-      next: stats => this.selectedPatientStats.set(stats),
-      error: () => this.selectedPatientStats.set(null),
-    });
     this.setPage('Patient Progress');
   }
 
@@ -345,6 +302,9 @@ export class DoctorDashboardComponent implements OnInit {
               this.patientStats.set(map);
               this.computeAggregates();
             },
+            error: err => {
+              console.warn(`Failed to load game stats for patient ${patient.keycloakId}`, err);
+            },
           });
         }
       },
@@ -358,7 +318,7 @@ export class DoctorDashboardComponent implements OnInit {
 
   private computeAggregates(): void {
     const stats = Array.from(this.patientStats().values());
-    this.totalPatientGames = stats.reduce((sum, s) => sum + s.totalGamesCreated, 0);
+    this.totalPatientGames = stats.reduce((sum, s) => sum + s.totalGamesPlayed, 0);
     const withScores = stats.filter(s => s.totalAttempts > 0);
     this.avgPatientScore = withScores.length > 0
       ? withScores.reduce((sum, s) => sum + s.averageScore, 0) / withScores.length
