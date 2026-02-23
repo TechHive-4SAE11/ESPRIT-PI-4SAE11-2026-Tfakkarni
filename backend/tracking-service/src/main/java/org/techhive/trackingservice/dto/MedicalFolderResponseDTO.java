@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MedicalFolderResponseDTO {
-    
+
     private Long id;
     private String idPatient;
     private String idDoctor;

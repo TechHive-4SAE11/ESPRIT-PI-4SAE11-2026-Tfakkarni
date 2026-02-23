@@ -73,7 +73,7 @@ export class PrescriptionManagementComponent implements OnInit {
     sessionId: z.union([
       z.number(),
       z.string().min(1)
-    ]).refine(val => val !== null && val !== '', { message: 'Session is required' }),
+    ]).refine((val: number | string) => val !== null && val !== '', { message: 'Session is required' }),
     medications: z.array(z.any()).min(1, { message: 'At least one medication is required' })
   });
 
@@ -162,7 +162,7 @@ export class PrescriptionManagementComponent implements OnInit {
         tap(folders => {
           console.log('[PrescriptionManagement] Medical folders:', folders);
 
-          const matchingFolder = folders.find(f => f.idDoctor === currentDoctorDbId);
+          const matchingFolder = folders.find(f => f.doctorId === currentDoctorDbId);
 
           if (matchingFolder) {
             console.log('[PrescriptionManagement] Found matching folder:', matchingFolder);

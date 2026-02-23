@@ -39,8 +39,19 @@ spring:
           uri: lb://tracking-service
           predicates:
             - Path=/api/tracking/**
+        # POST create: copy patientId query to header (gateway may not forward body/query), then cache body
+        - id: medical-folders-post
+          uri: lb://medical-service
+          predicates:
+            - Path=/api/medical-folders
+            - Method=POST
+          filters:
+            - PatientIdQueryToHeader
+            - name: CacheRequestBody
+              args:
+                bodyClass: java.lang.String
         - id: medical-folders
-          uri: lb://tracking-service
+          uri: lb://medical-service
           predicates:
             - Path=/api/medical-folders/**
         - id: care-plans

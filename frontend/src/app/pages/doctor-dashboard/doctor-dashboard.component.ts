@@ -1,5 +1,9 @@
-import { Component, OnInit, signal, PLATFORM_ID, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, signal, PLATFORM_ID, inject, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, of } from 'rxjs';
+import { debounceTime, switchMap, map } from 'rxjs/operators';
 import { AuthService } from '@/core/auth';
 import { DashboardLayoutComponent, type SidebarMenuGroup } from '@/shared/components/dashboard-layout';
 import { ZardCardComponent } from '@/shared/components/card';
@@ -11,8 +15,11 @@ import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardProgressBarComponent } from '@/shared/components/progress-bar';
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 import { GameService, type GameStatsResponse } from '@/core/services/game.service';
+import { MedicalFolderService } from '@/core/services/medical-folder.service';
+import type { MedicalFolder } from '@/core/services/medical-folder.service';
 import { PrescriptionManagementComponent } from './prescription-management/prescription-management.component';
 import { CarePlanManagementComponent } from './care-plan-management/care-plan-management.component';
+import { MedicalFolderListComponent } from '@/pages/medical-folders/medical-folder-list/medical-folder-list.component';
 
 @Component({
   selector: 'app-doctor-dashboard',
@@ -28,7 +35,8 @@ import { CarePlanManagementComponent } from './care-plan-management/care-plan-ma
     ZardButtonComponent,
     ZardProgressBarComponent,
     PrescriptionManagementComponent,
-    CarePlanManagementComponent
+    CarePlanManagementComponent,
+    MedicalFolderListComponent,
   ],
   template: `
     <app-dashboard-layout
@@ -36,6 +44,7 @@ import { CarePlanManagementComponent } from './care-plan-management/care-plan-ma
       [pageTitle]="currentPage()"
       basePath="/doctor"
     >
+      <div class="space-y-4">
       @switch (currentPage()) {
         @case ('Home') {
           <h2 class="text-2xl font-bold mb-6">Doctor Dashboard</h2>
@@ -242,11 +251,46 @@ import { CarePlanManagementComponent } from './care-plan-management/care-plan-ma
              </div>
           }
         }
+
+        @case ('Medical Folders') {
+          <div class="relative max-w-md mb-4">
+            <input
+              type="text"
+              placeholder="Search by Patient Name or ID"
+              class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+              [value]="searchInput()"
+              (input)="onSearchInput($any($event.target).value)"
+            />
+            @if (searchResults().length > 0) {
+              <div class="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-md shadow-lg z-10 max-h-60 overflow-auto">
+                @for (f of searchResults(); track f.id) {
+                  <button
+                    type="button"
+                    class="w-full text-left px-3 py-2 hover:bg-accent text-sm"
+                    (click)="openFolderFromSearch(f)"
+                  >
+                    Patient {{ f.patientId }} · Folder #{{ f.id }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+          <app-medical-folder-list
+            [initialFolderId]="searchSelectedFolderId()"
+            [doctorId]="doctorIdString()"
+            [doctor]="currentDoctor()"
+            (detailClosed)="searchSelectedFolderId.set(null)"
+          />
+        }
       }
+      </div>
     </app-dashboard-layout>
   `,
 })
 export class DoctorDashboardComponent implements OnInit {
+  private static readonly PAGE_STORAGE_KEY = 'tfk_doctor_current_page';
+  private static readonly PAGE_QUERY_PARAM = 'page';
+
   currentPage = signal('Home');
   patients = signal<UserInfo[]>([]);
   patientStats = signal<Map<string, GameStatsResponse>>(new Map());
@@ -258,12 +302,29 @@ export class DoctorDashboardComponent implements OnInit {
   totalPatientGames = 0;
   avgPatientScore = 0;
 
+  searchInput = signal('');
+  searchResults = signal<MedicalFolder[]>([]);
+  searchSelectedFolderId = signal<number | null>(null);
+  private readonly searchSubject = new Subject<string>();
+  private readonly medicalFolderService = inject(MedicalFolderService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly platformId = inject(PLATFORM_ID);
+
+  /** Use doctor's Keycloak ID to match medical-folder doctorId storage */
+  doctorIdString = computed(() => {
+    const keycloakId = this.currentDoctor()?.keycloakId;
+    return keycloakId || null;
+  });
+
   menuGroups: SidebarMenuGroup[] = [
     {
       label: 'Navigation',
       items: [
         { icon: 'house', label: 'Home', action: () => this.setPage('Home') },
         { icon: 'users', label: 'Patients', action: () => this.setPage('Home') },
+        { icon: 'folder', label: 'Medical Folders', action: () => this.setPage('Medical Folders') },
         { icon: 'bar-chart-3', label: 'Patient Progress', action: () => this.setPage('Patient Progress') },
         { icon: 'pill', label: 'Prescriptions', action: () => this.setPage('Prescriptions') },
         { icon: 'activity', label: 'Care Plans', action: () => this.setPage('CarePlans') },
@@ -276,15 +337,41 @@ export class DoctorDashboardComponent implements OnInit {
     private readonly userApiService: UserApiService,
     private readonly gameService: GameService,
   ) {
-    this.platformId = inject(PLATFORM_ID);
   }
 
-  private platformId: Object;
-
   ngOnInit(): void {
-    // Only load patients in browser, not during SSR
+    console.log('[doctor-dashboard] ngOnInit started');
+    this.restoreCurrentPage();
+    console.log('[doctor-dashboard] After restore, currentPage:', this.currentPage());
+    
+    this.searchSubject
+      .pipe(
+        debounceTime(300),
+        switchMap((term) => {
+          if (!term.trim()) {
+            this.searchResults.set([]);
+            return of({ term: '', folders: [] as MedicalFolder[] });
+          }
+          return this.medicalFolderService.getAll().pipe(
+            map((folders) => ({ term: term.trim().toLowerCase(), folders })),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(({ term, folders }) => {
+        if (!term) {
+          this.searchResults.set([]);
+          return;
+        }
+        const filtered = folders.filter(
+          (f) =>
+            f.patientId?.toLowerCase().includes(term) ||
+            f.doctorId?.toLowerCase().includes(term),
+        );
+        this.searchResults.set(filtered.slice(0, 5));
+      });
+
     if (isPlatformBrowser(this.platformId)) {
-      // Load current doctor info
       const doctorKeycloakId = this.authService.getKeycloakId();
       if (doctorKeycloakId) {
         this.userApiService.getUserByKeycloakId(doctorKeycloakId).subscribe({
@@ -292,13 +379,114 @@ export class DoctorDashboardComponent implements OnInit {
           error: err => console.error('Failed to load doctor info', err)
         });
       }
-
       this.loadPatients();
     }
   }
 
+  onSearchInput(value: string): void {
+    this.searchInput.set(value);
+    this.searchSubject.next(value);
+  }
+
+  openFolderFromSearch(folder: MedicalFolder): void {
+    this.searchSelectedFolderId.set(folder.id);
+    this.searchResults.set([]);
+    this.searchInput.set('');
+    this.setPage('Medical Folders');
+  }
+
   setPage(page: string): void {
     this.currentPage.set(page);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(DoctorDashboardComponent.PAGE_STORAGE_KEY, page);
+    }
+
+    const queryPage = this.toQueryPage(page);
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: queryPage ? { [DoctorDashboardComponent.PAGE_QUERY_PARAM]: queryPage } : { [DoctorDashboardComponent.PAGE_QUERY_PARAM]: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  private restoreCurrentPage(): void {
+    console.log('[doctor-dashboard] restoreCurrentPage called');
+    const queryPage = this.fromQueryPage(this.route.snapshot.queryParamMap.get(DoctorDashboardComponent.PAGE_QUERY_PARAM));
+    console.log('[doctor-dashboard] queryPage from route:', queryPage, 'currentPage before set:', this.currentPage());
+    if (queryPage) {
+      this.currentPage.set(queryPage);
+      console.log('[doctor-dashboard] Set currentPage from route query to:', queryPage, 'currentPage after set:', this.currentPage());
+      if (isPlatformBrowser(this.platformId)) {
+        localStorage.setItem(DoctorDashboardComponent.PAGE_STORAGE_KEY, queryPage);
+      }
+      return;
+    }
+
+    if (!isPlatformBrowser(this.platformId)) {
+      console.log('[doctor-dashboard] Not in browser, skipping localStorage restore');
+      return;
+    }
+
+    const savedPage = localStorage.getItem(DoctorDashboardComponent.PAGE_STORAGE_KEY);
+    console.log('[doctor-dashboard] savedPage from localStorage:', savedPage);
+    if (!savedPage) {
+      console.log('[doctor-dashboard] No saved page in localStorage');
+      return;
+    }
+
+    const validPages = new Set([
+      'Home',
+      'Patient Progress',
+      'Prescriptions',
+      'CarePlans',
+      'Medical Folders',
+    ]);
+
+    if (validPages.has(savedPage)) {
+      this.currentPage.set(savedPage);
+      console.log('[doctor-dashboard] Set currentPage from localStorage to:', savedPage, 'currentPage after set:', this.currentPage());
+      const savedQueryPage = this.toQueryPage(savedPage);
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: savedQueryPage ? { [DoctorDashboardComponent.PAGE_QUERY_PARAM]: savedQueryPage } : { [DoctorDashboardComponent.PAGE_QUERY_PARAM]: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }
+  }
+
+  private toQueryPage(page: string): string | null {
+    switch (page) {
+      case 'Medical Folders':
+        return 'medical-folders';
+      case 'Patient Progress':
+        return 'patient-progress';
+      case 'Prescriptions':
+        return 'prescriptions';
+      case 'CarePlans':
+        return 'careplans';
+      case 'Home':
+      default:
+        return null;
+    }
+  }
+
+  private fromQueryPage(queryPage: string | null): string | null {
+    switch (queryPage) {
+      case 'medical-folders':
+        return 'Medical Folders';
+      case 'patient-progress':
+        return 'Patient Progress';
+      case 'prescriptions':
+        return 'Prescriptions';
+      case 'careplans':
+        return 'CarePlans';
+      case 'home':
+        return 'Home';
+      default:
+        return null;
+    }
   }
 
   getPatientStat(keycloakId: string): GameStatsResponse | undefined {

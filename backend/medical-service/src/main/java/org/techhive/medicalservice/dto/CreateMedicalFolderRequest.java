@@ -15,6 +15,6 @@ public class CreateMedicalFolderRequest {
 	@NotNull(message = "Patient ID cannot be null")
 	private String patientId;
 
-	@NotNull(message = "Doctor ID cannot be null")
+	// doctorId is extracted from JWT token, not from request body
 	private String doctorId;
 }

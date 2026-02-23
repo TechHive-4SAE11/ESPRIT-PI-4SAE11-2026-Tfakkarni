@@ -12,6 +12,7 @@ import org.techhive.medicalservice.mapper.MedicalFolderMapper;
 import org.techhive.medicalservice.repository.MedicalFolderRepository;
 import org.techhive.medicalservice.service.MedicalFolderService;
 
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -24,6 +25,22 @@ public class MedicalFolderServiceImpl implements MedicalFolderService {
 
 	@Autowired
 	private MedicalFolderMapper medicalFolderMapper;
+
+	@Override
+	public List<MedicalFolderResponse> getAllMedicalFolders() {
+		log.debug("Fetching all medical folders");
+		return medicalFolderRepository.findAll().stream()
+				.map(medicalFolderMapper::toResponse)
+				.toList();
+	}
+
+	@Override
+	public List<MedicalFolderResponse> getMedicalFoldersByDoctorId(String doctorId) {
+		log.debug("Fetching medical folders for doctor: {}", doctorId);
+		return medicalFolderRepository.findByDoctorId(doctorId).stream()
+				.map(medicalFolderMapper::toResponse)
+				.toList();
+	}
 
 	@Override
 	public MedicalFolderResponse createMedicalFolder(CreateMedicalFolderRequest request) {

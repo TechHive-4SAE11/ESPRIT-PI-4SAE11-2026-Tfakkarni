@@ -1,0 +1,110 @@
+<div class="space-y-6">
+  <div class="flex items-center gap-2">
+    <button z-button zType="ghost" zSize="sm" (click)="goBack()">
+      <z-icon zType="arrow-left" class="mr-1" />
+      Back to list
+    </button>
+  </div>
+
+  @if (loading() && !folder()) {
+    <z-skeleton class="h-32 w-full" />
+  } @else if (error()) {
+    <z-card class="p-6">
+      <p class="text-destructive">{{ error() }}</p>
+    </z-card>
+  } @else if (folder()) {
+    @let f = folder()!;
+    <z-card class="p-6">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h2 class="text-xl font-bold">Medical Folder #{{ f!.id }}</h2>
+          <p class="text-muted-foreground text-sm mt-1">Patient: {{ f!.patientId }} · Doctor: {{ f!.doctorId }}</p>
+          <p class="text-muted-foreground text-xs mt-1">Created {{ f!.createdAt | date:'short' }} · Updated {{ f!.updatedAt | date:'short' }}</p>
+        </div>
+        <button z-button zType="outline" zSize="sm" (click)="openEditFolder()">Edit Folder</button>
+      </div>
+    </z-card>
+
+    <z-card class="p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Diagnostics</h3>
+        <button z-button zSize="sm" (click)="openAddDiagnostics()">
+          <z-icon zType="plus" class="mr-1" />
+          Add Diagnostics
+        </button>
+      </div>
+      @if (diagnostics().length === 0) {
+        <p class="text-muted-foreground text-sm">No diagnostics. Click "Add Diagnostics" to add one.</p>
+      } @else {
+        <div class="overflow-x-auto">
+          <table z-table>
+            <thead z-table-header>
+              <tr z-table-row>
+                <th z-table-head>Disease</th>
+                <th z-table-head>Stage</th>
+                <th z-table-head>Diagnosis Date</th>
+                <th z-table-head>Actions</th>
+              </tr>
+            </thead>
+            <tbody z-table-body>
+              @for (d of diagnostics(); track d.id) {
+                <tr z-table-row>
+                  <td z-table-cell class="font-medium">{{ d.diseaseName }}</td>
+                  <td z-table-cell>{{ d.stage || '-' }}</td>
+                  <td z-table-cell class="text-muted-foreground">{{ d.diagnosisDate | date:'short' }}</td>
+                  <td z-table-cell>
+                    <div class="flex gap-2">
+                      <button z-button zType="ghost" zSize="sm" (click)="editDiagnostics(d)">Edit</button>
+                      <button z-button zType="destructive" zSize="sm" (click)="deleteDiagnostics(d)">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </z-card>
+
+    <z-card class="p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Medical History</h3>
+        <button z-button zSize="sm" (click)="openAddHistory()">
+          <z-icon zType="plus" class="mr-1" />
+          Add Medical History
+        </button>
+      </div>
+      @if (history().length === 0) {
+        <p class="text-muted-foreground text-sm">No medical history. Click "Add Medical History" to add one.</p>
+      } @else {
+        <div class="overflow-x-auto">
+          <table z-table>
+            <thead z-table-header>
+              <tr z-table-row>
+                <th z-table-head>Allergies</th>
+                <th z-table-head>Conditions</th>
+                <th z-table-head>Surgeries</th>
+                <th z-table-head>Actions</th>
+              </tr>
+            </thead>
+            <tbody z-table-body>
+              @for (h of history(); track h.id) {
+                <tr z-table-row>
+                  <td z-table-cell class="max-w-[200px] truncate">{{ h.allergies || '-' }}</td>
+                  <td z-table-cell class="max-w-[200px] truncate">{{ h.conditions || '-' }}</td>
+                  <td z-table-cell class="max-w-[200px] truncate">{{ h.surgeries || '-' }}</td>
+                  <td z-table-cell>
+                    <div class="flex gap-2">
+                      <button z-button zType="ghost" zSize="sm" (click)="editHistory(h)">Edit</button>
+                      <button z-button zType="destructive" zSize="sm" (click)="deleteHistory(h)">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </z-card>
+  }
+</div>

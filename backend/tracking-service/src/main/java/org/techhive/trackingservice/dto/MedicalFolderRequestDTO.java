@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MedicalFolderRequestDTO {
-    
+
     private String idPatient;
     private String idDoctor;
 }

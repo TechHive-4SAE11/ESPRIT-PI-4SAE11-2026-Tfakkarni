@@ -1,0 +1,87 @@
+<div class="space-y-4">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <h2 class="text-2xl font-bold">Medical Folders</h2>
+    <div class="flex gap-2 flex-wrap">
+      <input
+        type="text"
+        placeholder="Search by Patient ID or Patient Name"
+        class="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors min-w-[200px]"
+        [value]="searchTerm()"
+        (input)="onSearch($any($event.target).value)"
+      />
+      <button z-button (click)="openCreate()">
+        <z-icon zType="plus" class="mr-2" />
+        Create New Folder
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <z-card class="p-6">
+      <z-skeleton class="h-32 w-full" />
+      <z-skeleton class="h-32 w-full mt-4" />
+    </z-card>
+  } @else if (error()) {
+    <z-card class="p-6">
+      <p class="text-destructive">{{ error() }}</p>
+      <button z-button zType="outline" class="mt-2" (click)="loadFolders()">Retry</button>
+    </z-card>
+  } @else if (showDetail() && folderToView()) {
+    <app-medical-folder-detail
+      [folderId]="folderToView()!.id"
+      (back)="closeDetail()"
+      (updated)="loadFolders()"
+    />
+  } @else if (filteredFolders().length === 0) {
+    <z-card class="p-12 text-center">
+      <z-icon zType="folder" class="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+      <p class="text-lg font-medium">No medical folders</p>
+      <p class="text-muted-foreground text-sm mt-1">Create a folder to get started.</p>
+      <button z-button class="mt-4" (click)="openCreate()">Create New Folder</button>
+    </z-card>
+  } @else {
+    <z-card>
+      <div class="overflow-x-auto">
+        <table z-table>
+          <thead z-table-header>
+            <tr z-table-row>
+              <th z-table-head>Patient ID</th>
+              <th z-table-head>Patient Name</th>
+              <th z-table-head>Created</th>
+              <th z-table-head>Updated</th>
+              <th z-table-head class="w-48">Actions</th>
+            </tr>
+          </thead>
+          <tbody z-table-body>
+            @for (f of paginatedFolders(); track f.id) {
+              <tr z-table-row>
+                <td z-table-cell class="font-medium">{{ f.patientId }}</td>
+                <td z-table-cell>{{ getPatientName(f.patientId) }}</td>
+                <td z-table-cell class="text-muted-foreground">{{ f.createdAt | date:'short' }}</td>
+                <td z-table-cell class="text-muted-foreground">{{ f.updatedAt | date:'short' }}</td>
+                <td z-table-cell>
+                  <div class="flex gap-2 flex-wrap">
+                    <button z-button zType="ghost" zSize="sm" (click)="viewDetail(f)" title="View">View</button>
+                    <button z-button zType="ghost" zSize="sm" (click)="openEdit(f)" title="Edit">Edit</button>
+                    <button z-button zType="destructive" zSize="sm" (click)="deleteFolder(f)" title="Delete">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (totalPages() > 1) {
+        <div class="flex items-center justify-between p-4 border-t border-border">
+          <span class="text-sm text-muted-foreground">
+            Page {{ currentPage() }} of {{ totalPages() }} ({{ filteredFolders().length }} folders)
+          </span>
+          <div class="flex gap-2">
+            <button z-button zType="outline" zSize="sm" [disabled]="currentPage() <= 1" (click)="setPage(currentPage() - 1)">Previous</button>
+            <button z-button zType="outline" zSize="sm" [disabled]="currentPage() >= totalPages()" (click)="setPage(currentPage() + 1)">Next</button>
+          </div>
+        </div>
+      }
+    </z-card>
+  }
+</div>
