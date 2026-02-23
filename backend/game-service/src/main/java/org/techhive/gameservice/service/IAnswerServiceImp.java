@@ -10,6 +10,7 @@ import org.techhive.gameservice.entity.Question;
 import org.techhive.gameservice.repository.AnswerRepository;
 import org.techhive.gameservice.repository.QuestionRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -98,18 +99,67 @@ public class IAnswerServiceImp implements IAnswerService {
 
     @Override
     public List<Answer> createAnswersBatch(List<AnswerDTO> answerDTOs) {
-        List<Answer> answers = answerDTOs.stream()
-                .map(dto -> {
-                    Answer answer = dto.toEntity();
-                    Question question = questionRepository.findById(dto.getQuestionId())
-                            .orElse(null);
-                    answer.setQuestion(question);
-                    validateAnswer(answer);
-                    return answer;
-                })
-                .toList();
+        log.info("Processing {} answers in batch", answerDTOs.size());
 
-        return (List<Answer>) answerRepository.saveAll(answers);
+        List<Answer> answers = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        for (int i = 0; i < answerDTOs.size(); i++) {
+            AnswerDTO dto = answerDTOs.get(i);
+
+            try {
+                // Validation
+                if (dto.getQuestionId() == null) {
+                    errors.add("Answer " + i + ": Question ID is null");
+                    continue;
+                }
+
+                if (dto.getText() == null || dto.getText().trim().isEmpty()) {
+                    errors.add("Answer " + i + ": Text is empty");
+                    continue;
+                }
+
+                if (dto.getIsCorrect() == null) {
+                    errors.add("Answer " + i + ": isCorrect flag is null");
+                    continue;
+                }
+
+                // Vérifier que la question existe
+                Question question = questionRepository.findById(dto.getQuestionId())
+                        .orElse(null);
+
+                if (question == null) {
+                    errors.add("Answer " + i + ": Question not found with id: " + dto.getQuestionId());
+                    continue;
+                }
+
+                // Créer l'entité Answer
+                Answer answer = new Answer();
+                answer.setText(dto.getText().trim());
+                answer.setIsCorrect(dto.getIsCorrect());
+                answer.setExplanation(dto.getExplanation() != null ? dto.getExplanation() :
+                        (dto.getIsCorrect() ? "Correct answer" : "Incorrect answer"));
+                answer.setQuestion(question);
+
+                answers.add(answer);
+
+            } catch (Exception e) {
+                errors.add("Answer " + i + ": " + e.getMessage());
+                log.error("Error processing answer {}: {}", i, dto, e);
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            log.error("Errors in batch processing: {}", errors);
+        }
+
+        if (answers.isEmpty()) {
+            log.error("No valid answers to save. Errors: {}", errors);
+            throw new RuntimeException("No valid answers to save: " + String.join(", ", errors));
+        }
+
+        log.info("Saving {} valid answers", answers.size());
+        return answerRepository.saveAll(answers);
     }
 
     @Override

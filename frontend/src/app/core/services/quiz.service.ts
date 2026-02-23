@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import {catchError, Observable, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   QuizDTO,
@@ -56,6 +56,16 @@ export class QuizService {
     return this.http.get<QuizDTO[]>(`${this.baseUrl}/caregiver/${caregiverId}/recent?limit=${limit}`);
   }
 
+  getQuizzesByDateRange(startDate: string, endDate: string): Observable<QuizDTO[]> {
+    return this.http.get<QuizDTO[]>(`${this.baseUrl}/date-range`, {
+      params: { startDate, endDate }
+    });
+  }
+
+  getQuizzesWithMinScore(minScore: number): Observable<QuizDTO[]> {
+    return this.http.get<QuizDTO[]>(`${this.baseUrl}/min-score/${minScore}`);
+  }
+
   getQuizCountByCaregiver(caregiverId: number): Observable<number> {
     return this.http.get<number>(`${this.baseUrl}/caregiver/${caregiverId}/count`);
   }
@@ -99,11 +109,22 @@ export class QuizService {
   }
 
   getQuestionsByQuizId(quizId: number): Observable<QuestionDTO[]> {
-    return this.http.get<QuestionDTO[]>(`${this.baseUrl}/questions/quiz/${quizId}`);
+    return this.http.get<QuestionDTO[]>(`${this.baseUrl}/questions/quiz/${quizId}`)
+      .pipe(
+        tap(questions => console.log('Questions loaded with answers:', questions)),
+        catchError(err => {
+          console.error('Error loading questions:', err);
+          return of([]);
+        })
+      );
   }
 
   getQuestionsByDifficultyLevel(level: number): Observable<QuestionDTO[]> {
     return this.http.get<QuestionDTO[]>(`${this.baseUrl}/questions/difficulty/${level}`);
+  }
+
+  deleteQuestionsByQuizId(quizId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/questions/quiz/${quizId}`);
   }
 
   getQuestionCountByQuizId(quizId: number): Observable<number> {
@@ -112,6 +133,14 @@ export class QuizService {
 
   searchQuestions(keyword: string): Observable<QuestionDTO[]> {
     return this.http.get<QuestionDTO[]>(`${this.baseUrl}/questions/search?keyword=${encodeURIComponent(keyword)}`);
+  }
+
+  getQuestionsByQuizAndDifficulty(quizId: number, level: number): Observable<QuestionDTO[]> {
+    return this.http.get<QuestionDTO[]>(`${this.baseUrl}/questions/quiz/${quizId}/difficulty/${level}`);
+  }
+
+  calculateTotalPoints(quizId: number): Observable<number> {
+    return this.http.get<number>(`${this.baseUrl}/questions/quiz/${quizId}/total-points`);
   }
 
   // ─── Answer CRUD ────────────────────────────────────────────
@@ -154,6 +183,10 @@ export class QuizService {
 
   createAnswersBatch(answers: AnswerDTO[]): Observable<AnswerDTO[]> {
     return this.http.post<AnswerDTO[]>(`${this.baseUrl}/answer/batch`, answers);
+  }
+
+  deleteAnswersByQuestionId(questionId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/answer/question/${questionId}`);
   }
 
   isAnswerCorrect(id: number): Observable<BooleanResponseDTO> {

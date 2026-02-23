@@ -18,12 +18,15 @@ public class Answer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 500)
     private String text;
+
+    @Column(name = "is_correct", nullable = false)
     private Boolean isCorrect;
     private String explanation;
 
     @ManyToOne
-    @JoinColumn(name = "question_id")
+    @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
     public boolean isCorrect() {

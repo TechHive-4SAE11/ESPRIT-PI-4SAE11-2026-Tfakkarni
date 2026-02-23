@@ -135,24 +135,25 @@ public class AnswerController {
      */
     @PostMapping("/batch")
     public ResponseEntity<List<AnswerDTO>> createAnswersBatch(@Valid @RequestBody List<AnswerDTO> answerDTOs) {
-        log.info("Creating {} answers in batch", answerDTOs.size());
+        log.info("=== BATCH ANSWERS REQUEST ===");
+        log.info("Number of answers: {}", answerDTOs.size());
 
-        List<Answer> createdAnswers = answerService.createAnswersBatch(answerDTOs);
-        List<AnswerDTO> createdDTOs = createdAnswers.stream()
-                .map(AnswerDTO::fromEntity)
-                .toList();
-        return new ResponseEntity<>(createdDTOs, HttpStatus.CREATED);
-    }
+        for (int i = 0; i < answerDTOs.size(); i++) {
+            AnswerDTO dto = answerDTOs.get(i);
+            log.info("Answer {}: questionId={}, text='{}', isCorrect={}, explanation='{}'",
+                    i, dto.getQuestionId(), dto.getText(), dto.getIsCorrect(), dto.getExplanation());
+        }
 
-    /**
-     * Delete all answers for a question
-     */
-    @DeleteMapping("/question/{questionId}")
-    public ResponseEntity<Void> deleteAnswersByQuestionId(@PathVariable Long questionId) {
-        log.info("Deleting all answers for question ID: {}", questionId);
-
-        answerService.deleteAnswersByQuestionId(questionId);
-        return ResponseEntity.noContent().build();
+        try {
+            List<Answer> createdAnswers = answerService.createAnswersBatch(answerDTOs);
+            List<AnswerDTO> createdDTOs = createdAnswers.stream()
+                    .map(AnswerDTO::fromEntity)
+                    .toList();
+            return new ResponseEntity<>(createdDTOs, HttpStatus.CREATED);
+        } catch (Exception e) {
+            log.error("Error creating answers batch", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     /**
