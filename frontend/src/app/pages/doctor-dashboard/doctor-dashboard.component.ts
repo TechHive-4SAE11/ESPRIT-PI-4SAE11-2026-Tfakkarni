@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, PLATFORM_ID, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Router } from '@angular/router';
 import { AuthService } from '@/core/auth';
 import { DashboardLayoutComponent, type SidebarMenuGroup } from '@/shared/components/dashboard-layout';
 import { ZardCardComponent } from '@/shared/components/card';
@@ -13,6 +14,7 @@ import { UserApiService, type UserInfo } from '@/core/services/user-api.service'
 import { GameService, type GameStatsResponse } from '@/core/services/game.service';
 import { PrescriptionManagementComponent } from './prescription-management/prescription-management.component';
 import { CarePlanManagementComponent } from './care-plan-management/care-plan-management.component';
+import { MedicationManagementComponent } from '../medications/medications.component';
 
 @Component({
   selector: 'app-doctor-dashboard',
@@ -28,7 +30,8 @@ import { CarePlanManagementComponent } from './care-plan-management/care-plan-ma
     ZardButtonComponent,
     ZardProgressBarComponent,
     PrescriptionManagementComponent,
-    CarePlanManagementComponent
+    CarePlanManagementComponent,
+    MedicationManagementComponent,
   ],
   template: `
     <app-dashboard-layout
@@ -115,8 +118,12 @@ import { CarePlanManagementComponent } from './care-plan-management/care-plan-ma
                                <z-icon zType="bar-chart-3" class="mr-1" />
                                Progress
                              </button>
-                             <button z-button zType="ghost" zSize="sm" (click)="managePrescriptions(patient)">
+                             <button z-button zType="ghost" zSize="sm" (click)="viewMedications(patient)">
                                <z-icon zType="pill" class="mr-1" />
+                               Meds
+                             </button>
+                             <button z-button zType="ghost" zSize="sm" (click)="managePrescriptions(patient)">
+                               <z-icon zType="file-text" class="mr-1" />
                                Rx
                              </button>
                              <button z-button zType="ghost" zSize="sm" (click)="manageCarePlans(patient)">
@@ -242,6 +249,29 @@ import { CarePlanManagementComponent } from './care-plan-management/care-plan-ma
              </div>
           }
         }
+
+        @case ('Medications') {
+          @if (selectedPatient(); as patient) {
+             <div class="flex items-center gap-2 mb-6">
+              <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
+                <z-icon zType="arrow-left" class="mr-1" />
+                Back to List
+              </button>
+            </div>
+            
+            <app-medication-management [patient]="patient" [doctor]="currentDoctor()" viewMode="patient"></app-medication-management>
+          } @else {
+             <div class="space-y-4">
+               <h2 class="text-2xl font-bold">Medications</h2>
+               <div class="p-8 border rounded-lg text-center bg-muted/20">
+                 <z-icon zType="pill" class="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                 <h3 class="text-lg font-semibold mb-2">No Patient Selected</h3>
+                 <p class="text-muted-foreground mb-4">Please select a patient from the main list to view their medications.</p>
+                 <button z-button (click)="setPage('Home')">Go to Patient List</button>
+               </div>
+             </div>
+          }
+        }
       }
     </app-dashboard-layout>
   `,
@@ -267,6 +297,7 @@ export class DoctorDashboardComponent implements OnInit {
         { icon: 'bar-chart-3', label: 'Patient Progress', action: () => this.setPage('Patient Progress') },
         { icon: 'pill', label: 'Prescriptions', action: () => this.setPage('Prescriptions') },
         { icon: 'activity', label: 'Care Plans', action: () => this.setPage('CarePlans') },
+        { icon: 'heart', label: 'Medications', action: () => this.setPage('Medications') },
       ],
     },
   ];
@@ -275,6 +306,7 @@ export class DoctorDashboardComponent implements OnInit {
     private readonly authService: AuthService,
     private readonly userApiService: UserApiService,
     private readonly gameService: GameService,
+    private readonly router: Router,
   ) {
     this.platformId = inject(PLATFORM_ID);
   }
@@ -321,6 +353,11 @@ export class DoctorDashboardComponent implements OnInit {
   manageCarePlans(patient: UserInfo): void {
     this.selectedPatient.set(patient);
     this.setPage('CarePlans');
+  }
+
+  viewMedications(patient: UserInfo): void {
+    this.selectedPatient.set(patient);
+    this.setPage('Medications');
   }
 
 

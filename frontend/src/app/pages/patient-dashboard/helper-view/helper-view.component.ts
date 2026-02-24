@@ -24,6 +24,7 @@ import { AddPlaceComponent } from './add-place/add-place.component';
 import { MovieGameManagerComponent } from './movie-game-manager/movie-game-manager.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
 import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-plan-list.component';
+import { MedicationManagementComponent } from '@/pages/medications/medications.component';
 
 import {
   GameService,
@@ -32,12 +33,8 @@ import {
   type GameDetailResponse,
   type EditImageEntry,
 } from '@/core/services/game.service';
-import { PrescriptionService } from '@/core/services/prescription.service';
-import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
-import { CarePlanService } from '@/core/services/care-plan.service';
-import { CarePlanResponseDTO } from '@/core/models/care-plan.model';
 import { SuiviQuotidienComponent } from './suivi-quotidien/suivi-quotidien.component';
-import { UserApiService } from '@/core/services/user-api.service';
+import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 
 @Component({
   selector: 'app-helper-view',
@@ -54,6 +51,7 @@ import { UserApiService } from '@/core/services/user-api.service';
     ZardTableImports,
     PrescriptionListComponent,
     CarePlanListComponent,
+    MedicationManagementComponent,
     SuiviQuotidienComponent,
   ],
   templateUrl: './helper-view.component.html',
@@ -62,8 +60,6 @@ export class HelperViewComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly gameService = inject(GameService);
   private readonly keycloakService = inject(KeycloakService);
-  private readonly prescriptionService = inject(PrescriptionService);
-  private readonly carePlanService = inject(CarePlanService);
   private readonly userApiService = inject(UserApiService);
   private readonly alertDialog = inject(ZardAlertDialogService);
 
@@ -74,13 +70,10 @@ export class HelperViewComponent implements OnInit {
   currentPage = signal<string>('Home');
   games = signal<GameResponse[]>([]);
   stats = signal<GameStatsResponse | null>(null);
-  prescriptions = signal<PrescriptionResponseDTO[]>([]);
-  carePlans = signal<CarePlanResponseDTO[]>([]);
   userNeonDbId = signal<number | null>(null);
+  currentUser = signal<UserInfo | null>(null);
 
   // Loading Signals
-  isLoadingPrescriptions = signal<boolean>(false);
-  isLoadingCarePlans = signal<boolean>(false);
   creating = signal<boolean>(false);
 
   // Form Signals (shared for create & edit)
@@ -107,10 +100,26 @@ export class HelperViewComponent implements OnInit {
   loadData(): void {
     if (!this.keycloakId) return;
 
-    this.loadCarePlans();
+    this.loadUserNeonDbId();
     this.loadGames();
     this.loadStats();
-    this.loadPrescriptions();
+  }
+  
+  private loadUserNeonDbId(): void {
+    this.userApiService.getUserByKeycloakId(this.keycloakId)
+      .pipe(
+        tap(userInfo => {
+          console.log('[HelperView] User info retrieved. DB ID:', userInfo.id);
+          this.userNeonDbId.set(userInfo.id);
+          this.currentUser.set(userInfo);
+        }),
+        catchError(err => {
+          console.error('[HelperView] Failed to load user info', err);
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
   }
 
   private loadGames(): void {
@@ -134,66 +143,6 @@ export class HelperViewComponent implements OnInit {
           console.error('[HelperView] Failed to load stats', err);
           return of(null);
         }),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe();
-  }
-
-  private loadPrescriptions(): void {
-    if (!this.keycloakId) {
-      console.warn('[HelperView] No keycloakId provided, skipping prescription load');
-      return;
-    }
-
-    console.log('[HelperView] Loading prescriptions for:', this.keycloakId);
-    this.isLoadingPrescriptions.set(true);
-
-    this.userApiService.getUserByKeycloakId(this.keycloakId)
-      .pipe(
-        tap(userInfo => {
-          console.log('[HelperView] User info retrieved. DB ID:', userInfo.id);
-          this.userNeonDbId.set(userInfo.id);
-        }),
-        switchMap(userInfo => {
-          const neonDbId = userInfo.id.toString();
-          return this.prescriptionService.getPrescriptionsByPatient(neonDbId);
-        }),
-        tap(prescriptions => {
-          console.log('[HelperView] Prescriptions loaded:', prescriptions.length);
-          this.prescriptions.set(prescriptions);
-        }),
-        catchError(err => {
-          console.error('[HelperView] Failed to load prescriptions', err);
-          return of([]);
-        }),
-        finalize(() => this.isLoadingPrescriptions.set(false)),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe();
-  }
-private loadCarePlans(): void {
-    if (!this.keycloakId) {
-      console.warn('[HelperView] No keycloakId, skipping care plan load');
-      return;
-    }
-
-    this.isLoadingCarePlans.set(true);
-
-    this.userApiService.getUserByKeycloakId(this.keycloakId)
-      .pipe(
-        switchMap(userInfo => {
-          const neonDbId = userInfo.id.toString();
-          return this.carePlanService.getCarePlansByPatient(neonDbId);
-        }),
-        tap(carePlans => {
-          console.log('[HelperView] Care Plans loaded:', carePlans.length);
-          this.carePlans.set(carePlans);
-        }),
-        catchError(err => {
-          console.error('[HelperView] Failed to load care plans', err);
-          return of([]);
-        }),
-        finalize(() => this.isLoadingCarePlans.set(false)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();

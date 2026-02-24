@@ -1,4 +1,4 @@
-import { Component, Input, computed, OnInit, OnChanges, SimpleChanges, inject, DestroyRef, PLATFORM_ID } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, signal, DestroyRef, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, tap, of } from 'rxjs';
@@ -6,7 +6,9 @@ import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardBadgeComponent } from '@/shared/components/badge';
 import { ZardButtonComponent } from '@/shared/components/button';
+import { ZardPaginationComponent } from '@/shared/components/pagination';
 import { PrescriptionResponseDTO, MedicationStatus } from '@/core/models/prescription.model';
+import { PagedResponse } from '@/core/models/paged-response.model';
 import { UserApiService } from '@/core/services/user-api.service';
 import { PrescriptionService } from '@/core/services/prescription.service';
 
@@ -18,10 +20,11 @@ import { PrescriptionService } from '@/core/services/prescription.service';
     ZardCardComponent,
     ZardIconComponent,
     ZardBadgeComponent,
-    ZardButtonComponent
+    ZardButtonComponent,
+    ZardPaginationComponent
   ],
   template: `
-    @if (isLoading) {
+    @if (isLoading()) {
       <div class="space-y-4">
         @for (i of [1,2,3]; track i) {
           <div class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 animate-pulse">
@@ -31,14 +34,14 @@ import { PrescriptionService } from '@/core/services/prescription.service';
           </div>
         }
       </div>
-    } @else if (prescriptions.length > 0) {
+    } @else if (prescriptions().length > 0) {
       <div class="space-y-4">
-        @for (prescription of prescriptions; track prescription.id) {
+        @for (prescription of prescriptions(); track prescription.id) {
           <div class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
             <div class="flex items-start justify-between mb-4">
               <div>
                 <div class="flex items-center gap-2 mb-1">
-                  <z-icon zType="file-text" class="text-primary h-5 w-5" />
+                  <z-icon zType="file" class="text-primary h-5 w-5" />
                   <p class="font-semibold text-lg text-slate-800 dark:text-white">
                     Prescription #{{ prescription.id }}
                   </p>
@@ -83,7 +86,7 @@ import { PrescriptionService } from '@/core/services/prescription.service';
                     
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                       <div class="flex items-center gap-2">
-                        <z-icon zType="circle" class="h-4 w-4 text-slate-400" />
+                        <z-icon zType="pill" class="h-4 w-4 text-slate-400" />
                         <span class="text-slate-500 dark:text-slate-400">Dosage:</span>
                         <span class="font-medium text-slate-700 dark:text-slate-200">{{ med.dosage }}</span>
                       </div>
@@ -129,38 +132,114 @@ import { PrescriptionService } from '@/core/services/prescription.service';
               </div>
             } @else {
               <div class="text-center py-4 text-slate-500 dark:text-slate-400 italic flex items-center justify-center gap-2">
-                <z-icon zType="circle-alert" class="h-5 w-5" />
+                <z-icon zType="alert-triangle" class="h-5 w-5" />
                 No medications listed
               </div>
             }
           </div>
         }
       </div>
+      
+      @if (totalPages() > 1) {
+        <div class="mt-6">
+          <z-pagination
+            [currentPage]="currentPage()"
+            [totalPages]="totalPages()"
+            [totalItems]="totalItems()"
+            [pageSize]="pageSize()"
+            (pageChange)="onPageChange($event)"
+          />
+        </div>
+      }
     } @else {
       <div class="text-center py-16 px-4">
-        <div class="bg-slate-100 dark:bg-slate-800 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-          <z-icon zType="pill" class="h-12 w-12 text-slate-400" />
-        </div>
-        <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">No prescriptions yet</h2>
-        <p class="text-slate-500 dark:text-slate-400 text-lg max-w-md mx-auto">
-          Your doctor will add prescriptions here when needed.
-        </p>
+        <z-icon zType="alert-triangle" class="h-12 w-12 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+        <p class="text-slate-600 dark:text-slate-400 text-lg font-medium">No prescriptions found</p>
+        <p class="text-slate-400 dark:text-slate-500 text-sm mt-1">This patient has no prescriptions yet.</p>
       </div>
     }
   `
 })
 export class PrescriptionListComponent implements OnInit, OnChanges {
-  @Input({ required: true }) prescriptions: PrescriptionResponseDTO[] = [];
-  @Input() isLoading = false;
+  @Input() patientId: string | null = null;
+  @Input() pageSize = signal<number>(1);
   
   private userApiService = inject(UserApiService);
   private prescriptionService = inject(PrescriptionService);
   private destroyRef = inject(DestroyRef);
   private platformId = inject(PLATFORM_ID);
   
-  doctorNames = new Map<string, string>(); // doctorDbId -> Full Name
+  prescriptions = signal<PrescriptionResponseDTO[]>([]);
+  isLoading = signal<boolean>(false);
+  currentPage = signal<number>(0);
+  totalPages = signal<number>(0);
+  totalItems = signal<number>(0);
+  
+  doctorNames = new Map<string, string>();
 
-  // Helper methods for medication status display
+  ngOnInit() {
+    if (this.patientId) {
+      this.loadPrescriptions();
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['patientId'] && !changes['patientId'].firstChange) {
+      this.currentPage.set(0);
+      this.loadPrescriptions();
+    }
+  }
+  
+  loadPrescriptions(): void {
+    if (!this.patientId) return;
+    
+    this.isLoading.set(true);
+    
+    this.prescriptionService.getPrescriptionsByPatientPaginated(
+      this.patientId,
+      this.currentPage(),
+      this.pageSize(),
+      'createdAt',
+      'DESC'
+    ).pipe(
+      tap((response: PagedResponse<PrescriptionResponseDTO>) => {
+        this.prescriptions.set(response.content);
+        this.totalPages.set(response.totalPages);
+        this.totalItems.set(response.totalElements);
+        this.fetchDoctorNames(response.content);
+      }),
+      catchError(err => {
+        console.error('Failed to load prescriptions', err);
+        this.prescriptions.set([]);
+        return of(null);
+      }),
+      tap(() => this.isLoading.set(false)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
+  }
+  
+  onPageChange(page: number): void {
+    this.currentPage.set(page);
+    this.loadPrescriptions();
+  }
+
+  fetchDoctorNames(prescriptions: PrescriptionResponseDTO[]) {
+    if (!prescriptions || prescriptions.length === 0) return;
+
+    const uniqueIds = new Set(prescriptions.map(p => p.doctorId).filter(id => id && !this.doctorNames.has(id)));
+    
+    uniqueIds.forEach(id => {
+      this.userApiService.getUserById(id).subscribe({
+        next: (user) => {
+          if (user) {
+            this.doctorNames.set(id, `Dr. ${user.firstName} ${user.lastName}`);
+          }
+        },
+        error: (err) => console.error(`Failed to load doctor info for ${id}`, err)
+      });
+    });
+  }
+
   getStatusBadgeType(status: MedicationStatus): 'default' | 'secondary' | 'destructive' | 'outline' {
     switch (status) {
       case MedicationStatus.ACTIVE:
@@ -172,7 +251,7 @@ export class PrescriptionListComponent implements OnInit, OnChanges {
       case MedicationStatus.DISCONTINUED:
         return 'outline';
       default:
-        return 'outline';
+        return 'secondary';
     }
   }
 
@@ -206,52 +285,25 @@ export class PrescriptionListComponent implements OnInit, OnChanges {
     }
   }
 
-  ngOnInit() {
-      this.fetchDoctorNames();
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-      if (changes['prescriptions']) {
-          this.fetchDoctorNames();
-      }
-  }
-
-  fetchDoctorNames() {
-      if (!this.prescriptions || this.prescriptions.length === 0) return;
-
-      const uniqueIds = new Set(this.prescriptions.map(p => p.doctorId).filter(id => id && !this.doctorNames.has(id)));
-      
-      uniqueIds.forEach(id => {
-          this.userApiService.getUserById(id).subscribe({
-              next: (user) => {
-                  if (user) {
-                    this.doctorNames.set(id, `Dr. ${user.firstName} ${user.lastName}`);
-                  }
-              },
-              error: (err) => console.error(`Failed to load doctor info for ${id}`, err)
-          });
-      });
-  }
-
   downloadPdf(id: number): void {
-      if (!isPlatformBrowser(this.platformId)) return;
+    if (!isPlatformBrowser(this.platformId)) return;
 
-      this.prescriptionService.downloadPrescriptionPdf(id)
-        .pipe(
-          tap((blob: Blob) => {
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `prescription_${id}.pdf`;
-            link.click();
-            window.URL.revokeObjectURL(url);
-          }),
-          catchError(error => {
-            console.error('Error downloading PDF', error);
-            return of(null);
-          }),
-          takeUntilDestroyed(this.destroyRef)
-        )
-        .subscribe();
-    }
+    this.prescriptionService.downloadPrescriptionPdf(id)
+      .pipe(
+        tap((blob: Blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `prescription_${id}.pdf`;
+          link.click();
+          window.URL.revokeObjectURL(url);
+        }),
+        catchError(error => {
+          console.error('Error downloading PDF', error);
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
 }

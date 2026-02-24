@@ -1,6 +1,8 @@
 package org.techhive.trackingservice.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.techhive.trackingservice.entity.Medication;
@@ -97,6 +99,11 @@ public class PrescriptionService {
     @Transactional(readOnly = true)
     public List<Prescription> getPrescriptionsByPatient(String idPatient) {
         return prescriptionRepository.findBySessionMedicalFolderIdPatient(idPatient);
+    }
+    
+    @Transactional(readOnly = true)
+    public Page<Prescription> getPrescriptionsByPatientPaginated(String idPatient, Pageable pageable) {
+        return prescriptionRepository.findBySessionMedicalFolderIdPatient(idPatient, pageable);
     }
 
     @Transactional

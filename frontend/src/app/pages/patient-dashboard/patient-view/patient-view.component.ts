@@ -16,28 +16,23 @@ import { catchError, finalize, of, tap, switchMap } from 'rxjs';
 
 import { GameService, type GameResponse, type GameStatsResponse } from '@/core/services/game.service';
 import { MovieGameService, type MovieGameResponse } from '@/core/services/movie-game.service';
-import { PrescriptionService } from '@/core/services/prescription.service';
-import { CarePlanService } from '@/core/services/care-plan.service';
-import { UserApiService } from '@/core/services/user-api.service';
-import { type PrescriptionResponseDTO } from '@/core/models/prescription.model';
-import { type CarePlanResponseDTO } from '@/core/models/care-plan.model';
+import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 import { AuthService } from '@/core/auth';
 import { GuessPlaceComponent } from './guess-place/guess-place.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
 import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-plan-list.component';
+import { MedicationManagementComponent } from '@/pages/medications/medications.component';
 
 @Component({
   selector: 'app-patient-view',
   standalone: true,
-  imports: [CommonModule, GuessPlaceComponent, PrescriptionListComponent, CarePlanListComponent],
+  imports: [CommonModule, GuessPlaceComponent, PrescriptionListComponent, CarePlanListComponent, MedicationManagementComponent],
   templateUrl: './patient-view.component.html',
 })
 export class PatientViewComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly gameService = inject(GameService);
   private readonly movieGameService = inject(MovieGameService);
-  private readonly prescriptionService = inject(PrescriptionService);
-  private readonly carePlanService = inject(CarePlanService);
   private readonly userApiService = inject(UserApiService);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
@@ -50,18 +45,15 @@ export class PatientViewComponent implements OnInit {
   games = signal<GameResponse[]>([]);
   movieGames = signal<MovieGameResponse[]>([]);
   stats = signal<GameStatsResponse | null>(null);
-  prescriptions = signal<PrescriptionResponseDTO[]>([]);
-  carePlans = signal<CarePlanResponseDTO[]>([]);
 
   // Loading State Signals
   isLoadingGames = signal<boolean>(false);
   isLoadingMovieGames = signal<boolean>(false);
   isLoadingStats = signal<boolean>(false);
-  isLoadingPrescriptions = signal<boolean>(false);
-  isLoadingCarePlans = signal<boolean>(false);
 
   // User Info
   userNeonDbId = signal<number | null>(null);
+  currentUser = signal<UserInfo | null>(null);
 
   // Computed Values
   playableGames = computed(() => this.games().filter(g => g.imageCount >= 2));
@@ -91,11 +83,27 @@ export class PatientViewComponent implements OnInit {
   loadData(): void {
     if (!this.keycloakId) return;
 
+    this.loadUserNeonDbId();
     this.loadGames();
     this.loadMovieGames();
     this.loadStats();
-    this.loadPrescriptions();
-    this.loadCarePlans();
+  }
+  
+  private loadUserNeonDbId(): void {
+    this.userApiService.getUserByKeycloakId(this.keycloakId)
+      .pipe(
+        tap(userInfo => {
+          console.log('[PatientView] User info retrieved. DB ID:', userInfo.id);
+          this.userNeonDbId.set(userInfo.id);
+          this.currentUser.set(userInfo);
+        }),
+        catchError(err => {
+          console.error('[PatientView] Failed to load user info', err);
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
   }
 
   private loadGames(): void {
@@ -138,67 +146,6 @@ export class PatientViewComponent implements OnInit {
           return of(null);
         }),
         finalize(() => this.isLoadingStats.set(false)),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe();
-  }
-
-  private loadPrescriptions(): void {
-    if (!this.keycloakId) {
-      console.warn('[PatientView] No keycloakId provided, skipping prescription load');
-      return;
-    }
-
-    console.log('[PatientView] Loading prescriptions flow started for:', this.keycloakId);
-    this.isLoadingPrescriptions.set(true);
-
-    // Chain: Get User Info -> Extract ID -> Get Prescriptions
-    this.userApiService.getUserByKeycloakId(this.keycloakId)
-      .pipe(
-        tap(userInfo => {
-          console.log('[PatientView] User info retrieved. DB ID:', userInfo.id);
-          this.userNeonDbId.set(userInfo.id);
-        }),
-        switchMap(userInfo => {
-          const neonDbId = userInfo.id.toString();
-          console.log('[PatientView] Fetching prescriptions for DB ID:', neonDbId);
-          return this.prescriptionService.getPrescriptionsByPatient(neonDbId);
-        }),
-        tap(prescriptions => {
-          console.log('[PatientView] Prescriptions loaded:', prescriptions.length);
-          this.prescriptions.set(prescriptions);
-        }),
-        catchError(err => {
-          console.error('[PatientView] Failed to load prescriptions chain', err);
-          return of([]);
-        }),
-        finalize(() => this.isLoadingPrescriptions.set(false)),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe();
-  }
-
-  private loadCarePlans(): void {
-    if (!this.keycloakId) {
-      return;
-    }
-
-    this.isLoadingCarePlans.set(true);
-
-    this.userApiService.getUserByKeycloakId(this.keycloakId)
-      .pipe(
-        switchMap(userInfo => {
-          const neonDbId = userInfo.id.toString();
-          return this.carePlanService.getCarePlansByPatient(neonDbId);
-        }),
-        tap(plans => {
-          this.carePlans.set(plans);
-        }),
-        catchError(err => {
-          console.error('[PatientView] Failed to load care plans', err);
-          return of([]);
-        }),
-        finalize(() => this.isLoadingCarePlans.set(false)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();

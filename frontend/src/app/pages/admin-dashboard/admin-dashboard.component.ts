@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { AuthService } from '@/core/auth';
 import { DashboardLayoutComponent, type SidebarMenuGroup } from '@/shared/components/dashboard-layout';
 import { ZardCardComponent } from '@/shared/components/card';
@@ -274,6 +275,7 @@ export class AdminDashboardComponent implements OnInit {
     private readonly authService: AuthService,
     private readonly userApiService: UserApiService,
     private readonly gameService: GameService,
+    private readonly router: Router,
   ) {}
 
   ngOnInit(): void {

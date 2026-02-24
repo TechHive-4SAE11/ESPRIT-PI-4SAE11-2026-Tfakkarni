@@ -1,10 +1,15 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, signal, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { catchError, tap, of } from 'rxjs';
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardBadgeComponent } from '@/shared/components/badge';
+import { ZardPaginationComponent } from '@/shared/components/pagination';
 import { CarePlanResponseDTO, CareActivityType, CareActivityResponseDTO } from '@/core/models/care-plan.model';
+import { PagedResponse } from '@/core/models/paged-response.model';
 import { UserApiService } from '@/core/services/user-api.service';
+import { CarePlanService } from '@/core/services/care-plan.service';
 
 @Component({
   selector: 'app-care-plan-list',
@@ -13,10 +18,11 @@ import { UserApiService } from '@/core/services/user-api.service';
     CommonModule,
     ZardCardComponent,
     ZardIconComponent,
-    ZardBadgeComponent
+    ZardBadgeComponent,
+    ZardPaginationComponent
   ],
   template: `
-    @if (isLoading) {
+    @if (isLoading()) {
       <div class="space-y-4">
         @for (i of [1,2,3]; track i) {
           <div class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 animate-pulse">
@@ -26,9 +32,9 @@ import { UserApiService } from '@/core/services/user-api.service';
           </div>
         }
       </div>
-    } @else if (carePlans.length > 0) {
+    } @else if (carePlans().length > 0) {
       <div class="space-y-4">
-        @for (plan of carePlans; track plan.id) {
+        @for (plan of carePlans(); track plan.id) {
           <div class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
             <div class="flex items-start justify-between mb-4">
               <div>
@@ -136,47 +142,104 @@ import { UserApiService } from '@/core/services/user-api.service';
           </div>
         }
       </div>
+      
+      @if (totalPages() > 1) {
+        <div class="mt-6">
+          <z-pagination
+            [currentPage]="currentPage()"
+            [totalPages]="totalPages()"
+            [totalItems]="totalItems()"
+            [pageSize]="pageSize()"
+            (pageChange)="onPageChange($event)"
+          />
+        </div>
+      }
     } @else {
-      <div class="text-center py-10 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
-        <z-icon zType="file-text" class="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-        <h3 class="text-lg font-medium text-slate-900 dark:text-white">No Care Plans</h3>
-        <p class="text-slate-500 dark:text-slate-400">There are no care plans assigned yet.</p>
+      <div class="text-center py-16 px-4">
+        <z-icon zType="alert-triangle" class="h-12 w-12 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+        <p class="text-slate-600 dark:text-slate-400 text-lg font-medium">No care plans found</p>
+        <p class="text-slate-400 dark:text-slate-500 text-sm mt-1">This patient has no care plans yet.</p>
       </div>
     }
   `
 })
 export class CarePlanListComponent implements OnInit, OnChanges {
-  @Input() carePlans: CarePlanResponseDTO[] = [];
-  @Input() isLoading = false;
+  @Input() patientId: string | null = null;
+  @Input() pageSize = signal<number>(1);
   
   private userApiService = inject(UserApiService);
+  private carePlanService = inject(CarePlanService);
+  private destroyRef = inject(DestroyRef);
+  
+  carePlans = signal<CarePlanResponseDTO[]>([]);
+  isLoading = signal<boolean>(false);
+  currentPage = signal<number>(0);
+  totalPages = signal<number>(0);
+  totalItems = signal<number>(0);
+  
   doctorNames = new Map<string, string>(); // doctorDbId -> Full Name
 
   ngOnInit() {
-      this.fetchDoctorNames();
+    if (this.patientId) {
+      this.loadCarePlans();
+    }
   }
 
   ngOnChanges(changes: SimpleChanges) {
-      if (changes['carePlans']) {
-          this.fetchDoctorNames();
-      }
+    if (changes['patientId'] && !changes['patientId'].firstChange) {
+      this.currentPage.set(0);
+      this.loadCarePlans();
+    }
+  }
+  
+  loadCarePlans(): void {
+    if (!this.patientId) return;
+    
+    this.isLoading.set(true);
+    
+    this.carePlanService.getCarePlansByPatientPaginated(
+      this.patientId,
+      this.currentPage(),
+      this.pageSize(),
+      'createdAt',
+      'DESC'
+    ).pipe(
+      tap((response: PagedResponse<CarePlanResponseDTO>) => {
+        this.carePlans.set(response.content);
+        this.totalPages.set(response.totalPages);
+        this.totalItems.set(response.totalElements);
+        this.fetchDoctorNames(response.content);
+      }),
+      catchError(err => {
+        console.error('Failed to load care plans', err);
+        this.carePlans.set([]);
+        return of(null);
+      }),
+      tap(() => this.isLoading.set(false)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
+  }
+  
+  onPageChange(page: number): void {
+    this.currentPage.set(page);
+    this.loadCarePlans();
   }
 
-  fetchDoctorNames() {
-      if (!this.carePlans || this.carePlans.length === 0) return;
+  fetchDoctorNames(carePlans: CarePlanResponseDTO[]) {
+    if (!carePlans || carePlans.length === 0) return;
 
-      const uniqueIds = new Set(this.carePlans.map(p => p.doctorId).filter(id => id && !this.doctorNames.has(id)));
-      
-      uniqueIds.forEach(id => {
-          this.userApiService.getUserById(id).subscribe({
-              next: (user) => {
-                  if (user) {
-                    this.doctorNames.set(id, `Dr. ${user.firstName} ${user.lastName}`);
-                  }
-              },
-              error: (err) => console.error(`Failed to load doctor info for ${id}`, err)
-          });
+    const uniqueIds = new Set(carePlans.map(p => p.doctorId).filter(id => id && !this.doctorNames.has(id)));
+    
+    uniqueIds.forEach(id => {
+      this.userApiService.getUserById(id).subscribe({
+        next: (user) => {
+          if (user) {
+            this.doctorNames.set(id, `Dr. ${user.firstName} ${user.lastName}`);
+          }
+        },
+        error: (err) => console.error(`Failed to load doctor info for ${id}`, err)
       });
+    });
   }
 
   getPhysicalActivities(plan: CarePlanResponseDTO): CareActivityResponseDTO[] {
