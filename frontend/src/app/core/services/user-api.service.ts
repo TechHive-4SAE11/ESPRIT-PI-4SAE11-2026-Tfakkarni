@@ -10,7 +10,23 @@ export interface UserInfo {
   lastName: string;
   email: string;
   role: string;
+  gender?: string;
+  enabled: boolean;
   createdAt: string;
+  kycStatus?: string;
+  kycSessionId?: string;
+}
+
+export interface KycSessionResponse {
+  session_id: string;
+  url: string;
+  status: string;
+}
+
+export interface KycStatusResponse {
+  kyc_status: string;
+  session_id: string;
+  didit_status: string;
 }
 
 @Injectable({
@@ -32,8 +48,50 @@ export class UserApiService {
   getUserByKeycloakId(keycloakId: string): Observable<UserInfo> {
     return this.http.get<UserInfo>(`${this.baseUrl}/keycloak/${keycloakId}`);
   }
-  
+
   getUserById(id: string | number): Observable<UserInfo> {
     return this.http.get<UserInfo>(`${this.baseUrl}/${id}`);
+  }
+
+  updateProfile(keycloakId: string, data: { firstName: string; lastName: string; email: string }): Observable<UserInfo> {
+    return this.http.put<UserInfo>(`${this.baseUrl}/profile/${keycloakId}`, data);
+  }
+
+  changePassword(keycloakId: string, data: { currentPassword: string; newPassword: string }): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.baseUrl}/password/${keycloakId}`, data);
+  }
+
+  adminResetPassword(keycloakId: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.baseUrl}/admin-reset-password/${keycloakId}`, { newPassword });
+  }
+
+  registerUser(data: { firstName: string; lastName: string; email: string; password: string; role: string }): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/register`, data);
+  }
+
+  deleteUser(keycloakId: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.baseUrl}/keycloak/${keycloakId}`);
+  }
+
+  updateRole(keycloakId: string, role: string): Observable<UserInfo> {
+    return this.http.put<UserInfo>(`${this.baseUrl}/role/${keycloakId}`, { role });
+  }
+
+  toggleEnabled(keycloakId: string, enabled: boolean): Observable<UserInfo> {
+    return this.http.put<UserInfo>(`${this.baseUrl}/toggle-enabled/${keycloakId}`, { enabled });
+  }
+
+  // ─── KYC Methods ──────────────────────────────────────────
+
+  startKyc(keycloakId: string): Observable<KycSessionResponse> {
+    return this.http.post<KycSessionResponse>(`${this.baseUrl}/kyc/start/${keycloakId}`, {});
+  }
+
+  getKycStatus(keycloakId: string): Observable<KycStatusResponse> {
+    return this.http.get<KycStatusResponse>(`${this.baseUrl}/kyc/status/${keycloakId}`);
+  }
+
+  skipKyc(keycloakId: string): Observable<{ message: string; kycStatus: string }> {
+    return this.http.put<{ message: string; kycStatus: string }>(`${this.baseUrl}/kyc/skip/${keycloakId}`, {});
   }
 }

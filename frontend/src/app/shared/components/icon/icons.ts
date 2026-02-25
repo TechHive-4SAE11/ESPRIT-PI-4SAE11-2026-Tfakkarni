@@ -59,6 +59,7 @@ import {
   ListFilterPlus,
   Loader2,
   LoaderCircle,
+  Lock,
   LogOut,
   type LucideIconData,
   Mail,
@@ -98,6 +99,7 @@ import {
   Trophy,
   Underline,
   Upload,
+  Download,
   TrendingUp,
   Edit,
   Pill,
@@ -106,6 +108,7 @@ import {
   Zap,
   Users,
   UserPlus,
+  Unlock,
 } from 'lucide-angular';
 
 const DarkMode: LucideIconData = [
@@ -217,6 +220,7 @@ export const ZARD_ICONS = {
   brain: Brain,
   play: Play,
   upload: Upload,
+  download: Download,
   'loader-2': Loader2,
   'thumbs-up': ThumbsUp,
   'rotate-ccw': RotateCcw,
@@ -230,6 +234,8 @@ export const ZARD_ICONS = {
   'map-pin': MapPin,
   pill: Pill,
   edit: Edit,
+  lock: Lock,
+  unlock: Unlock,
   'alert-triangle': TriangleAlert,
 } as const satisfies Record<string, LucideIconData>;
 

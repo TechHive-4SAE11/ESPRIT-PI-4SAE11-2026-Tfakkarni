@@ -1,12 +1,13 @@
 // src/app/core/services/prescription.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@/environments/environment';
 import {
   PrescriptionRequestDTO,
   PrescriptionResponseDTO,
 } from '@/core/models/prescription.model';
+import { PagedResponse } from '@/core/models/paged-response.model';
 
 @Injectable({
   providedIn: 'root',
@@ -31,6 +32,25 @@ export class PrescriptionService {
   getPrescriptionsByPatient(patientId: string): Observable<PrescriptionResponseDTO[]> {
     return this.http.get<PrescriptionResponseDTO[]>(`${this.baseUrl}/patient/${patientId}`);
   }
+  
+  getPrescriptionsByPatientPaginated(
+    patientId: string, 
+    page: number = 0, 
+    size: number = 10,
+    sortBy: string = 'createdAt',
+    sortDir: 'ASC' | 'DESC' = 'DESC'
+  ): Observable<PagedResponse<PrescriptionResponseDTO>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('sortBy', sortBy)
+      .set('sortDir', sortDir);
+    
+    return this.http.get<PagedResponse<PrescriptionResponseDTO>>(
+      `${this.baseUrl}/patient/${patientId}/paginated`,
+      { params }
+    );
+  }
 
   createPrescription(
     prescription: PrescriptionRequestDTO
@@ -50,5 +70,9 @@ export class PrescriptionService {
 
   deletePrescription(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  downloadPrescriptionPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/pdf`, { responseType: 'blob' });
   }
 }

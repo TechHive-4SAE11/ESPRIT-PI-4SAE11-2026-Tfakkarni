@@ -1,6 +1,7 @@
-import { Component, Input, OnInit, signal, computed, DestroyRef, inject } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, signal, computed, DestroyRef, inject, ViewChild, TemplateRef, ViewContainerRef, ApplicationRef, Injector, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { DomPortalOutlet, TemplatePortal } from '@angular/cdk/portal';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormArray, AbstractControl, Validators } from '@angular/forms';
 import { catchError, finalize, of, tap } from 'rxjs';
 import { z } from 'zod';
@@ -34,10 +35,20 @@ import {
   ],
   templateUrl: './care-plan-management.component.html',
 })
-export class CarePlanManagementComponent implements OnInit {
+export class CarePlanManagementComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly alertDialog = inject(ZardAlertDialogService);
   private readonly fb = inject(FormBuilder);
+
+  // CDK Portal - render dialogs at body level to escape overflow:auto containers
+  private readonly appRef = inject(ApplicationRef);
+  private readonly injector = inject(Injector);
+  private readonly viewContainerRef = inject(ViewContainerRef);
+  private readonly platformId = inject(PLATFORM_ID);
+  @ViewChild('createDialogTpl') private createDialogTpl!: TemplateRef<any>;
+  @ViewChild('viewDialogTpl') private viewDialogTpl!: TemplateRef<any>;
+  private createDialogPortal: DomPortalOutlet | null = null;
+  private viewDialogPortal: DomPortalOutlet | null = null;
   private readonly carePlanService = inject(CarePlanService);
   private readonly medicalFolderService = inject(MedicalFolderService);
   private readonly sessionService = inject(SessionService);
@@ -77,10 +88,10 @@ export class CarePlanManagementComponent implements OnInit {
 
   // Zod Schemas
   private readonly activityFieldSchemas = {
-    activityName: z.string().min(1, { message: 'Activity name is required' }),
-    description: z.string().min(1, { message: 'Description is required' }),
-    frequency: z.string().min(1, { message: 'Frequency is required' }),
-    duration: z.string().min(1, { message: 'Duration is required' })
+    activityName: z.string().min(1, { message: 'Please enter the activity name' }),
+    description: z.string().min(1, { message: 'Please provide a description of the activity' }),
+    frequency: z.string().min(1, { message: 'Please specify how often (e.g., Daily, 3x/week)' }),
+    duration: z.string().min(1, { message: 'Please specify duration (e.g., 30 mins, 1 hour)' })
   };
 
   private readonly carePlanSchema = z.object({
@@ -99,6 +110,37 @@ export class CarePlanManagementComponent implements OnInit {
 
   get activities(): FormArray {
     return this.carePlanForm.get('activities') as FormArray;
+  }
+
+  // Helper method to get activity control
+  getActivityControl(index: number, controlName: string): AbstractControl | null {
+    const activityGroup = this.activities.at(index) as FormGroup;
+    return activityGroup?.get(controlName);
+  }
+
+  // Get the first validation error message for a form control
+  getErrorMessage(control: AbstractControl | null): string {
+    if (!control || !control.errors) {
+      return '';
+    }
+    const errors = control.errors;
+    // Zod validator stores the message in the 'zodError' key
+    if (errors['zodError']) {
+      return errors['zodError'];
+    }
+    // Fallback to standard Angular validators
+    if (errors['required']) {
+      return 'This field is required';
+    }
+    if (errors['minlength']) {
+      return `Minimum length is ${errors['minlength'].requiredLength}`;
+    }
+    return 'Invalid value';
+  }
+
+  // Check if control should show error (invalid and touched)
+  shouldShowError(control: AbstractControl | null): boolean {
+    return !!(control && control.invalid && control.touched);
   }
 
   // ==================== Form Creation ====================
@@ -217,6 +259,27 @@ export class CarePlanManagementComponent implements OnInit {
       .subscribe();
   }
 
+  // ==================== Portal Helpers ====================
+
+  private getOrCreatePortal(): DomPortalOutlet | null {
+    if (isPlatformBrowser(this.platformId)) {
+      return new DomPortalOutlet(document.body, null as any, this.appRef, this.injector);
+    }
+    return null;
+  }
+
+  private attachPortal(templateRef: TemplateRef<any>, outlet: DomPortalOutlet | null): DomPortalOutlet | null {
+    if (!outlet) outlet = this.getOrCreatePortal();
+    if (!outlet) return null;
+    if (outlet.hasAttached()) outlet.detach();
+    outlet.attach(new TemplatePortal(templateRef, this.viewContainerRef));
+    return outlet;
+  }
+
+  private detachPortal(outlet: DomPortalOutlet | null): void {
+    if (outlet?.hasAttached()) outlet.detach();
+  }
+
   // ==================== Actions ====================
 
   openCreateDialog(): void {
@@ -227,6 +290,7 @@ export class CarePlanManagementComponent implements OnInit {
       this.activities.clear();
       this.addCareActivity(); // Add one empty activity
       this.showCreateDialog.set(true);
+      this.createDialogPortal = this.attachPortal(this.createDialogTpl, this.createDialogPortal);
     } catch (error) {
       console.error('CarePlanManagement: Error opening create dialog', error);
       this.errorMessage.set('An error occurred while opening the dialog');
@@ -255,9 +319,11 @@ export class CarePlanManagementComponent implements OnInit {
     });
 
     this.showCreateDialog.set(true);
+    this.createDialogPortal = this.attachPortal(this.createDialogTpl, this.createDialogPortal);
   }
 
   closeCreateDialog(): void {
+    this.detachPortal(this.createDialogPortal);
     this.showCreateDialog.set(false);
     this.carePlanForm.reset();
     this.activities.clear();
@@ -275,16 +341,24 @@ export class CarePlanManagementComponent implements OnInit {
   viewCarePlan(carePlan: CarePlanResponseDTO): void {
     this.selectedCarePlan.set(carePlan);
     this.showViewDialog.set(true);
+    this.viewDialogPortal = this.attachPortal(this.viewDialogTpl, this.viewDialogPortal);
   }
 
   closeViewDialog(): void {
+    this.detachPortal(this.viewDialogPortal);
     this.showViewDialog.set(false);
     this.selectedCarePlan.set(null);
   }
 
   saveCarePlan(): void {
+    // Mark all fields as touched to show validation errors
+    this.carePlanForm.markAllAsTouched();
+    this.activities.controls.forEach(control => {
+      control.markAllAsTouched();
+    });
+
     if (this.carePlanForm.invalid) {
-      this.carePlanForm.markAllAsTouched();
+      this.errorMessage.set('Please correct the errors below before submitting');
       return;
     }
 
@@ -339,5 +413,10 @@ export class CarePlanManagementComponent implements OnInit {
           .subscribe();
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.createDialogPortal?.dispose();
+    this.viewDialogPortal?.dispose();
   }
 }

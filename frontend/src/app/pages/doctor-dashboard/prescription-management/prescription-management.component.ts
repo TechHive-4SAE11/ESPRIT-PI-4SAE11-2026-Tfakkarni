@@ -1,6 +1,7 @@
-import { Component, Input, OnInit, signal, computed, DestroyRef, inject } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, signal, computed, DestroyRef, inject, ViewChild, TemplateRef, ViewContainerRef, ApplicationRef, Injector, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { DomPortalOutlet, TemplatePortal } from '@angular/cdk/portal';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormArray, AbstractControl, Validators } from '@angular/forms';
 import { catchError, finalize, of, tap } from 'rxjs';
 import { z } from 'zod';
@@ -9,16 +10,20 @@ import { createZodValidator } from '@/core/utils/zod-validator';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
+import { ZardBadgeComponent } from '@/shared/components/badge';
 import { ZardAlertDialogService } from '@/shared/components/alert-dialog/alert-dialog.service';
+import { ZardInputDirective } from '@/shared/components/input';
 
 import { UserInfo } from '@/core/services/user-api.service';
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { MedicalFolderService } from '@/core/services/medical-folder.service';
 import { SessionService, SessionResponseDTO } from '@/core/services/session.service';
+import { MedicationService } from '@/core/services/medication.service';
 import {
   PrescriptionResponseDTO,
   PrescriptionRequestDTO,
-  MedicationRequestDTO
+  MedicationRequestDTO,
+  MedicationStatus
 } from '@/core/models/prescription.model';
 
 @Component({
@@ -29,15 +34,28 @@ import {
     ReactiveFormsModule,
     ZardButtonComponent,
     ZardCardComponent,
-    ZardIconComponent
+    ZardIconComponent,
+    ZardBadgeComponent,
+    ZardInputDirective
   ],
   templateUrl: './prescription-management.component.html',
 })
-export class PrescriptionManagementComponent implements OnInit {
+export class PrescriptionManagementComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly alertDialog = inject(ZardAlertDialogService);
   private readonly fb = inject(FormBuilder);
   private readonly prescriptionService = inject(PrescriptionService);
+  private readonly medicationService = inject(MedicationService);
+
+  // CDK Portal - render dialogs at body level to escape overflow:auto containers
+  private readonly appRef = inject(ApplicationRef);
+  private readonly injector = inject(Injector);
+  private readonly viewContainerRef = inject(ViewContainerRef);
+  private readonly platformId = inject(PLATFORM_ID);
+  @ViewChild('createDialogTpl') private createDialogTpl!: TemplateRef<any>;
+  @ViewChild('viewDialogTpl') private viewDialogTpl!: TemplateRef<any>;
+  private createDialogPortal: DomPortalOutlet | null = null;
+  private viewDialogPortal: DomPortalOutlet | null = null;
   private readonly medicalFolderService = inject(MedicalFolderService);
   private readonly sessionService = inject(SessionService);
 
@@ -48,10 +66,13 @@ export class PrescriptionManagementComponent implements OnInit {
   prescriptions = signal<PrescriptionResponseDTO[]>([]);
   sessions = signal<SessionResponseDTO[]>([]);
   selectedPrescription = signal<PrescriptionResponseDTO | null>(null);
+  discontinueReason = signal('');
+  private currentMedicationToDiscontinue: number | null = null;
 
   // UI state signals
   showCreateDialog = signal(false);
   showViewDialog = signal(false);
+  showDiscontinueDialog = signal(false);
   isLoadingPrescriptions = signal(false);
   isLoadingSessions = signal(false);
   isSubmitting = signal(false);
@@ -62,19 +83,48 @@ export class PrescriptionManagementComponent implements OnInit {
 
   // Zod Schemas
   private readonly medicationFieldSchemas = {
-    medicationName: z.string().min(1, { message: 'Medication name is required' }),
-    dosage: z.string().min(1, { message: 'Dosage is required' }),
-    frequency: z.string().min(1, { message: 'Frequency is required' }),
-    duration: z.string().min(1, { message: 'Duration is required' }),
-    instructions: z.string().optional()
+    medicationName: z.string()
+      .min(1, { message: 'Medication name is required' })
+      .max(200, { message: 'Medication name is too long (max 200 characters)' }),
+    dosage: z.string()
+      .min(1, { message: 'Dosage is required' })
+      .refine(
+        (val) => val.trim().length >= 2,
+        { message: 'Please specify a complete dosage (e.g., 500mg, 2 tablets, 10ml)' }
+      ),
+    frequency: z.string()
+      .min(1, { message: 'Frequency is required' })
+      .refine(
+        (val) => val.trim().length >= 3,
+        { message: 'Please specify intake frequency (e.g., 2x/day, every 8 hours, once daily)' }
+      ),
+    duration: z.string()
+      .min(1, { message: 'Treatment duration is required' })
+      .refine(
+        (val) => {
+          // Match format: "number timeunit" or "ongoing"
+          // Supported: "3 days", "2 weeks", "1 month", "ongoing" (English or French)
+          const pattern = /^(\d+\s*(days?|jours?|weeks?|semaines?|months?|mois))$|^(ongoing|en cours)$/i;
+          return pattern.test(val.trim());
+        },
+        { message: 'Invalid duration format. Examples: "7 days", "2 weeks", "3 months", or "ongoing"' }
+      ),
+    instructions: z.string()
+      .max(1000, { message: 'Instructions are too long (max 1000 characters)' })
+      .optional()
   };
 
   private readonly prescriptionSchema = z.object({
     sessionId: z.union([
       z.number(),
       z.string().min(1)
-    ]).refine((val: number | string) => val !== null && val !== '', { message: 'Session is required' }),
-    medications: z.array(z.any()).min(1, { message: 'At least one medication is required' })
+    ]).refine(
+      val => val !== null && val !== '',
+      { message: 'You must select a consultation session before creating a prescription' }
+    ),
+    medications: z.array(z.any())
+      .min(1, { message: 'Please add at least one medication to the prescription' })
+      .max(20, { message: 'Too many medications (maximum 20 per prescription)' })
   });
 
   ngOnInit(): void {
@@ -85,6 +135,130 @@ export class PrescriptionManagementComponent implements OnInit {
 
   get medications(): FormArray {
     return this.prescriptionForm.get('medications') as FormArray;
+  }
+
+  // ==================== Medication Status Display Helpers ====================
+
+  getStatusBadgeType(status: MedicationStatus): 'default' | 'secondary' | 'destructive' | 'outline' {
+    switch (status) {
+      case MedicationStatus.ACTIVE:
+        return 'default';
+      case MedicationStatus.ONGOING:
+        return 'secondary';
+      case MedicationStatus.EXPIRED:
+        return 'destructive';
+      case MedicationStatus.DISCONTINUED:
+        return 'outline';
+      default:
+        return 'outline';
+    }
+  }
+
+  getStatusLabel(status: MedicationStatus): string {
+    switch (status) {
+      case MedicationStatus.ACTIVE:
+        return 'Active';
+      case MedicationStatus.ONGOING:
+        return 'Ongoing';
+      case MedicationStatus.EXPIRED:
+        return 'Expired';
+      case MedicationStatus.DISCONTINUED:
+        return 'Discontinued';
+      default:
+        return status;
+    }
+  }
+
+  getStatusIcon(status: MedicationStatus): 'check' | 'activity' | 'x' | 'alert-triangle' | 'info' {
+    switch (status) {
+      case MedicationStatus.ACTIVE:
+        return 'check';
+      case MedicationStatus.ONGOING:
+        return 'activity';
+      case MedicationStatus.EXPIRED:
+        return 'x';
+      case MedicationStatus.DISCONTINUED:
+        return 'alert-triangle';
+      default:
+        return 'info';
+    }
+  }
+
+  // ==================== Medication Status Management ====================
+
+  /**
+   * Change medication status (e.g., discontinue)
+   */
+  changeMedicationStatus(medicationId: number, currentStatus: MedicationStatus): void {
+    // Show dialog to select new status and reason
+    const statusOptions = Object.values(MedicationStatus)
+      .filter(s => s !== currentStatus)
+      .map(s => ({ value: s, label: this.getStatusLabel(s) }));
+
+    this.alertDialog.confirm({
+      zTitle: 'Change Medication Status',
+      zDescription: `Select new status for this medication. Current status: ${this.getStatusLabel(currentStatus)}`,
+      zOkText: 'Update Status',
+      zCancelText: 'Cancel',
+      zOnOk: () => {
+        // For now, we'll just discontinue. In a full implementation, you'd show a form
+        this.discontinueMedication(medicationId);
+      }
+    });
+  }
+
+  /**
+   * Open dialog to discontinue a medication
+   */
+  discontinueMedication(medicationId: number): void {
+    this.currentMedicationToDiscontinue = medicationId;
+    this.discontinueReason.set('');
+    this.showDiscontinueDialog.set(true);
+  }
+
+  /**
+   * Close discontinue dialog
+   */
+  closeDiscontinueDialog(): void {
+    this.showDiscontinueDialog.set(false);
+    this.currentMedicationToDiscontinue = null;
+    this.discontinueReason.set('');
+  }
+
+  /**
+   * Confirm discontinuing the medication
+   */
+  confirmDiscontinue(): void {
+    if (!this.currentMedicationToDiscontinue) return;
+
+    const medicationId = this.currentMedicationToDiscontinue;
+    const reason = this.discontinueReason().trim();
+
+    this.medicationService.updateMedicationStatus(medicationId, {
+      status: MedicationStatus.DISCONTINUED,
+      reason: reason || undefined
+    }).pipe(
+      tap(() => {
+        // Reload prescriptions to show updated status
+        this.loadPrescriptions();
+        this.closeDiscontinueDialog();
+        this.alertDialog.info({
+          zTitle: 'Success',
+          zDescription: 'Medication has been discontinued successfully.',
+          zOkText: 'OK'
+        });
+      }),
+      catchError(error => {
+        console.error('Error updating medication status:', error);
+        this.alertDialog.info({
+          zTitle: 'Error',
+          zDescription: 'Failed to discontinue medication. Please try again.',
+          zOkText: 'OK'
+        });
+        return of(null);
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
   }
 
   // ==================== Form Creation ====================
@@ -110,6 +284,36 @@ export class PrescriptionManagementComponent implements OnInit {
   getMedicationControl(index: number, controlName: string): AbstractControl | null {
     const medicationGroup = this.medications.at(index) as FormGroup;
     return medicationGroup?.get(controlName);
+  }
+
+  // Get the first validation error message for a form control
+  getErrorMessage(control: AbstractControl | null): string {
+    if (!control || !control.errors) {
+      return '';
+    }
+    const errors = control.errors;
+    // Zod validator stores the message in the 'zodError' key
+    if (errors['zodError']) {
+      return errors['zodError'];
+    }
+    // Zod validator may also store messages under 'required' key with custom message
+    if (errors['required']) {
+      // If it's a string, it's a Zod custom message - return it
+      if (typeof errors['required'] === 'string') {
+        return errors['required'];
+      }
+      // Otherwise it's Angular's required validator
+      return 'This field is required';
+    }
+    if (errors['minlength']) {
+      return `Minimum length is ${errors['minlength'].requiredLength}`;
+    }
+    return 'Invalid value';
+  }
+
+  // Check if control should show error (invalid and touched)
+  shouldShowError(control: AbstractControl | null): boolean {
+    return !!(control && control.invalid && control.touched);
   }
 
   // ==================== Data Loading ====================
@@ -202,6 +406,27 @@ export class PrescriptionManagementComponent implements OnInit {
       .subscribe();
   }
 
+  // ==================== Portal Helpers ====================
+
+  private getOrCreatePortal(): DomPortalOutlet | null {
+    if (isPlatformBrowser(this.platformId)) {
+      return new DomPortalOutlet(document.body, null as any, this.appRef, this.injector);
+    }
+    return null;
+  }
+
+  private attachPortal(templateRef: TemplateRef<any>, outlet: DomPortalOutlet | null): DomPortalOutlet | null {
+    if (!outlet) outlet = this.getOrCreatePortal();
+    if (!outlet) return null;
+    if (outlet.hasAttached()) outlet.detach();
+    outlet.attach(new TemplatePortal(templateRef, this.viewContainerRef));
+    return outlet;
+  }
+
+  private detachPortal(outlet: DomPortalOutlet | null): void {
+    if (outlet?.hasAttached()) outlet.detach();
+  }
+
   // ==================== Actions ====================
 
   openCreateDialog(): void {
@@ -213,9 +438,10 @@ export class PrescriptionManagementComponent implements OnInit {
       this.addMedication();
       this.errorMessage.set(null);
       this.showCreateDialog.set(true);
+      this.createDialogPortal = this.attachPortal(this.createDialogTpl, this.createDialogPortal);
     } catch (error) {
       console.error('PrescriptionManagement: Error opening create dialog', error);
-      this.errorMessage.set('An error occurred while opening the dialog');
+      this.errorMessage.set('Unable to open prescription form. Please try again.');
     }
   }
 
@@ -244,9 +470,11 @@ export class PrescriptionManagementComponent implements OnInit {
 
     this.errorMessage.set(null);
     this.showCreateDialog.set(true);
+    this.createDialogPortal = this.attachPortal(this.createDialogTpl, this.createDialogPortal);
   }
 
   closeCreateDialog(): void {
+    this.detachPortal(this.createDialogPortal);
     this.showCreateDialog.set(false);
     this.prescriptionForm.reset();
     this.medications.clear();
@@ -256,9 +484,11 @@ export class PrescriptionManagementComponent implements OnInit {
   viewPrescription(prescription: PrescriptionResponseDTO): void {
     this.selectedPrescription.set(prescription);
     this.showViewDialog.set(true);
+    this.viewDialogPortal = this.attachPortal(this.viewDialogTpl, this.viewDialogPortal);
   }
 
   closeViewDialog(): void {
+    this.detachPortal(this.viewDialogPortal);
     this.showViewDialog.set(false);
     this.selectedPrescription.set(null);
   }
@@ -301,15 +531,20 @@ export class PrescriptionManagementComponent implements OnInit {
   }
 
   onSubmit(): void {
+    // Mark all fields as touched to show validation errors
+    this.prescriptionForm.markAllAsTouched();
+    this.medications.controls.forEach(control => {
+      control.markAllAsTouched();
+    });
+
     if (this.prescriptionForm.invalid) {
       console.error('[PrescriptionManagement] Form is invalid');
-      this.prescriptionForm.markAllAsTouched();
-      this.errorMessage.set('Please fill in all required fields');
+      this.errorMessage.set('Please review and fix the highlighted errors before saving the prescription');
       return;
     }
 
     if (this.medications.length === 0) {
-      this.errorMessage.set('At least one medication is required');
+      this.errorMessage.set('Cannot save empty prescription. Please add at least one medication');
       return;
     }
 
@@ -337,7 +572,7 @@ export class PrescriptionManagementComponent implements OnInit {
         }),
         catchError(error => {
           console.error('[PrescriptionManagement] Error:', error);
-          const errorMsg = error?.error?.error || error?.message || 'Failed to save prescription';
+          const errorMsg = error?.error?.error || error?.error?.message || error?.message || 'Failed to save prescription. Please check your input and try again.';
           this.errorMessage.set(errorMsg);
           return of(null);
         }),
@@ -345,5 +580,10 @@ export class PrescriptionManagementComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
+  }
+
+  ngOnDestroy(): void {
+    this.createDialogPortal?.dispose();
+    this.viewDialogPortal?.dispose();
   }
 }

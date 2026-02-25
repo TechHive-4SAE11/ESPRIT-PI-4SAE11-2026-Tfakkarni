@@ -1,64 +1,68 @@
-<div
-  class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
-  <div class="w-full max-w-md">
-    <!-- Logo/Brand Section -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-primary mb-2">Tfakkarni</h1>
-      <p class="text-muted-foreground text-sm">
+<div class="auth-shell p-4">
+  <div class="auth-blob auth-blob-left"></div>
+  <div class="auth-blob auth-blob-right"></div>
+
+  <div class="w-full max-w-md auth-panel">
+    <div class="text-center mb-6">
+      <div class="inline-flex items-center gap-3 brand-chip">
+        <span class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path
+              d="M12 4a6.5 6.5 0 0 0-6.5 6.5v3.7a3.8 3.8 0 0 0 3.8 3.8h.2v2h5v-2h.2a3.8 3.8 0 0 0 3.8-3.8v-3.7A6.5 6.5 0 0 0 12 4Z" />
+            <path d="M9.7 10.2 12 12l2.3-1.8" />
+          </svg>
+        </span>
+        <h1 class="text-3xl font-bold tracking-tight">tfakkarni</h1>
+      </div>
+      <p class="text-sm text-slate-600 mt-3">
         Alzheimer's Patient Monitoring Platform
       </p>
     </div>
 
-    <!-- Signup Card -->
-    <z-card zTitle="Create Account" zDescription="Sign up to get started">
-      <div class="space-y-6">
+    <z-card class="auth-card" zTitle="Create your account" zDescription="Join tfakkarni in less than a minute">
+      <div class="space-y-5">
         <form (ngSubmit)="onSubmit()" class="space-y-4">
-          <!-- Name Row -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="space-y-2">
               <label for="firstName" class="text-sm font-medium leading-none">
                 First Name
               </label>
               <input z-input type="text" id="firstName" name="firstName" [(ngModel)]="firstName"
-                placeholder="First name" class="w-full" required />
+                placeholder="First name" class="w-full auth-input" required />
             </div>
             <div class="space-y-2">
               <label for="lastName" class="text-sm font-medium leading-none">
                 Last Name
               </label>
               <input z-input type="text" id="lastName" name="lastName" [(ngModel)]="lastName" placeholder="Last name"
-                class="w-full" required />
+                class="w-full auth-input" required />
             </div>
           </div>
 
-          <!-- Email -->
           <div class="space-y-2">
             <label for="email" class="text-sm font-medium leading-none">
               Email
             </label>
             <input z-input type="email" id="email" name="email" [(ngModel)]="email" placeholder="Enter your email"
-              class="w-full" required />
+              class="w-full auth-input" required />
           </div>
 
-          <!-- Password -->
           <div class="space-y-2">
             <label for="password" class="text-sm font-medium leading-none">
               Password
             </label>
             <input z-input type="password" id="password" name="password" [(ngModel)]="password"
-              placeholder="Create a password" class="w-full" required />
+              placeholder="Create a password" class="w-full auth-input" required />
           </div>
 
-          <!-- Confirm Password -->
           <div class="space-y-2">
             <label for="confirmPassword" class="text-sm font-medium leading-none">
               Confirm Password
             </label>
             <input z-input type="password" id="confirmPassword" name="confirmPassword" [(ngModel)]="confirmPassword"
-              placeholder="Confirm your password" class="w-full" required />
+              placeholder="Confirm your password" class="w-full auth-input" required />
           </div>
 
-          <!-- Role Selection -->
           <div class="space-y-2">
             <span class="text-sm font-medium leading-none">
               I am a
@@ -86,43 +90,84 @@
             </div>
           </div>
 
-          <!-- Error Message -->
+          @if (selectedRole === 'patient') {
+          <div class="space-y-2">
+            <span class="text-sm font-medium leading-none">
+              Gender
+            </span>
+            <div class="grid grid-cols-2 gap-3">
+              <button z-button type="button" [zType]="selectedGender === 'male' ? 'default' : 'outline'" class="w-full"
+                (click)="selectedGender = 'male'">
+                <span class="mr-2">👨</span>
+                Male
+              </button>
+              <button z-button type="button" [zType]="selectedGender === 'female' ? 'default' : 'outline'"
+                class="w-full" (click)="selectedGender = 'female'">
+                <span class="mr-2">👩</span>
+                Female
+              </button>
+            </div>
+          </div>
+          }
+
           @if (errorMessage) {
-          <div class="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+          <div class="text-sm text-red-700 bg-red-50 border border-red-200 p-3 rounded-lg">
             {{ errorMessage }}
           </div>
           }
 
-          <!-- Success Message -->
           @if (successMessage) {
-          <div class="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+          <div class="text-sm text-green-700 bg-green-50 border border-green-200 p-3 rounded-lg">
             {{ successMessage }}
           </div>
           }
 
-          <!-- Sign Up Button -->
-          <button z-button type="submit" class="w-full" zSize="lg" [disabled]="isLoading">
+          @if (showKycPrompt) {
+          <div class="space-y-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <span class="font-semibold text-blue-800">Identity Verification Required</span>
+            </div>
+            <p class="text-sm text-blue-700">
+              As a doctor, you need to verify your identity before accessing the platform.
+              Click below to complete the verification process.
+            </p>
+            <div class="flex gap-2">
+              <button z-button type="button" class="flex-1" (click)="openKycVerification()">
+                Verify Identity
+              </button>
+              <button z-button type="button" zType="outline" class="flex-1" (click)="skipKycAndLogin()">
+                Skip (Dev)
+              </button>
+            </div>
+          </div>
+          }
+
+          @if (!showKycPrompt) {
+          <button z-button type="submit" class="w-full auth-submit" zSize="lg" [disabled]="isLoading">
             @if (isLoading) {
             <span>Creating account...</span>
             } @else {
             <span>Sign Up</span>
             }
           </button>
+          }
         </form>
 
-        <!-- Login Link -->
         <div class="text-center text-sm">
-          <span class="text-muted-foreground">Already have an account? </span>
-          <a routerLink="/login" class="text-primary hover:underline font-medium">
+          <span class="text-slate-600">Already have an account? </span>
+          <a routerLink="/login" class="font-semibold text-cyan-700 hover:text-cyan-800">
             Sign in
           </a>
         </div>
       </div>
     </z-card>
 
-    <!-- Footer -->
-    <div class="mt-8 text-center text-sm text-muted-foreground">
-      <p>&copy; 2026 Tfakkarni. All rights reserved.</p>
+    <div class="mt-6 text-center text-xs text-slate-500">
+      <p>&copy; 2026 tfakkarni. All rights reserved.</p>
     </div>
   </div>
 </div>

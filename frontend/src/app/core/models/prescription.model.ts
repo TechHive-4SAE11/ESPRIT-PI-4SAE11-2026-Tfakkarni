@@ -1,5 +1,12 @@
 // src/app/core/models/prescription.model.ts
 
+export enum MedicationStatus {
+  ACTIVE = 'ACTIVE',
+  EXPIRED = 'EXPIRED',
+  ONGOING = 'ONGOING',
+  DISCONTINUED = 'DISCONTINUED'
+}
+
 export interface MedicationRequestDTO {
   medicationName: string;
   dosage: string;
@@ -15,7 +22,13 @@ export interface MedicationResponseDTO {
   frequency: string;
   duration: string;
   instructions: string;
+  status: MedicationStatus;
+  startDate: string | null;
+  endDate: string | null;
   createdAt: string;
+  sessionId?: number;
+  sessionDate?: string;
+  doctorId?: string;
 }
 
 export interface PrescriptionRequestDTO {

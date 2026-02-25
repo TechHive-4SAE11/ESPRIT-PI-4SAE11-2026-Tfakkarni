@@ -1,5 +1,6 @@
 package org.techhive.gameservice.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -26,7 +27,7 @@ public class GameController {
     @PostMapping
     public ResponseEntity<?> createGame(
             @RequestHeader("X-User-Id") String patientKeycloakId,
-            @RequestBody CreateGameRequest request) {
+            @Valid @RequestBody CreateGameRequest request) {
         try {
             GameResponse game = gameService.createGame(patientKeycloakId, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(game);
@@ -43,7 +44,7 @@ public class GameController {
     @PostMapping("/{gameId}/images")
     public ResponseEntity<?> addImages(
             @PathVariable Long gameId,
-            @RequestBody List<GameImageUpload> uploads) {
+            @Valid @RequestBody List<GameImageUpload> uploads) {
         try {
             GameDetailResponse detail = gameService.addImages(gameId, uploads);
             return ResponseEntity.ok(detail);
@@ -81,7 +82,7 @@ public class GameController {
     @PutMapping("/{gameId}")
     public ResponseEntity<?> editGame(
             @PathVariable Long gameId,
-            @RequestBody EditGameRequest request) {
+            @Valid @RequestBody EditGameRequest request) {
         try {
             GameDetailResponse detail = gameService.editGame(gameId, request);
             return ResponseEntity.ok(detail);

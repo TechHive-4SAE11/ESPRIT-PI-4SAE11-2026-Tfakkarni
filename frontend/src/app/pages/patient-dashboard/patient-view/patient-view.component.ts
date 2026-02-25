@@ -1,13 +1,6 @@
 import {
-  Component,
-  OnInit,
-  signal,
-  Input,
-  Output,
-  EventEmitter,
-  inject,
-  DestroyRef,
-  computed
+  Component, OnInit, signal, Input, Output, EventEmitter,
+  inject, DestroyRef, computed, ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -16,190 +9,291 @@ import { catchError, finalize, of, tap, switchMap } from 'rxjs';
 
 import { GameService, type GameResponse, type GameStatsResponse } from '@/core/services/game.service';
 import { MovieGameService, type MovieGameResponse } from '@/core/services/movie-game.service';
-import { PrescriptionService } from '@/core/services/prescription.service';
-import { CarePlanService } from '@/core/services/care-plan.service';
-import { UserApiService } from '@/core/services/user-api.service';
-import { type PrescriptionResponseDTO } from '@/core/models/prescription.model';
-import { type CarePlanResponseDTO } from '@/core/models/care-plan.model';
+import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
+import { CustomGameService, type CustomGameResponse } from '@/core/services/custom-game.service';
+import { DailyLogStateService } from '@/core/services/daily-log-state.service';
+import { type IntakeStatus, type MedicationIntakeLogResponse } from '@/core/models/daily-monitoring.model';
 import { AuthService } from '@/core/auth';
+import { AudioGameService, type SpeechLanguage } from '@/core/services/audio-game.service';
+import { ThemeService } from '@/core/services/theme.service';
 import { GuessPlaceComponent } from './guess-place/guess-place.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
 import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-plan-list.component';
-import { PatientDossierViewComponent } from '../patient-dossier-view/patient-dossier-view.component';
+import { MedicationManagementComponent } from '@/pages/medications/medications.component';
+
+function nowTime(): string {
+  const d = new Date();
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
 
 @Component({
   selector: 'app-patient-view',
   standalone: true,
-  imports: [CommonModule, GuessPlaceComponent, PrescriptionListComponent, CarePlanListComponent, PatientDossierViewComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, GuessPlaceComponent, PrescriptionListComponent, CarePlanListComponent, MedicationManagementComponent],
   templateUrl: './patient-view.component.html',
 })
 export class PatientViewComponent implements OnInit {
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly gameService = inject(GameService);
-  private readonly movieGameService = inject(MovieGameService);
-  private readonly prescriptionService = inject(PrescriptionService);
-  private readonly carePlanService = inject(CarePlanService);
-  private readonly userApiService = inject(UserApiService);
-  private readonly router = inject(Router);
-  private readonly authService = inject(AuthService);
+  private readonly destroyRef            = inject(DestroyRef);
+  private readonly gameService           = inject(GameService);
+  private readonly movieGameService      = inject(MovieGameService);
+  private readonly userApiService        = inject(UserApiService);
+  private readonly customGameService     = inject(CustomGameService);
+  private readonly router                = inject(Router);
+  private readonly authService           = inject(AuthService);
+  private readonly audioGameService      = inject(AudioGameService);
+  readonly themeService                  = inject(ThemeService);
+
+  // ── Service partagé (source unique de vérité pour les médicaments) ─────────
+  readonly logState = inject(DailyLogStateService);
 
   @Input() keycloakId = '';
   @Output() switchToHelper = new EventEmitter<void>();
 
-  // State Signals
+  // ── Navigation ─────────────────────────────────────────────────────────────
   currentPage = signal<string>('Home');
-  games = signal<GameResponse[]>([]);
+
+  // ── Game data ──────────────────────────────────────────────────────────────
+  games      = signal<GameResponse[]>([]);
   movieGames = signal<MovieGameResponse[]>([]);
-  stats = signal<GameStatsResponse | null>(null);
-  prescriptions = signal<PrescriptionResponseDTO[]>([]);
-  carePlans = signal<CarePlanResponseDTO[]>([]);
+  stats      = signal<GameStatsResponse | null>(null);
+  customGames = signal<CustomGameResponse[]>([]);
 
-  // Loading State Signals
-  isLoadingGames = signal<boolean>(false);
-  isLoadingMovieGames = signal<boolean>(false);
-  isLoadingStats = signal<boolean>(false);
-  isLoadingPrescriptions = signal<boolean>(false);
-  isLoadingCarePlans = signal<boolean>(false);
+  // ── Loading flags ──────────────────────────────────────────────────────────
+  isLoadingGames        = signal(false);
+  isLoadingMovieGames   = signal(false);
+  isLoadingStats        = signal(false);
+  isLoadingCustomGames  = signal<boolean>(false);
 
-  // User Info
+  // ── Médicaments — lus depuis le service partagé ────────────────────────────
+  /** Proxy computed vers les signaux du service partagé */
+  readonly todayMedications    = computed(() => this.logState.todayMedications());
+  readonly isLoadingMeds       = computed(() => this.logState.loading());
+  readonly medsTakenCount      = computed(() => this.logState.medsTakenCount());
+  readonly medsTotal           = computed(() => this.logState.medsTotal());
+  readonly medsProgressPercent = computed(() => this.logState.medsProgressPercent());
+
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  updatingMedId  = signal<number | null>(null);
+  medToastMsg    = signal('');
+  medToastType   = signal<'success' | 'error'>('success');
+
+  // ── User info ──────────────────────────────────────────────────────────────
   userNeonDbId = signal<number | null>(null);
+  currentUser = signal<UserInfo | null>(null);
 
-  // Computed Values
+  // ── Language preference for TTS ────────────────────────────────────────────
+  selectedLanguage = signal<SpeechLanguage>(this.audioGameService.getPreferredLanguage());
+
+  // ── Computed ───────────────────────────────────────────────────────────────
   playableGames = computed(() => this.games().filter(g => g.imageCount >= 2));
 
   ngOnInit(): void {
-    if (this.keycloakId) {
-      this.loadData();
-    }
+    if (this.keycloakId) { this.loadData(); }
   }
 
-  setPage(page: string): void {
-    this.currentPage.set(page);
-  }
+  setPage(page: string): void { this.currentPage.set(page); }
+  playGame(id: number):       void { this.router.navigate(['/patient/play', id]); }
+  playMovieGame(id: number):  void { this.router.navigate(['/patient/play-movie', id]); }
+  logout(): void { this.authService.logout(); }
 
-  playGame(gameId: number): void {
-    this.router.navigate(['/patient/play', gameId]);
-  }
-
-  playMovieGame(gameId: number): void {
-    this.router.navigate(['/patient/play-movie', gameId]);
-  }
-
-  logout(): void {
-    this.authService.logout();
+  /** Switch TTS language and persist the preference */
+  setLanguage(lang: SpeechLanguage): void {
+    this.selectedLanguage.set(lang);
+    this.audioGameService.setPreferredLanguage(lang);
   }
 
   loadData(): void {
     if (!this.keycloakId) return;
-
+    this.loadUserNeonDbId();
     this.loadGames();
     this.loadMovieGames();
     this.loadStats();
-    this.loadPrescriptions();
-    this.loadCarePlans();
+    this.loadCustomGames();
+    this.loadAndCacheUserGender();
+    // Médicaments : charger via le service partagé (évite un double-fetch si déjà chargé)
+    this.logState.loadTodayLog(this.keycloakId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
   }
+
+  // ── Médicaments ────────────────────────────────────────────────────────────
+
+  loadTodayMedications(): void {
+    this.logState.refresh(this.keycloakId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
+  }
+
+  toggleMedication(med: MedicationIntakeLogResponse): void {
+    const logId = this.logState.currentLogId;
+    if (!logId || this.updatingMedId() !== null) return;
+
+    const newStatus: IntakeStatus = med.status === 'PRIS' ? 'OUBLIE' : 'PRIS';
+    this.updatingMedId.set(med.id);
+
+    this.logState.toggleMedication(logId, med, newStatus, newStatus === 'PRIS' ? nowTime() : undefined)
+      .pipe(
+        tap(result => {
+          if (result) {
+            this.showMedToast(
+              newStatus === 'PRIS' ? 'Médicament marqué comme pris ✓' : 'Médicament marqué comme non pris',
+              newStatus === 'PRIS' ? 'success' : 'error'
+            );
+          } else {
+            this.showMedToast('Erreur de mise à jour', 'error');
+          }
+        }),
+        finalize(() => this.updatingMedId.set(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private showMedToast(msg: string, type: 'success' | 'error'): void {
+    this.medToastMsg.set(msg);
+    this.medToastType.set(type);
+    setTimeout(() => this.medToastMsg.set(''), 3000);
+  }
+
+  /**
+   * Mark all medications as taken at once.
+   */
+  markAllTaken(): void {
+    const logId = this.logState.currentLogId;
+    if (!logId || this.updatingMedId() !== null) return;
+
+    const untaken = this.todayMedications().filter(m => m.status !== 'PRIS');
+    if (untaken.length === 0) return;
+
+    this.updatingMedId.set(-1); // -1 = bulk updating
+    let remaining = untaken.length;
+    let hasError = false;
+
+    for (const med of untaken) {
+      const now = new Date();
+      const takenAt = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+
+      this.logState.toggleMedication(logId, med, 'PRIS', takenAt)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (result) => {
+            remaining--;
+            if (!result) hasError = true;
+            if (remaining === 0) {
+              this.updatingMedId.set(null);
+              this.showMedToast(
+                hasError ? 'Certains médicaments n\'ont pas pu être mis à jour' : '🎉 Tous les médicaments marqués comme pris !',
+                hasError ? 'error' : 'success'
+              );
+            }
+          },
+          error: () => {
+            remaining--;
+            hasError = true;
+            if (remaining === 0) {
+              this.updatingMedId.set(null);
+              this.showMedToast('Erreur de mise à jour', 'error');
+            }
+          },
+        });
+    }
+  }
+
+  medStatusLabel(status: string): string {
+    const map: Record<string, string> = {
+      PRIS: 'Pris', OUBLIE: 'Non pris', REFUSE: 'Refusé', EN_RETARD: 'En retard',
+    };
+    return map[status] ?? status;
+  }
+
+  // ── Custom Games ───────────────────────────────────────────────────────────
+
+  playCustomGame(gameId: number): void {
+    this.router.navigate(['/patient/play-memory', gameId]);
+  }
+
+  playRandomMix(): void {
+    this.router.navigate(['/patient/play-memory', 'random']);
+  }
+
+  // ── Private loaders ────────────────────────────────────────────────────────
 
   private loadGames(): void {
     this.isLoadingGames.set(true);
     this.gameService.getPatientGames(this.keycloakId)
       .pipe(
-        tap(games => this.games.set(games)),
-        catchError(err => {
-          console.error('[PatientView] Failed to load games', err);
-          return of([]);
-        }),
+        tap(g => this.games.set(g)),
+        catchError(() => of([])),
         finalize(() => this.isLoadingGames.set(false)),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe();
+        takeUntilDestroyed(this.destroyRef),
+      ).subscribe();
   }
 
   private loadMovieGames(): void {
     this.isLoadingMovieGames.set(true);
     this.movieGameService.getPatientMovieGames(this.keycloakId)
       .pipe(
-        tap(games => this.movieGames.set(games)),
-        catchError(err => {
-          console.error('[PatientView] Failed to load movie games', err);
-          return of([]);
-        }),
+        tap(g => this.movieGames.set(g)),
+        catchError(() => of([])),
         finalize(() => this.isLoadingMovieGames.set(false)),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe();
+        takeUntilDestroyed(this.destroyRef),
+      ).subscribe();
   }
 
   private loadStats(): void {
     this.isLoadingStats.set(true);
     this.gameService.getPlayerStats(this.keycloakId)
       .pipe(
-        tap(stats => this.stats.set(stats)),
-        catchError(err => {
-          console.error('[PatientView] Failed to load stats', err);
-          return of(null);
-        }),
+        tap(s => this.stats.set(s)),
+        catchError(() => of(null)),
         finalize(() => this.isLoadingStats.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      ).subscribe();
+  }
+
+  private loadCustomGames(): void {
+    this.isLoadingCustomGames.set(true);
+    this.customGameService.getGames(this.keycloakId)
+      .pipe(
+        tap(games => this.customGames.set(games)),
+        catchError(err => {
+          console.error('[PatientView] Failed to load custom games', err);
+          return of([]);
+        }),
+        finalize(() => this.isLoadingCustomGames.set(false)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
   }
 
-  private loadPrescriptions(): void {
-    if (!this.keycloakId) {
-      console.warn('[PatientView] No keycloakId provided, skipping prescription load');
-      return;
-    }
-
-    console.log('[PatientView] Loading prescriptions flow started for:', this.keycloakId);
-    this.isLoadingPrescriptions.set(true);
-
-    // Chain: Get User Info -> Extract ID -> Get Prescriptions
+  private loadUserNeonDbId(): void {
     this.userApiService.getUserByKeycloakId(this.keycloakId)
       .pipe(
         tap(userInfo => {
           console.log('[PatientView] User info retrieved. DB ID:', userInfo.id);
           this.userNeonDbId.set(userInfo.id);
-        }),
-        switchMap(userInfo => {
-          const neonDbId = userInfo.id.toString();
-          console.log('[PatientView] Fetching prescriptions for DB ID:', neonDbId);
-          return this.prescriptionService.getPrescriptionsByPatient(neonDbId);
-        }),
-        tap(prescriptions => {
-          console.log('[PatientView] Prescriptions loaded:', prescriptions.length);
-          this.prescriptions.set(prescriptions);
+          this.currentUser.set(userInfo);
         }),
         catchError(err => {
-          console.error('[PatientView] Failed to load prescriptions chain', err);
-          return of([]);
+          console.error('[PatientView] Failed to load user info', err);
+          return of(null);
         }),
-        finalize(() => this.isLoadingPrescriptions.set(false)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
   }
 
-  private loadCarePlans(): void {
-    if (!this.keycloakId) {
-      return;
-    }
-
-    this.isLoadingCarePlans.set(true);
-
+  /** Fetch user info and cache gender in localStorage for TTS usage */
+  private loadAndCacheUserGender(): void {
     this.userApiService.getUserByKeycloakId(this.keycloakId)
       .pipe(
-        switchMap(userInfo => {
-          const neonDbId = userInfo.id.toString();
-          return this.carePlanService.getCarePlansByPatient(neonDbId);
+        tap(user => {
+          if (user.gender) {
+            this.audioGameService.setCachedGender(user.gender);
+          }
         }),
-        tap(plans => {
-          this.carePlans.set(plans);
-        }),
-        catchError(err => {
-          console.error('[PatientView] Failed to load care plans', err);
-          return of([]);
-        }),
-        finalize(() => this.isLoadingCarePlans.set(false)),
+        catchError(() => of(null)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();

@@ -22,6 +22,14 @@ public class DailyLog {
     @Column(name = "global_notes", columnDefinition = "TEXT")
     private String globalNotes;
 
+    /** Humeur du jour : BONNE, MOYENNE, MAUVAISE (nullable si non renseigné) */
+    @Column(name = "mood_level")
+    private String moodLevel;
+
+    /** Durée du sommeil en heures (nullable si non renseigné) */
+    @Column(name = "sleep_hours")
+    private Double sleepHours;
+
     @Column(name = "created_at") private LocalDateTime createdAt;
     @Column(name = "updated_at") private LocalDateTime updatedAt;
 

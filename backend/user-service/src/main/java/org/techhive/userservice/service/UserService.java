@@ -3,6 +3,7 @@ package org.techhive.userservice.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.techhive.userservice.dto.UpdateProfileRequest;
 import org.techhive.userservice.entity.User;
 import org.techhive.userservice.repository.UserRepository;
 
@@ -21,15 +22,7 @@ public class UserService {
   }
 
   public List<User> getUsersByRole(String role) {
-    log.info("Querying database for users with role: {}", role);
-    try {
-      List<User> users = userRepository.findByRole(role);
-      log.info("Query successful. Found {} users with role: {}", users.size(), role);
-      return users;
-    } catch (Exception e) {
-      log.error("Database error while fetching users by role: {}", role, e);
-      throw e;
-    }
+    return userRepository.findByRole(role);
   }
 
   public Optional<User> getUserByKeycloakId(String keycloakId) {
@@ -42,5 +35,46 @@ public class UserService {
 
   public Optional<User> getUserByEmail(String email) {
     return userRepository.findByEmail(email);
+  }
+
+  public void deleteUser(String keycloakId) {
+    User user = userRepository.findByKeycloakId(keycloakId)
+        .orElseThrow(() -> new RuntimeException("User not found with keycloakId: " + keycloakId));
+    userRepository.delete(user);
+    log.info("User '{}' deleted from local database", keycloakId);
+  }
+
+  public User updateRole(String keycloakId, String newRole) {
+    User user = userRepository.findByKeycloakId(keycloakId)
+        .orElseThrow(() -> new RuntimeException("User not found with keycloakId: " + keycloakId));
+    user.setRole(newRole);
+    return userRepository.save(user);
+  }
+
+  public User updateProfile(String keycloakId, UpdateProfileRequest request) {
+    User user = userRepository.findByKeycloakId(keycloakId)
+        .orElseThrow(() -> new RuntimeException("User not found with keycloakId: " + keycloakId));
+
+    if (request.getFirstName() != null && !request.getFirstName().isBlank()) {
+      user.setFirstName(request.getFirstName().trim());
+    }
+    if (request.getLastName() != null && !request.getLastName().isBlank()) {
+      user.setLastName(request.getLastName().trim());
+    }
+    if (request.getEmail() != null && !request.getEmail().isBlank()) {
+      user.setEmail(request.getEmail().trim());
+    }
+
+    return userRepository.save(user);
+  }
+
+  /**
+   * Toggle user enabled status in local database.
+   */
+  public User toggleEnabled(String keycloakId, boolean enabled) {
+    User user = userRepository.findByKeycloakId(keycloakId)
+        .orElseThrow(() -> new RuntimeException("User not found with keycloakId: " + keycloakId));
+    user.setEnabled(enabled);
+    return userRepository.save(user);
   }
 }

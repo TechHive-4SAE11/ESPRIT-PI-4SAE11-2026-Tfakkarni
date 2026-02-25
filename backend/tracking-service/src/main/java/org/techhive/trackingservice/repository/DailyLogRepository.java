@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface DailyLogRepository extends JpaRepository<DailyLog, Long> {
     Optional<DailyLog> findByPatientKeycloakIdAndLogDate(String patientKeycloakId, LocalDate logDate);
     List<DailyLog> findByPatientKeycloakIdOrderByLogDateDesc(String patientKeycloakId);
+    List<DailyLog> findByPatientKeycloakIdAndLogDateBetweenOrderByLogDateAsc(
+            String patientKeycloakId, LocalDate start, LocalDate end);
 }

@@ -25,6 +25,13 @@ export const routes: Routes = [
       import('@/pages/signup/signup.component').then((m) => m.SignupComponent),
   },
   {
+    path: 'kyc-callback',
+    loadComponent: () =>
+      import('@/pages/kyc-callback/kyc-callback.component').then(
+        (m) => m.KycCallbackComponent
+      ),
+  },
+  {
     path: 'admin',
     loadComponent: () =>
       import('@/pages/admin-dashboard/admin-dashboard.component').then(
@@ -52,20 +59,11 @@ export const routes: Routes = [
     data: { roles: ['patient'] },
   },
   {
-    path: 'patient/play/:gameId',
-    loadComponent: () =>
-      import('@/pages/patient-dashboard/play-game/play-game.component').then(
-        (m) => m.PlayGameComponent
-      ),
-    canActivate: [AuthGuard],
-    data: { roles: ['patient'] },
-  },
-  {
-    path: 'patient/play-movie/:gameId',
+    path: 'patient/play-memory/:gameId',
     loadComponent: () =>
       import(
-        '@/pages/patient-dashboard/play-movie-game/play-movie-game.component'
-      ).then((m) => m.PlayMovieGameComponent),
+        '@/pages/patient-dashboard/play-memory-game/play-memory-game.component'
+      ).then((m) => m.PlayMemoryGameComponent),
     canActivate: [AuthGuard],
     data: { roles: ['patient'] },
   },
