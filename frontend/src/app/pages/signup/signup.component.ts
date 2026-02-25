@@ -30,6 +30,7 @@ export class SignupComponent {
   password = '';
   confirmPassword = '';
   selectedRole: 'doctor' | 'patient' = 'patient';
+  selectedGender: 'male' | 'female' = 'male';
   errorMessage = '';
   successMessage = '';
   isLoading = false;
@@ -77,6 +78,7 @@ export class SignupComponent {
         email: this.email,
         password: this.password,
         role: this.selectedRole,
+        gender: this.selectedRole === 'patient' ? this.selectedGender : undefined,
       }));
 
       console.log('[SIGNUP] Registration successful:', response);

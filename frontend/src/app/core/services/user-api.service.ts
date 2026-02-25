@@ -10,6 +10,7 @@ export interface UserInfo {
   lastName: string;
   email: string;
   role: string;
+  gender?: string;
   enabled: boolean;
   createdAt: string;
 }

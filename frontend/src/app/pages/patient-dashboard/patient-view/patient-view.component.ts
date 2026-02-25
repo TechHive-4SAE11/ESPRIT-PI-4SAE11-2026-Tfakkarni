@@ -18,6 +18,7 @@ import { type PrescriptionResponseDTO } from '@/core/models/prescription.model';
 import { type CarePlanResponseDTO } from '@/core/models/care-plan.model';
 import { type IntakeStatus, type MedicationIntakeLogResponse } from '@/core/models/daily-monitoring.model';
 import { AuthService } from '@/core/auth';
+import { AudioGameService, type SpeechLanguage } from '@/core/services/audio-game.service';
 import { ThemeService } from '@/core/services/theme.service';
 import { GuessPlaceComponent } from './guess-place/guess-place.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
@@ -45,6 +46,7 @@ export class PatientViewComponent implements OnInit {
   private readonly customGameService     = inject(CustomGameService);
   private readonly router                = inject(Router);
   private readonly authService           = inject(AuthService);
+  private readonly audioGameService      = inject(AudioGameService);
   readonly themeService                  = inject(ThemeService);
 
   // ── Service partagé (source unique de vérité pour les médicaments) ─────────
@@ -88,6 +90,9 @@ export class PatientViewComponent implements OnInit {
   // ── User info ──────────────────────────────────────────────────────────────
   userNeonDbId = signal<number | null>(null);
 
+  // ── Language preference for TTS ────────────────────────────────────────────
+  selectedLanguage = signal<SpeechLanguage>(this.audioGameService.getPreferredLanguage());
+
   // ── Computed ───────────────────────────────────────────────────────────────
   playableGames = computed(() => this.games().filter(g => g.imageCount >= 2));
 
@@ -100,6 +105,12 @@ export class PatientViewComponent implements OnInit {
   playMovieGame(id: number):  void { this.router.navigate(['/patient/play-movie', id]); }
   logout(): void { this.authService.logout(); }
 
+  /** Switch TTS language and persist the preference */
+  setLanguage(lang: SpeechLanguage): void {
+    this.selectedLanguage.set(lang);
+    this.audioGameService.setPreferredLanguage(lang);
+  }
+
   loadData(): void {
     if (!this.keycloakId) return;
     this.loadGames();
@@ -108,6 +119,7 @@ export class PatientViewComponent implements OnInit {
     this.loadCustomGames();
     this.loadPrescriptions();
     this.loadCarePlans();
+    this.loadAndCacheUserGender();
     // Médicaments : charger via le service partagé (évite un double-fetch si déjà chargé)
     this.logState.loadTodayLog(this.keycloakId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -297,6 +309,21 @@ export class PatientViewComponent implements OnInit {
           return of([]);
         }),
         finalize(() => this.isLoadingCarePlans.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  /** Fetch user info and cache gender in localStorage for TTS usage */
+  private loadAndCacheUserGender(): void {
+    this.userApiService.getUserByKeycloakId(this.keycloakId)
+      .pipe(
+        tap(user => {
+          if (user.gender) {
+            this.audioGameService.setCachedGender(user.gender);
+          }
+        }),
+        catchError(() => of(null)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
