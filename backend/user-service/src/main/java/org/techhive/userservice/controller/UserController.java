@@ -51,8 +51,14 @@ public class UserController {
    * List all users (admin).
    */
   @GetMapping
-  public ResponseEntity<List<User>> getAllUsers() {
-    return ResponseEntity.ok(userService.getAllUsers());
+  public ResponseEntity<?> getAllUsers() {
+    try {
+      return ResponseEntity.ok(userService.getAllUsers());
+    } catch (Exception e) {
+      log.error("Error fetching all users", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(Map.of("error", "Failed to fetch users: " + e.getMessage()));
+    }
   }
 
   /**
@@ -77,9 +83,15 @@ public class UserController {
    */
   @GetMapping("/keycloak/{keycloakId}")
   public ResponseEntity<?> getUserByKeycloakId(@PathVariable String keycloakId) {
-    return userService.getUserByKeycloakId(keycloakId)
-        .<ResponseEntity<?>>map(ResponseEntity::ok)
-        .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(Map.of("error", "User not found")));
+    try {
+      return userService.getUserByKeycloakId(keycloakId)
+          .<ResponseEntity<?>>map(ResponseEntity::ok)
+          .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+              .body(Map.of("error", "User not found")));
+    } catch (Exception e) {
+      log.error("Error fetching user by keycloakId: {}", keycloakId, e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(Map.of("error", "Failed to fetch user: " + e.getMessage()));
+    }
   }
 }

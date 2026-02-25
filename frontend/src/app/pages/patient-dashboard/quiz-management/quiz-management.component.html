@@ -1,0 +1,475 @@
+<div class="space-y-6">
+    <!-- Header & Notifications -->
+    <div class="flex items-center justify-between">
+        <h2 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
+            Gestion des Quizz
+        </h2>
+        <button z-button (click)="openCreateQuizModal()" class="shadow-lg hover:shadow-xl transition-all">
+            <z-icon zType="plus" class="mr-2" />
+            Créer un Quizz
+        </button>
+    </div>
+
+    @if (notification()) {
+    <div [class]="'p-4 rounded-lg flex items-center gap-3 text-sm font-medium animate-in fade-in slide-in-from-top-4 ' + 
+        (notification()?.type === 'success' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 
+         notification()?.type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' : 
+         'bg-blue-100 text-blue-800 border border-blue-200')">
+        <span>{{ notification()?.type === 'success' ? '✅' : notification()?.type === 'error' ? '❌' : 'ℹ️' }}</span>
+        <p>{{ notification()?.message }}</p>
+    </div>
+    }
+
+    <!-- Stats Grid -->
+    <div class="grid gap-4 md:grid-cols-4">
+        <z-card class="p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg overflow-hidden relative">
+            <div class="absolute -right-4 -top-4 opacity-10">
+                <z-icon zType="brain" class="h-24 w-24" />
+            </div>
+            <div class="relative z-10">
+                <p class="text-blue-100 font-medium mb-1">Total Quizz</p>
+                <p class="text-4xl font-bold">{{ quizzes().length }}</p>
+            </div>
+        </z-card>
+
+        <z-card
+            class="p-6 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg overflow-hidden relative">
+            <div class="absolute -right-4 -top-4 opacity-10">
+                <z-icon zType="target" class="h-24 w-24" />
+            </div>
+            <div class="relative z-10">
+                <p class="text-purple-100 font-medium mb-1">Score Moyen</p>
+                <p class="text-4xl font-bold">{{ avgScore() | number:'1.0-0' }}%</p>
+            </div>
+        </z-card>
+
+        <z-card
+            class="p-6 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg overflow-hidden relative">
+            <div class="absolute -right-4 -top-4 opacity-10">
+                <z-icon zType="trending-up" class="h-24 w-24" />
+            </div>
+            <div class="relative z-10">
+                <p class="text-emerald-100 font-medium mb-1">Points sur ce Quiz</p>
+                <p class="text-4xl font-bold">{{ selectedQuizTotalPoints() }}</p>
+            </div>
+        </z-card>
+
+        <z-card class="p-6 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-lg overflow-hidden relative">
+            <div class="absolute -right-4 -top-4 opacity-10">
+                <z-icon zType="triangle-alert" class="h-24 w-24" />
+            </div>
+            <div class="relative z-10">
+                <p class="text-amber-100 text-sm font-medium mb-1">Sujets à améliorer</p>
+                @if (weakTopics().length > 0) {
+                <div class="flex flex-wrap gap-1 mt-2">
+                    @for (topic of weakTopics(); track topic) {
+                    <span class="px-2 py-0.5 bg-white/20 rounded text-xs font-semibold">{{ topic }}</span>
+                    }
+                </div>
+                } @else {
+                <p class="text-lg font-bold mt-1">Aucun</p>
+                }
+            </div>
+        </z-card>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="flex gap-2 border-b border-border">
+        <button class="px-6 py-3 text-sm font-semibold transition-all border-b-2"
+            [class.border-primary]="activeTab() === 'quizzes'" [class.text-primary]="activeTab() === 'quizzes'"
+            [class.border-transparent]="activeTab() !== 'quizzes'"
+            [class.text-muted-foreground]="activeTab() !== 'quizzes'" (click)="setActiveTab('quizzes')">
+            🎯 Mes Quizz
+        </button>
+        <button class="px-6 py-3 text-sm font-semibold transition-all border-b-2"
+            [class.border-primary]="activeTab() === 'questions'" [class.text-primary]="activeTab() === 'questions'"
+            [class.border-transparent]="activeTab() !== 'questions'"
+            [class.text-muted-foreground]="activeTab() !== 'questions'" (click)="setActiveTab('questions')">
+            ❓ Questions & Réponses
+        </button>
+    </div>
+
+    <!-- TAB: QUIZZES -->
+    @if (activeTab() === 'quizzes') {
+    <!-- Filters Toolbar -->
+    <z-card class="p-4 bg-muted/40 border-0 shadow-sm">
+        <div class="flex flex-wrap items-end gap-4">
+            <div class="flex-1 min-w-[200px]">
+                <label class="text-xs font-semibold text-muted-foreground mb-1 block">Recherche globale</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-2.5 text-muted-foreground"><z-icon zType="search"
+                            class="w-4 h-4" /></span>
+                    <input type="text" [(ngModel)]="searchQuizQuery" (ngModelChange)="onSearchQuiz($event)"
+                        placeholder="Chercher un sujet..."
+                        class="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-lg shadow-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs font-semibold text-muted-foreground mb-1 block">Score Minimum</label>
+                <div class="flex gap-2">
+                    <input type="number" [(ngModel)]="minScoreFilter" placeholder="50"
+                        class="w-24 px-3 py-2 bg-background border border-border rounded-lg shadow-sm">
+                    <button z-button zType="secondary" (click)="filterByMinScore()">Filtrer</button>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs font-semibold text-muted-foreground mb-1 block">Dates (Début - Fin)</label>
+                <div class="flex gap-2">
+                    <input type="date" [(ngModel)]="startDateFilter"
+                        class="px-3 py-2 bg-background border border-border rounded-lg shadow-sm">
+                    <input type="date" [(ngModel)]="endDateFilter"
+                        class="px-3 py-2 bg-background border border-border rounded-lg shadow-sm">
+                    <button z-button zType="secondary" (click)="filterByDateRange()">Filtrer</button>
+                </div>
+            </div>
+
+            <button z-button zType="outline" (click)="loadQuizzes()" title="Réinitialiser filtres">
+                <z-icon zType="rotate-ccw" class="w-4 h-4 mr-2" />
+                Actualiser
+            </button>
+        </div>
+    </z-card>
+
+    @if (isLoading()) {
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
+        @for (i of [1,2,3,4,5,6]; track i) { <z-skeleton class="h-48 w-full rounded-xl" /> }
+    </div>
+    } @else {
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-4">
+        @for (quiz of displayedQuizzes(); track quiz.id) {
+        <z-card class="overflow-hidden shadow-sm hover:shadow-md transition-all border-border/50 group flex flex-col">
+            <div class="p-5 border-b border-border/50 bg-gradient-to-r from-muted/30 to-transparent flex-1">
+                <div class="flex justify-between items-start mb-3">
+                    <h3 class="font-bold text-lg leading-tight line-clamp-2">{{ quiz.topic }}</h3>
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                    <z-badge [zType]="quiz.dateTaken ? 'default' : 'secondary'">
+                        {{ quiz.dateTaken ? 'Passé' : 'Non passé' }}
+                    </z-badge>
+                    @if (quiz.totalScore !== undefined && quiz.totalScore !== null) {
+                    <z-badge zType="outline" class="font-bold bg-primary/10 text-primary border-primary/20">
+                        Score: {{ quiz.totalScore }}
+                    </z-badge>
+                    }
+                </div>
+
+                <div class="space-y-2 text-sm text-muted-foreground mt-4">
+                    <p class="flex items-center gap-2">
+                        <z-icon zType="calendar" class="w-4 h-4 opacity-70" />
+                        {{ quiz.dateTaken ? (quiz.dateTaken | date:'medium') : 'Date indéfinie' }}
+                    </p>
+                    <p class="flex items-center gap-2">
+                        <z-icon zType="help-circle" class="w-4 h-4 opacity-70" />
+                        ID Quiz: {{ quiz.id }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="p-3 bg-muted/20 flex flex-wrap gap-2 justify-end">
+                <button z-button zType="secondary" zSize="sm" class="flex-1" (click)="viewQuiz(quiz)">
+                    Gérer Questions
+                </button>
+                <button z-button zType="outline" zSize="sm" (click)="editQuiz(quiz)" class="px-2">
+                    <z-icon zType="edit" class="w-4 h-4 text-amber-600" />
+                </button>
+                <button z-button zType="outline" zSize="sm" (click)="deleteQuiz(quiz.id!)"
+                    class="px-2 hover:bg-red-50 hover:text-red-600">
+                    <z-icon zType="trash" class="w-4 h-4 text-red-500" />
+                </button>
+            </div>
+        </z-card>
+        }
+
+        @if (displayedQuizzes().length === 0) {
+        <div
+            class="col-span-full py-12 text-center text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border">
+            <z-icon zType="inbox" class="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p class="text-lg">Aucun quiz trouvé</p>
+        </div>
+        }
+    </div>
+    }
+    }
+
+    <!-- TAB: QUESTIONS -->
+    @if (activeTab() === 'questions') {
+    <div class="flex flex-col md:flex-row gap-6">
+
+        <!-- Quiz Selection Sidebar -->
+        <z-card class="w-full md:w-1/3 outline-none p-4 h-fit shadow-sm">
+            <h3 class="font-bold text-lg mb-4 flex justify-between items-center">
+                Sélectionner le Quiz
+            </h3>
+            <select class="w-full px-3 py-2 border border-border rounded-lg bg-background mb-4 font-medium"
+                [(ngModel)]="selectedQuizId" (ngModelChange)="loadSelectedQuizData()">
+                <option [ngValue]="null">--- Choisissez un Quiz ---</option>
+                @for (quiz of quizzes(); track quiz.id) {
+                <option [ngValue]="quiz.id">{{ quiz.topic }}</option>
+                }
+            </select>
+
+            @if (selectedQuizId()) {
+            <div class="space-y-3 pt-4 border-t border-border">
+                <button z-button class="w-full justify-start" (click)="showQuestionForm.set(true)">
+                    <z-icon zType="plus" class="mr-2" /> Ajouter Question
+                </button>
+                <button z-button zType="destructive"
+                    class="w-full justify-start bg-red-100 text-red-700 hover:bg-red-200"
+                    (click)="deleteAllQuestionsInQuiz()">
+                    <z-icon zType="trash" class="mr-2" /> Vider toutes les questions
+                </button>
+            </div>
+            }
+        </z-card>
+
+        <!-- Questions List -->
+        <div class="flex-1 space-y-4">
+            @if (selectedQuizId()) {
+            <z-card class="p-4 bg-muted/30 shadow-sm flex gap-4 items-end">
+                <div class="flex-1">
+                    <label class="text-xs font-semibold text-muted-foreground block mb-1">Recherche de question</label>
+                    <input type="text" [(ngModel)]="searchQuestionQuery" (ngModelChange)="onSearchQuestion($event)"
+                        placeholder="Mot clé..." class="w-full px-3 py-2 rounded border border-border">
+                </div>
+                <div class="w-48">
+                    <label class="text-xs font-semibold text-muted-foreground block mb-1">Filtre Difficulté</label>
+                    <select [(ngModel)]="difficultyFilter" (ngModelChange)="filterQuestionsByDifficulty()"
+                        class="w-full px-3 py-2 border rounded border-border">
+                        <option [ngValue]="null">Toutes</option>
+                        <option [ngValue]="1">Facile (1)</option>
+                        <option [ngValue]="2">Moyenne (2)</option>
+                        <option [ngValue]="3">Difficile (3)</option>
+                    </select>
+                </div>
+            </z-card>
+
+            @if (isLoadingQuestions()) {
+            <div class="space-y-4 mt-4">
+                @for(i of [1,2,3]; track i) { <z-skeleton class="h-24 w-full" /> }
+            </div>
+            } @else {
+            <div class="space-y-4">
+                <div class="flex justify-between items-center px-2 text-sm text-muted-foreground font-semibold">
+                    <span>{{ displayedQuestions().length }} questions trouvées</span>
+                    <span>Total des points: {{ selectedQuizTotalPoints() }}</span>
+                </div>
+
+                @for (q of displayedQuestions(); track q.id) {
+                <z-card class="p-5 overflow-hidden relative shadow-sm hover:shadow-md transition-all border-l-4"
+                    [class.border-l-emerald-500]="q.difficultyLevel === 1"
+                    [class.border-l-amber-500]="q.difficultyLevel === 2"
+                    [class.border-l-red-500]="q.difficultyLevel === 3">
+                    <div class="flex justify-between gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <z-badge
+                                    [zType]="q.difficultyLevel === 1 ? 'default' : q.difficultyLevel === 2 ? 'secondary' : 'destructive'">
+                                    Niveau {{ q.difficultyLevel }}
+                                </z-badge>
+                                <span class="text-xs text-muted-foreground font-medium">{{ q.answers?.length || 0 }}
+                                    réponses</span>
+                            </div>
+                            <h4 class="font-semibold text-lg">{{ q.text }}</h4>
+                            @if (q.mediaAttachment) {
+                            <a [href]="q.mediaAttachment" target="_blank"
+                                class="text-xs text-blue-500 hover:underline mt-2 inline-flex items-center">
+                                🔗 Voir pièce jointe
+                            </a>
+                            }
+                        </div>
+
+                        <div class="flex flex-col gap-2">
+                            <button z-button zType="outline" zSize="sm" (click)="manageAnswers(q)"
+                                class="w-32 justify-center">
+                                Gérer Choix
+                            </button>
+                            <button z-button zType="secondary" zSize="sm" (click)="editQuestion(q)"
+                                class="w-32 justify-center">
+                                Modifier Q.
+                            </button>
+                            <button z-button zType="destructive" zSize="sm" (click)="deleteQuestion(q.id!)"
+                                class="w-32 justify-center">
+                                Supprimer
+                            </button>
+                        </div>
+                    </div>
+                </z-card>
+                }
+                @if (displayedQuestions().length === 0) {
+                <div class="text-center py-10 text-muted-foreground border border-dashed rounded-lg">
+                    Aucune question ne correspond.
+                </div>
+                }
+            </div>
+            }
+            } @else {
+            <div
+                class="h-full flex items-center justify-center p-12 border border-dashed rounded-xl bg-muted/10 text-muted-foreground">
+                Sélectionnez un quiz à gauche pour voir ses questions.
+            </div>
+            }
+        </div>
+    </div>
+    }
+
+    <!-- MODAL: ADD/EDIT QUIZ -->
+    @if (showCreateForm()) {
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <z-card class="w-full max-w-lg p-6 animate-in fade-in zoom-in-95">
+            <h2 class="text-2xl font-bold mb-5">{{ isEditing() ? 'Modifier le Quiz' : 'Nouveau Quiz' }}</h2>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="text-sm font-semibold mb-1.5 block text-foreground">Sujet du Quiz <span
+                            class="text-red-500">*</span></label>
+                    <input class="w-full px-4 py-2 border border-border rounded-lg" [(ngModel)]="newQuiz.topic"
+                        placeholder="Sujet..." />
+                </div>
+
+                <div class="flex gap-3 justify-end mt-8 border-t border-border pt-4">
+                    <button z-button zType="outline" (click)="cancelCreate()">Annuler</button>
+                    <button z-button [disabled]="!newQuiz.topic || creating()" (click)="saveQuiz()">
+                        {{ creating() ? 'Sauvegarde...' : 'Sauvegarder' }}
+                    </button>
+                </div>
+            </div>
+        </z-card>
+    </div>
+    }
+
+    <!-- MODAL: ADD/EDIT QUESTION -->
+    @if (showQuestionForm()) {
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <z-card class="w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95">
+            <h2 class="text-2xl font-bold mb-5">{{ isEditingQuestion() ? 'Modifier la Question' : 'Nouvelle Question' }}
+            </h2>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="text-sm font-semibold mb-1 block">Texte de la question <span
+                            class="text-red-500">*</span></label>
+                    <textarea class="w-full px-4 py-2 border rounded-lg" [(ngModel)]="newQuestion.text"
+                        rows="2"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm font-semibold mb-1 block">Niveau de difficulté</label>
+                        <select class="w-full px-4 py-2 border rounded-lg" [(ngModel)]="newQuestion.difficultyLevel">
+                            <option [ngValue]="1">1 - Facile</option>
+                            <option [ngValue]="2">2 - Moyen</option>
+                            <option [ngValue]="3">3 - Difficile</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold mb-1 block">Lien Media (Image/Vidéo)</label>
+                        <input class="w-full px-4 py-2 border rounded-lg" [(ngModel)]="newQuestion.mediaAttachment"
+                            placeholder="https://..." />
+                    </div>
+                </div>
+
+                <!-- Quick Answers section only for NEW question -->
+                @if (!isEditingQuestion()) {
+                <div class="p-4 bg-muted/40 rounded-lg border border-border mt-6">
+                    <h4 class="font-bold text-sm mb-3 text-primary uppercase tracking-wider">Réponses (Batch Création)
+                    </h4>
+
+                    @for (ans of newQuestionAnswers; track i; let i = $index) {
+                    <div class="flex items-center gap-3 mb-2">
+                        <input type="radio" name="quickCorrect" [checked]="i === correctAnswerIndex()"
+                            (change)="setCorrectAnswer(i)" class="w-4 h-4 text-primary">
+                        <input type="text" [(ngModel)]="ans.text" class="flex-1 px-3 py-1.5 border rounded-md text-sm"
+                            placeholder="Choix de réponse {{i+1}}" />
+                        @if (newQuestionAnswers.length > 2) {
+                        <button class="text-red-500 hover:bg-red-50 p-1.5 rounded" (click)="removeAnswer(i)"><z-icon
+                                zType="x" class="w-4 h-4" /></button>
+                        }
+                    </div>
+                    }
+                    <button z-button zType="outline" zSize="sm" class="mt-2 w-full border-dashed" (click)="addAnswer()"
+                        [disabled]="newQuestionAnswers.length>=6">
+                        + Ajouter un choix
+                    </button>
+                </div>
+                }
+
+                <div class="flex gap-3 justify-end mt-8 border-t border-border pt-4">
+                    <button z-button zType="outline" (click)="cancelQuestionForm()">Annuler</button>
+                    <button z-button [disabled]="isSubmittingQuestion()" (click)="submitQuestion()">
+                        {{ isSubmittingQuestion() ? 'Patientez...' : 'Enregistrer' }}
+                    </button>
+                </div>
+            </div>
+        </z-card>
+    </div>
+    }
+
+    <!-- MODAL: MANAGE ANSWERS -->
+    @if (showAnswersModal()) {
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center p-4 z-50">
+        <z-card
+            class="w-full max-w-2xl p-6 h-[80vh] flex flex-col animate-in fade-in zoom-in-95 border-t-8 border-t-primary shadow-2xl">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h2 class="text-2xl font-bold">Gérer les Réponses</h2>
+                    <p class="text-muted-foreground mt-1 font-medium">Q: {{ selectedQuestionForAnswers()?.text }}</p>
+                </div>
+                <button (click)="showAnswersModal.set(false)" class="p-2 hover:bg-muted rounded-full">
+                    <z-icon zType="x" />
+                </button>
+            </div>
+
+            <!-- Add new Answer bar -->
+            <div class="flex gap-2 mb-6 bg-muted/30 p-3 rounded-lg border border-border">
+                <input type="text" [(ngModel)]="newSingleAnswerText" placeholder="Nouvelle réponse possible..."
+                    class="flex-1 px-3 py-2 border rounded-md">
+                <button z-button (click)="addSingleAnswerToQuestion()">Ajouter</button>
+            </div>
+
+            <!-- List of Answers -->
+            <div class="flex-1 overflow-y-auto pr-2 space-y-3">
+                @if (isLoadingAnswers()) {
+                <z-skeleton class="h-16 w-full" /> <z-skeleton class="h-16 w-full" />
+                } @else {
+                @for (ans of answersForSelectedQuestion(); track ans.id) {
+                <div class="flex gap-3 items-center p-3 border rounded-lg bg-background shadow-sm hover:border-primary/50 transition-colors"
+                    [class.ring-2]="ans.isCorrect" [class.ring-emerald-500]="ans.isCorrect">
+
+                    <input type="radio" name="correctModal" [checked]="ans.isCorrect"
+                        (change)="setCorrectAnswerById(ans.id!)" class="w-5 h-5 text-emerald-500 cursor-pointer">
+
+                    <div class="flex-1">
+                        <input type="text" [value]="ans.text" #ansInput
+                            (blur)="updateAnswerText(ans.id!, ansInput.value)"
+                            class="w-full px-2 py-1 bg-transparent font-medium border-b border-transparent focus:border-border outline-none transition-colors">
+                        <!-- Explanation optional field -->
+                        <div class="flex items-center gap-2 mt-1">
+                            <span
+                                class="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Explication:</span>
+                            <input type="text" [value]="ans.explanation || ''" #expInput
+                                (blur)="updateAnswerExplanation(ans.id!, expInput.value)"
+                                placeholder="Pourquoi c'est juste/faux ?"
+                                class="w-full text-xs text-muted-foreground bg-transparent outline-none">
+                        </div>
+                    </div>
+
+                    <div class="flex gap-1">
+                        <button class="p-2 text-primary hover:bg-primary/10 rounded"
+                            (click)="checkAnswerCorrectness(ans.id!)" title="Vérifier Backend">
+                            <z-icon zType="check-circle" class="w-4 h-4" />
+                        </button>
+                        <button class="p-2 text-red-500 hover:bg-red-50 rounded" (click)="deleteAnswer(ans.id!)"
+                            title="Supprimer">
+                            <z-icon zType="trash" class="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+                }
+                }
+            </div>
+        </z-card>
+    </div>
+    }
+</div>

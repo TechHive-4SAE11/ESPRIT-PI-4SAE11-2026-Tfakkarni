@@ -14,16 +14,19 @@ import org.techhive.gameservice.service.IQuizService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/games/quiz")
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class QuizController {
 
     private final IQuizService quizService;
 
     @PostMapping
+    @Transactional
     public ResponseEntity<QuizDTO> createQuiz(@Valid @RequestBody QuizDTO quizDTO) {
         log.info("Creating new quiz with topic: {}", quizDTO.getTopic());
 
@@ -35,6 +38,7 @@ public class QuizController {
     }
 
     @PutMapping("/{id}")
+    @Transactional
     public ResponseEntity<QuizDTO> updateQuiz(@PathVariable Long id, @Valid @RequestBody QuizDTO quizDTO) {
         log.info("Updating quiz with ID: {}", id);
 
@@ -47,6 +51,7 @@ public class QuizController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<Void> deleteQuiz(@PathVariable Long id) {
         log.info("Deleting quiz with ID: {}", id);
 
@@ -143,6 +148,7 @@ public class QuizController {
     }
 
     @PostMapping("/{id}/start")
+    @Transactional
     public ResponseEntity<QuizDTO> startQuiz(@PathVariable Long id) {
         log.info("Starting quiz with ID: {}", id);
 
@@ -154,6 +160,7 @@ public class QuizController {
     }
 
     @PostMapping("/{id}/complete")
+    @Transactional
     public ResponseEntity<QuizDTO> completeQuiz(@PathVariable Long id, @RequestBody Map<String, Integer> request) {
         Integer score = request.get("score");
         log.info("Completing quiz with ID: {} with score: {}", id, score);

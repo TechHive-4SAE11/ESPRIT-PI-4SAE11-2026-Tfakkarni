@@ -11,16 +11,19 @@ import org.techhive.gameservice.entity.Answer;
 import org.techhive.gameservice.service.IAnswerService;
 
 import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/games/quiz/answer")
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AnswerController {
 
     private final IAnswerService answerService;
 
     @PostMapping
+    @Transactional
     public ResponseEntity<AnswerDTO> createAnswer(@Valid @RequestBody AnswerDTO answerDTO) {
 
         Answer createdAnswer = answerService.createAnswer(answerDTO);
@@ -28,6 +31,7 @@ public class AnswerController {
     }
 
     @PutMapping("/{id}")
+    @Transactional
     public ResponseEntity<AnswerDTO> updateAnswer(@PathVariable Long id, @Valid @RequestBody AnswerDTO answerDTO) {
         answerDTO.setId(id);
         Answer updatedAnswer = answerService.updateAnswer(answerDTO);
@@ -35,6 +39,7 @@ public class AnswerController {
     }
 
     @DeleteMapping("deleteAnswer/{id}")
+    @Transactional
     public ResponseEntity<Void> deleteAnswer(@PathVariable Long id) {
         answerService.deleteAnswer(id);
         return ResponseEntity.noContent().build();
@@ -79,7 +84,7 @@ public class AnswerController {
 
         Answer correctAnswer = answerService.getCorrectAnswerByQuestionId(questionId);
         if (correctAnswer == null) {
-            return ResponseEntity.notFound().build();  // Retourne 404
+            return ResponseEntity.notFound().build(); // Retourne 404
         }
         return ResponseEntity.ok(AnswerDTO.fromEntity(correctAnswer));
     }
@@ -88,6 +93,7 @@ public class AnswerController {
      * Validate an answer
      */
     @PostMapping("/validate")
+    @Transactional
     public ResponseEntity<ValidationResponseDTO> validateAnswer(@RequestBody ValidationRequestDTO request) {
         log.info("Validating answer ID: {} for question ID: {}", request.getAnswerId(), request.getQuestionId());
 
@@ -108,6 +114,7 @@ public class AnswerController {
      * Submit an answer (for quiz taking)
      */
     @PostMapping("/submit")
+    @Transactional
     public ResponseEntity<SubmissionResponseDTO> submitAnswer(@RequestBody SubmissionRequestDTO request) {
         log.info("Submitting answer ID: {} for question ID: {} in quiz ID: {}",
                 request.getAnswerId(), request.getQuestionId(), request.getQuizId());
@@ -134,6 +141,7 @@ public class AnswerController {
      * Batch create answers
      */
     @PostMapping("/batch")
+    @Transactional
     public ResponseEntity<List<AnswerDTO>> createAnswersBatch(@Valid @RequestBody List<AnswerDTO> answerDTOs) {
         log.info("=== BATCH ANSWERS REQUEST ===");
         log.info("Number of answers: {}", answerDTOs.size());
@@ -208,5 +216,3 @@ public class AnswerController {
         }
     }
 }
-
-

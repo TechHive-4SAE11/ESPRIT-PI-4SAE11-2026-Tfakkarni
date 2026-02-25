@@ -11,16 +11,19 @@ import org.techhive.gameservice.entity.Question;
 import org.techhive.gameservice.service.IQuestionService;
 
 import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/games/quiz/questions")
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class QuestionController {
 
     private final IQuestionService questionService;
 
     @PostMapping
+    @Transactional
     public ResponseEntity<QuestionDTO> createQuestion(@Valid @RequestBody QuestionDTO questionDTO) {
         log.info("Creating new question for quiz ID: {}", questionDTO.getQuizId());
 
@@ -32,7 +35,9 @@ public class QuestionController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<QuestionDTO> updateQuestion(@PathVariable Long id, @Valid @RequestBody QuestionDTO questionDTO) {
+    @Transactional
+    public ResponseEntity<QuestionDTO> updateQuestion(@PathVariable Long id,
+            @Valid @RequestBody QuestionDTO questionDTO) {
         log.info("Updating question with ID: {}", id);
 
         questionDTO.setId(id);
@@ -44,6 +49,7 @@ public class QuestionController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<Void> deleteQuestion(@PathVariable Long id) {
         log.info("Deleting question with ID: {}", id);
 
@@ -96,6 +102,7 @@ public class QuestionController {
     }
 
     @DeleteMapping("/quiz/{quizId}")
+    @Transactional
     public ResponseEntity<Void> deleteQuestionsByQuizId(@PathVariable Long quizId) {
         log.info("Deleting all questions for quiz ID: {}", quizId);
 

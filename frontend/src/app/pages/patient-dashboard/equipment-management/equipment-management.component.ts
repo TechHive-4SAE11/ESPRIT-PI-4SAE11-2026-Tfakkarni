@@ -2,6 +2,7 @@ import {
   Component,
   OnInit,
   signal,
+  computed,
   Input,
   inject,
   DestroyRef
@@ -11,245 +12,42 @@ import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, finalize, of, tap } from 'rxjs';
 
-import { ZardCardComponent } from '@/shared/components/card';
-import { ZardIconComponent } from '@/shared/components/icon';
-import { ZardButtonComponent } from '@/shared/components/button';
-import { ZardBadgeComponent } from '@/shared/components/badge';
-import { ZardTableImports } from '@/shared/components/table/table.imports';
-import { ZardSkeletonComponent } from '@/shared/components/skeleton';
 import { EquipmentService } from '@/core/services/equipment.service';
-import { EquipmentDTO, EquipmentLoanDTO, EquipmentStatus, LoanStatus } from '@/core/models/equipment.model';
+import {
+  EquipmentDTO,
+  EquipmentLoanDTO,
+  EquipmentStatus,
+  LoanStatus
+} from '@/core/models/equipment.model';
 import { UserApiService } from '@/core/services/user-api.service';
+
+type TabType = 'equipment' | 'loans' | 'stats';
+
+interface Notification {
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
+interface BorrowForm {
+  dueDate: string;
+  purpose: string;
+  notes: string;
+  manualBorrowerId?: number; 
+}
+
+interface EquipmentForm {
+  name: string;
+  description: string;
+  category: string;
+  condition: string;
+  status: string;
+}
 
 @Component({
   selector: 'app-equipment-management',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ZardCardComponent,
-    ZardIconComponent,
-    ZardButtonComponent,
-    ZardBadgeComponent,
-    ZardTableImports,
-    ZardSkeletonComponent
-  ],
-  template: `
-    <div class="space-y-6">
-      <!-- Header -->
-      <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-bold">Equipment Management</h2>
-        <button z-button (click)="showAvailable.set(true)">
-          <z-icon zType="search" class="mr-2" />
-          Browse Available
-        </button>
-      </div>
-
-      <!-- Stats -->
-      <div class="grid gap-4 md:grid-cols-4">
-        <z-card class="p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-muted-foreground">Total Equipment</p>
-              <p class="text-3xl font-bold">{{ allEquipment().length }}</p>
-            </div>
-            <z-icon zType="shield" class="text-primary h-8 w-8" />
-          </div>
-        </z-card>
-        <z-card class="p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-muted-foreground">Available</p>
-              <p class="text-3xl font-bold">{{ availableCount() }}</p>
-            </div>
-            <z-icon zType="check" class="text-green-500 h-8 w-8" />
-          </div>
-        </z-card>
-        <z-card class="p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-muted-foreground">My Loans</p>
-              <p class="text-3xl font-bold">{{ myLoans().length }}</p>
-            </div>
-            <z-icon zType="clock" class="text-blue-500 h-8 w-8" />
-          </div>
-        </z-card>
-        <z-card class="p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-muted-foreground">Overdue</p>
-              <p class="text-3xl font-bold">{{ overdueCount() }}</p>
-            </div>
-            <z-icon zType="triangle-alert" class="text-red-500 h-8 w-8" />
-          </div>
-        </z-card>
-      </div>
-
-      <!-- My Active Loans -->
-      @if (myLoans().length > 0) {
-      <z-card>
-        <div class="p-6">
-          <h3 class="text-lg font-semibold mb-4">My Active Loans</h3>
-          <table z-table>
-            <thead z-table-header>
-              <tr z-table-row>
-                <th z-table-head>Equipment</th>
-                <th z-table-head>Category</th>
-                <th z-table-head>Loan Date</th>
-                <th z-table-head>Due Date</th>
-                <th z-table-head>Status</th>
-                <th z-table-head>Actions</th>
-              </tr>
-            </thead>
-            <tbody z-table-body>
-              @for (loan of myLoans(); track loan.id) {
-              <tr z-table-row>
-                <td z-table-cell class="font-medium">{{ loan.equipmentName }}</td>
-                <td z-table-cell class="text-muted-foreground">
-                  {{ getEquipmentCategory(loan.equipmentId) }}
-                </td>
-                <td z-table-cell class="text-muted-foreground">
-                  {{ loan.loanDate | date:'short' }}
-                </td>
-                <td z-table-cell>
-                  <span [class]="isOverdue(loan) ? 'text-red-500 font-semibold' : ''">
-                    {{ loan.dueDate | date:'short' }}
-                  </span>
-                </td>
-                <td z-table-cell>
-                  <z-badge [zType]="getLoanStatusBadgeType(loan.status)">
-                    {{ loan.status }}
-                  </z-badge>
-                </td>
-                <td z-table-cell>
-                  <div class="flex gap-2">
-                    @if (loan.status === LoanStatus.ACTIVE) {
-                    <button z-button zType="ghost" zSize="sm" (click)="returnEquipment(loan.id!)">
-                      <z-icon zType="check" class="mr-1" />
-                      Return
-                    </button>
-                    }
-                  </div>
-                </td>
-              </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </z-card>
-      }
-
-      <!-- Available Equipment -->
-      @if (showAvailable()) {
-      <z-card>
-        <div class="p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">Available Equipment</h3>
-            <button z-button zType="ghost" zSize="sm" (click)="showAvailable.set(false)">
-              <z-icon zType="x" class="mr-1" />
-              Close
-            </button>
-          </div>
-          @if (isLoading()) {
-          <z-skeleton class="h-32 w-full" />
-          } @else if (availableEquipment().length > 0) {
-          <table z-table>
-            <thead z-table-header>
-              <tr z-table-row>
-                <th z-table-head>Name</th>
-                <th z-table-head>Category</th>
-                <th z-table-head>Description</th>
-                <th z-table-head>Condition</th>
-                <th z-table-head>Actions</th>
-              </tr>
-            </thead>
-            <tbody z-table-body>
-              @for (equipment of availableEquipment(); track equipment.id) {
-              <tr z-table-row>
-                <td z-table-cell class="font-medium">{{ equipment.name }}</td>
-                <td z-table-cell>
-                  <z-badge zType="secondary">{{ equipment.category }}</z-badge>
-                </td>
-                <td z-table-cell class="text-muted-foreground">
-                  {{ equipment.description || '-' }}
-                </td>
-                <td z-table-cell>
-                  {{ equipment.condition || '-' }}
-                </td>
-                <td z-table-cell>
-                  <button z-button zType="ghost" zSize="sm" (click)="borrowEquipment(equipment)">
-                    <z-icon zType="plus" class="mr-1" />
-                    Borrow
-                  </button>
-                </td>
-              </tr>
-              }
-            </tbody>
-          </table>
-          } @else {
-          <div class="text-center py-8">
-            <z-icon zType="shield" class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <p class="text-muted-foreground">No available equipment at the moment.</p>
-          </div>
-          }
-        </div>
-      </z-card>
-      }
-
-      <!-- All Equipment List -->
-      @if (!showAvailable()) {
-      <z-card>
-        <div class="p-6">
-          <h3 class="text-lg font-semibold mb-4">All Equipment</h3>
-          @if (isLoading()) {
-          <z-skeleton class="h-32 w-full" />
-          } @else if (allEquipment().length > 0) {
-          <table z-table>
-            <thead z-table-header>
-              <tr z-table-row>
-                <th z-table-head>Name</th>
-                <th z-table-head>Category</th>
-                <th z-table-head>Status</th>
-                <th z-table-head>Donation Date</th>
-                <th z-table-head>Actions</th>
-              </tr>
-            </thead>
-            <tbody z-table-body>
-              @for (equipment of allEquipment(); track equipment.id) {
-              <tr z-table-row>
-                <td z-table-cell class="font-medium">{{ equipment.name }}</td>
-                <td z-table-cell>
-                  <z-badge zType="secondary">{{ equipment.category }}</z-badge>
-                </td>
-                <td z-table-cell>
-                  <z-badge [zType]="getEquipmentStatusBadgeType(equipment.status)">
-                    {{ equipment.status }}
-                  </z-badge>
-                </td>
-                <td z-table-cell class="text-muted-foreground">
-                  {{ equipment.donationDate | date:'short' }}
-                </td>
-                <td z-table-cell>
-                  <button z-button zType="ghost" zSize="sm" (click)="viewEquipment(equipment)">
-                    <z-icon zType="eye" class="mr-1" />
-                    View
-                  </button>
-                </td>
-              </tr>
-              }
-            </tbody>
-          </table>
-          } @else {
-          <div class="text-center py-8">
-            <z-icon zType="shield" class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <p class="text-muted-foreground">No equipment found.</p>
-          </div>
-          }
-        </div>
-      </z-card>
-      }
-    </div>
-  `,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './equipment-management.component.html',
 })
 export class EquipmentManagementComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -258,31 +56,94 @@ export class EquipmentManagementComponent implements OnInit {
 
   @Input() keycloakId = '';
 
-  // State
-  allEquipment = signal<EquipmentDTO[]>([]);
-  myLoans = signal<EquipmentLoanDTO[]>([]);
+  // ─── Enums exposed to template ─────────────────────────────
+  equipmentStatuses: EquipmentStatus[] = [
+    EquipmentStatus.AVAILABLE,
+    EquipmentStatus.LOANED,
+    EquipmentStatus.REQUESTED,
+    EquipmentStatus.DONATED,
+    EquipmentStatus.MAINTENANCE
+  ];
+  loanStatuses: LoanStatus[] = [
+    LoanStatus.ACTIVE,
+    LoanStatus.RETURNED,
+    LoanStatus.OVERDUE,
+    LoanStatus.CANCELLED
+  ];
+
+  // ─── State ──────────────────────────────────────────────────
+  activeTab = signal<TabType>('equipment');
   isLoading = signal<boolean>(false);
-  showAvailable = signal<boolean>(false);
+  isLoadingLoans = signal<boolean>(false);
+  isSaving = signal<boolean>(false);
   userNeonDbId = signal<number | null>(null);
+  notification = signal<Notification | null>(null);
+  private notifTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  LoanStatus = LoanStatus;
-  EquipmentStatus = EquipmentStatus;
+  // ─── Data ───────────────────────────────────────────────────
+  allEquipment = signal<EquipmentDTO[]>([]);
+  displayedEquipment = signal<EquipmentDTO[]>([]);
+  allLoans = signal<EquipmentLoanDTO[]>([]);
+  displayedLoans = signal<EquipmentLoanDTO[]>([]);
+  myActiveLoans = signal<EquipmentLoanDTO[]>([]);
+  overdueLoans = signal<EquipmentLoanDTO[]>([]);
+  dueSoonLoans = signal<EquipmentLoanDTO[]>([]);
 
+  // ─── Filters ────────────────────────────────────────────────
+  searchQuery = '';
+  filterStatus = '';
+  filterCategory = '';
+  filterLoanStatus = '';
+
+  // ─── Modals ─────────────────────────────────────────────────
+  showEquipmentModal = signal<boolean>(false);
+  showDonateModal = signal<boolean>(false);
+  showBorrowModal = signal<boolean>(false);
+  showExtendModal = signal<boolean>(false);
+  showStatusModal = signal<boolean>(false);
+  showDetailsModal = signal<boolean>(false);
+
+  editingEquipment = signal<EquipmentDTO | null>(null);
+  selectedEquipment = signal<EquipmentDTO | null>(null);
+  selectedLoan = signal<EquipmentLoanDTO | null>(null);
+  detailsEquipment = signal<EquipmentDTO | null>(null);
+
+  // ─── Forms ──────────────────────────────────────────────────
+  eqForm: EquipmentForm = { name: '', description: '', category: '', condition: '', status: EquipmentStatus.AVAILABLE };
+  donateForm: EquipmentForm = { name: '', description: '', category: '', condition: '', status: EquipmentStatus.DONATED };
+  borrowForm: BorrowForm = { dueDate: '', purpose: '', notes: '', manualBorrowerId: undefined };
+  extendDays = 7;
+  newStatus: EquipmentStatus = EquipmentStatus.AVAILABLE;
+
+  // ─── Computed ───────────────────────────────────────────────
+  uniqueCategories = computed<string[]>(() => {
+    const cats = this.allEquipment().map(e => e.category).filter(Boolean);
+    return [...new Set(cats)];
+  });
+
+  // ─── Lifecycle ──────────────────────────────────────────────
   ngOnInit(): void {
     if (this.keycloakId) {
       this.loadUserInfo();
+    } else {
+      // Load without user context
+      this.loadAllEquipment();
+      this.loadAllLoansPublic();
     }
   }
 
+  // ─── User Info ──────────────────────────────────────────────
   private loadUserInfo(): void {
     this.userApiService.getUserByKeycloakId(this.keycloakId)
       .pipe(
         tap(userInfo => {
           this.userNeonDbId.set(userInfo.id);
-          this.loadData();
+          this.loadAllData();
         }),
         catchError(err => {
-          console.error('[EquipmentManagement] Failed to load user info', err);
+          console.error('[EquipmentMgmt] Failed to load user info', err);
+          this.loadAllEquipment();
+          this.loadAllLoansPublic();
           return of(null);
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -290,18 +151,31 @@ export class EquipmentManagementComponent implements OnInit {
       .subscribe();
   }
 
-  private loadData(): void {
+  // ─── Data Loading Methods ────────────────────────────────────
+
+  private loadAllData(): void {
     this.loadAllEquipment();
-    this.loadMyLoans();
+    // Only load user-specific data if borrowerId is available
+    // loadOverdueLoans() is now lazy (triggered by button) to avoid 500s on init
+    const borrowerId = this.userNeonDbId();
+    if (borrowerId) {
+      this.loadMyActiveLoans();
+      this.loadAllMyLoans();
+    }
   }
 
-  private loadAllEquipment(): void {
+  loadAllEquipment(): void {
     this.isLoading.set(true);
     this.equipmentService.getAllEquipment()
       .pipe(
-        tap(equipment => this.allEquipment.set(equipment)),
+        tap(list => {
+          this.allEquipment.set(list);
+          this.displayedEquipment.set(list);
+          this.applyEquipmentFilters();
+        }),
         catchError(err => {
-          console.error('[EquipmentManagement] Failed to load equipment', err);
+          console.error('[EquipmentMgmt] getAllEquipment failed', err);
+          this.notify('Erreur lors du chargement des équipements', 'error');
           return of([]);
         }),
         finalize(() => this.isLoading.set(false)),
@@ -310,15 +184,52 @@ export class EquipmentManagementComponent implements OnInit {
       .subscribe();
   }
 
-  private loadMyLoans(): void {
+  loadAvailableEquipment(): void {
+    this.isLoading.set(true);
+    this.equipmentService.getAvailableEquipment()
+      .pipe(
+        tap(list => {
+          this.displayedEquipment.set(list);
+          this.notify(`${list.length} équipement(s) disponible(s)`, 'info');
+        }),
+        catchError(err => {
+          console.error('[EquipmentMgmt] getAvailableEquipment failed', err);
+          this.notify('Erreur lors du chargement', 'error');
+          return of([]);
+        }),
+        finalize(() => this.isLoading.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  loadOverdueEquipment(): void {
+    this.isLoading.set(true);
+    this.equipmentService.getEquipmentWithOverdueLoans()
+      .pipe(
+        tap(list => {
+          this.displayedEquipment.set(list);
+          this.notify(`${list.length} équipement(s) avec des prêts en retard`, 'info');
+        }),
+        catchError(err => {
+          console.error('[EquipmentMgmt] getEquipmentWithOverdueLoans failed', err);
+          this.notify('Erreur lors du chargement', 'error');
+          return of([]);
+        }),
+        finalize(() => this.isLoading.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  loadMyActiveLoans(): void {
     const borrowerId = this.userNeonDbId();
     if (!borrowerId) return;
-
     this.equipmentService.getActiveLoansByBorrower(borrowerId)
       .pipe(
-        tap(loans => this.myLoans.set(loans)),
+        tap(loans => this.myActiveLoans.set(loans)),
         catchError(err => {
-          console.error('[EquipmentManagement] Failed to load loans', err);
+          console.error('[EquipmentMgmt] getActiveLoansByBorrower failed', err);
           return of([]);
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -326,45 +237,430 @@ export class EquipmentManagementComponent implements OnInit {
       .subscribe();
   }
 
-  borrowEquipment(equipment: EquipmentDTO): void {
+  loadOverdueLoans(): void {
+    this.equipmentService.getOverdueLoans()
+      .pipe(
+        tap(loans => this.overdueLoans.set(loans)),
+        catchError(() => of([])),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  loadAllMyLoans(): void {
     const borrowerId = this.userNeonDbId();
-    if (!borrowerId || !equipment.id) return;
+    if (!borrowerId) {
+      this.loadAllLoansPublic();
+      return;
+    }
+    this.isLoadingLoans.set(true);
+    this.equipmentService.getLoansByBorrowerId(borrowerId)
+      .pipe(
+        tap(loans => {
+          this.allLoans.set(loans);
+          this.displayedLoans.set(loans);
+        }),
+        catchError(err => {
+          console.error('[EquipmentMgmt] getLoansByBorrowerId failed', err);
+          this.notify('Erreur lors du chargement des prêts', 'error');
+          return of([]);
+        }),
+        finalize(() => this.isLoadingLoans.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
 
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 30); // 30 days from now
+  private loadAllLoansPublic(): void {
+    this.isLoadingLoans.set(true);
+    this.equipmentService.getAllLoans()
+      .pipe(
+        tap(loans => {
+          this.allLoans.set(loans);
+          this.displayedLoans.set(loans);
+        }),
+        catchError(() => of([])),
+        finalize(() => this.isLoadingLoans.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
 
-    const loan: EquipmentLoanDTO = {
-      equipmentId: equipment.id,
-      borrowerId: borrowerId,
-      dueDate: dueDate.toISOString(),
-      status: LoanStatus.ACTIVE
+  loadDueSoonLoans(): void {
+    this.isLoadingLoans.set(true);
+    this.equipmentService.getLoansDueSoon(3)
+      .pipe(
+        tap(loans => {
+          this.dueSoonLoans.set(loans);
+          this.displayedLoans.set(loans);
+          this.activeTab.set('loans');
+          this.notify(`${loans.length} prêt(s) dûs dans les 3 prochains jours`, 'info');
+        }),
+        catchError(err => {
+          console.error('[EquipmentMgmt] getLoansDueSoon failed', err);
+          this.notify('Erreur lors du chargement', 'error');
+          return of([]);
+        }),
+        finalize(() => this.isLoadingLoans.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  checkOverdueLoans(): void {
+    this.equipmentService.checkAndUpdateOverdueLoans()
+      .pipe(
+        tap(msg => {
+          this.notify(msg || 'Prêts en retard mis à jour', 'success');
+          this.loadAllData();
+        }),
+        catchError(err => {
+          console.error('[EquipmentMgmt] checkAndUpdateOverdueLoans failed', err);
+          this.notify('Erreur lors de la vérification', 'error');
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  // ─── Filter Methods (ALL LOCAL – avoids 500 from backend filter endpoints) ──
+
+  onSearchChange(_query: string): void {
+    // Local filtering only – backend /search returns 500 on current env
+    this.applyEquipmentFilters();
+  }
+
+  onFilterStatusChange(_status: string): void {
+    // Local filtering only – backend /status & /category+status return 500
+    this.applyEquipmentFilters();
+  }
+
+  onFilterCategoryChange(_category: string): void {
+    // Local filtering only
+    this.applyEquipmentFilters();
+  }
+
+  onLoanStatusFilterChange(status: string): void {
+    // Local filtering on already-loaded loans signal
+    if (!status) {
+      this.displayedLoans.set(this.allLoans());
+      return;
+    }
+    this.displayedLoans.set(
+      this.allLoans().filter(l => l.status === status as LoanStatus)
+    );
+  }
+
+  private applyEquipmentFilters(): void {
+    let list = [...this.allEquipment()];
+    if (this.filterStatus) list = list.filter(e => e.status === this.filterStatus);
+    if (this.filterCategory) list = list.filter(e => e.category === this.filterCategory);
+    if (this.searchQuery.trim()) {
+      const q = this.searchQuery.toLowerCase();
+      list = list.filter(e => e.name?.toLowerCase().includes(q));
+    }
+    this.displayedEquipment.set(list);
+  }
+
+  // ─── CRUD Equipment ──────────────────────────────────────────
+
+  openAddEquipmentModal(): void {
+    this.editingEquipment.set(null);
+    this.eqForm = { name: '', description: '', category: '', condition: '', status: EquipmentStatus.AVAILABLE };
+    this.showEquipmentModal.set(true);
+  }
+
+  openEditModal(eq: EquipmentDTO): void {
+    this.editingEquipment.set(eq);
+    this.eqForm = {
+      name: eq.name,
+      description: eq.description || '',
+      category: eq.category,
+      condition: eq.condition || '',
+      status: eq.status || EquipmentStatus.AVAILABLE
+    };
+    this.showEquipmentModal.set(true);
+  }
+
+  closeEquipmentModal(): void {
+    this.showEquipmentModal.set(false);
+    this.editingEquipment.set(null);
+  }
+
+  saveEquipment(): void {
+    if (!this.eqForm.name.trim() || !this.eqForm.category.trim()) {
+      this.notify('Nom et catégorie sont requis', 'error');
+      return;
+    }
+    this.isSaving.set(true);
+    const payload: EquipmentDTO = {
+      name: this.eqForm.name,
+      description: this.eqForm.description,
+      category: this.eqForm.category,
+      condition: this.eqForm.condition,
+      status: this.eqForm.status as EquipmentStatus,
+      donorId: this.userNeonDbId() ?? 1,
     };
 
+    const editing = this.editingEquipment();
+    const obs = editing?.id
+      ? this.equipmentService.updateEquipment(editing.id, payload)
+      : this.equipmentService.createEquipment(payload);
+
+    obs.pipe(
+      tap(() => {
+        this.notify(editing ? 'Équipement mis à jour avec succès' : 'Équipement créé avec succès', 'success');
+        this.closeEquipmentModal();
+        this.loadAllEquipment();
+      }),
+      catchError(err => {
+        console.error('[EquipmentMgmt] saveEquipment failed', err);
+        this.notify('Erreur lors de la sauvegarde', 'error');
+        return of(null);
+      }),
+      finalize(() => this.isSaving.set(false)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
+  }
+
+  confirmDelete(eq: EquipmentDTO): void {
+    if (!confirm(`Supprimer "${eq.name}" ? Cette action est irréversible.`)) return;
+    if (!eq.id) return;
+    this.equipmentService.deleteEquipment(eq.id)
+      .pipe(
+        tap(() => {
+          this.notify('Équipement supprimé avec succès', 'success');
+          this.loadAllEquipment();
+        }),
+        catchError(err => {
+          console.error('[EquipmentMgmt] deleteEquipment failed', err);
+          const status = err?.status;
+          let msg = 'Erreur lors de la suppression';
+          if (status === 500 || status === 409) {
+            msg = '⚠️ Impossible de supprimer: cet équipement est lié à des prêts existants. Annulez d\'abord ses prêts.';
+          } else if (err?.error?.message) {
+            msg = err.error.message;
+          }
+          this.notify(msg, 'error');
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  // ─── Donation ────────────────────────────────────────────────
+
+  openDonateModal(): void {
+    this.donateForm = { name: '', description: '', category: '', condition: '', status: EquipmentStatus.DONATED };
+    this.showDonateModal.set(true);
+  }
+
+  closeDonateModal(): void {
+    this.showDonateModal.set(false);
+  }
+
+  registerDonation(): void {
+    if (!this.donateForm.name.trim() || !this.donateForm.category.trim()) {
+      this.notify('Nom et catégorie sont requis', 'error');
+      return;
+    }
+    this.isSaving.set(true);
+    const payload: EquipmentDTO = {
+      name: this.donateForm.name,
+      description: this.donateForm.description,
+      category: this.donateForm.category,
+      condition: this.donateForm.condition,
+      status: EquipmentStatus.DONATED,
+      donorId: this.userNeonDbId() ?? 1,
+    };
+    this.equipmentService.registerDonation(payload)
+      .pipe(
+        tap(() => {
+          this.notify('Don enregistré avec succès!', 'success');
+          this.closeDonateModal();
+          this.loadAllEquipment();
+        }),
+        catchError(err => {
+          console.error('[EquipmentMgmt] registerDonation failed', err);
+          this.notify('Erreur lors de l\'enregistrement du don', 'error');
+          return of(null);
+        }),
+        finalize(() => this.isSaving.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  // ─── Status Update ───────────────────────────────────────────
+
+  openStatusModal(eq: EquipmentDTO): void {
+    this.selectedEquipment.set(eq);
+    this.newStatus = eq.status || EquipmentStatus.AVAILABLE;
+    this.showStatusModal.set(true);
+  }
+
+  closeStatusModal(): void {
+    this.showStatusModal.set(false);
+    this.selectedEquipment.set(null);
+  }
+
+  confirmStatusUpdate(): void {
+    const eq = this.selectedEquipment();
+    if (!eq?.id) return;
+    this.isSaving.set(true);
+    this.equipmentService.updateEquipmentStatus(eq.id, this.newStatus)
+      .pipe(
+        tap(() => {
+          this.notify(`Statut mis à jour: ${this.newStatus}`, 'success');
+          this.closeStatusModal();
+          this.loadAllEquipment();
+        }),
+        catchError(err => {
+          console.error('[EquipmentMgmt] updateEquipmentStatus failed', err);
+          this.notify('Erreur lors de la mise à jour du statut', 'error');
+          return of(null);
+        }),
+        finalize(() => this.isSaving.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  // ─── Details ─────────────────────────────────────────────────
+
+  viewEquipmentDetails(eq: EquipmentDTO): void {
+    if (!eq.id) {
+      this.detailsEquipment.set(eq);
+      this.showDetailsModal.set(true);
+      return;
+    }
+    // Fetch fresh details from server
+    this.equipmentService.getEquipmentById(eq.id)
+      .pipe(
+        tap(details => {
+          this.detailsEquipment.set(details);
+          this.showDetailsModal.set(true);
+        }),
+        catchError(err => {
+          // Silently fallback to cached version - no error toast needed
+          console.warn('[EquipmentMgmt] getEquipmentById failed, using cached data', err);
+          this.detailsEquipment.set(eq);
+          this.showDetailsModal.set(true);
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  closeDetailsModal(): void {
+    this.showDetailsModal.set(false);
+    this.detailsEquipment.set(null);
+  }
+
+  // ─── Borrow ──────────────────────────────────────────────────
+
+  openBorrowModal(eq: EquipmentDTO): void {
+    this.selectedEquipment.set(eq);
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30);
+    // Format for datetime-local input: YYYY-MM-DDTHH:mm
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const y = dueDate.getFullYear();
+    const mo = pad(dueDate.getMonth() + 1);
+    const d = pad(dueDate.getDate());
+    const h = pad(dueDate.getHours());
+    const mi = pad(dueDate.getMinutes());
+    this.borrowForm = { dueDate: `${y}-${mo}-${d}T${h}:${mi}`, purpose: '', notes: '' };
+    this.showBorrowModal.set(true);
+  }
+
+  closeBorrowModal(): void {
+    this.showBorrowModal.set(false);
+    this.selectedEquipment.set(null);
+  }
+
+  // No retry needed – we use manualBorrowerId if user service is down
+  private retryUserInfoThenBorrow(): void {
+    // This method is kept for future use only
+  }
+
+  confirmBorrow(): void {
+    const eq = this.selectedEquipment();
+
+    if (!eq?.id) {
+      this.notify('Équipement invalide', 'error');
+      return;
+    }
+
+    // Use userNeonDbId from service, OR the manually entered ID as fallback
+    const borrowerId = this.userNeonDbId() ?? this.borrowForm.manualBorrowerId;
+
+    if (!borrowerId) {
+      this.notify(
+        '⚠️ Votre ID utilisateur est requis. Le service utilisateur est indisponible – entrez votre ID manuellement dans le champ ci-dessous.',
+        'error'
+      );
+      return;
+    }
+    if (!this.borrowForm.dueDate) {
+      this.notify('La date de retour est requise', 'error');
+      return;
+    }
+    this.isSaving.set(true);
+    const loan: EquipmentLoanDTO = {
+      equipmentId: eq.id,
+      borrowerId,
+      dueDate: new Date(this.borrowForm.dueDate).toISOString(),
+      purpose: this.borrowForm.purpose || undefined,
+      notes: this.borrowForm.notes || undefined,
+      status: LoanStatus.ACTIVE,
+    };
     this.equipmentService.borrowEquipment(loan)
       .pipe(
         tap(() => {
-          this.loadData();
-          this.showAvailable.set(false);
+          this.notify(`"${eq.name}" emprunté avec succès!`, 'success');
+          this.closeBorrowModal();
+          this.loadAllEquipment();
+          this.loadAllMyLoans();
+          this.loadMyActiveLoans();
         }),
         catchError(err => {
-          console.error('[EquipmentManagement] Failed to borrow equipment', err);
-          alert('Failed to borrow equipment. Please try again.');
+          console.error('[EquipmentMgmt] borrowEquipment failed', err);
+          const status = err?.status;
+          if (status === 400) {
+            this.notify('❌ Emprunt refusé: l\'ID utilisateur ou la date est invalide.', 'error');
+          } else if (status === 500) {
+            this.notify('❌ Erreur serveur lors de l\'emprunt. Vérifiez que le medical-service est opérationnel.', 'error');
+          } else {
+            this.notify('Erreur lors de l\'emprunt', 'error');
+          }
           return of(null);
         }),
+        finalize(() => this.isSaving.set(false)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
   }
+
+  // ─── Return ──────────────────────────────────────────────────
 
   returnEquipment(loanId: number): void {
-    if (!confirm('Are you sure you want to return this equipment?')) return;
-
+    if (!confirm('Confirmer le retour de cet équipement?')) return;
     this.equipmentService.returnEquipment(loanId)
       .pipe(
-        tap(() => this.loadData()),
+        tap(() => {
+          this.notify('Équipement retourné avec succès!', 'success');
+          this.loadAllEquipment();
+          this.loadAllMyLoans();
+          this.loadMyActiveLoans();
+          this.loadOverdueLoans();
+        }),
         catchError(err => {
-          console.error('[EquipmentManagement] Failed to return equipment', err);
-          alert('Failed to return equipment. Please try again.');
+          console.error('[EquipmentMgmt] returnEquipment failed', err);
+          this.notify('Erreur lors du retour', 'error');
           return of(null);
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -372,65 +668,182 @@ export class EquipmentManagementComponent implements OnInit {
       .subscribe();
   }
 
-  viewEquipment(equipment: EquipmentDTO): void {
-    // TODO: Implement view equipment details
-    console.log('View equipment:', equipment);
+  // ─── Extend Loan ─────────────────────────────────────────────
+
+  openExtendModal(loan: EquipmentLoanDTO): void {
+    this.selectedLoan.set(loan);
+    this.extendDays = 7;
+    this.showExtendModal.set(true);
   }
 
-  get availableEquipment(): () => EquipmentDTO[] {
-    return () => {
-      return this.allEquipment().filter(eq => eq.status === EquipmentStatus.AVAILABLE);
-    };
+  closeExtendModal(): void {
+    this.showExtendModal.set(false);
+    this.selectedLoan.set(null);
   }
 
-  get availableCount(): () => number {
-    return () => this.availableEquipment().length;
+  confirmExtend(): void {
+    const loan = this.selectedLoan();
+    if (!loan?.id || !this.extendDays || this.extendDays < 1) {
+      this.notify('Nombre de jours invalide', 'error');
+      return;
+    }
+    this.isSaving.set(true);
+    this.equipmentService.extendLoan(loan.id, this.extendDays)
+      .pipe(
+        tap(() => {
+          this.notify(`Prêt prolongé de ${this.extendDays} jour(s)`, 'success');
+          this.closeExtendModal();
+          this.loadAllMyLoans();
+          this.loadMyActiveLoans();
+        }),
+        catchError(err => {
+          console.error('[EquipmentMgmt] extendLoan failed', err);
+          this.notify('Erreur lors de la prolongation', 'error');
+          return of(null);
+        }),
+        finalize(() => this.isSaving.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
   }
 
-  get overdueCount(): () => number {
-    return () => {
-      return this.myLoans().filter(loan => {
-        if (!loan.dueDate) return false;
-        return new Date(loan.dueDate) < new Date() && loan.status === LoanStatus.ACTIVE;
-      }).length;
-    };
+  // ─── Cancel Loan ─────────────────────────────────────────────
+
+  cancelLoan(loanId: number): void {
+    if (!confirm('Annuler ce prêt ?')) return;
+    this.equipmentService.cancelLoan(loanId)
+      .pipe(
+        tap(() => {
+          this.notify('Prêt annulé', 'success');
+          this.loadAllEquipment();
+          this.loadAllMyLoans();
+          this.loadMyActiveLoans();
+        }),
+        catchError(err => {
+          console.error('[EquipmentMgmt] cancelLoan failed', err);
+          this.notify('Erreur lors de l\'annulation', 'error');
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
   }
 
-  isOverdue(loan: EquipmentLoanDTO): boolean {
+  // ─── Delete Loan ─────────────────────────────────────────────
+
+  deleteLoan(loanId: number): void {
+    if (!confirm('Supprimer ce prêt définitivement?')) return;
+    this.equipmentService.deleteLoan(loanId)
+      .pipe(
+        tap(() => {
+          this.notify('Prêt supprimé', 'success');
+          this.loadAllMyLoans();
+        }),
+        catchError(err => {
+          console.error('[EquipmentMgmt] deleteLoan failed', err);
+          this.notify('Erreur lors de la suppression', 'error');
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  // ─── Tabs ────────────────────────────────────────────────────
+
+  setActiveTab(tab: TabType): void {
+    this.activeTab.set(tab);
+    if (tab === 'loans' && this.displayedLoans().length === 0) {
+      this.loadAllMyLoans();
+    }
+  }
+
+  // ─── Helpers / UI ────────────────────────────────────────────
+
+  countByStatus(status: string): number {
+    return this.allEquipment().filter(e => e.status === status).length;
+  }
+
+  isLoanOverdue(loan: EquipmentLoanDTO): boolean {
     if (!loan.dueDate) return false;
     return new Date(loan.dueDate) < new Date() && loan.status === LoanStatus.ACTIVE;
   }
 
-  getEquipmentCategory(equipmentId: number): string {
-    const equipment = this.allEquipment().find(eq => eq.id === equipmentId);
-    return equipment?.category || '-';
-  }
-
-  getLoanStatusBadgeType(status?: LoanStatus): 'default' | 'secondary' | 'destructive' | 'outline' {
+  getStatusBgClass(status?: EquipmentStatus | string): string {
     switch (status) {
-      case LoanStatus.ACTIVE:
-        return 'default';
-      case LoanStatus.RETURNED:
-        return 'secondary';
-      case LoanStatus.OVERDUE:
-        return 'destructive';
-      case LoanStatus.CANCELLED:
-        return 'outline';
-      default:
-        return 'secondary';
+      case EquipmentStatus.AVAILABLE: return 'bg-emerald-500';
+      case EquipmentStatus.LOANED: return 'bg-blue-500';
+      case EquipmentStatus.MAINTENANCE: return 'bg-red-500';
+      case EquipmentStatus.DONATED: return 'bg-purple-500';
+      case EquipmentStatus.REQUESTED: return 'bg-amber-500';
+      default: return 'bg-slate-500';
     }
   }
 
-  getEquipmentStatusBadgeType(status?: EquipmentStatus): 'default' | 'secondary' | 'destructive' | 'outline' {
+  getStatusLabel(status?: EquipmentStatus | string): string {
     switch (status) {
-      case EquipmentStatus.AVAILABLE:
-        return 'default';
-      case EquipmentStatus.LOANED:
-        return 'secondary';
-      case EquipmentStatus.MAINTENANCE:
-        return 'destructive';
-      default:
-        return 'outline';
+      case EquipmentStatus.AVAILABLE: return '✅ Disponible';
+      case EquipmentStatus.LOANED: return '📤 Emprunté';
+      case EquipmentStatus.MAINTENANCE: return '🔧 Maintenance';
+      case EquipmentStatus.DONATED: return '🎁 Donné';
+      case EquipmentStatus.REQUESTED: return '⏳ Demandé';
+      default: return '❓ Inconnu';
     }
+  }
+
+  getStatusEmoji(status?: string): string {
+    switch (status) {
+      case 'AVAILABLE': return '✅';
+      case 'LOANED': return '📤';
+      case 'MAINTENANCE': return '🔧';
+      case 'DONATED': return '🎁';
+      case 'REQUESTED': return '⏳';
+      default: return '❓';
+    }
+  }
+
+  getCategoryEmoji(category?: string): string {
+    if (!category) return '📦';
+    const cat = category.toLowerCase();
+    if (cat.includes('mobilit') || cat.includes('fauteuil') || cat.includes('walker')) return '♿';
+    if (cat.includes('oxygène') || cat.includes('oxygen') || cat.includes('respirat')) return '🫁';
+    if (cat.includes('cardiac') || cat.includes('cardiaq') || cat.includes('coeur')) return '❤️';
+    if (cat.includes('orthopéd') || cat.includes('orthop')) return '🦴';
+    if (cat.includes('moniteur') || cat.includes('monitor')) return '📺';
+    if (cat.includes('lit') || cat.includes('bed')) return '🛏️';
+    return '🏥';
+  }
+
+  getLoanStatusClass(status?: LoanStatus | string): string {
+    switch (status) {
+      case LoanStatus.ACTIVE: return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300';
+      case LoanStatus.RETURNED: return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300';
+      case LoanStatus.OVERDUE: return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+      case LoanStatus.CANCELLED: return 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
+      default: return 'bg-slate-100 text-slate-600';
+    }
+  }
+
+  getLoanCardClass(status?: LoanStatus | string): string {
+    switch (status) {
+      case LoanStatus.ACTIVE: return 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800';
+      case LoanStatus.RETURNED: return 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800';
+      case LoanStatus.OVERDUE: return 'bg-red-50 dark:bg-red-900/10 border-red-300 dark:border-red-800';
+      case LoanStatus.CANCELLED: return 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-60';
+      default: return 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700';
+    }
+  }
+
+  // ─── Notifications ───────────────────────────────────────────
+
+  notify(message: string, type: 'success' | 'error' | 'info'): void {
+    if (this.notifTimeout) clearTimeout(this.notifTimeout);
+    this.notification.set({ message, type });
+    this.notifTimeout = setTimeout(() => this.notification.set(null), 4500);
+  }
+
+  clearNotification(): void {
+    if (this.notifTimeout) clearTimeout(this.notifTimeout);
+    this.notification.set(null);
   }
 }

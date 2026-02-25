@@ -64,6 +64,22 @@ export class EquipmentService {
     return this.http.get<EquipmentDTO[]>(`${this.baseUrl}/search?name=${encodeURIComponent(name)}`);
   }
 
+  getEquipmentByCategoryAndStatus(category: string, status: EquipmentStatus): Observable<EquipmentDTO[]> {
+    return this.http.get<EquipmentDTO[]>(`${this.baseUrl}/category/${encodeURIComponent(category)}/status/${status}`);
+  }
+
+  getEquipmentDonatedAfter(date: string): Observable<EquipmentDTO[]> {
+    return this.http.get<EquipmentDTO[]>(`${this.baseUrl}/donated-after?date=${encodeURIComponent(date)}`);
+  }
+
+  countEquipmentByStatus(status: EquipmentStatus): Observable<number> {
+    return this.http.get<number>(`${this.baseUrl}/status/${status}/count`);
+  }
+
+  getEquipmentWithOverdueLoans(): Observable<EquipmentDTO[]> {
+    return this.http.get<EquipmentDTO[]>(`${this.baseUrl}/overdue`);
+  }
+
   isEquipmentAvailable(id: number): Observable<boolean> {
     return this.http.get<boolean>(`${this.baseUrl}/${id}/available`);
   }
@@ -122,6 +138,12 @@ export class EquipmentService {
     return this.http.get<EquipmentLoanDTO[]>(`${this.loansUrl}/overdue`);
   }
 
+  getLoansDueBetween(startDate: string, endDate: string): Observable<EquipmentLoanDTO[]> {
+    return this.http.get<EquipmentLoanDTO[]>(
+      `${this.loansUrl}/due-between?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
+    );
+  }
+
   getCurrentLoanForEquipment(equipmentId: number): Observable<EquipmentLoanDTO> {
     return this.http.get<EquipmentLoanDTO>(`${this.loansUrl}/equipment/${equipmentId}/current`);
   }
@@ -144,6 +166,14 @@ export class EquipmentService {
 
   cancelLoan(loanId: number): Observable<EquipmentLoanDTO> {
     return this.http.post<EquipmentLoanDTO>(`${this.loansUrl}/${loanId}/cancel`, {});
+  }
+
+  getLoansByBorrowerAndStatus(borrowerId: number, status: LoanStatus): Observable<EquipmentLoanDTO[]> {
+    return this.http.get<EquipmentLoanDTO[]>(`${this.loansUrl}/borrower/${borrowerId}/status/${status}`);
+  }
+
+  checkAndUpdateOverdueLoans(): Observable<string> {
+    return this.http.post<string>(`${this.loansUrl}/check-overdue`, {});
   }
 
   getLoansDueSoon(days: number = 3): Observable<EquipmentLoanDTO[]> {
