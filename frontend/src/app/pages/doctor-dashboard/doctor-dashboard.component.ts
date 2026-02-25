@@ -40,6 +40,67 @@ import { KeycloakService } from 'keycloak-angular';
     ProfileComponent,
   ],
   template: `
+    @if (kycChecking()) {
+      <div class="flex items-center justify-center min-h-screen">
+        <div class="text-center space-y-4">
+          <z-icon zType="loader-2" class="w-8 h-8 animate-spin mx-auto text-primary" />
+          <p class="text-muted-foreground">Checking verification status...</p>
+        </div>
+      </div>
+    } @else if (isKycBlocked) {
+      <div class="flex items-center justify-center min-h-screen bg-background">
+        <z-card class="w-full max-w-md">
+          <div class="p-8 text-center space-y-6">
+            <div class="mx-auto w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
+              <z-icon zType="shield" class="w-8 h-8 text-amber-600" />
+            </div>
+            <div class="space-y-2">
+              <h2 class="text-2xl font-bold">Identity Verification Required</h2>
+              <p class="text-muted-foreground">
+                As a doctor, you need to verify your identity before accessing the platform.
+                This helps us ensure the safety of our patients.
+              </p>
+            </div>
+
+            @if (kycStatus() === 'pending') {
+              <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+                Your verification is being processed. Click "Check Status" to refresh.
+              </div>
+            } @else if (kycStatus() === 'declined') {
+              <div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                Your verification was declined. Please try again with valid documents.
+              </div>
+            } @else if (kycStatus() === 'expired') {
+              <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+                Your verification session has expired. Please start a new one.
+              </div>
+            }
+
+            <div class="space-y-3">
+              @if (kycStatus() === 'none' || kycStatus() === 'declined' || kycStatus() === 'expired') {
+                <button z-button class="w-full" zSize="lg" (click)="startKycVerification()">
+                  <z-icon zType="shield" class="mr-2" />
+                  Start Verification
+                </button>
+              }
+              @if (kycStatus() === 'pending') {
+                <button z-button class="w-full" zSize="lg" (click)="refreshKycStatus()">
+                  <z-icon zType="rotate-ccw" class="mr-2" />
+                  Check Status
+                </button>
+              }
+              <button z-button zType="outline" class="w-full" [disabled]="kycSkipping()" (click)="skipKyc()">
+                @if (kycSkipping()) {
+                  Skipping...
+                } @else {
+                  Skip KYC (Dev Build)
+                }
+              </button>
+            </div>
+          </div>
+        </z-card>
+      </div>
+    } @else {
     <app-dashboard-layout
       [menuGroups]="menuGroups"
       [pageTitle]="currentPage()"
@@ -256,6 +317,7 @@ import { KeycloakService } from 'keycloak-angular';
         }
       }
     </app-dashboard-layout>
+    }
   `,
 })
 export class DoctorDashboardComponent implements OnInit {
@@ -269,6 +331,11 @@ export class DoctorDashboardComponent implements OnInit {
   error = signal<string | null>(null);
   totalPatientGames = 0;
   avgPatientScore = 0;
+
+  // KYC state
+  kycStatus = signal<string>('none');
+  kycChecking = signal(true);
+  kycSkipping = signal(false);
 
   menuGroups: SidebarMenuGroup[] = [
     {
@@ -313,9 +380,25 @@ export class DoctorDashboardComponent implements OnInit {
       const doctorKeycloakId = this.authService.getKeycloakId();
       if (doctorKeycloakId) {
         this.userApiService.getUserByKeycloakId(doctorKeycloakId).subscribe({
-          next: doctor => this.currentDoctor.set(doctor),
-          error: err => console.error('Failed to load doctor info', err)
+          next: doctor => {
+            this.currentDoctor.set(doctor);
+            // Check KYC status from the user record
+            const status = doctor.kycStatus ?? 'none';
+            this.kycStatus.set(status);
+            this.kycChecking.set(false);
+
+            // If pending, try refreshing from Didit
+            if (status === 'pending') {
+              this.refreshKycStatus();
+            }
+          },
+          error: err => {
+            console.error('Failed to load doctor info', err);
+            this.kycChecking.set(false);
+          }
         });
+      } else {
+        this.kycChecking.set(false);
       }
 
       this.loadPatients();
@@ -357,6 +440,57 @@ export class DoctorDashboardComponent implements OnInit {
 
   retryLoadPatients(): void {
     this.loadPatients();
+  }
+
+  // ─── KYC Methods ──────────────────────────────────────────────
+
+  get isKycBlocked(): boolean {
+    const status = this.kycStatus();
+    return status !== 'approved' && status !== 'skipped';
+  }
+
+  refreshKycStatus(): void {
+    const keycloakId = this.authService.getKeycloakId();
+    if (!keycloakId) return;
+
+    this.userApiService.getKycStatus(keycloakId).subscribe({
+      next: result => {
+        this.kycStatus.set(result.kyc_status);
+      },
+      error: err => console.error('Failed to check KYC status', err),
+    });
+  }
+
+  startKycVerification(): void {
+    const keycloakId = this.authService.getKeycloakId();
+    if (!keycloakId) return;
+
+    this.userApiService.startKyc(keycloakId).subscribe({
+      next: result => {
+        if (result.url) {
+          window.open(result.url, '_blank');
+          this.kycStatus.set('pending');
+        }
+      },
+      error: err => console.error('Failed to start KYC', err),
+    });
+  }
+
+  skipKyc(): void {
+    const keycloakId = this.authService.getKeycloakId();
+    if (!keycloakId) return;
+
+    this.kycSkipping.set(true);
+    this.userApiService.skipKyc(keycloakId).subscribe({
+      next: () => {
+        this.kycStatus.set('skipped');
+        this.kycSkipping.set(false);
+      },
+      error: err => {
+        console.error('Failed to skip KYC', err);
+        this.kycSkipping.set(false);
+      },
+    });
   }
 
   private loadPatients(): void {

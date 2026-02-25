@@ -25,6 +25,13 @@ export const routes: Routes = [
       import('@/pages/signup/signup.component').then((m) => m.SignupComponent),
   },
   {
+    path: 'kyc-callback',
+    loadComponent: () =>
+      import('@/pages/kyc-callback/kyc-callback.component').then(
+        (m) => m.KycCallbackComponent
+      ),
+  },
+  {
     path: 'admin',
     loadComponent: () =>
       import('@/pages/admin-dashboard/admin-dashboard.component').then(

@@ -34,6 +34,12 @@ public class User {
   @Column(nullable = false, columnDefinition = "boolean default true")
   private boolean enabled = true;
 
+  @Column(name = "kyc_status", nullable = false, columnDefinition = "varchar(255) default 'none'")
+  private String kycStatus = "none";
+
+  @Column(name = "kyc_session_id")
+  private String kycSessionId;
+
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
@@ -126,6 +132,22 @@ public class User {
 
   public void setGender(String gender) {
     this.gender = gender;
+  }
+
+  public String getKycStatus() {
+    return kycStatus;
+  }
+
+  public void setKycStatus(String kycStatus) {
+    this.kycStatus = kycStatus;
+  }
+
+  public String getKycSessionId() {
+    return kycSessionId;
+  }
+
+  public void setKycSessionId(String kycSessionId) {
+    this.kycSessionId = kycSessionId;
   }
 
   public LocalDateTime getCreatedAt() {

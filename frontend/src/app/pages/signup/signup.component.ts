@@ -8,6 +8,7 @@ import { environment } from '@/environments/environment';
 import { ZardButtonComponent } from '@/shared/components/button/button.component';
 import { ZardCardComponent } from '@/shared/components/card/card.component';
 import { ZardInputDirective } from '@/shared/components/input/input.directive';
+import { UserApiService } from '@/core/services/user-api.service';
 
 @Component({
   selector: 'app-signup',
@@ -34,13 +35,16 @@ export class SignupComponent {
   errorMessage = '';
   successMessage = '';
   isLoading = false;
+  kycUrl = '';
+  showKycPrompt = false;
   private readonly platformId = inject(PLATFORM_ID);
 
   private readonly API_URL = `${environment.apiBaseUrl}/api/users`;
 
   constructor(
     private readonly http: HttpClient,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly userApiService: UserApiService,
   ) { }
 
   async onSubmit(): Promise<void> {
@@ -82,6 +86,33 @@ export class SignupComponent {
       }));
 
       console.log('[SIGNUP] Registration successful:', response);
+
+      // If doctor, start KYC flow
+      if (this.selectedRole === 'doctor') {
+        this.successMessage = 'Account created! Starting identity verification...';
+        try {
+          // We need the keycloakId — fetch user by email
+          const user = await firstValueFrom(
+            this.http.get<any>(`${this.API_URL}/role/doctor`)
+          );
+          const doctorUser = (user as any[]).find((u: any) => u.email === this.email);
+
+          if (doctorUser?.keycloakId) {
+            const kycResult = await firstValueFrom(
+              this.userApiService.startKyc(doctorUser.keycloakId)
+            );
+            if (kycResult.url) {
+              this.kycUrl = kycResult.url;
+              this.showKycPrompt = true;
+              this.successMessage = 'Account created! Please complete identity verification to access your dashboard.';
+              return; // Don't redirect — show KYC prompt
+            }
+          }
+        } catch (kycError) {
+          console.warn('[SIGNUP] KYC initiation failed, proceeding to login:', kycError);
+        }
+      }
+
       this.successMessage = 'Account created successfully! Redirecting to login...';
 
       setTimeout(() => {
@@ -103,5 +134,15 @@ export class SignupComponent {
     } finally {
       this.isLoading = false;
     }
+  }
+
+  openKycVerification(): void {
+    if (this.kycUrl) {
+      window.open(this.kycUrl, '_blank');
+    }
+  }
+
+  skipKycAndLogin(): void {
+    this.router.navigate(['/login']);
   }
 }

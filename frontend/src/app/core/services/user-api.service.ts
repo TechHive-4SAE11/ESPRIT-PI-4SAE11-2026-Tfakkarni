@@ -13,6 +13,20 @@ export interface UserInfo {
   gender?: string;
   enabled: boolean;
   createdAt: string;
+  kycStatus?: string;
+  kycSessionId?: string;
+}
+
+export interface KycSessionResponse {
+  session_id: string;
+  url: string;
+  status: string;
+}
+
+export interface KycStatusResponse {
+  kyc_status: string;
+  session_id: string;
+  didit_status: string;
 }
 
 @Injectable({
@@ -65,5 +79,19 @@ export class UserApiService {
 
   toggleEnabled(keycloakId: string, enabled: boolean): Observable<UserInfo> {
     return this.http.put<UserInfo>(`${this.baseUrl}/toggle-enabled/${keycloakId}`, { enabled });
+  }
+
+  // ─── KYC Methods ──────────────────────────────────────────
+
+  startKyc(keycloakId: string): Observable<KycSessionResponse> {
+    return this.http.post<KycSessionResponse>(`${this.baseUrl}/kyc/start/${keycloakId}`, {});
+  }
+
+  getKycStatus(keycloakId: string): Observable<KycStatusResponse> {
+    return this.http.get<KycStatusResponse>(`${this.baseUrl}/kyc/status/${keycloakId}`);
+  }
+
+  skipKyc(keycloakId: string): Observable<{ message: string; kycStatus: string }> {
+    return this.http.put<{ message: string; kycStatus: string }>(`${this.baseUrl}/kyc/skip/${keycloakId}`, {});
   }
 }

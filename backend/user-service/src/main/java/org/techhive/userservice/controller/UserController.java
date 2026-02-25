@@ -11,6 +11,7 @@ import org.techhive.userservice.dto.ChangePasswordRequest;
 import org.techhive.userservice.dto.RegisterRequest;
 import org.techhive.userservice.dto.UpdateProfileRequest;
 import org.techhive.userservice.entity.User;
+import org.techhive.userservice.service.DiditKycService;
 import org.techhive.userservice.service.KeycloakUserService;
 import org.techhive.userservice.service.UserService;
 
@@ -25,6 +26,7 @@ public class UserController {
 
   private final KeycloakUserService keycloakUserService;
   private final UserService userService;
+  private final DiditKycService diditKycService;
 
   @PostMapping("/register")
   public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
@@ -213,6 +215,54 @@ public class UserController {
       log.error("Unexpected error toggling user", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body(Map.of("error", "Échec de la modification du statut"));
+    }
+  }
+
+  // ─── KYC Endpoints ────────────────────────────────────────────
+
+  /**
+   * Start a Didit KYC verification session for a doctor.
+   * Returns session_id, verification url, and status.
+   */
+  @PostMapping("/kyc/start/{keycloakId}")
+  public ResponseEntity<?> startKyc(@PathVariable String keycloakId) {
+    try {
+      Map<String, String> result = diditKycService.createSession(keycloakId);
+      return ResponseEntity.ok(result);
+    } catch (RuntimeException e) {
+      log.error("KYC start failed for keycloakId: {}", keycloakId, e);
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body(Map.of("error", e.getMessage()));
+    }
+  }
+
+  /**
+   * Check the KYC verification status for a user.
+   */
+  @GetMapping("/kyc/status/{keycloakId}")
+  public ResponseEntity<?> getKycStatus(@PathVariable String keycloakId) {
+    try {
+      Map<String, String> result = diditKycService.getSessionStatus(keycloakId);
+      return ResponseEntity.ok(result);
+    } catch (RuntimeException e) {
+      log.error("KYC status check failed for keycloakId: {}", keycloakId, e);
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body(Map.of("error", e.getMessage()));
+    }
+  }
+
+  /**
+   * Skip KYC verification (dev/testing only).
+   */
+  @PutMapping("/kyc/skip/{keycloakId}")
+  public ResponseEntity<?> skipKyc(@PathVariable String keycloakId) {
+    try {
+      User user = diditKycService.skipKyc(keycloakId);
+      return ResponseEntity.ok(Map.of("message", "KYC skipped", "kycStatus", user.getKycStatus()));
+    } catch (RuntimeException e) {
+      log.error("KYC skip failed for keycloakId: {}", keycloakId, e);
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body(Map.of("error", e.getMessage()));
     }
   }
 }
