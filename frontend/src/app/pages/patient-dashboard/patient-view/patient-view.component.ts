@@ -25,11 +25,12 @@ import { AuthService } from '@/core/auth';
 import { GuessPlaceComponent } from './guess-place/guess-place.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
 import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-plan-list.component';
+import { PatientDossierViewComponent } from '../patient-dossier-view/patient-dossier-view.component';
 
 @Component({
   selector: 'app-patient-view',
   standalone: true,
-  imports: [CommonModule, GuessPlaceComponent, PrescriptionListComponent, CarePlanListComponent],
+  imports: [CommonModule, GuessPlaceComponent, PrescriptionListComponent, CarePlanListComponent, PatientDossierViewComponent],
   templateUrl: './patient-view.component.html',
 })
 export class PatientViewComponent implements OnInit {

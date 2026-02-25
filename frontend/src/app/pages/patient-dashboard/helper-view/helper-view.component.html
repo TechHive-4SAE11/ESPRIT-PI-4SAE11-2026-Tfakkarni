@@ -108,6 +108,15 @@
             </div>
         </div>
     </z-card>
+    <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Dossier médical')">
+        <div class="flex items-center gap-3">
+            <z-icon zType="folder" class="text-primary h-10 w-10" />
+            <div>
+                <h3 class="font-semibold">Dossier médical</h3>
+                <p class="text-sm text-muted-foreground">View patient medical folder</p>
+            </div>
+        </div>
+    </z-card>
 </div>
 }
 
@@ -331,5 +340,13 @@
 
 @case ('Suivi Quotidien') {
 <app-suivi-quotidien [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
+}
+
+@case ('Dossier médical') {
+<app-patient-dossier-view
+    [keycloakId]="keycloakId"
+    [showBack]="true"
+    (goBack)="setPage('Home')"
+/>
 }
 }

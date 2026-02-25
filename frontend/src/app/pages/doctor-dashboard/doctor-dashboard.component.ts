@@ -20,6 +20,7 @@ import type { MedicalFolder } from '@/core/services/medical-folder.service';
 import { PrescriptionManagementComponent } from './prescription-management/prescription-management.component';
 import { CarePlanManagementComponent } from './care-plan-management/care-plan-management.component';
 import { MedicalFolderListComponent } from '@/pages/medical-folders/medical-folder-list/medical-folder-list.component';
+import { DossierAnalyticsComponent } from '@/pages/medical-folders/dossier-analytics/dossier-analytics.component';
 
 @Component({
   selector: 'app-doctor-dashboard',
@@ -37,6 +38,7 @@ import { MedicalFolderListComponent } from '@/pages/medical-folders/medical-fold
     PrescriptionManagementComponent,
     CarePlanManagementComponent,
     MedicalFolderListComponent,
+    DossierAnalyticsComponent,
   ],
   template: `
     <app-dashboard-layout
@@ -253,34 +255,15 @@ import { MedicalFolderListComponent } from '@/pages/medical-folders/medical-fold
         }
 
         @case ('Medical Folders') {
-          <div class="relative max-w-md mb-4">
-            <input
-              type="text"
-              placeholder="Search by Patient Name or ID"
-              class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-              [value]="searchInput()"
-              (input)="onSearchInput($any($event.target).value)"
-            />
-            @if (searchResults().length > 0) {
-              <div class="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-md shadow-lg z-10 max-h-60 overflow-auto">
-                @for (f of searchResults(); track f.id) {
-                  <button
-                    type="button"
-                    class="w-full text-left px-3 py-2 hover:bg-accent text-sm"
-                    (click)="openFolderFromSearch(f)"
-                  >
-                    Patient {{ f.patientId }} · Folder #{{ f.id }}
-                  </button>
-                }
-              </div>
-            }
-          </div>
           <app-medical-folder-list
             [initialFolderId]="searchSelectedFolderId()"
             [doctorId]="doctorIdString()"
             [doctor]="currentDoctor()"
             (detailClosed)="searchSelectedFolderId.set(null)"
           />
+        }
+        @case ('Dossier Analytics') {
+          <app-dossier-analytics />
         }
       }
       </div>
@@ -325,6 +308,7 @@ export class DoctorDashboardComponent implements OnInit {
         { icon: 'house', label: 'Home', action: () => this.setPage('Home') },
         { icon: 'users', label: 'Patients', action: () => this.setPage('Home') },
         { icon: 'folder', label: 'Medical Folders', action: () => this.setPage('Medical Folders') },
+        { icon: 'activity', label: 'Dossier Analytics', action: () => this.setPage('Dossier Analytics') },
         { icon: 'bar-chart-3', label: 'Patient Progress', action: () => this.setPage('Patient Progress') },
         { icon: 'pill', label: 'Prescriptions', action: () => this.setPage('Prescriptions') },
         { icon: 'activity', label: 'Care Plans', action: () => this.setPage('CarePlans') },
@@ -441,6 +425,7 @@ export class DoctorDashboardComponent implements OnInit {
       'Prescriptions',
       'CarePlans',
       'Medical Folders',
+      'Dossier Analytics',
     ]);
 
     if (validPages.has(savedPage)) {
@@ -460,6 +445,8 @@ export class DoctorDashboardComponent implements OnInit {
     switch (page) {
       case 'Medical Folders':
         return 'medical-folders';
+      case 'Dossier Analytics':
+        return 'dossier-analytics';
       case 'Patient Progress':
         return 'patient-progress';
       case 'Prescriptions':
@@ -476,6 +463,8 @@ export class DoctorDashboardComponent implements OnInit {
     switch (queryPage) {
       case 'medical-folders':
         return 'Medical Folders';
+      case 'dossier-analytics':
+        return 'Dossier Analytics';
       case 'patient-progress':
         return 'Patient Progress';
       case 'prescriptions':

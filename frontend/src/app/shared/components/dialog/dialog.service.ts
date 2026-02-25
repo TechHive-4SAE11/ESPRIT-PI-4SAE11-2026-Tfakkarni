@@ -54,7 +54,7 @@ export class ZardDialogService {
     if (isPlatformBrowser(this.platformId)) {
       const overlayConfig = new OverlayConfig({
         hasBackdrop: true,
-        positionStrategy: this.overlay.position().global(),
+        positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
       });
 
       return this.overlay.create(overlayConfig);

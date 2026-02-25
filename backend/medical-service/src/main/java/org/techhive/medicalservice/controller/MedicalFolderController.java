@@ -8,6 +8,10 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,10 +24,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.techhive.medicalservice.dto.CreateMedicalFolderRequest;
 import org.techhive.medicalservice.dto.MedicalFolderResponse;
+import org.techhive.medicalservice.dto.MedicalFolderStatsResponse;
 import org.techhive.medicalservice.dto.UpdateMedicalFolderRequest;
 import org.techhive.medicalservice.service.MedicalFolderService;
 
@@ -41,15 +47,31 @@ public class MedicalFolderController {
 	private final ObjectMapper objectMapper;
 
 	/**
-	 * Get all medical folders
+	 * Get medical folders with pagination.
+	 * Query params: page (0-based), size (default 10), sort (e.g. createdAt,desc or patientId,asc).
 	 *
-	 * @return list of medical folder responses with status 200
+	 * @param pageable page, size, sort from request
+	 * @return paginated list of medical folder responses with status 200
 	 */
 	@GetMapping
-	public ResponseEntity<List<MedicalFolderResponse>> getAllMedicalFolders() {
-		log.info("GET /api/medical-folders - Fetching all medical folders");
-		List<MedicalFolderResponse> responses = medicalFolderService.getAllMedicalFolders();
-		return ResponseEntity.ok(responses);
+	public ResponseEntity<Page<MedicalFolderResponse>> getMedicalFolders(
+			@PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+			@RequestParam(required = false) String search) {
+		log.info("GET /api/medical-folders - Fetching medical folders page: {} size: {} search: {}", pageable.getPageNumber(), pageable.getPageSize(), search);
+		Page<MedicalFolderResponse> page = medicalFolderService.getMedicalFolders(pageable, search);
+		return ResponseEntity.ok(page);
+	}
+
+	/**
+	 * Get aggregate stats for medical folders (total, this month, this week, patient count).
+	 *
+	 * @return stats with status 200
+	 */
+	@GetMapping("/stats")
+	public ResponseEntity<MedicalFolderStatsResponse> getMedicalFolderStats() {
+		log.info("GET /api/medical-folders/stats - Fetching medical folder stats");
+		MedicalFolderStatsResponse stats = medicalFolderService.getMedicalFolderStats();
+		return ResponseEntity.ok(stats);
 	}
 
 	/**
@@ -62,6 +84,19 @@ public class MedicalFolderController {
 	public ResponseEntity<List<MedicalFolderResponse>> getMedicalFoldersByDoctorId(@PathVariable String doctorId) {
 		log.info("GET /api/medical-folders/doctor/{} - Fetching medical folders for doctor", doctorId);
 		List<MedicalFolderResponse> responses = medicalFolderService.getMedicalFoldersByDoctorId(doctorId);
+		return ResponseEntity.ok(responses);
+	}
+
+	/**
+	 * Get medical folders for a specific patient
+	 *
+	 * @param patientId the patient ID (e.g. Keycloak subject)
+	 * @return list of medical folder responses with status 200
+	 */
+	@GetMapping("/patient/{patientId}")
+	public ResponseEntity<List<MedicalFolderResponse>> getMedicalFoldersByPatientId(@PathVariable String patientId) {
+		log.info("GET /api/medical-folders/patient/{} - Fetching medical folders for patient", patientId);
+		List<MedicalFolderResponse> responses = medicalFolderService.getMedicalFoldersByPatientId(patientId);
 		return ResponseEntity.ok(responses);
 	}
 

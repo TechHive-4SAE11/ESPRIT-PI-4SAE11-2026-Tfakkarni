@@ -135,6 +135,12 @@ export class PatientDashboardComponent implements OnInit {
           { icon: 'play', label: 'Movie Characters', action: () => this.helperView?.setPage('Movie Quiz') },
         ],
       },
+      {
+        label: 'Gestion',
+        items: [
+          { icon: 'folder', label: 'Dossier médical', action: () => this.helperView?.setPage('Dossier médical') },
+        ],
+      },
     ];
   }
 }

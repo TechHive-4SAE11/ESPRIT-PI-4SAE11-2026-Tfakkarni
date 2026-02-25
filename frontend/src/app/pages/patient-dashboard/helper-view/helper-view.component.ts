@@ -38,6 +38,7 @@ import { CarePlanService } from '@/core/services/care-plan.service';
 import { CarePlanResponseDTO } from '@/core/models/care-plan.model';
 import { SuiviQuotidienComponent } from './suivi-quotidien/suivi-quotidien.component';
 import { UserApiService } from '@/core/services/user-api.service';
+import { PatientDossierViewComponent } from '../patient-dossier-view/patient-dossier-view.component';
 
 @Component({
   selector: 'app-helper-view',
@@ -55,6 +56,7 @@ import { UserApiService } from '@/core/services/user-api.service';
     PrescriptionListComponent,
     CarePlanListComponent,
     SuiviQuotidienComponent,
+    PatientDossierViewComponent,
   ],
   templateUrl: './helper-view.component.html',
 })

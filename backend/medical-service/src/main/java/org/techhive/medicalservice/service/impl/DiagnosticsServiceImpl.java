@@ -2,6 +2,7 @@ package org.techhive.medicalservice.service.impl;
 
 import java.util.List;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.techhive.medicalservice.dto.CreateDiagnosticsRequest;
@@ -13,19 +14,28 @@ import org.techhive.medicalservice.mapper.DiagnosticsMapper;
 import org.techhive.medicalservice.repository.DiagnosticsRepository;
 import org.techhive.medicalservice.repository.MedicalFolderRepository;
 import org.techhive.medicalservice.service.DiagnosticsService;
+import org.techhive.medicalservice.service.AIReportService;
 
 import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Transactional
-@RequiredArgsConstructor
 @Slf4j
 public class DiagnosticsServiceImpl implements DiagnosticsService {
 
 	private final DiagnosticsRepository diagnosticsRepository;
 	private final MedicalFolderRepository medicalFolderRepository;
+	private final AIReportService aiReportService;
+
+	public DiagnosticsServiceImpl(
+			DiagnosticsRepository diagnosticsRepository,
+			MedicalFolderRepository medicalFolderRepository,
+			@Lazy AIReportService aiReportService) {
+		this.diagnosticsRepository = diagnosticsRepository;
+		this.medicalFolderRepository = medicalFolderRepository;
+		this.aiReportService = aiReportService;
+	}
 
 	@Override
 	public DiagnosticsResponse createDiagnostics(CreateDiagnosticsRequest request) {
@@ -36,6 +46,7 @@ public class DiagnosticsServiceImpl implements DiagnosticsService {
 		Diagnostics diagnostics = DiagnosticsMapper.toEntity(request, medicalFolder);
 		Diagnostics savedDiagnostics = diagnosticsRepository.save(diagnostics);
 		log.info("Diagnostics created successfully with id: {}", savedDiagnostics.getId());
+		aiReportService.generateReport(request.getMedicalFolderId());
 		return DiagnosticsMapper.toResponse(savedDiagnostics);
 	}
 
@@ -66,6 +77,7 @@ public class DiagnosticsServiceImpl implements DiagnosticsService {
 		Diagnostics updatedDiagnostics = DiagnosticsMapper.toEntity(request, diagnostics);
 		Diagnostics savedDiagnostics = diagnosticsRepository.save(updatedDiagnostics);
 		log.info("Diagnostics updated successfully with id: {}", id);
+		aiReportService.generateReport(diagnostics.getMedicalFolder().getId());
 		return DiagnosticsMapper.toResponse(savedDiagnostics);
 	}
 

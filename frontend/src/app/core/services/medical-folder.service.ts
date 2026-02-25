@@ -11,6 +11,24 @@ export interface MedicalFolder {
   updatedAt: string;
 }
 
+export interface MedicalFolderPage {
+  content: MedicalFolder[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  numberOfElements: number;
+}
+
+export interface MedicalFolderStats {
+  total: number;
+  thisMonth: number;
+  thisWeek: number;
+  patientCount: number;
+}
+
 export interface CreateMedicalFolderRequest {
   patientId: string;
   doctorId?: string;
@@ -31,6 +49,29 @@ export class MedicalFolderService {
   private readonly baseUrl = `${environment.apiBaseUrl}/api/medical-folders`;
 
   constructor(private readonly http: HttpClient) {}
+
+  /**
+   * Get paginated medical folders.
+   * @param params page (0-based), size, sort (e.g. 'createdAt,desc'), optional search (patientId filter)
+   */
+  getPage(params: {
+    page?: number;
+    size?: number;
+    sort?: string;
+    search?: string;
+  } = {}): Observable<MedicalFolderPage> {
+    const { page = 0, size = 10, sort = 'createdAt,desc', search } = params;
+    let queryParams: Record<string, string> = { page: String(page), size: String(size), sort };
+    if (search != null && search.trim() !== '') {
+      queryParams['search'] = search.trim();
+    }
+    return this.http.get<MedicalFolderPage>(this.baseUrl, { params: queryParams });
+  }
+
+  /** Get aggregate stats (total, thisMonth, thisWeek, patientCount). */
+  getStats(): Observable<MedicalFolderStats> {
+    return this.http.get<MedicalFolderStats>(`${this.baseUrl}/stats`);
+  }
 
   getAll(): Observable<MedicalFolder[]> {
     return this.http.get<MedicalFolder[]>(this.baseUrl);

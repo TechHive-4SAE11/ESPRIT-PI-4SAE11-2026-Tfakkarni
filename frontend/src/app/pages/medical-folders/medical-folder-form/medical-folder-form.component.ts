@@ -2,32 +2,26 @@ import { Component, inject, Input, signal, OnInit, computed } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ZardButtonComponent } from '@/shared/components/button';
-import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardInputDirective } from '@/shared/components/input/input.directive';
+import { Z_MODAL_DATA } from '@/shared/components/dialog/dialog.service';
 import type { MedicalFolder, CreateMedicalFolderRequest, UpdateMedicalFolderRequest } from '@/core/services/medical-folder.service';
 import type { UserInfo } from '@/core/services/user-api.service';
 import { UserApiService } from '@/core/services/user-api.service';
 
+export interface MedicalFolderDialogData {
+  callbacks?: {
+    onSubmit?: (data: CreateMedicalFolderRequest | UpdateMedicalFolderRequest) => void;
+    onCancel?: () => void;
+  };
+}
+
 @Component({
   selector: 'app-medical-folder-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ZardButtonComponent, ZardIconComponent, ZardInputDirective],
+  imports: [CommonModule, ReactiveFormsModule, ZardButtonComponent, ZardInputDirective],
   template: `
-    <form (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
-      <!-- Doctor Name (Read-only, auto-filled) -->
-      <div>
-        <label for="doctorName" class="block text-sm font-medium mb-1">Doctor Name</label>
-        <input
-          id="doctorName"
-          type="text"
-          z-input
-          class="w-full"
-          [value]="doctorName()"
-          readonly
-          placeholder="Doctor name"
-        />
-      </div>
-
+    <form (ngSubmit)="onSubmit($event)" class="flex flex-col gap-4">
+      <!-- Doctor is the connected user (from JWT on backend); no field needed -->
       <!-- Patient Selection with Dropdown -->
       <div>
         <label for="patientSearch" class="block text-sm font-medium mb-1">Patient</label>
@@ -66,7 +60,7 @@ import { UserApiService } from '@/core/services/user-api.service';
 
       <div class="flex gap-2 justify-end pt-2">
         <button type="button" z-button zType="outline" (click)="onCancel()">Cancel</button>
-        <button type="submit" z-button [disabled]="form.invalid || isSubmitting()">
+        <button type="button" z-button [disabled]="form.invalid || isSubmitting()" (click)="onSubmit($event)">
           {{ isSubmitting() ? 'Creating...' : (folderId() ? 'Update' : 'Create') }}
         </button>
       </div>
@@ -87,6 +81,7 @@ import { UserApiService } from '@/core/services/user-api.service';
 export class MedicalFolderFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly userApiService = inject(UserApiService);
+  private readonly modalData = inject<MedicalFolderDialogData | null>(Z_MODAL_DATA, { optional: true });
 
   @Input() set folder(value: MedicalFolder | null) {
     if (value) {
@@ -114,11 +109,6 @@ export class MedicalFolderFormComponent implements OnInit {
   
   onSubmitCallback: ((data: CreateMedicalFolderRequest | UpdateMedicalFolderRequest) => void) | null = null;
   onCancelCallback: (() => void) | null = null;
-
-  doctorName = computed(() => {
-    if (!this.doctor) return '';
-    return `${this.doctor.firstName} ${this.doctor.lastName}`;
-  });
 
   filteredPatients = computed(() => {
     const search = this.searchPatientInput().toLowerCase().trim();
@@ -163,40 +153,28 @@ export class MedicalFolderFormComponent implements OnInit {
     setTimeout(() => this.showPatientDropdown.set(false), 200);
   }
 
-  onSubmit(): void {
+  onSubmit(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
     this.form.markAllAsTouched();
-    
-    // Log validation state
-    console.log('Form submitted', {
-      valid: this.form.valid,
-      patientId: this.form.value.patientId,
-      formValue: this.form.value,
-    });
-    
-    if (this.form.invalid) {
-      console.warn('Form is invalid, cannot submit');
-      return;
-    }
-    
+    if (this.form.invalid) return;
+
     this.isSubmitting.set(true);
-    const value = this.form.getRawValue();
-    
-    // Only send patientId - doctorId will be extracted from JWT token on backend
-    const payload = { patientId: value.patientId };
-    
-    if (this.onSubmitCallback) {
+    const payload = { patientId: this.form.getRawValue().patientId } as CreateMedicalFolderRequest;
+    const submitFn = this.modalData?.callbacks?.onSubmit ?? this.onSubmitCallback;
+
+    if (submitFn) {
       try {
-        this.onSubmitCallback(payload as CreateMedicalFolderRequest);
+        submitFn(payload);
       } catch (err) {
-        console.error('Error calling submit callback', err);
         this.isSubmitting.set(false);
       }
     } else {
-      console.warn('No submit callback set');
       this.isSubmitting.set(false);
     }
   }
 
   onCancel(): void {
-    if (this.onCancelCallback) this.onCancelCallback();
-  }}
+    (this.modalData?.callbacks?.onCancel ?? this.onCancelCallback)?.();
+  }
+}
