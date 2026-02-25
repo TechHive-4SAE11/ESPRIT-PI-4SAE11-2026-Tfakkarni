@@ -7,6 +7,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, of, tap } from 'rxjs';
 import { environment } from '@/environments/environment';
 import { AuthService } from '@/core/auth/auth.service';
+import { AudioGameService, type SpeechLanguage } from '@/core/services/audio-game.service';
 
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
@@ -98,7 +99,18 @@ interface RevealedState {
                         alt="Who is this?" class="w-full h-80 object-contain bg-muted" />
                     }
                     <div class="p-6 text-center">
-                      <h2 class="text-2xl font-bold mb-2">Who is this?</h2>
+                      <div class="flex items-center justify-center gap-3 mb-2">
+                        <h2 class="text-2xl font-bold">Who is this?</h2>
+                        <button (click)="replayTtsAudio()" class="p-2 rounded-full hover:bg-muted transition-colors" title="Listen">
+                          @if (audioGameService.audioLoading()) {
+                            <z-icon zType="loader-2" class="h-6 w-6 animate-spin text-primary" />
+                          } @else if (audioGameService.isPlaying()) {
+                            <span class="text-2xl">🔊</span>
+                          } @else {
+                            <span class="text-2xl">🔈</span>
+                          }
+                        </button>
+                      </div>
                       <p class="text-muted-foreground">Type the name of this person</p>
                     </div>
                   </z-card>
@@ -131,7 +143,18 @@ interface RevealedState {
                       </div>
                     }
                     <div class="p-6 text-center">
-                      <h2 class="text-2xl font-bold mb-2">Can you name this place?</h2>
+                      <div class="flex items-center justify-center gap-3 mb-2">
+                        <h2 class="text-2xl font-bold">Can you name this place?</h2>
+                        <button (click)="replayTtsAudio()" class="p-2 rounded-full hover:bg-muted transition-colors" title="Listen">
+                          @if (audioGameService.audioLoading()) {
+                            <z-icon zType="loader-2" class="h-6 w-6 animate-spin text-primary" />
+                          } @else if (audioGameService.isPlaying()) {
+                            <span class="text-2xl">🔊</span>
+                          } @else {
+                            <span class="text-2xl">🔈</span>
+                          }
+                        </button>
+                      </div>
                       @if (item.hint) {
                         <p class="text-muted-foreground italic">"{{ item.hint }}"</p>
                       }
@@ -147,7 +170,18 @@ interface RevealedState {
                         alt="Movie poster" class="w-full h-80 object-contain bg-muted" />
                     }
                     <div class="p-6 text-center">
-                      <h2 class="text-2xl font-bold mb-2">Name a character from this movie</h2>
+                      <div class="flex items-center justify-center gap-3 mb-2">
+                        <h2 class="text-2xl font-bold">Name a character from this movie</h2>
+                        <button (click)="replayTtsAudio()" class="p-2 rounded-full hover:bg-muted transition-colors" title="Listen">
+                          @if (audioGameService.audioLoading()) {
+                            <z-icon zType="loader-2" class="h-6 w-6 animate-spin text-primary" />
+                          } @else if (audioGameService.isPlaying()) {
+                            <span class="text-2xl">🔊</span>
+                          } @else {
+                            <span class="text-2xl">🔈</span>
+                          }
+                        </button>
+                      </div>
                       <p class="text-muted-foreground">{{ item.movieTitle }}</p>
                     </div>
                   </z-card>
@@ -158,7 +192,18 @@ interface RevealedState {
                   <z-card class="p-6 mb-8">
                     <div class="text-center">
                       <span class="text-5xl mb-4 block">🧠</span>
-                      <h2 class="text-2xl font-bold mb-4">{{ item.questionText }}</h2>
+                      <div class="flex items-center justify-center gap-3 mb-4">
+                        <h2 class="text-2xl font-bold">{{ item.questionText }}</h2>
+                        <button (click)="replayTtsAudio()" class="p-2 rounded-full hover:bg-muted transition-colors" title="Listen">
+                          @if (audioGameService.audioLoading()) {
+                            <z-icon zType="loader-2" class="h-6 w-6 animate-spin text-primary" />
+                          } @else if (audioGameService.isPlaying()) {
+                            <span class="text-2xl">🔊</span>
+                          } @else {
+                            <span class="text-2xl">🔈</span>
+                          }
+                        </button>
+                      </div>
                       <p class="text-muted-foreground">Type your answer below</p>
                     </div>
                   </z-card>
@@ -399,6 +444,7 @@ export class PlayMemoryGameComponent implements OnInit, OnDestroy {
   private readonly keycloakService = inject(KeycloakService);
   private readonly authService = inject(AuthService);
   private readonly customGameService = inject(CustomGameService);
+  readonly audioGameService = inject(AudioGameService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly ngZone = inject(NgZone);
   private readonly platformId = inject(PLATFORM_ID);
@@ -449,15 +495,27 @@ export class PlayMemoryGameComponent implements OnInit, OnDestroy {
   private isRandom = false;
   private playerKeycloakId = '';
 
+  // TTS
+  private ttsLanguage: SpeechLanguage = 'en';
+  private patientName = '';
+  private patientGender = 'male';
+
   ngOnInit() {
     this.gameId = this.route.snapshot.paramMap.get('gameId') || '';
     this.isRandom = this.gameId === 'random';
+
+    // Load TTS preferences from localStorage
+    this.ttsLanguage = this.audioGameService.getPreferredLanguage();
+    this.patientGender = this.audioGameService.getCachedGender();
+    this.loadPatientName();
+
     this.loadGame();
   }
 
   ngOnDestroy() {
     this.destroyPanorama();
     this.stopTimer();
+    this.audioGameService.stopAudio();
   }
 
   private loadGame() {
@@ -483,6 +541,8 @@ export class PlayMemoryGameComponent implements OnInit, OnDestroy {
         this.startTimer();
         // Init Street View if first item is PLACE
         this.initStreetViewForCurrentItem();
+        // Auto-play TTS for the first question
+        this.triggerTtsForCurrentItem();
       }),
       catchError(() => {
         this.goBack();
@@ -578,6 +638,8 @@ export class PlayMemoryGameComponent implements OnInit, OnDestroy {
     this.answerInput = '';
     this.revealedState.set(null);
     this.destroyPanorama();
+    this.audioGameService.stopAudio();
+    this.audioGameService.clearCache();
 
     if (this.isLastItem()) {
       this.finishGame();
@@ -586,6 +648,8 @@ export class PlayMemoryGameComponent implements OnInit, OnDestroy {
       this.phase.set('playing');
       // Init Street View if next item is PLACE
       this.initStreetViewForCurrentItem();
+      // Auto-play TTS for the next question
+      this.triggerTtsForCurrentItem();
     }
   }
 
@@ -755,5 +819,58 @@ export class PlayMemoryGameComponent implements OnInit, OnDestroy {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  // ── TTS ──────────────────────────────────────────────────────────────────
+
+  /** Load patient name from Keycloak token for TTS personalization */
+  private async loadPatientName(): Promise<void> {
+    try {
+      const fullName = await this.authService.getUsername();
+      // Use first name only for the TTS greeting
+      this.patientName = fullName.split(' ')[0] || '';
+    } catch {
+      this.patientName = '';
+    }
+  }
+
+  /** Trigger TTS for the current item — auto-play audio */
+  private triggerTtsForCurrentItem(): void {
+    if (!this.isBrowser) return;
+
+    const item = this.currentItem();
+    if (!item) return;
+
+    let originalText = '';
+    switch (item.type) {
+      case 'QUESTION':
+        originalText = item.questionText || '';
+        break;
+      case 'PHOTO':
+      case 'PLACE':
+      case 'MOVIE':
+        // Backend picks from fixed variants — no text needed
+        break;
+    }
+
+    this.audioGameService.fetchAndPlay({
+      originalText,
+      targetLanguageCode: this.ttsLanguage,
+      gameType: item.type,
+      patientName: this.patientName,
+      patientGender: this.patientGender,
+    });
+  }
+
+  /** Replay the cached TTS audio (speaker button) */
+  replayTtsAudio(): void {
+    if (this.audioGameService.audioLoading()) return;
+
+    // If we have cached audio, replay it; otherwise re-fetch
+    if (this.audioGameService.isPlaying()) {
+      this.audioGameService.stopAudio();
+    } else {
+      this.audioGameService.replayAudio();
+    }
   }
 }

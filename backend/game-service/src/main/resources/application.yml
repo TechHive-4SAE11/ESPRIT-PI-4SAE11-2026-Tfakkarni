@@ -31,3 +31,14 @@ eureka:
 
 tmdb:
   api-key: bac4726f178ccc49f4659a52479b4725
+
+# ── TTS Pipeline (Google Translate + ElevenLabs) ──────────────────────────────
+google:
+  translate:
+    api-key: ${GOOGLE_TRANSLATE_API_KEY:YOUR_GOOGLE_TRANSLATE_API_KEY}
+
+elevenlabs:
+  api-key: ${ELEVENLABS_API_KEY:YOUR_ELEVENLABS_API_KEY}
+  voice-id-en: 2qfp6zPuviqeCOZIE9RZ
+  voice-id-tn: GLRyn2pNxpZ4FAjmlY3z
+  model-id: eleven_multilingual_v2

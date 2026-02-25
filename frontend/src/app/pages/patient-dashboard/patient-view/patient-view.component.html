@@ -9,6 +9,17 @@
         <span class="text-xl font-bold text-slate-800 dark:text-white">Tfakkarni</span>
       </div>
       <div class="flex items-center gap-2">
+        <!-- Language flags for TTS -->
+        <button (click)="setLanguage('en')" class="text-2xl px-1.5 py-1 rounded-lg transition-all"
+          [class]="selectedLanguage() === 'en' ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/30 scale-110' : 'opacity-60 hover:opacity-100'"
+          title="English">
+          🇬🇧
+        </button>
+        <button (click)="setLanguage('tn')" class="text-2xl px-1.5 py-1 rounded-lg transition-all"
+          [class]="selectedLanguage() === 'tn' ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-900/30 scale-110' : 'opacity-60 hover:opacity-100'"
+          title="تونسي (Tunisian)">
+          🇹🇳
+        </button>
         <button (click)="switchToHelper.emit()"
           class="text-xs px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
           Switch to Helper
@@ -60,39 +71,12 @@
         </div>
       </button>
 
-      <button (click)="playRandomMix()"
-        class="w-full flex items-center gap-5 p-6 sm:p-7 rounded-2xl bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 active:scale-[0.98] text-white shadow-lg shadow-pink-500/25 transition-all">
-        <span class="text-4xl sm:text-5xl shrink-0">🎲</span>
-        <div class="text-left">
-          <p class="text-xl sm:text-2xl font-bold">Random Mix</p>
-          <p class="text-pink-100 text-sm sm:text-base">Mélange aléatoire de tout</p>
-        </div>
-      </button>
-
       <button (click)="setPage('My Scores')"
         class="w-full flex items-center gap-5 p-6 sm:p-7 rounded-2xl bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white shadow-lg shadow-amber-500/25 transition-all">
         <span class="text-4xl sm:text-5xl shrink-0">🏆</span>
         <div class="text-left">
           <p class="text-xl sm:text-2xl font-bold">Mes Scores</p>
           <p class="text-amber-100 text-sm sm:text-base">Voir vos résultats</p>
-        </div>
-      </button>
-
-      <button (click)="setPage('Guess Place')"
-        class="w-full flex items-center gap-5 p-6 sm:p-7 rounded-2xl bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white shadow-lg shadow-green-500/25 transition-all">
-        <span class="text-4xl sm:text-5xl shrink-0">📍</span>
-        <div class="text-left">
-          <p class="text-xl sm:text-2xl font-bold">Deviner le lieu</p>
-          <p class="text-green-100 text-sm sm:text-base">Reconnaître des endroits familiers</p>
-        </div>
-      </button>
-
-      <button (click)="setPage('Guess Movie')"
-        class="w-full flex items-center gap-5 p-6 sm:p-7 rounded-2xl bg-rose-500 hover:bg-rose-600 active:scale-[0.98] text-white shadow-lg shadow-rose-500/25 transition-all">
-        <span class="text-4xl sm:text-5xl shrink-0">🎬</span>
-        <div class="text-left">
-          <p class="text-xl sm:text-2xl font-bold">Personnages de Films</p>
-          <p class="text-rose-100 text-sm sm:text-base">Nommer un personnage du film</p>
         </div>
       </button>
 
@@ -324,22 +308,24 @@
       <span class="text-3xl shrink-0">▶</span>
     </button>
 
-    @if (playableGames().length > 0) {
+    <!-- ── Custom Memory Games (Game Builder) ── -->
+    @if (customGames().length > 0) {
     <div class="space-y-4">
-      @for (game of playableGames(); track game.id) {
-      <button (click)="playGame(game.id)"
-        class="w-full flex items-center gap-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 active:scale-[0.98] shadow-sm hover:shadow-md transition-all text-left">
-        <span class="text-3xl sm:text-4xl shrink-0">🧩</span>
+      @for (game of customGames(); track game.id) {
+      <button (click)="playCustomGame(game.id)"
+        class="w-full flex items-center gap-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-purple-400 dark:hover:border-purple-500 active:scale-[0.98] shadow-sm hover:shadow-md transition-all text-left">
+        <span class="text-3xl sm:text-4xl shrink-0">🧠</span>
         <div class="flex-1 min-w-0">
           <p class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white truncate">{{ game.title }}</p>
           <p class="text-sm text-slate-500 dark:text-slate-400 truncate">{{ game.description }}</p>
-          <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ game.imageCount }} photos</p>
+          <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ game.itemCount }} éléments</p>
         </div>
-        <span class="text-3xl text-blue-500 shrink-0">▶</span>
+        <span class="text-3xl text-purple-500 shrink-0">▶</span>
       </button>
       }
     </div>
     } @else {
+    <!-- Empty state when no custom games -->
     <div class="text-center py-16">
       <p class="text-5xl mb-4">😊</p>
       <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">Aucun jeu disponible</h2>
@@ -400,39 +386,7 @@
 
     <!-- ─────────────────── GUESS PLACE ─────────────────── -->
     @case ('Guess Place') {
-    <app-guess-place [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
-    }
-
-    <!-- ─────────────────── GUESS MOVIE ─────────────────── -->
-    @case ('Guess Movie') {
-    <button (click)="setPage('Home')"
-      class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
-      <span class="text-2xl">←</span><span>Retour</span>
-    </button>
-    <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-2">🎬 Personnages de Films</h1>
-    <p class="text-lg text-slate-500 dark:text-slate-400 mb-6">Nommer un personnage !</p>
-    @if (movieGames().length > 0) {
-    <div class="space-y-4">
-      @for (game of movieGames(); track game.id) {
-      <button (click)="playMovieGame(game.id)"
-        class="w-full flex items-center gap-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-rose-400 dark:hover:border-rose-500 active:scale-[0.98] shadow-sm hover:shadow-md transition-all text-left">
-        <span class="text-3xl sm:text-4xl shrink-0">🎬</span>
-        <div class="flex-1 min-w-0">
-          <p class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white truncate">{{ game.title }}</p>
-          <p class="text-sm text-slate-500 dark:text-slate-400 truncate">{{ game.description }}</p>
-          <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ game.movieCount }} films</p>
-        </div>
-        <span class="text-3xl text-rose-500 shrink-0">▶</span>
-      </button>
-      }
-    </div>
-    } @else {
-    <div class="text-center py-16">
-      <p class="text-5xl mb-4">🎬</p>
-      <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">Aucun quiz disponible</h2>
-      <p class="text-slate-500 dark:text-slate-400 text-lg">Demandez à votre aidant d'en créer !</p>
-    </div>
-    }
+    <app-guess-place [keycloakId]="keycloakId" (goBack)="setPage('Play Games')" />
     }
 
     <!-- ─────────────────── MY PRESCRIPTIONS ─────────────────── -->

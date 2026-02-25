@@ -7,7 +7,8 @@
       <div class="inline-flex items-center gap-3 brand-chip">
         <span class="brand-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 4a6.5 6.5 0 0 0-6.5 6.5v3.7a3.8 3.8 0 0 0 3.8 3.8h.2v2h5v-2h.2a3.8 3.8 0 0 0 3.8-3.8v-3.7A6.5 6.5 0 0 0 12 4Z" />
+            <path
+              d="M12 4a6.5 6.5 0 0 0-6.5 6.5v3.7a3.8 3.8 0 0 0 3.8 3.8h.2v2h5v-2h.2a3.8 3.8 0 0 0 3.8-3.8v-3.7A6.5 6.5 0 0 0 12 4Z" />
             <path d="M9.7 10.2 12 12l2.3-1.8" />
           </svg>
         </span>
@@ -88,6 +89,26 @@
               </button>
             </div>
           </div>
+
+          @if (selectedRole === 'patient') {
+          <div class="space-y-2">
+            <span class="text-sm font-medium leading-none">
+              Gender
+            </span>
+            <div class="grid grid-cols-2 gap-3">
+              <button z-button type="button" [zType]="selectedGender === 'male' ? 'default' : 'outline'" class="w-full"
+                (click)="selectedGender = 'male'">
+                <span class="mr-2">👨</span>
+                Male
+              </button>
+              <button z-button type="button" [zType]="selectedGender === 'female' ? 'default' : 'outline'"
+                class="w-full" (click)="selectedGender = 'female'">
+                <span class="mr-2">👩</span>
+                Female
+              </button>
+            </div>
+          </div>
+          }
 
           @if (errorMessage) {
           <div class="text-sm text-red-700 bg-red-50 border border-red-200 p-3 rounded-lg">

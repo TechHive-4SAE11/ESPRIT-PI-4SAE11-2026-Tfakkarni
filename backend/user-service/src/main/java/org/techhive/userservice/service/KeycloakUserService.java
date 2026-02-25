@@ -42,7 +42,7 @@ public class KeycloakUserService {
 
     // 4. Save user to local PostgreSQL database
     User user = new User(keycloakId, request.getFirstName(), request.getLastName(),
-        request.getEmail(), request.getRole());
+        request.getEmail(), request.getRole(), request.getGender());
     userRepository.save(user);
 
     log.info("User '{}' registered successfully with role '{}', keycloakId='{}'",

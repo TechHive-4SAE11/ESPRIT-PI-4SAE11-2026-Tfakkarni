@@ -28,6 +28,9 @@ public class User {
   @Column(nullable = false)
   private String role;
 
+  @Column
+  private String gender;
+
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
@@ -40,6 +43,15 @@ public class User {
     this.lastName = lastName;
     this.email = email;
     this.role = role;
+  }
+
+  public User(String keycloakId, String firstName, String lastName, String email, String role, String gender) {
+    this.keycloakId = keycloakId;
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.email = email;
+    this.role = role;
+    this.gender = gender;
   }
 
   @PrePersist
@@ -93,6 +105,14 @@ public class User {
 
   public void setRole(String role) {
     this.role = role;
+  }
+
+  public String getGender() {
+    return gender;
+  }
+
+  public void setGender(String gender) {
+    this.gender = gender;
   }
 
   public LocalDateTime getCreatedAt() {
