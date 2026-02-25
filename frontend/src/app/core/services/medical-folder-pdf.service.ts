@@ -132,48 +132,75 @@ export class MedicalFolderPdfService {
     // —— Patient & folder info (record header) ——
     doc.setDrawColor(LINE_GRAY.r, LINE_GRAY.g, LINE_GRAY.b);
     doc.setLineWidth(0.25);
-    doc.rect(MARGIN, y, CONTENT_W, 28, 'D');
+    doc.rect(MARGIN, y, CONTENT_W, 36, 'D');
     doc.setFillColor(250, 250, 252);
-    doc.rect(MARGIN + 0.5, y + 0.5, CONTENT_W - 1, 27, 'F');
+    doc.rect(MARGIN + 0.5, y + 0.5, CONTENT_W - 1, 35, 'F');
 
-    const row1 = y + 8;
-    const row2 = y + 16;
-    const row3 = y + 24;
     const col1 = MARGIN + 6;
-    const col2 = MARGIN + 55;
-    const col3 = MARGIN + 105;
+    const col2 = MARGIN + 70;
+    const col3 = MARGIN + 135;
+    let rowY = y + 3;
 
+    // Column 1: Patient
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(GRAY.r, GRAY.g, GRAY.b);
-    doc.text('Patient', col1, row1 - 2);
-    doc.text('N° Dossier', col2, row1 - 2);
-    doc.text('Médecin', col3, row1 - 2);
+    doc.text('Patient', col1, rowY);
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.text(`${folder.patientId}${patientName ? ` — ${patientName}` : ''}`, col1, row1 + 4);
+    doc.text(patientName || folder.patientId, col1, rowY + 6);
+    
+    // Column 1: Created date
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(GRAY.r, GRAY.g, GRAY.b);
+    doc.text('Créé le', col1, rowY + 14);
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(9);
+    doc.text(formatDate(folder.createdAt), col1, rowY + 20);
+    
+    // Column 1: Patient ID (bottom, gray)
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(GRAY.r, GRAY.g, GRAY.b);
+    doc.text(folder.patientId, col1, rowY + 28);
+
+    // Column 2: N° Dossier
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(GRAY.r, GRAY.g, GRAY.b);
+    doc.text('N° Dossier', col2, rowY);
+    doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text(`#${folder.id}`, col2, row1 + 4);
-    doc.text(folder.doctorId, col3, row1 + 4);
-
+    doc.text(`#${folder.id}`, col2, rowY + 6);
+    
+    // Column 2: Last update
     doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
     doc.setTextColor(GRAY.r, GRAY.g, GRAY.b);
-    doc.text('Créé le', col1, row2 - 2);
-    doc.text('Dernière mise à jour', col2, row2 - 2);
+    doc.text('Dernière mise à jour', col2, rowY + 14);
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(9);
+    doc.text(formatDate(folder.updatedAt), col2, rowY + 20);
+
+    // Column 3: Médecin
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(GRAY.r, GRAY.g, GRAY.b);
+    doc.text('Médecin', col3, rowY);
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text(formatDate(folder.createdAt), col1, row2 + 4);
-    doc.text(formatDate(folder.updatedAt), col2, row2 + 4);
+    doc.text(folder.doctorId, col3, rowY + 6);
 
     doc.setDrawColor(LINE_GRAY.r, LINE_GRAY.g, LINE_GRAY.b);
-    doc.line(MARGIN + 52, y, MARGIN + 52, y + 28);
-    doc.line(MARGIN + 102, y, MARGIN + 102, y + 28);
-    doc.line(MARGIN, y + 14, MARGIN + CONTENT_W, y + 14);
+    doc.setLineWidth(0.15);
+    doc.line(col2 - 8, y, col2 - 8, y + 36);
+    doc.line(col3 - 8, y, col3 - 8, y + 36);
 
-    y += 32;
+    y += 40;
     pushY(4);
 
     // —— Antécédents médicaux ——

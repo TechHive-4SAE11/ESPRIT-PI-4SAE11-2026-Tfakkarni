@@ -356,6 +356,7 @@ export class MedicalFolderDetailComponent implements OnInit {
       zContent: DiagnosticsFormComponent,
       zWidth: '480px',
       zHideFooter: true,
+      zDraggable: true,
       zData: { medicalFolderId: id },
     });
     const setCallbacks = () => {
@@ -389,6 +390,7 @@ export class MedicalFolderDetailComponent implements OnInit {
       zContent: MedicalHistoryFormComponent,
       zWidth: '480px',
       zHideFooter: true,
+      zDraggable: true,
       zData: { medicalFolderId: id },
     });
     const setCallbacks = () => {
@@ -421,6 +423,7 @@ export class MedicalFolderDetailComponent implements OnInit {
       zContent: DiagnosticsFormComponent,
       zWidth: '480px',
       zHideFooter: true,
+      zDraggable: true,
       zData: { diagnostics: d },
     });
     const form = formRef.componentInstance;
@@ -474,6 +477,7 @@ export class MedicalFolderDetailComponent implements OnInit {
       zContent: MedicalHistoryFormComponent,
       zWidth: '480px',
       zHideFooter: true,
+      zDraggable: true,
       zData: { medicalFolderId: id },
     });
     const setCallbacks = () => {
