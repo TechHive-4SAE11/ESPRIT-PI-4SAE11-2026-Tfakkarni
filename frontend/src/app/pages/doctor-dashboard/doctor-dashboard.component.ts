@@ -17,6 +17,8 @@ import { SuiviQuotidienComponent } from '@/pages/patient-dashboard/helper-view/s
 import { CarePlanManagementComponent } from './care-plan-management/care-plan-management.component';
 import { MedicationManagementComponent } from '../medications/medications.component';
 import { PatientAnalyticsComponent } from './patient-analytics/patient-analytics.component';
+import { ProfileComponent } from '@/pages/patient-dashboard/helper-view/profile/profile.component';
+import { KeycloakService } from 'keycloak-angular';
 
 @Component({
   selector: 'app-doctor-dashboard',
@@ -34,7 +36,8 @@ import { PatientAnalyticsComponent } from './patient-analytics/patient-analytics
     SuiviQuotidienComponent,
     CarePlanManagementComponent,
     MedicationManagementComponent,
-    PatientAnalyticsComponent
+    PatientAnalyticsComponent,
+    ProfileComponent,
   ],
   template: `
     <app-dashboard-layout
@@ -202,6 +205,10 @@ import { PatientAnalyticsComponent } from './patient-analytics/patient-analytics
           }
         }
 
+        @case ('Mon Profil') {
+          <app-profile [keycloakId]="doctorKeycloakId" (goBack)="setPage('Home')" />
+        }
+
         @case ('CarePlans') {
           @if (selectedPatient(); as patient) {
              <div class="flex items-center gap-2 mb-6">
@@ -275,22 +282,33 @@ export class DoctorDashboardComponent implements OnInit {
         { icon: 'heart', label: 'Medications', action: () => this.setPage('Medications') },
       ],
     },
+    {
+      label: 'Compte',
+      items: [
+        { icon: 'user', label: 'Mon Profil', action: () => this.setPage('Mon Profil') },
+      ],
+    },
   ];
+
+  doctorKeycloakId = '';
+  private platformId: Object;
 
   constructor(
     private readonly authService: AuthService,
     private readonly userApiService: UserApiService,
     private readonly gameService: GameService,
-    private readonly router: Router,
+    private readonly keycloakService: KeycloakService,
   ) {
     this.platformId = inject(PLATFORM_ID);
   }
 
-  private platformId: Object;
-
   ngOnInit(): void {
     // Only load patients in browser, not during SSR
     if (isPlatformBrowser(this.platformId)) {
+      // Get keycloak ID for profile
+      const kc = this.keycloakService.getKeycloakInstance();
+      this.doctorKeycloakId = kc?.subject ?? kc?.tokenParsed?.['sub'] ?? '';
+
       // Load current doctor info
       const doctorKeycloakId = this.authService.getKeycloakId();
       if (doctorKeycloakId) {

@@ -9,11 +9,17 @@ import { catchError, finalize, of, tap, switchMap } from 'rxjs';
 
 import { GameService, type GameResponse, type GameStatsResponse } from '@/core/services/game.service';
 import { MovieGameService, type MovieGameResponse } from '@/core/services/movie-game.service';
+import { PrescriptionService } from '@/core/services/prescription.service';
+import { CarePlanService } from '@/core/services/care-plan.service';
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 import { CustomGameService, type CustomGameResponse } from '@/core/services/custom-game.service';
 import { DailyLogStateService } from '@/core/services/daily-log-state.service';
+import { type PrescriptionResponseDTO } from '@/core/models/prescription.model';
+import { type CarePlanResponseDTO } from '@/core/models/care-plan.model';
 import { type IntakeStatus, type MedicationIntakeLogResponse } from '@/core/models/daily-monitoring.model';
 import { AuthService } from '@/core/auth';
+import { AudioGameService, type SpeechLanguage } from '@/core/services/audio-game.service';
+import { ThemeService } from '@/core/services/theme.service';
 import { GuessPlaceComponent } from './guess-place/guess-place.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
 import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-plan-list.component';
@@ -32,13 +38,17 @@ function nowTime(): string {
   templateUrl: './patient-view.component.html',
 })
 export class PatientViewComponent implements OnInit {
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly gameService = inject(GameService);
-  private readonly movieGameService = inject(MovieGameService);
-  private readonly userApiService = inject(UserApiService);
-  private readonly customGameService = inject(CustomGameService);
-  private readonly router = inject(Router);
-  private readonly authService = inject(AuthService);
+  private readonly destroyRef            = inject(DestroyRef);
+  private readonly gameService           = inject(GameService);
+  private readonly movieGameService      = inject(MovieGameService);
+  private readonly prescriptionService   = inject(PrescriptionService);
+  private readonly carePlanService       = inject(CarePlanService);
+  private readonly userApiService        = inject(UserApiService);
+  private readonly customGameService     = inject(CustomGameService);
+  private readonly router                = inject(Router);
+  private readonly authService           = inject(AuthService);
+  private readonly audioGameService      = inject(AudioGameService);
+  readonly themeService                  = inject(ThemeService);
 
   // ── Service partagé (source unique de vérité pour les médicaments) ─────────
   readonly logState = inject(DailyLogStateService);
@@ -78,6 +88,9 @@ export class PatientViewComponent implements OnInit {
   userNeonDbId = signal<number | null>(null);
   currentUser = signal<UserInfo | null>(null);
 
+  // ── Language preference for TTS ────────────────────────────────────────────
+  selectedLanguage = signal<SpeechLanguage>(this.audioGameService.getPreferredLanguage());
+
   // ── Computed ───────────────────────────────────────────────────────────────
   playableGames = computed(() => this.games().filter(g => g.imageCount >= 2));
 
@@ -90,6 +103,12 @@ export class PatientViewComponent implements OnInit {
   playMovieGame(id: number):  void { this.router.navigate(['/patient/play-movie', id]); }
   logout(): void { this.authService.logout(); }
 
+  /** Switch TTS language and persist the preference */
+  setLanguage(lang: SpeechLanguage): void {
+    this.selectedLanguage.set(lang);
+    this.audioGameService.setPreferredLanguage(lang);
+  }
+
   loadData(): void {
     if (!this.keycloakId) return;
     this.loadUserNeonDbId();
@@ -97,6 +116,9 @@ export class PatientViewComponent implements OnInit {
     this.loadMovieGames();
     this.loadStats();
     this.loadCustomGames();
+    this.loadPrescriptions();
+    this.loadCarePlans();
+    this.loadAndCacheUserGender();
     // Médicaments : charger via le service partagé (évite un double-fetch si déjà chargé)
     this.logState.loadTodayLog(this.keycloakId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -140,6 +162,50 @@ export class PatientViewComponent implements OnInit {
     this.medToastMsg.set(msg);
     this.medToastType.set(type);
     setTimeout(() => this.medToastMsg.set(''), 3000);
+  }
+
+  /**
+   * Mark all medications as taken at once.
+   */
+  markAllTaken(): void {
+    const logId = this.logState.currentLogId;
+    if (!logId || this.updatingMedId() !== null) return;
+
+    const untaken = this.todayMedications().filter(m => m.status !== 'PRIS');
+    if (untaken.length === 0) return;
+
+    this.updatingMedId.set(-1); // -1 = bulk updating
+    let remaining = untaken.length;
+    let hasError = false;
+
+    for (const med of untaken) {
+      const now = new Date();
+      const takenAt = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+
+      this.logState.toggleMedication(logId, med, 'PRIS', takenAt)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (result) => {
+            remaining--;
+            if (!result) hasError = true;
+            if (remaining === 0) {
+              this.updatingMedId.set(null);
+              this.showMedToast(
+                hasError ? 'Certains médicaments n\'ont pas pu être mis à jour' : '🎉 Tous les médicaments marqués comme pris !',
+                hasError ? 'error' : 'success'
+              );
+            }
+          },
+          error: () => {
+            remaining--;
+            hasError = true;
+            if (remaining === 0) {
+              this.updatingMedId.set(null);
+              this.showMedToast('Erreur de mise à jour', 'error');
+            }
+          },
+        });
+    }
   }
 
   medStatusLabel(status: string): string {
@@ -221,6 +287,21 @@ export class PatientViewComponent implements OnInit {
           console.error('[PatientView] Failed to load user info', err);
           return of(null);
         }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  /** Fetch user info and cache gender in localStorage for TTS usage */
+  private loadAndCacheUserGender(): void {
+    this.userApiService.getUserByKeycloakId(this.keycloakId)
+      .pipe(
+        tap(user => {
+          if (user.gender) {
+            this.audioGameService.setCachedGender(user.gender);
+          }
+        }),
+        catchError(() => of(null)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();

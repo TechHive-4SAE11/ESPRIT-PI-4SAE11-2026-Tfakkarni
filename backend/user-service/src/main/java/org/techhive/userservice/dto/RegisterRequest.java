@@ -6,6 +6,7 @@ public class RegisterRequest {
   private String email;
   private String password;
   private String role;
+  private String gender;
 
   public RegisterRequest() {
   }
@@ -48,5 +49,13 @@ public class RegisterRequest {
 
   public void setRole(String role) {
     this.role = role;
+  }
+
+  public String getGender() {
+    return gender;
+  }
+
+  public void setGender(String gender) {
+    this.gender = gender;
   }
 }
