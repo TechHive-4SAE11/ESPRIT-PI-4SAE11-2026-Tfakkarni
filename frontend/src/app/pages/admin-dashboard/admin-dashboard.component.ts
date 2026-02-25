@@ -23,7 +23,6 @@ import { GameService, type GameResponse, type OverviewStatsResponse } from '@/co
     ZardBadgeComponent,
     ZardTableImports,
     ZardSkeletonComponent,
-    ZardButtonComponent,
   ],
   template: `
     <app-dashboard-layout

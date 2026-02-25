@@ -40,43 +40,6 @@ export interface GameDetailResponse {
   createdAt: string;
 }
 
-export interface GamePlayData {
-  gameId: number;
-  title: string;
-  description: string;
-  images: { id: number; imageBase64: string; contentType: string }[];
-  choices: string[];
-  totalQuestions: number;
-}
-
-export interface AnswerEntry {
-  imageId: number;
-  selectedName: string;
-}
-
-export interface GameAttemptRequest {
-  miniGameId: number;
-  answers: AnswerEntry[];
-  durationSeconds: number;
-}
-
-export interface AnswerResult {
-  imageId: number;
-  correctName: string;
-  selectedName: string;
-  correct: boolean;
-}
-
-export interface GameAttemptResponse {
-  attemptId: number;
-  score: number;
-  totalQuestions: number;
-  durationSeconds: number;
-  percentage: number;
-  results: AnswerResult[];
-  completedAt: string;
-}
-
 export interface GameStatsResponse {
   playerKeycloakId: string;
   totalGamesCreated: number;
@@ -91,6 +54,27 @@ export interface OverviewStatsResponse {
   totalAttempts: number;
   totalPlayers: number;
   averageScorePercentage: number;
+}
+
+export interface AttemptPoint {
+  attemptId: number;
+  gameType: string; // "CUSTOM" | "MINI" | "MOVIE" | "PERSONAL"
+  gameTitle: string;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  durationSeconds: number | null;
+  completedAt: string;
+}
+
+export interface ScoreAnalyticsResponse {
+  patientKeycloakId: string;
+  totalGamesPlayed: number;
+  gamesLast7Days: number;
+  averageScore: number;
+  averageScoreLast7Days: number;
+  bestScore: number;
+  scoreHistory: AttemptPoint[];
 }
 
 export interface EditGameRequest {
@@ -153,18 +137,6 @@ export class GameService {
     return this.http.get<GameResponse[]>(`${this.baseUrl}/all`);
   }
 
-  // ─── Gameplay ───────────────────────────────────────────────
-
-  getGameForPlay(gameId: number): Observable<GamePlayData> {
-    return this.http.get<GamePlayData>(`${this.baseUrl}/play/${gameId}`);
-  }
-
-  submitAnswers(gameId: number, keycloakId: string, request: GameAttemptRequest): Observable<GameAttemptResponse> {
-    return this.http.post<GameAttemptResponse>(`${this.baseUrl}/play/${gameId}/submit`, request, {
-      headers: this.userHeaders(keycloakId),
-    });
-  }
-
   // ─── Stats ──────────────────────────────────────────────────
 
   getPlayerStats(keycloakId: string): Observable<GameStatsResponse> {
@@ -175,7 +147,7 @@ export class GameService {
     return this.http.get<OverviewStatsResponse>(`${this.baseUrl}/stats/overview`);
   }
 
-  getPlayerAttempts(keycloakId: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/stats/attempts/player/${keycloakId}`);
+  getScoreAnalytics(keycloakId: string): Observable<ScoreAnalyticsResponse> {
+    return this.http.get<ScoreAnalyticsResponse>(`${this.baseUrl}/stats/analytics/${keycloakId}`);
   }
 }

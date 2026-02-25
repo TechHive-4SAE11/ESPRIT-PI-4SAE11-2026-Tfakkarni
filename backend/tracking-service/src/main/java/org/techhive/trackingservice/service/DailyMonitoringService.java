@@ -11,27 +11,55 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class DailyMonitoringService {
 
-    private final DailyLogRepository logRepo;
-    private final NutritionEntryRepository nutritionRepo;
-    private final MedicationIntakeLogRepository medIntakeRepo;
-    private final MedicationRepository medicationRepo;
-    private final ActivityEntryRepository activityRepo;
-    private final IncidentEntryRepository incidentRepo;
+    private final DailyLogRepository             logRepo;
+    private final NutritionEntryRepository       nutritionRepo;
+    private final MedicationIntakeLogRepository  medIntakeRepo;
+    private final MedicationRepository           medicationRepo;
+    private final ActivityEntryRepository        activityRepo;
+    private final IncidentEntryRepository        incidentRepo;
 
     // ── Daily log ──────────────────────────────────────────────────────────
 
+    /**
+     * Retourne le log du jour, ou le crée s'il n'existe pas.
+     *
+     * Si le log n'a aucun médicament enregistré, on le pré-peuple
+     * automatiquement à partir des prescriptions actives du patient,
+     * avec le statut « OUBLIE » (= à prendre). Cela garantit que le
+     * patient voit toujours ses médicaments du jour dès l'ouverture.
+     */
     @Transactional
     public DailyLog getOrCreateLog(String keycloakId, LocalDate date) {
-        return logRepo.findByPatientKeycloakIdAndLogDate(keycloakId, date)
+        DailyLog log = logRepo.findByPatientKeycloakIdAndLogDate(keycloakId, date)
                 .orElseGet(() -> {
-                    DailyLog log = new DailyLog();
-                    log.setPatientKeycloakId(keycloakId);
-                    log.setLogDate(date);
-                    return logRepo.save(log);
+                    DailyLog newLog = new DailyLog();
+                    newLog.setPatientKeycloakId(keycloakId);
+                    newLog.setLogDate(date);
+                    return logRepo.save(newLog);
                 });
+
+        // Auto-peuplement des médicaments si le log n'en a aucun
+        if (log.getMedicationIntakes() == null || log.getMedicationIntakes().isEmpty()) {
+            List<Medication> meds = medicationRepo
+                    .findByPrescriptionSessionMedicalFolderIdPatient(keycloakId);
+            for (Medication med : meds) {
+                MedicationIntakeLog intake = new MedicationIntakeLog();
+                intake.setDailyLog(log);
+                intake.setMedication(med);
+                intake.setStatus("OUBLIE");   // statut par défaut = « à prendre »
+                medIntakeRepo.save(intake);
+            }
+            // Recharger le log pour avoir les intakes frais en mémoire
+            if (!meds.isEmpty()) {
+                log = logRepo.findById(log.getId()).orElse(log);
+            }
+        }
+
+        return log;
     }
 
     public List<DailyLog> getLogsForPatient(String keycloakId) {
@@ -39,10 +67,11 @@ public class DailyMonitoringService {
     }
 
     public DailyLog getLogById(Long id) {
-        return logRepo.findById(id).orElseThrow(() -> new RuntimeException("Log not found: " + id));
+        return logRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Log not found: " + id));
     }
 
-    // ── Available medications for patient ────────────────────────────────
+    // ── Available medications for patient ─────────────────────────────────
 
     public List<AvailableMedicationDTO> getAvailableMedications(String keycloakId) {
         return medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(keycloakId)
@@ -87,7 +116,7 @@ public class DailyMonitoringService {
         e.setEntryTime(dto.getEntryTime());
     }
 
-    // ── Medication intakes (linked to Medication entity) ──────────────────
+    // ── Medication intakes ────────────────────────────────────────────────
 
     @Transactional
     public MedicationIntakeLog addMedicationIntake(Long logId, MedicationIntakeLogRequest dto) {
@@ -122,7 +151,7 @@ public class DailyMonitoringService {
         e.setNotes(dto.getNotes());
     }
 
-    // ── Activities ─────────────────────────────────────────────────────────
+    // ── Activities ────────────────────────────────────────────────────────
 
     @Transactional
     public ActivityEntry addActivity(Long logId, ActivityEntryRequest dto) {
@@ -152,7 +181,7 @@ public class DailyMonitoringService {
         e.setStartTime(dto.getStartTime());
     }
 
-    // ── Incidents ──────────────────────────────────────────────────────────
+    // ── Incidents ─────────────────────────────────────────────────────────
 
     @Transactional
     public IncidentEntry addIncident(Long logId, IncidentEntryRequest dto) {
@@ -183,7 +212,7 @@ public class DailyMonitoringService {
         e.setOccurredAt(dto.getOccurredAt());
     }
 
-    // ── Mapper ─────────────────────────────────────────────────────────────
+    // ── Mapper ────────────────────────────────────────────────────────────
 
     public DailyLogResponse toResponse(DailyLog log) {
         DailyLogResponse r = new DailyLogResponse();
@@ -227,7 +256,8 @@ public class DailyMonitoringService {
             IncidentEntryResponse d = new IncidentEntryResponse();
             d.setId(e.getId()); d.setIncidentType(e.getIncidentType()); d.setDescription(e.getDescription());
             d.setSeverity(e.getSeverity()); d.setLocation(e.getLocation());
-            d.setActionTaken(e.getActionTaken()); d.setInjuryDetails(e.getInjuryDetails()); d.setOccurredAt(e.getOccurredAt());
+            d.setActionTaken(e.getActionTaken()); d.setInjuryDetails(e.getInjuryDetails());
+            d.setOccurredAt(e.getOccurredAt());
             return d;
         }).collect(Collectors.toList()));
 
