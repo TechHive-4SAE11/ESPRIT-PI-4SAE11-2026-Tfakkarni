@@ -18,6 +18,7 @@ import { type PrescriptionResponseDTO } from '@/core/models/prescription.model';
 import { type CarePlanResponseDTO } from '@/core/models/care-plan.model';
 import { type IntakeStatus, type MedicationIntakeLogResponse } from '@/core/models/daily-monitoring.model';
 import { AuthService } from '@/core/auth';
+import { ThemeService } from '@/core/services/theme.service';
 import { GuessPlaceComponent } from './guess-place/guess-place.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
 import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-plan-list.component';
@@ -44,6 +45,7 @@ export class PatientViewComponent implements OnInit {
   private readonly customGameService     = inject(CustomGameService);
   private readonly router                = inject(Router);
   private readonly authService           = inject(AuthService);
+  readonly themeService                  = inject(ThemeService);
 
   // ── Service partagé (source unique de vérité pour les médicaments) ─────────
   readonly logState = inject(DailyLogStateService);
@@ -149,6 +151,50 @@ export class PatientViewComponent implements OnInit {
     this.medToastMsg.set(msg);
     this.medToastType.set(type);
     setTimeout(() => this.medToastMsg.set(''), 3000);
+  }
+
+  /**
+   * Mark all medications as taken at once.
+   */
+  markAllTaken(): void {
+    const logId = this.logState.currentLogId;
+    if (!logId || this.updatingMedId() !== null) return;
+
+    const untaken = this.todayMedications().filter(m => m.status !== 'PRIS');
+    if (untaken.length === 0) return;
+
+    this.updatingMedId.set(-1); // -1 = bulk updating
+    let remaining = untaken.length;
+    let hasError = false;
+
+    for (const med of untaken) {
+      const now = new Date();
+      const takenAt = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+
+      this.logState.toggleMedication(logId, med, 'PRIS', takenAt)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (result) => {
+            remaining--;
+            if (!result) hasError = true;
+            if (remaining === 0) {
+              this.updatingMedId.set(null);
+              this.showMedToast(
+                hasError ? 'Certains médicaments n\'ont pas pu être mis à jour' : '🎉 Tous les médicaments marqués comme pris !',
+                hasError ? 'error' : 'success'
+              );
+            }
+          },
+          error: () => {
+            remaining--;
+            hasError = true;
+            if (remaining === 0) {
+              this.updatingMedId.set(null);
+              this.showMedToast('Erreur de mise à jour', 'error');
+            }
+          },
+        });
+    }
   }
 
   medStatusLabel(status: string): string {
