@@ -1,7 +1,12 @@
 package org.techhive.trackingservice.controller;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.techhive.trackingservice.dto.PagedResponse;
 import org.techhive.trackingservice.service.PrescriptionPdfService;
 import com.lowagie.text.DocumentException;
 import java.io.IOException;
@@ -95,6 +100,36 @@ public class PrescriptionController {
                 .map(prescriptionMapper::toResponseDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(responseDTOs);
+    }
+    
+    @GetMapping("/patient/{idPatient}/paginated")
+    public ResponseEntity<PagedResponse<PrescriptionResponseDTO>> getPrescriptionsByPatientPaginated(
+            @PathVariable String idPatient,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir) {
+        
+        Sort.Direction direction = sortDir.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        
+        Page<Prescription> prescriptionPage = prescriptionService.getPrescriptionsByPatientPaginated(idPatient, pageable);
+        
+        List<PrescriptionResponseDTO> responseDTOs = prescriptionPage.getContent().stream()
+                .map(prescriptionMapper::toResponseDTO)
+                .collect(Collectors.toList());
+        
+        PagedResponse<PrescriptionResponseDTO> response = PagedResponse.<PrescriptionResponseDTO>builder()
+                .content(responseDTOs)
+                .page(prescriptionPage.getNumber())
+                .size(prescriptionPage.getSize())
+                .totalElements(prescriptionPage.getTotalElements())
+                .totalPages(prescriptionPage.getTotalPages())
+                .first(prescriptionPage.isFirst())
+                .last(prescriptionPage.isLast())
+                .build();
+        
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")

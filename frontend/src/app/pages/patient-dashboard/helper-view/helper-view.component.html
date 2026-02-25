@@ -67,6 +67,15 @@
             </div>
         </div>
     </z-card>
+    <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Medications')">
+        <div class="flex items-center gap-3">
+            <z-icon zType="pill" class="text-primary h-10 w-10" />
+            <div>
+                <h3 class="font-semibold">Medications</h3>
+                <p class="text-sm text-muted-foreground">Track patient medications</p>
+            </div>
+        </div>
+    </z-card>
 </div>
 }
 
@@ -79,7 +88,7 @@
     <h2 class="text-2xl font-bold">Patient Prescriptions</h2>
 </div>
 
-<app-prescription-list [prescriptions]="prescriptions()" [isLoading]="isLoadingPrescriptions()" />
+<app-prescription-list [patientId]="userNeonDbId()?.toString() || null" />
 }
 
 @case ('Data Library') {
@@ -95,7 +104,23 @@
     <h2 class="text-2xl font-bold">Care Plans</h2>
 </div>
 
-<app-care-plan-list [carePlans]="carePlans()" [isLoading]="isLoadingCarePlans()" />
+<app-care-plan-list [patientId]="userNeonDbId()?.toString() || null" />
+}
+
+@case ('Medications') {
+@if (currentUser()) {
+<div class="flex items-center gap-2 mb-6">
+    <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
+        <z-icon zType="arrow-left" class="mr-1" />
+        Back
+    </button>
+    <h2 class="text-2xl font-bold">Medications</h2>
+</div>
+
+<app-medication-management [patient]="currentUser()!" viewMode="patient" />
+} @else {
+<p class="text-muted-foreground">Loading...</p>
+}
 }
 
 @case ('Tags') {
