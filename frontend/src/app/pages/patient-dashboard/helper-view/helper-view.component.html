@@ -110,6 +110,10 @@
 <app-suivi-quotidien [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
 }
 
+@case ('Profile') {
+<app-profile [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
+}
+
 @case ('Statistiques') {
 <div class="flex items-center gap-2 mb-6">
     <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">

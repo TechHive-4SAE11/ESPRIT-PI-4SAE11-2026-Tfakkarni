@@ -22,6 +22,7 @@ import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-p
 import { DataLibraryComponent } from './data-library/data-library.component';
 import { TagManagerComponent } from './tag-manager/tag-manager.component';
 import { GameBuilderComponent } from './game-builder/game-builder.component';
+import { ProfileComponent } from './profile/profile.component';
 
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
@@ -48,6 +49,7 @@ import { UserApiService } from '@/core/services/user-api.service';
     DataLibraryComponent,
     TagManagerComponent,
     GameBuilderComponent,
+    ProfileComponent,
   ],
 })
 export class HelperViewComponent implements OnInit {
