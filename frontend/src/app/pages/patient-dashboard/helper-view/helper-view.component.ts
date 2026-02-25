@@ -86,4 +86,4 @@ export class HelperViewComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
-  }
+  }}
