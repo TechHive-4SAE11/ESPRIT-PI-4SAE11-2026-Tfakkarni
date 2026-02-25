@@ -102,6 +102,7 @@ export interface DailyLogResponse {
   patientKeycloakId: string;
   logDate: string;
   globalNotes?: string;
+  voiceNoteText?: string;
   createdAt: string;
   updatedAt: string;
   nutritionEntries: NutritionEntryResponse[];

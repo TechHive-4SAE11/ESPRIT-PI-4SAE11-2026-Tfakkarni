@@ -66,6 +66,14 @@ export class DailyMonitoringService {
     return this.http.delete<void>(`${this.base}/${logId}/activities/${id}`);
   }
 
+  // ── Voice note ────────────────────────────────────────────────────────────
+  uploadVoiceNote(logId: number, formData: FormData): Observable<{ text: string }> {
+    return this.http.post<{ text: string }>(`${this.base}/${logId}/voice-note`, formData);
+  }
+  deleteVoiceNote(logId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${logId}/voice-note`);
+  }
+
   // ── Incidents ──────────────────────────────────────────────────────────
   addIncident(logId: number, dto: IncidentEntryRequest): Observable<IncidentEntryResponse> {
     return this.http.post<IncidentEntryResponse>(`${this.base}/${logId}/incidents`, dto);

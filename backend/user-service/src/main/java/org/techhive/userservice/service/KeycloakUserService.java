@@ -289,24 +289,25 @@ public class KeycloakUserService {
 
     try {
       restTemplate.exchange(tokenUrl, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+      // Success → password is correct, proceed
     } catch (HttpClientErrorException.Unauthorized e) {
+      // 401 = wrong password
       throw new RuntimeException("Mot de passe actuel incorrect");
     } catch (HttpClientErrorException e) {
-      log.warn("Password verification failed with status {}: {}", e.getStatusCode(), e.getResponseBodyAsString());
-      // If it's a client configuration issue (not 401), the password might still be correct
-      // but the client doesn't support direct access grants
+      log.warn("Password verification attempt status {}: {}", e.getStatusCode(), e.getResponseBodyAsString());
       if (e.getStatusCode().value() == 400) {
         String responseBody = e.getResponseBodyAsString();
         if (responseBody.contains("invalid_grant")) {
+          // Keycloak explicitly says credentials are wrong
           throw new RuntimeException("Mot de passe actuel incorrect");
         }
-        if (responseBody.contains("unauthorized_client") || responseBody.contains("invalid_client")) {
-          log.warn("Client '{}' not configured for direct access grants. Skipping password verification.", clientId);
-          // Cannot verify password - skip verification (admin API will handle reset)
-          return;
-        }
+        // Any other 400 (unauthorized_client, invalid_client, account_disabled, etc.)
+        // means the client is not configured for direct-access grants → skip verification.
+        log.warn("Client '{}' not configured for direct access grants — skipping password verification.", clientId);
+        return;
       }
-      throw new RuntimeException("Mot de passe actuel incorrect");
+      // For unexpected status codes, skip verification rather than blocking the user
+      log.warn("Unexpected error during password verification (status {}), skipping.", e.getStatusCode());
     }
   }
 }

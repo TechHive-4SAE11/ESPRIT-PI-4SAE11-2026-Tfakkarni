@@ -408,6 +408,57 @@ function isNumericOrEmpty(v: string): boolean {
           </div>
         }
       </div>
+      <div class="border-t border-dashed"></div>
+
+      <!-- Note Vocale -->
+      <div>
+        <h3 class="font-semibold text-base flex items-center gap-2 mb-3">
+          <span class="p-1.5 rounded-lg bg-purple-100 text-purple-600"><z-icon zType="activity" class="h-4 w-4" /></span>
+          Note vocale
+        </h3>
+        @if (log()?.voiceNoteText) {
+          <z-card class="p-4 bg-purple-50/50 border-purple-200">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex-1">
+                <p class="text-sm text-muted-foreground whitespace-pre-wrap">{{ log()!.voiceNoteText }}</p>
+              </div>
+              @if (!readOnly) {
+                <button z-button zType="ghost" zSize="sm" class="text-destructive shrink-0" (click)="deleteVoiceNote()">
+                  <z-icon zType="trash-2" class="h-3.5 w-3.5" />
+                </button>
+              }
+            </div>
+          </z-card>
+        } @else if (!readOnly) {
+          <div class="flex flex-col items-center gap-3 p-6 border-2 border-dashed rounded-xl">
+            @if (isRecording()) {
+              <div class="flex flex-col items-center gap-2">
+                <div class="h-16 w-16 rounded-full bg-red-500 animate-pulse flex items-center justify-center">
+                  <z-icon zType="activity" class="h-8 w-8 text-white" />
+                </div>
+                <p class="text-sm font-medium">Enregistrement en cours...</p>
+                <button z-button zType="destructive" (click)="stopRecording()">
+                  <z-icon zType="square" class="h-4 w-4 mr-2" /> Arr&#234;ter
+                </button>
+              </div>
+            } @else if (isTranscribing()) {
+              <div class="flex flex-col items-center gap-2">
+                <z-icon zType="loader-2" class="h-8 w-8 text-primary animate-spin" />
+                <p class="text-sm text-muted-foreground">Transcription en cours...</p>
+              </div>
+            } @else {
+              <button z-button (click)="startRecording()">
+                <z-icon zType="activity" class="h-4 w-4 mr-2" /> Enregistrer une note vocale
+              </button>
+              <p class="text-xs text-muted-foreground text-center">
+                Cliquez pour enregistrer une note qui sera automatiquement convertie en texte
+              </p>
+            }
+          </div>
+        } @else {
+          <p class="text-center py-4 text-sm text-muted-foreground border border-dashed rounded-xl">Aucune note vocale</p>
+        }
+      </div>
     </div>
   </z-tab>
 
@@ -1119,6 +1170,13 @@ export class SuiviQuotidienComponent implements OnInit {
     this.selectedDate() === this.today ? this.logState.loading() : this._loadingLocal()
   );
 
+  // ── Voice Note recording ────────────────────────────────────────────
+  isRecording      = signal(false);
+  isTranscribing   = signal(false);
+  audioBlob        = signal<Blob | null>(null);
+  private mediaRecorder: MediaRecorder | null = null;
+  private audioChunks: Blob[] = [];
+
   // ── Toggle rapide médicament (sans ouvrir le modal) ───────────────────
   _togglingMedId = signal<number | null>(null);
   healthScore   = signal<HealthScoreResponse | null>(null);
@@ -1776,6 +1834,71 @@ export class SuiviQuotidienComponent implements OnInit {
   deleteIncident(id:number){
     const logId=this.log()?.id; if(!logId) return;
     this.svc.deleteIncident(logId,id).subscribe({ next:()=>this.loadLog(), error:()=>this.errorMsg.set('Erreur suppression.') });
+  }
+
+  // ── Voice Note methods ────────────────────────────────────────────────
+  async startRecording(): Promise<void> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+      this.mediaRecorder = new MediaRecorder(stream, { mimeType });
+      this.audioChunks = [];
+
+      this.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) this.audioChunks.push(event.data);
+      };
+
+      this.mediaRecorder.onstop = () => {
+        const blob = new Blob(this.audioChunks, { type: mimeType });
+        this.audioBlob.set(blob);
+        this.uploadVoiceNote(blob, mimeType);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      this.mediaRecorder.start();
+      this.isRecording.set(true);
+    } catch (err) {
+      console.error('Microphone access error:', err);
+      this.errorMsg.set('Impossible d\'accéder au microphone. Vérifiez les permissions.');
+    }
+  }
+
+  stopRecording(): void {
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.stop();
+      this.isRecording.set(false);
+    }
+  }
+
+  uploadVoiceNote(blob: Blob, mimeType: string = 'audio/webm'): void {
+    const logId = this.log()?.id;
+    if (!logId) return;
+
+    this.isTranscribing.set(true);
+    const formData = new FormData();
+    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+    formData.append('audio', blob, `voice-note.${ext}`);
+
+    this.svc.uploadVoiceNote(logId, formData).subscribe({
+      next: () => {
+        this.isTranscribing.set(false);
+        this.loadLog();
+      },
+      error: (err) => {
+        this.isTranscribing.set(false);
+        this.errorMsg.set(err?.error?.error || 'Erreur lors de la transcription');
+      }
+    });
+  }
+
+  deleteVoiceNote(): void {
+    const logId = this.log()?.id;
+    if (!logId) return;
+
+    this.svc.deleteVoiceNote(logId).subscribe({
+      next: () => this.loadLog(),
+      error: () => this.errorMsg.set('Erreur lors de la suppression de la note vocale')
+    });
   }
 
   // ── Empty form factories ───────────────────────────────────────────────
