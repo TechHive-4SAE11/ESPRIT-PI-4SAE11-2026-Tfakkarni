@@ -9,13 +9,9 @@ import { catchError, finalize, of, tap, switchMap } from 'rxjs';
 
 import { GameService, type GameResponse, type GameStatsResponse } from '@/core/services/game.service';
 import { MovieGameService, type MovieGameResponse } from '@/core/services/movie-game.service';
-import { PrescriptionService } from '@/core/services/prescription.service';
-import { CarePlanService } from '@/core/services/care-plan.service';
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 import { CustomGameService, type CustomGameResponse } from '@/core/services/custom-game.service';
 import { DailyLogStateService } from '@/core/services/daily-log-state.service';
-import { type PrescriptionResponseDTO } from '@/core/models/prescription.model';
-import { type CarePlanResponseDTO } from '@/core/models/care-plan.model';
 import { type IntakeStatus, type MedicationIntakeLogResponse } from '@/core/models/daily-monitoring.model';
 import { AuthService } from '@/core/auth';
 import { AudioGameService, type SpeechLanguage } from '@/core/services/audio-game.service';
@@ -41,8 +37,6 @@ export class PatientViewComponent implements OnInit {
   private readonly destroyRef            = inject(DestroyRef);
   private readonly gameService           = inject(GameService);
   private readonly movieGameService      = inject(MovieGameService);
-  private readonly prescriptionService   = inject(PrescriptionService);
-  private readonly carePlanService       = inject(CarePlanService);
   private readonly userApiService        = inject(UserApiService);
   private readonly customGameService     = inject(CustomGameService);
   private readonly router                = inject(Router);
@@ -116,8 +110,6 @@ export class PatientViewComponent implements OnInit {
     this.loadMovieGames();
     this.loadStats();
     this.loadCustomGames();
-    this.loadPrescriptions();
-    this.loadCarePlans();
     this.loadAndCacheUserGender();
     // Médicaments : charger via le service partagé (évite un double-fetch si déjà chargé)
     this.logState.loadTodayLog(this.keycloakId)
