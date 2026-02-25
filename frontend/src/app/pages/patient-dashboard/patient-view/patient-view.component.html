@@ -169,269 +169,269 @@
     </div>
 
     <!-- "Tout pris" quick button -->
-    @if (medsTakenCount() < medsTotal()) {
-    <button (click)="markAllTaken()"
-      [disabled]="updatingMedId() !== null"
+    @if (medsTakenCount() < medsTotal()) { <button (click)="markAllTaken()" [disabled]="updatingMedId() !== null"
       class="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 active:scale-[0.98] text-white shadow-lg shadow-emerald-500/30 transition-all font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed mb-4">
       @if (updatingMedId() === -1) {
-        <div class="w-6 h-6 rounded-full border-3 border-white/30 border-t-white animate-spin"></div>
-        <span>Mise à jour en cours...</span>
+      <div class="w-6 h-6 rounded-full border-3 border-white/30 border-t-white animate-spin"></div>
+      <span>Mise à jour en cours...</span>
       } @else {
-        <span class="text-2xl">✅</span>
-        <span>Tout pris</span>
+      <span class="text-2xl">✅</span>
+      <span>Tout pris</span>
       }
-    </button>
-    }
+      </button>
+      }
 
-    <!-- Medication cards -->
-    <div class="space-y-3">
-      @for (med of todayMedications(); track med.id) {
-      <div class="relative rounded-2xl border-2 transition-all duration-300 overflow-hidden"
-        [class]="med.status === 'PRIS'
+      <!-- Medication cards -->
+      <div class="space-y-3">
+        @for (med of todayMedications(); track med.id) {
+        <div class="relative rounded-2xl border-2 transition-all duration-300 overflow-hidden"
+          [class]="med.status === 'PRIS'
                 ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-700 shadow-sm'
                 : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm hover:border-violet-300 dark:hover:border-violet-600'">
 
-        <!-- Taken ribbon -->
-        @if (med.status === 'PRIS') {
-        <div class="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">
-          PRIS
-        </div>
-        }
+          <!-- Taken ribbon -->
+          @if (med.status === 'PRIS') {
+          <div class="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">
+            PRIS
+          </div>
+          }
 
-        <div class="flex items-center gap-4 p-5">
+          <div class="flex items-center gap-4 p-5">
 
-          <!-- Toggle button -->
-          <button (click)="toggleMedication(med)" [disabled]="updatingMedId() === med.id"
-            class="shrink-0 relative focus:outline-none focus-visible:ring-4 focus-visible:ring-violet-300 rounded-full transition-all active:scale-90"
-            [attr.aria-label]="med.status === 'PRIS' ? 'Marquer comme non pris' : 'Marquer comme pris'">
+            <!-- Toggle button -->
+            <button (click)="toggleMedication(med)" [disabled]="updatingMedId() === med.id"
+              class="shrink-0 relative focus:outline-none focus-visible:ring-4 focus-visible:ring-violet-300 rounded-full transition-all active:scale-90"
+              [attr.aria-label]="med.status === 'PRIS' ? 'Marquer comme non pris' : 'Marquer comme pris'">
 
-            @if (updatingMedId() === med.id) {
-            <!-- Spinner -->
-            <div class="w-14 h-14 rounded-full border-4 border-violet-200 border-t-violet-500 animate-spin"></div>
-            } @else if (med.status === 'PRIS') {
-            <!-- Checked circle -->
-            <div
-              class="w-14 h-14 rounded-full bg-emerald-500 shadow-lg shadow-emerald-300/50 flex items-center justify-center transition-transform hover:scale-105">
-              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            } @else {
-            <!-- Unchecked circle -->
-            <div
-              class="w-14 h-14 rounded-full border-4 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 flex items-center justify-center transition-all hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:scale-105">
-              <svg class="w-7 h-7 text-slate-300 dark:text-slate-500" fill="none" stroke="currentColor" stroke-width="2"
-                viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            }
-          </button>
-
-          <!-- Medication info -->
-          <div class="flex-1 min-w-0">
-            <p class="text-lg font-bold text-slate-800 dark:text-white truncate leading-tight">
-              {{ med.medicationName }}
-            </p>
-            @if (med.dosage) {
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{{ med.dosage }}</p>
-            }
-            @if (med.frequency) {
-            <span
-              class="inline-block mt-1.5 text-xs px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-medium">
-              {{ med.frequency }}
-            </span>
-            }
-
-            <!-- Status + time row -->
-            <div class="flex items-center gap-2 mt-2 flex-wrap">
-              @if (med.status === 'PRIS') {
-              <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd"
-                    d="M16.707 5.293a1 1 0 00-1.414 0L8 12.586 4.707 9.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l8-8a1 1 0 000-1.414z"
-                    clip-rule="evenodd" />
+              @if (updatingMedId() === med.id) {
+              <!-- Spinner -->
+              <div class="w-14 h-14 rounded-full border-4 border-violet-200 border-t-violet-500 animate-spin"></div>
+              } @else if (med.status === 'PRIS') {
+              <!-- Checked circle -->
+              <div
+                class="w-14 h-14 rounded-full bg-emerald-500 shadow-lg shadow-emerald-300/50 flex items-center justify-center transition-transform hover:scale-105">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="2.5"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                Pris
-                @if (med.takenAt) { <span class="text-emerald-500">à {{ med.takenAt }}</span> }
-              </span>
-              } @else if (med.status === 'EN_RETARD') {
-              <span class="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                En retard
-              </span>
-              } @else if (med.status === 'REFUSE') {
-              <span class="text-xs font-semibold text-red-500 dark:text-red-400">Refusé</span>
+              </div>
               } @else {
-              <span class="text-xs text-slate-400 dark:text-slate-500">En attente</span>
+              <!-- Unchecked circle -->
+              <div
+                class="w-14 h-14 rounded-full border-4 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 flex items-center justify-center transition-all hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:scale-105">
+                <svg class="w-7 h-7 text-slate-300 dark:text-slate-500" fill="none" stroke="currentColor"
+                  stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
               }
+            </button>
+
+            <!-- Medication info -->
+            <div class="flex-1 min-w-0">
+              <p class="text-lg font-bold text-slate-800 dark:text-white truncate leading-tight">
+                {{ med.medicationName }}
+              </p>
+              @if (med.dosage) {
+              <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{{ med.dosage }}</p>
+              }
+              @if (med.frequency) {
+              <span
+                class="inline-block mt-1.5 text-xs px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-medium">
+                {{ med.frequency }}
+              </span>
+              }
+
+              <!-- Status + time row -->
+              <div class="flex items-center gap-2 mt-2 flex-wrap">
+                @if (med.status === 'PRIS') {
+                <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 00-1.414 0L8 12.586 4.707 9.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l8-8a1 1 0 000-1.414z"
+                      clip-rule="evenodd" />
+                  </svg>
+                  Pris
+                  @if (med.takenAt) { <span class="text-emerald-500">à {{ med.takenAt }}</span> }
+                </span>
+                } @else if (med.status === 'EN_RETARD') {
+                <span class="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  En retard
+                </span>
+                } @else if (med.status === 'REFUSE') {
+                <span class="text-xs font-semibold text-red-500 dark:text-red-400">Refusé</span>
+                } @else {
+                <span class="text-xs text-slate-400 dark:text-slate-500">En attente</span>
+                }
+              </div>
             </div>
+
+            <!-- Right arrow hint (only if not taken) -->
+            @if (med.status !== 'PRIS') {
+            <div class="shrink-0 text-slate-300 dark:text-slate-600">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+            }
           </div>
 
-          <!-- Right arrow hint (only if not taken) -->
-          @if (med.status !== 'PRIS') {
-          <div class="shrink-0 text-slate-300 dark:text-slate-600">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
+          <!-- Notes (if any) -->
+          @if (med.notes) {
+          <div class="px-5 pb-4">
+            <p
+              class="text-xs text-slate-400 dark:text-slate-500 italic bg-slate-50 dark:bg-slate-700/50 rounded-xl px-3 py-2">
+              📝 {{ med.notes }}
+            </p>
           </div>
           }
         </div>
+        }
+      </div>
 
-        <!-- Notes (if any) -->
-        @if (med.notes) {
-        <div class="px-5 pb-4">
-          <p
-            class="text-xs text-slate-400 dark:text-slate-500 italic bg-slate-50 dark:bg-slate-700/50 rounded-xl px-3 py-2">
-            📝 {{ med.notes }}
+      <!-- Refresh button -->
+      <div class="mt-6 text-center">
+        <button (click)="loadTodayMedications()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Actualiser
+        </button>
+      </div>
+      }
+      }
+
+      <!-- ─────────────────── PLAY GAMES ─────────────────── -->
+      @case ('Play Games') {
+      <button (click)="setPage('Home')"
+        class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
+        <span class="text-2xl">←</span><span>Retour</span>
+      </button>
+      <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-2">🎮 Choisir un jeu</h1>
+      <p class="text-lg text-slate-500 dark:text-slate-400 mb-6">Appuyez sur un jeu pour commencer</p>
+
+      <!-- Random mix -->
+      <button (click)="playRandomMix()"
+        class="w-full flex items-center gap-4 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-pink-500 to-orange-500 text-white shadow-md hover:shadow-lg active:scale-[0.98] transition-all mb-6 text-left">
+        <span class="text-3xl sm:text-4xl shrink-0">🎲</span>
+        <div class="flex-1 min-w-0">
+          <p class="text-lg sm:text-xl font-bold">Random Mix</p>
+          <p class="text-sm text-pink-100">Mélange aléatoire de toutes les catégories</p>
+        </div>
+        <span class="text-3xl shrink-0">▶</span>
+      </button>
+
+      <!-- ── Custom Memory Games (Game Builder) ── -->
+      @if (customGames().length > 0) {
+      <div class="space-y-4">
+        @for (game of customGames(); track game.id) {
+        <button (click)="playCustomGame(game.id)"
+          class="w-full flex items-center gap-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-purple-400 dark:hover:border-purple-500 active:scale-[0.98] shadow-sm hover:shadow-md transition-all text-left">
+          <span class="text-3xl sm:text-4xl shrink-0">🧠</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white truncate">{{ game.title }}</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 truncate">{{ game.description }}</p>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ game.itemCount }} éléments</p>
+          </div>
+          <span class="text-3xl text-purple-500 shrink-0">▶</span>
+        </button>
+        }
+      </div>
+      } @else {
+      <!-- Empty state when no custom games -->
+      <div class="text-center py-16">
+        <p class="text-5xl mb-4">😊</p>
+        <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">Aucun jeu disponible</h2>
+        <p class="text-slate-500 dark:text-slate-400 text-lg">Demandez à votre aidant de créer des jeux !</p>
+      </div>
+      }
+      }
+
+      <!-- ─────────────────── MY SCORES ─────────────────── -->
+      @case ('My Scores') {
+      <button (click)="setPage('Home')"
+        class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
+        <span class="text-2xl">←</span><span>Retour</span>
+      </button>
+      <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-6">🏆 Mes Scores</h1>
+      @if (stats(); as s) {
+      <div class="space-y-4">
+        <div
+          class="rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 p-6 sm:p-8 text-center text-white shadow-lg">
+          <p class="text-lg opacity-80 mb-1">Meilleur score</p>
+          <p class="text-5xl sm:text-6xl font-bold">{{ s.bestScore }}</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div
+            class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 text-center shadow-sm">
+            <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ s.totalGamesPlayed }}</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Parties jouées</p>
+          </div>
+          <div
+            class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 text-center shadow-sm">
+            <p class="text-3xl font-bold text-green-600 dark:text-green-400">{{ s.averageScore | number:'1.0-0' }}%</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Moyenne</p>
+          </div>
+        </div>
+        @if (s.totalAttempts > 0) {
+        <div class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+          <p class="text-base font-semibold text-slate-700 dark:text-slate-300 mb-3">Précision moyenne</p>
+          <div class="relative w-full h-6 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500"
+              [style.width.%]="s.averageScore"></div>
+          </div>
+          <p class="text-right text-sm text-slate-500 dark:text-slate-400 mt-1">{{ s.averageScore | number:'1.0-0' }}%
           </p>
         </div>
         }
       </div>
-      }
-    </div>
-
-    <!-- Refresh button -->
-    <div class="mt-6 text-center">
-      <button (click)="loadTodayMedications()"
-        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        Actualiser
-      </button>
-    </div>
-    }
-    }
-
-    <!-- ─────────────────── PLAY GAMES ─────────────────── -->
-    @case ('Play Games') {
-    <button (click)="setPage('Home')"
-      class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
-      <span class="text-2xl">←</span><span>Retour</span>
-    </button>
-    <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-2">🎮 Choisir un jeu</h1>
-    <p class="text-lg text-slate-500 dark:text-slate-400 mb-6">Appuyez sur un jeu pour commencer</p>
-
-    <!-- Random mix -->
-    <button (click)="playRandomMix()"
-      class="w-full flex items-center gap-4 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-pink-500 to-orange-500 text-white shadow-md hover:shadow-lg active:scale-[0.98] transition-all mb-6 text-left">
-      <span class="text-3xl sm:text-4xl shrink-0">🎲</span>
-      <div class="flex-1 min-w-0">
-        <p class="text-lg sm:text-xl font-bold">Random Mix</p>
-        <p class="text-sm text-pink-100">Mélange aléatoire de toutes les catégories</p>
-      </div>
-      <span class="text-3xl shrink-0">▶</span>
-    </button>
-
-    <!-- ── Custom Memory Games (Game Builder) ── -->
-    @if (customGames().length > 0) {
-    <div class="space-y-4">
-      @for (game of customGames(); track game.id) {
-      <button (click)="playCustomGame(game.id)"
-        class="w-full flex items-center gap-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-purple-400 dark:hover:border-purple-500 active:scale-[0.98] shadow-sm hover:shadow-md transition-all text-left">
-        <span class="text-3xl sm:text-4xl shrink-0">🧠</span>
-        <div class="flex-1 min-w-0">
-          <p class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white truncate">{{ game.title }}</p>
-          <p class="text-sm text-slate-500 dark:text-slate-400 truncate">{{ game.description }}</p>
-          <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ game.itemCount }} éléments</p>
-        </div>
-        <span class="text-3xl text-purple-500 shrink-0">▶</span>
-      </button>
-      }
-    </div>
-    } @else {
-    <!-- Empty state when no custom games -->
-    <div class="text-center py-16">
-      <p class="text-5xl mb-4">😊</p>
-      <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">Aucun jeu disponible</h2>
-      <p class="text-slate-500 dark:text-slate-400 text-lg">Demandez à votre aidant de créer des jeux !</p>
-    </div>
-    }
-    }
-
-    <!-- ─────────────────── MY SCORES ─────────────────── -->
-    @case ('My Scores') {
-    <button (click)="setPage('Home')"
-      class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
-      <span class="text-2xl">←</span><span>Retour</span>
-    </button>
-    <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-6">🏆 Mes Scores</h1>
-    @if (stats(); as s) {
-    <div class="space-y-4">
-      <div
-        class="rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 p-6 sm:p-8 text-center text-white shadow-lg">
-        <p class="text-lg opacity-80 mb-1">Meilleur score</p>
-        <p class="text-5xl sm:text-6xl font-bold">{{ s.bestScore }}</p>
-      </div>
-      <div class="grid grid-cols-2 gap-3">
-        <div
-          class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 text-center shadow-sm">
-          <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ s.totalGamesPlayed }}</p>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Parties jouées</p>
-        </div>
-        <div
-          class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 text-center shadow-sm">
-          <p class="text-3xl font-bold text-green-600 dark:text-green-400">{{ s.averageScore | number:'1.0-0' }}%</p>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Moyenne</p>
-        </div>
-      </div>
-      @if (s.totalAttempts > 0) {
-      <div class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
-        <p class="text-base font-semibold text-slate-700 dark:text-slate-300 mb-3">Précision moyenne</p>
-        <div class="relative w-full h-6 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-          <div class="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500"
-            [style.width.%]="s.averageScore"></div>
-        </div>
-        <p class="text-right text-sm text-slate-500 dark:text-slate-400 mt-1">{{ s.averageScore | number:'1.0-0' }}%</p>
+      } @else {
+      <div class="text-center py-16">
+        <p class="text-5xl mb-4">🎯</p>
+        <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">Pas encore de scores</h2>
+        <p class="text-slate-500 dark:text-slate-400 text-lg">Jouez pour voir vos scores ici !</p>
+        <button (click)="setPage('Play Games')"
+          class="mt-6 px-8 py-4 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold shadow-lg transition-all">
+          🎮 Jouer
+        </button>
       </div>
       }
-    </div>
-    } @else {
-    <div class="text-center py-16">
-      <p class="text-5xl mb-4">🎯</p>
-      <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">Pas encore de scores</h2>
-      <p class="text-slate-500 dark:text-slate-400 text-lg">Jouez pour voir vos scores ici !</p>
-      <button (click)="setPage('Play Games')"
-        class="mt-6 px-8 py-4 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold shadow-lg transition-all">
-        🎮 Jouer
+      }
+
+      <!-- ─────────────────── GUESS PLACE ─────────────────── -->
+      @case ('Guess Place') {
+      <app-guess-place [keycloakId]="keycloakId" (goBack)="setPage('Play Games')" />
+      }
+
+      <!-- ─────────────────── MY PRESCRIPTIONS ─────────────────── -->
+      @case ('My Prescriptions') {
+      <button (click)="setPage('Home')"
+        class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
+        <span class="text-2xl">←</span><span>Retour</span>
       </button>
-    </div>
-    }
-    }
+      <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-2">📋 Mes Ordonnances</h1>
+      <p class="text-lg text-slate-500 dark:text-slate-400 mb-6">Vos médicaments prescrits</p>
+      <app-prescription-list [prescriptions]="prescriptions()" [isLoading]="isLoadingPrescriptions()" />
+      }
 
-    <!-- ─────────────────── GUESS PLACE ─────────────────── -->
-    @case ('Guess Place') {
-    <app-guess-place [keycloakId]="keycloakId" (goBack)="setPage('Play Games')" />
-    }
+      <!-- ─────────────────── MY CARE PLANS ─────────────────── -->
+      @case ('My Care Plans') {
+      <button (click)="setPage('Home')"
+        class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
+        <span class="text-2xl">←</span><span>Retour</span>
+      </button>
+      <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-2">📅 Mes Plans de Soins</h1>
+      <p class="text-lg text-slate-500 dark:text-slate-400 mb-6">Vos activités et routines quotidiennes</p>
+      <app-care-plan-list [carePlans]="carePlans()" [isLoading]="isLoadingCarePlans()" />
+      }
 
-    <!-- ─────────────────── MY PRESCRIPTIONS ─────────────────── -->
-    @case ('My Prescriptions') {
-    <button (click)="setPage('Home')"
-      class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
-      <span class="text-2xl">←</span><span>Retour</span>
-    </button>
-    <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-2">📋 Mes Ordonnances</h1>
-    <p class="text-lg text-slate-500 dark:text-slate-400 mb-6">Vos médicaments prescrits</p>
-    <app-prescription-list [prescriptions]="prescriptions()" [isLoading]="isLoadingPrescriptions()" />
-    }
-
-    <!-- ─────────────────── MY CARE PLANS ─────────────────── -->
-    @case ('My Care Plans') {
-    <button (click)="setPage('Home')"
-      class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
-      <span class="text-2xl">←</span><span>Retour</span>
-    </button>
-    <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-2">📅 Mes Plans de Soins</h1>
-    <p class="text-lg text-slate-500 dark:text-slate-400 mb-6">Vos activités et routines quotidiennes</p>
-    <app-care-plan-list [carePlans]="carePlans()" [isLoading]="isLoadingCarePlans()" />
-    }
-
-    } <!-- /switch -->
+      } <!-- /switch -->
   </main>
 
   <!-- ══ BOTTOM NAV ══ -->
