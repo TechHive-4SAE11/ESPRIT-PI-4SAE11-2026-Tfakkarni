@@ -122,6 +122,31 @@
           </div>
           }
 
+          @if (showKycPrompt) {
+          <div class="space-y-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <span class="font-semibold text-blue-800">Identity Verification Required</span>
+            </div>
+            <p class="text-sm text-blue-700">
+              As a doctor, you need to verify your identity before accessing the platform.
+              Click below to complete the verification process.
+            </p>
+            <div class="flex gap-2">
+              <button z-button type="button" class="flex-1" (click)="openKycVerification()">
+                Verify Identity
+              </button>
+              <button z-button type="button" zType="outline" class="flex-1" (click)="skipKycAndLogin()">
+                Skip (Dev)
+              </button>
+            </div>
+          </div>
+          }
+
+          @if (!showKycPrompt) {
           <button z-button type="submit" class="w-full auth-submit" zSize="lg" [disabled]="isLoading">
             @if (isLoading) {
             <span>Creating account...</span>
@@ -129,6 +154,7 @@
             <span>Sign Up</span>
             }
           </button>
+          }
         </form>
 
         <div class="text-center text-sm">

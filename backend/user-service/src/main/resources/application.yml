@@ -32,3 +32,7 @@ keycloak:
   admin:
     username: admin
     password: admin
+
+didit:
+  api-key: ${DIDIT_API_KEY:}
+  workflow-id: ${DIDIT_WORKFLOW_ID:}
