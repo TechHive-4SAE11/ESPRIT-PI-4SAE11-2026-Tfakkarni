@@ -137,6 +137,12 @@ export class PatientDashboardComponent implements OnInit {
         ],
       },
       {
+        label: 'Compte',
+        items: [
+          { icon: 'user', label: 'Mon Profil', action: () => this.helperView?.setPage('Profile') },
+        ],
+      },
+      {
         label: 'Game Builder',
         items: [
           { icon: 'folder', label: 'Data Library', action: () => this.helperView?.setPage('Data Library') },

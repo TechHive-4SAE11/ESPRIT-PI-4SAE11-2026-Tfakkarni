@@ -485,12 +485,13 @@ function isNumericOrEmpty(v: string): boolean {
           <option value="status">Statut</option>
           <option value="time">Heure</option>
         </select>
-        @if (!readOnly) {
-          <button z-button zType="outline" zSize="sm" (click)="openMedForm()">
-            <z-icon zType="plus" class="h-3.5 w-3.5 mr-1" /> Ajouter
-          </button>
-        }
       </div>
+      @if (!readOnly) {
+        <div class="flex items-start gap-2 p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-sm">
+          <z-icon zType="info" class="h-4 w-4 mt-0.5 shrink-0" />
+          <span>Les médicaments proviennent des prescriptions du médecin. Vous pouvez modifier le statut de chaque prise.</span>
+        </div>
+      }
       @if (mSearch()) {
         <p class="text-xs text-muted-foreground">{{ mFiltered().length }} résultat(s)
           <button class="ml-1 text-primary underline" (click)="mSearch.set('')">Effacer</button>
@@ -516,7 +517,6 @@ function isNumericOrEmpty(v: string): boolean {
             @if (!readOnly) {
               <div class="flex gap-1 shrink-0">
                 <button z-button zType="ghost" zSize="sm" (click)="editMedication(e)"><z-icon zType="edit" class="h-3.5 w-3.5" /></button>
-                <button z-button zType="ghost" zSize="sm" class="text-destructive" (click)="deleteMedication(e.id)"><z-icon zType="trash-2" class="h-3.5 w-3.5" /></button>
               </div>
             }
           </div>

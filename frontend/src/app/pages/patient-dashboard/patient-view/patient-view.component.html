@@ -9,6 +9,11 @@
         <span class="text-xl font-bold text-slate-800 dark:text-white">Tfakkarni</span>
       </div>
       <div class="flex items-center gap-2">
+        <button (click)="themeService.toggle()"
+          class="text-xs px-2.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+          [attr.aria-label]="themeService.isDark() ? 'Mode clair' : 'Mode sombre'">
+          {{ themeService.isDark() ? '☀️' : '🌙' }}
+        </button>
         <button (click)="switchToHelper.emit()"
           class="text-xs px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
           Switch to Helper
@@ -178,6 +183,21 @@
       </p>
       }
     </div>
+
+    <!-- "Tout pris" quick button -->
+    @if (medsTakenCount() < medsTotal()) {
+    <button (click)="markAllTaken()"
+      [disabled]="updatingMedId() !== null"
+      class="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 active:scale-[0.98] text-white shadow-lg shadow-emerald-500/30 transition-all font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed mb-4">
+      @if (updatingMedId() === -1) {
+        <div class="w-6 h-6 rounded-full border-3 border-white/30 border-t-white animate-spin"></div>
+        <span>Mise à jour en cours...</span>
+      } @else {
+        <span class="text-2xl">✅</span>
+        <span>Tout pris</span>
+      }
+    </button>
+    }
 
     <!-- Medication cards -->
     <div class="space-y-3">

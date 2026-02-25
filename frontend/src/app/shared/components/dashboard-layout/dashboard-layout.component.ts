@@ -10,6 +10,7 @@ import { LayoutImports } from '@/shared/components/layout/layout.imports';
 import { ZardMenuImports } from '@/shared/components/menu/menu.imports';
 import { ZardTooltipImports } from '@/shared/components/tooltip';
 import { AuthService } from '@/core/auth';
+import { ThemeService } from '@/core/services/theme.service';
 
 export interface SidebarMenuItem {
   icon: ZardIcon;
@@ -107,6 +108,32 @@ export interface SidebarMenuGroup {
           <!-- User section at bottom -->
           <div class="mt-auto">
             <z-divider zSpacing="sm" />
+
+            <!-- Theme toggle -->
+            <div [class]="'flex items-center mb-2 ' + (sidebarCollapsed() ? 'justify-center' : 'px-2')">
+              <button
+                type="button"
+                z-button
+                zType="ghost"
+                zSize="sm"
+                [class]="sidebarCollapsed() ? 'justify-center' : 'justify-start w-full'"
+                [zTooltip]="sidebarCollapsed() ? (themeService.isDark() ? 'Mode clair' : 'Mode sombre') : ''"
+                zPosition="right"
+                (click)="themeService.toggle()">
+                @if (themeService.isDark()) {
+                  <z-icon zType="sun" [class]="sidebarCollapsed() ? '' : 'mr-2'" />
+                  @if (!sidebarCollapsed()) {
+                    <span>Mode clair</span>
+                  }
+                } @else {
+                  <z-icon zType="moon" [class]="sidebarCollapsed() ? '' : 'mr-2'" />
+                  @if (!sidebarCollapsed()) {
+                    <span>Mode sombre</span>
+                  }
+                }
+              </button>
+            </div>
+
             <div
               z-menu
               [zMenuTriggerFor]="userMenu"
@@ -134,9 +161,14 @@ export interface SidebarMenuGroup {
                   <z-icon zType="user" class="mr-2" />
                   Profile
                 </button>
-                <button type="button" z-menu-item>
-                  <z-icon zType="settings" class="mr-2" />
-                  Settings
+                <button type="button" z-menu-item (click)="themeService.toggle()">
+                  @if (themeService.isDark()) {
+                    <z-icon zType="sun" class="mr-2" />
+                    Mode clair
+                  } @else {
+                    <z-icon zType="moon" class="mr-2" />
+                    Mode sombre
+                  }
                 </button>
                 <z-divider zSpacing="sm" />
                 <button type="button" z-menu-item (click)="logout()">
@@ -181,6 +213,7 @@ export class DashboardLayoutComponent implements OnInit {
   username = '';
   roleBadge = '';
 
+  readonly themeService = inject(ThemeService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 

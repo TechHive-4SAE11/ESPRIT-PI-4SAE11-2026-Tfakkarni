@@ -59,6 +59,7 @@ import {
   ListFilterPlus,
   Loader2,
   LoaderCircle,
+  Lock,
   LogOut,
   type LucideIconData,
   Mail,
@@ -107,6 +108,7 @@ import {
   Zap,
   Users,
   UserPlus,
+  Unlock,
 } from 'lucide-angular';
 
 const DarkMode: LucideIconData = [
@@ -232,6 +234,8 @@ export const ZARD_ICONS = {
   'map-pin': MapPin,
   pill: Pill,
   edit: Edit,
+  lock: Lock,
+  unlock: Unlock,
   'alert-triangle': TriangleAlert,
 } as const satisfies Record<string, LucideIconData>;
 
