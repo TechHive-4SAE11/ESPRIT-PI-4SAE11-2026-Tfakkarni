@@ -273,7 +273,6 @@ import { finalize } from 'rxjs';
                               </div>
                               <div>
                                 <p class="font-medium" [class]="!user.enabled ? 'text-muted-foreground line-through' : ''">{{ user.firstName }} {{ user.lastName }}</p>
-                                <p class="text-xs text-muted-foreground font-mono">{{ user.keycloakId | slice:0:12 }}...</p>
                               </div>
                             </div>
                           </td>
