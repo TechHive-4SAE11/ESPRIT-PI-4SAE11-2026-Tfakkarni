@@ -14,6 +14,7 @@ import org.techhive.medicalservice.entity.MedicalFolder;
 import org.techhive.medicalservice.entity.MedicalHistory;
 import org.techhive.medicalservice.exception.ResourceNotFoundException;
 import org.techhive.medicalservice.mapper.MedicalFolderMapper;
+import org.techhive.medicalservice.repository.AIReportRepository;
 import org.techhive.medicalservice.repository.DiagnosticsRepository;
 import org.techhive.medicalservice.repository.MedicalFolderRepository;
 import org.techhive.medicalservice.repository.MedicalHistoryRepository;
@@ -36,6 +37,9 @@ public class MedicalFolderServiceImpl implements MedicalFolderService {
 
 	@Autowired
 	private MedicalHistoryRepository medicalHistoryRepository;
+
+	@Autowired
+	private AIReportRepository aiReportRepository;
 
 	@Autowired
 	private MedicalFolderMapper medicalFolderMapper;
@@ -128,17 +132,30 @@ public class MedicalFolderServiceImpl implements MedicalFolderService {
 		log.debug("Deleting medical folder with id: {}", id);
 		MedicalFolder folder = medicalFolderRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Medical folder not found with id: " + id));
+		
 		// Delete dependent records first to avoid FK constraint violation
+		// 1. Delete AI Reports
+		List<org.techhive.medicalservice.entity.AIReport> aiReports = aiReportRepository.findByMedicalFolderIdOrderByGeneratedAtDesc(id);
+		if (!aiReports.isEmpty()) {
+			aiReportRepository.deleteAll(aiReports);
+			log.debug("Deleted {} AI reports for folder id: {}", aiReports.size(), id);
+		}
+		
+		// 2. Delete Diagnostics
 		List<Diagnostics> diagnostics = diagnosticsRepository.findByMedicalFolderId(id);
 		if (!diagnostics.isEmpty()) {
 			diagnosticsRepository.deleteAll(diagnostics);
 			log.debug("Deleted {} diagnostics for folder id: {}", diagnostics.size(), id);
 		}
+		
+		// 3. Delete Medical History
 		List<MedicalHistory> histories = medicalHistoryRepository.findByMedicalFolderId(id);
 		if (!histories.isEmpty()) {
 			medicalHistoryRepository.deleteAll(histories);
 			log.debug("Deleted {} medical history entries for folder id: {}", histories.size(), id);
 		}
+		
+		// 4. Finally delete the medical folder itself
 		medicalFolderRepository.delete(folder);
 		log.info("Medical folder deleted successfully with id: {}", id);
 	}

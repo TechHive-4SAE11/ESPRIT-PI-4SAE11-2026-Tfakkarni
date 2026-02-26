@@ -15,6 +15,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -42,12 +44,16 @@ public class Diagnostics implements Serializable {
 	private MedicalFolder medicalFolder;
 
 	@NotNull(message = "Disease name cannot be null")
+	@NotBlank(message = "Disease name cannot be blank")
+	@Size(min = 2, max = 255, message = "Disease name must be between 2 and 255 characters")
 	@Column(name = "disease_name", nullable = false)
 	private String diseaseName;
 
+	@Size(max = 100, message = "Stage must not exceed 100 characters")
 	@Column(name = "stage")
 	private String stage;
 
+	@Size(max = 1000, message = "Comorbidities must not exceed 1000 characters")
 	@Column(name = "comorbidities", columnDefinition = "TEXT")
 	private String comorbidities;
 

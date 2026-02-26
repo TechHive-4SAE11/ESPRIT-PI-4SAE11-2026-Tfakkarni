@@ -20,6 +20,7 @@ import { GuessPlaceComponent } from './guess-place/guess-place.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
 import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-plan-list.component';
 import { MedicationManagementComponent } from '@/pages/medications/medications.component';
+import { PatientDossierViewComponent } from '../patient-dossier-view/patient-dossier-view.component';
 
 function nowTime(): string {
   const d = new Date();
@@ -30,7 +31,7 @@ function nowTime(): string {
   selector: 'app-patient-view',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, GuessPlaceComponent, PrescriptionListComponent, CarePlanListComponent, MedicationManagementComponent],
+  imports: [CommonModule, GuessPlaceComponent, PrescriptionListComponent, CarePlanListComponent, MedicationManagementComponent, PatientDossierViewComponent],
   templateUrl: './patient-view.component.html',
 })
 export class PatientViewComponent implements OnInit {

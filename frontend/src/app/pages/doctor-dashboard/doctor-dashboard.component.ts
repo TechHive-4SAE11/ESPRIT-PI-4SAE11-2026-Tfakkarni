@@ -336,6 +336,7 @@ import { KeycloakService } from 'keycloak-angular';
              </div>
           }
       }
+      }
       </div>
     </app-dashboard-layout>
     }
@@ -401,33 +402,6 @@ export class DoctorDashboardComponent implements OnInit {
   ];
 
   doctorKeycloakId = '';
-
-  constructor(
-    private readonly authService: AuthService,
-    private readonly userApiService: UserApiService,
-    private readonly gameService: GameService,
-    private readonly keycloakService: KeycloakService,
-  ) {
-  }
-        { icon: 'users', label: 'Patients', action: () => this.setPage('Home') },
-        { icon: 'folder', label: 'Medical Folders', action: () => this.setPage('Medical Folders') },
-        { icon: 'activity', label: 'Dossier Analytics', action: () => this.setPage('Dossier Analytics') },
-        { icon: 'bar-chart-3', label: 'Patient Progress', action: () => this.setPage('Patient Progress') },
-        { icon: 'pill', label: 'Prescriptions', action: () => this.setPage('Prescriptions') },
-        { icon: 'activity', label: 'Care Plans', action: () => this.setPage('CarePlans') },
-        { icon: 'heart', label: 'Medications', action: () => this.setPage('Medications') },
-      ],
-    },
-    {
-      label: 'Compte',
-      items: [
-        { icon: 'user', label: 'Mon Profil', action: () => this.setPage('Mon Profil') },
-      ],
-    },
-  ];
-
-  doctorKeycloakId = '';
-  private platformId: Object;
 
   constructor(
     private readonly authService: AuthService,

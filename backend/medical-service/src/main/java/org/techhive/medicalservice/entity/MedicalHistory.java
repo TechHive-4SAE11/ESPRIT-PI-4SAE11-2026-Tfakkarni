@@ -15,6 +15,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -41,12 +42,15 @@ public class MedicalHistory implements Serializable {
 	@ToString.Exclude
 	private MedicalFolder medicalFolder;
 
+	@Size(max = 2000, message = "Allergies must not exceed 2000 characters")
 	@Column(name = "allergies", columnDefinition = "TEXT")
 	private String allergies;
 
+	@Size(max = 2000, message = "Conditions must not exceed 2000 characters")
 	@Column(name = "conditions", columnDefinition = "TEXT")
 	private String conditions;
 
+	@Size(max = 2000, message = "Surgeries must not exceed 2000 characters")
 	@Column(name = "surgeries", columnDefinition = "TEXT")
 	private String surgeries;
 

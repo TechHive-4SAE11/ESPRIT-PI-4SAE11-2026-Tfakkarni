@@ -1,6 +1,8 @@
 import { Component, inject, Input, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { z } from 'zod';
+import { createZodValidator } from '@/core/utils/zod-validator';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardInputDirective } from '@/shared/components/input/input.directive';
 import { Z_MODAL_DATA } from '@/shared/components/dialog/dialog.service';
@@ -14,6 +16,15 @@ export interface MedicalFolderDialogData {
     onCancel?: () => void;
   };
 }
+
+// ─── Zod Validation Schema ──────────────────────────────────────────────────────
+const medicalFolderSchema = z.object({
+  patientId: z.string()
+    .min(1, { message: 'Patient is required' })
+    .min(1, { message: 'Patient ID must be at least 1 character' })
+    .max(255, { message: 'Patient ID must not exceed 255 characters' })
+    .trim(),
+});
 
 @Component({
   selector: 'app-medical-folder-form',
@@ -121,7 +132,7 @@ export class MedicalFolderFormComponent implements OnInit {
   });
 
   form = this.fb.nonNullable.group({
-    patientId: ['', Validators.required],
+    patientId: ['', createZodValidator(medicalFolderSchema.shape.patientId)],
     // doctorId is extracted from JWT token on backend, not needed in form
   });
 

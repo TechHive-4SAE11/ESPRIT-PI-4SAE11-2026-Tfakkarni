@@ -1,6 +1,8 @@
 import { Component, inject, Input, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { z } from 'zod';
+import { createZodValidator } from '@/core/utils/zod-validator';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardInputDirective } from '@/shared/components/input/input.directive';
@@ -12,6 +14,28 @@ import { MedicalFolderService } from '@/core/services/medical-folder.service';
 export interface DiagnosticsDialogData {
   medicalFolderId?: number;
 }
+
+// ─── Zod Validation Schema ──────────────────────────────────────────────────────
+const diagnosticsSchema = z.object({
+  medicalFolderId: z.number().min(1, { message: 'Medical folder is required' }),
+  diseaseName: z.string()
+    .min(1, { message: 'Disease name is required' })
+    .min(2, { message: 'Disease name must be at least 2 characters' })
+    .max(255, { message: 'Disease name must not exceed 255 characters' })
+    .trim(),
+  stage: z.string()
+    .max(100, { message: 'Stage must not exceed 100 characters' })
+    .optional()
+    .transform(v => (v?.trim() ? v.trim() : undefined)),
+  comorbidities: z.string()
+    .max(1000, { message: 'Comorbidities must not exceed 1000 characters' })
+    .optional()
+    .transform(v => (v?.trim() ? v.trim() : undefined)),
+  diagnosisDate: z.string()
+    .min(1, { message: 'Diagnosis date is required' })
+    .refine(val => !isNaN(new Date(val).getTime()), { message: 'Invalid date format' })
+    .refine(val => new Date(val) <= new Date(), { message: 'Diagnosis date cannot be in the future' }),
+});
 
 @Component({
   selector: 'app-diagnostics-form',
@@ -42,7 +66,9 @@ export interface DiagnosticsDialogData {
         <label for="diseaseName" class="block text-sm font-medium mb-1">Disease Name</label>
         <input id="diseaseName" type="text" z-input class="w-full" [formControl]="form.controls.diseaseName" placeholder="Disease name" />
         @if (form.controls.diseaseName.touched && form.controls.diseaseName.errors) {
-          <p class="text-destructive text-sm mt-1">Required</p>
+          <p class="text-destructive text-sm mt-1">
+            {{ form.controls.diseaseName.errors['zodError'] || 'Disease name is required' }}
+          </p>
         }
       </div>
       <div>
@@ -120,11 +146,11 @@ export class DiagnosticsFormComponent implements OnInit {
   onCancelCallback: (() => void) | null = null;
 
   form = this.fb.nonNullable.group({
-    medicalFolderId: [0 as number, [Validators.required, Validators.min(1)]],
-    diseaseName: ['', Validators.required],
-    stage: [''],
-    comorbidities: [''],
-    diagnosisDate: ['', Validators.required],
+    medicalFolderId: [0 as number, createZodValidator(diagnosticsSchema.shape.medicalFolderId)],
+    diseaseName: ['', createZodValidator(diagnosticsSchema.shape.diseaseName)],
+    stage: ['', createZodValidator(diagnosticsSchema.shape.stage)],
+    comorbidities: ['', createZodValidator(diagnosticsSchema.shape.comorbidities)],
+    diagnosisDate: ['', createZodValidator(diagnosticsSchema.shape.diagnosisDate)],
   });
 
   diagnosisDateValue = signal('');

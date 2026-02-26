@@ -1,6 +1,8 @@
 import { Component, inject, Input, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { z } from 'zod';
+import { createZodValidator } from '@/core/utils/zod-validator';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardInputDirective } from '@/shared/components/input/input.directive';
@@ -12,6 +14,23 @@ import { MedicalFolderService } from '@/core/services/medical-folder.service';
 export interface MedicalHistoryDialogData {
   medicalFolderId?: number;
 }
+
+// ─── Zod Validation Schema ──────────────────────────────────────────────────────
+const medicalHistorySchema = z.object({
+  medicalFolderId: z.number().min(1, { message: 'Medical folder is required' }),
+  allergies: z.string()
+    .max(2000, { message: 'Allergies must not exceed 2000 characters' })
+    .optional()
+    .transform(v => (v?.trim() ? v.trim() : undefined)),
+  conditions: z.string()
+    .max(2000, { message: 'Conditions must not exceed 2000 characters' })
+    .optional()
+    .transform(v => (v?.trim() ? v.trim() : undefined)),
+  surgeries: z.string()
+    .max(2000, { message: 'Surgeries must not exceed 2000 characters' })
+    .optional()
+    .transform(v => (v?.trim() ? v.trim() : undefined)),
+});
 
 @Component({
   selector: 'app-medical-history-form',
@@ -101,10 +120,10 @@ export class MedicalHistoryFormComponent implements OnInit {
   onCancelCallback: (() => void) | null = null;
 
   form = this.fb.nonNullable.group({
-    medicalFolderId: [0 as number, [Validators.required, Validators.min(1)]],
-    allergies: [''],
-    conditions: [''],
-    surgeries: [''],
+    medicalFolderId: [0 as number, createZodValidator(medicalHistorySchema.shape.medicalFolderId)],
+    allergies: ['', createZodValidator(medicalHistorySchema.shape.allergies)],
+    conditions: ['', createZodValidator(medicalHistorySchema.shape.conditions)],
+    surgeries: ['', createZodValidator(medicalHistorySchema.shape.surgeries)],
   });
 
   constructor() {

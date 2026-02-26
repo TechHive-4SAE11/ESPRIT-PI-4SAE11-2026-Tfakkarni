@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -45,6 +47,7 @@ public class AIReport implements Serializable {
 	@NotNull
 	@ManyToOne
 	@JoinColumn(name = "medical_folder_id", nullable = false)
+	@OnDelete(action = OnDeleteAction.CASCADE)
 	@ToString.Exclude
 	private MedicalFolder medicalFolder;
 
