@@ -14,16 +14,19 @@ import org.techhive.medicalservice.service.IEquipmentService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/medical/equipment")
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class EquipmentController {
 
     private final IEquipmentService equipmentService;
 
     @PostMapping
+    @Transactional
     public ResponseEntity<EquipmentDTO> createEquipment(@Valid @RequestBody EquipmentDTO equipmentDTO) {
         log.info("Creating new equipment: {}", equipmentDTO.getName());
 
@@ -35,6 +38,7 @@ public class EquipmentController {
     }
 
     @PostMapping("/donate")
+    @Transactional
     public ResponseEntity<EquipmentDTO> registerDonation(@Valid @RequestBody EquipmentDTO equipmentDTO) {
         log.info("Registering donation: {}", equipmentDTO.getName());
 
@@ -46,7 +50,9 @@ public class EquipmentController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<EquipmentDTO> updateEquipment(@PathVariable Long id, @Valid @RequestBody EquipmentDTO equipmentDTO) {
+    @Transactional
+    public ResponseEntity<EquipmentDTO> updateEquipment(@PathVariable Long id,
+            @Valid @RequestBody EquipmentDTO equipmentDTO) {
         log.info("Updating equipment with ID: {}", id);
 
         equipmentDTO.setId(id);
@@ -58,6 +64,7 @@ public class EquipmentController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<Void> deleteEquipment(@PathVariable Long id) {
         log.info("Deleting equipment with ID: {}", id);
 
@@ -194,6 +201,7 @@ public class EquipmentController {
     }
 
     @PatchMapping("/{id}/status")
+    @Transactional
     public ResponseEntity<EquipmentDTO> updateEquipmentStatus(
             @PathVariable Long id, @RequestParam EquipmentStatus status) {
         log.info("Updating equipment {} status to {}", id, status);

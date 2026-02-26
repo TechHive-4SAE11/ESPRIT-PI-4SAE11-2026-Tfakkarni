@@ -15,10 +15,8 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
     // Find correct answer for a question
     Optional<Answer> findByQuestionIdAndIsCorrectTrue(Long questionId);
 
-    // Delete all answers for a question
-    @Modifying
-    @Query("DELETE FROM Answer a WHERE a.question.id = :questionId")
-    void deleteByQuestionId(@Param("questionId") Long questionId);
+    // Delete all answers for a question (derived)
+    void deleteByQuestionId(Long questionId);
 
     // Count answers for a question
     long countByQuestionId(Long questionId);

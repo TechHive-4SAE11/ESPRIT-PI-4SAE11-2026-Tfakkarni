@@ -4,7 +4,6 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.techhive.gameservice.entity.Question;
 
-
 import java.util.List;
 
 public interface QuestionRepository extends JpaRepository<Question, Long> {
@@ -15,10 +14,8 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     // Find questions by difficulty level
     List<Question> findByDifficultyLevel(Integer difficultyLevel);
 
-    // Delete all questions for a quiz
-    @Modifying
-    @Query("DELETE FROM Question q WHERE q.quiz.id = :quizId")
-    void deleteByQuizId(@Param("quizId") Long quizId);
+    // Delete all questions for a quiz (derived)
+    void deleteByQuizId(Long quizId);
 
     // Count questions for a quiz
     long countByQuizId(Long quizId);

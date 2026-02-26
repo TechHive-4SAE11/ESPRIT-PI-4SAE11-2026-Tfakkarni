@@ -1,10 +1,8 @@
 package org.techhive.gameservice.entity;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
 
 @Entity
 @Getter
@@ -23,14 +21,11 @@ public class Answer {
 
     @Column(name = "is_correct", nullable = false)
     private Boolean isCorrect;
+
     private String explanation;
 
     @ManyToOne
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
-
-    public boolean isCorrect() {
-        return Boolean.TRUE.equals(isCorrect);
-    }
 
 }

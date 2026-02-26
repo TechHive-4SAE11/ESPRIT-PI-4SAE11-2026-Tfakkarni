@@ -8,6 +8,7 @@ import org.techhive.gameservice.entity.Answer;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Data
 @Builder
@@ -20,6 +21,7 @@ public class AnswerDTO {
     private String text;
 
     @NotNull(message = "isCorrect flag is required")
+    @JsonProperty("isCorrect")
     private Boolean isCorrect;
 
     private String explanation;
@@ -29,7 +31,8 @@ public class AnswerDTO {
 
     // Convert Entity to DTO
     public static AnswerDTO fromEntity(Answer answer) {
-        if (answer == null) return null;
+        if (answer == null)
+            return null;
 
         return AnswerDTO.builder()
                 .id(answer.getId())

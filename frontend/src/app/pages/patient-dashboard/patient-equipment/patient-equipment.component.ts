@@ -1,12 +1,8 @@
 import {
-  Component,
-  OnInit,
-  signal,
-  Input,
-  inject,
-  DestroyRef
+  Component, OnInit, signal, Input, inject, DestroyRef, computed
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, finalize, of, tap } from 'rxjs';
 
@@ -17,176 +13,288 @@ import { UserApiService } from '@/core/services/user-api.service';
 @Component({
   selector: 'app-patient-equipment',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div class="space-y-6">
-      <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mb-2">
-        🏥 Equipment
-      </h1>
-      <p class="text-lg text-slate-500 dark:text-slate-400 mb-6">View available medical equipment</p>
-
-      @if (isLoading()) {
-      <div class="text-center py-16">
-        <p class="text-5xl mb-4 animate-pulse">⏳</p>
-        <p class="text-slate-500 dark:text-slate-400 text-lg">Loading equipment...</p>
-      </div>
-      } @else {
-      <!-- My Loans -->
-      @if (myLoans().length > 0) {
-      <div class="space-y-4 mb-8">
-        <h2 class="text-2xl font-bold text-slate-800 dark:text-white">My Borrowed Equipment</h2>
-        @for (loan of myLoans(); track loan.id) {
-        <div class="rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 p-6 shadow-lg">
-          <div class="flex items-start justify-between mb-4">
-            <div class="flex-1">
-              <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2">
-                {{ loan.equipmentName }}
-              </h3>
-              @if (loan.purpose) {
-              <p class="text-slate-600 dark:text-slate-400 mb-2">{{ loan.purpose }}</p>
-              }
-              <div class="space-y-1 text-sm">
-                <p class="text-slate-500 dark:text-slate-400">
-                  <span class="font-semibold">Borrowed:</span> {{ loan.loanDate | date:'mediumDate' }}
-                </p>
-                <p [class]="isOverdue(loan) ? 'text-red-500 font-semibold' : 'text-slate-500 dark:text-slate-400'">
-                  <span class="font-semibold">Due:</span> {{ loan.dueDate | date:'mediumDate' }}
-                </p>
-              </div>
-            </div>
-            @if (isOverdue(loan)) {
-            <span class="text-3xl">⚠️</span>
-            } @else {
-            <span class="text-3xl">✅</span>
-            }
-          </div>
-        </div>
-        }
-      </div>
-      }
-
-      <!-- Available Equipment -->
-      <div class="space-y-4">
-        <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Available Equipment</h2>
-        @if (availableEquipment().length > 0) {
-        @for (equipment of availableEquipment(); track equipment.id) {
-        <div class="rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 p-6 shadow-lg">
-          <div class="flex items-start justify-between">
-            <div class="flex-1">
-              <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2">
-                {{ equipment.name }}
-              </h3>
-              @if (equipment.description) {
-              <p class="text-slate-600 dark:text-slate-400 mb-2">{{ equipment.description }}</p>
-              }
-              <div class="flex gap-2">
-                <span class="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-sm font-semibold">
-                  {{ equipment.category }}
-                </span>
-                @if (equipment.condition) {
-                <span class="px-3 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-sm">
-                  {{ equipment.condition }}
-                </span>
-                }
-              </div>
-            </div>
-            <span class="text-3xl">🏥</span>
-          </div>
-        </div>
-        }
-        } @else {
-        <div class="text-center py-16">
-          <p class="text-5xl mb-4">😊</p>
-          <h3 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">No equipment available</h3>
-          <p class="text-slate-500 dark:text-slate-400 text-lg">
-            Check back later for available medical equipment.
-          </p>
-        </div>
-        }
-      </div>
-      }
-    </div>
-  `,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './patient-equipment.component.html'
 })
 export class PatientEquipmentComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly equipmentService = inject(EquipmentService);
+  private readonly equipService = inject(EquipmentService);
   private readonly userApiService = inject(UserApiService);
 
   @Input() keycloakId = '';
 
-  // State
+  // ─── DATA ─────────────────────────────────────────────────────
   allEquipment = signal<EquipmentDTO[]>([]);
   myLoans = signal<EquipmentLoanDTO[]>([]);
+  allLoans = signal<EquipmentLoanDTO[]>([]);      // historique complet
+  suggestions = signal<EquipmentDTO[]>([]);
+  activeLoanCount = signal<number>(0);
+
+  // ─── LOADING ──────────────────────────────────────────────────
   isLoading = signal<boolean>(false);
+  isLoadingLoans = signal<boolean>(false);
+  isSubmitting = signal<boolean>(false);
+
+  // ─── UI STATE ─────────────────────────────────────────────────
+  activeTab = signal<'catalogue' | 'mes-prets' | 'historique'>('catalogue');
+  searchKeyword = '';
+  categoryFilter = '';
+  selectedEquipment = signal<EquipmentDTO | null>(null);
+  showBorrowModal = signal<boolean>(false);
+  showReturnModal = signal<boolean>(false);
+  selectedLoan = signal<EquipmentLoanDTO | null>(null);
+  extendDays = 7;
+
+  // ─── BORROW FORM ──────────────────────────────────────────────
+  borrowForm = {
+    purpose: '',
+    notes: '',
+    dueDate: ''
+  };
+  today = new Date().toISOString().split('T')[0];
+
+  // ─── NOTIFICATION ─────────────────────────────────────────────
+  notification = signal<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  // ─── USER ─────────────────────────────────────────────────────
   userNeonDbId = signal<number | null>(null);
 
+  // ─── COMPUTED ─────────────────────────────────────────────────
+  availableEquipment = computed(() =>
+    this.allEquipment().filter(e => e.status === EquipmentStatus.AVAILABLE)
+  );
+  activeLoans = computed(() =>
+    this.myLoans().filter(l => l.status === LoanStatus.ACTIVE || l.status === LoanStatus.OVERDUE)
+  );
+  overdueLoans = computed(() =>
+    this.myLoans().filter(l => this.isOverdue(l))
+  );
+  filteredEquipment = computed(() => {
+    let list = this.allEquipment();
+    if (this.categoryFilter) list = list.filter(e => e.category === this.categoryFilter);
+    if (this.searchKeyword.trim().length >= 2) {
+      const kw = this.searchKeyword.toLowerCase();
+      list = list.filter(e => e.name.toLowerCase().includes(kw) || (e.description ?? '').toLowerCase().includes(kw));
+    }
+    return list;
+  });
+  categories = computed(() => [...new Set(this.allEquipment().map(e => e.category))].filter(Boolean));
+
+  // ─── LIFECYCLE ────────────────────────────────────────────────
   ngOnInit(): void {
-    if (this.keycloakId) {
-      this.loadUserInfo();
+    if (this.keycloakId) this.loadUserInfo();
+  }
+
+  private notify(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
+    this.notification.set({ message, type });
+    setTimeout(() => this.notification.set(null), 3500);
+  }
+
+  // ─── INIT ─────────────────────────────────────────────────────
+  private loadUserInfo(): void {
+    this.userApiService.getUserByKeycloakId(this.keycloakId).pipe(
+      tap(u => {
+        this.userNeonDbId.set(u.id);
+        this.loadAllEquipment();
+        this.loadMyLoans(u.id);
+        this.loadActiveLoanCount(u.id);
+      }),
+      catchError(() => of(null)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
+  }
+
+  // ─── EQUIPMENT — getAllEquipment / getAvailableEquipment ──────
+  loadAllEquipment(): void {
+    this.isLoading.set(true);
+    this.equipService.getAvailableEquipment().pipe(
+      tap(eq => this.allEquipment.set(eq)),
+      catchError(() => of([])),
+      finalize(() => this.isLoading.set(false)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
+  }
+
+  // ─── SEARCH — searchEquipment ─────────────────────────────────
+  onSearch(): void {
+    if (this.searchKeyword.trim().length >= 2) {
+      this.equipService.searchEquipment(this.searchKeyword).pipe(
+        tap(res => this.allEquipment.set(res)),
+        catchError(() => of([])),
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe();
+    } else if (!this.searchKeyword.trim()) {
+      this.loadAllEquipment();
     }
   }
 
-  private loadUserInfo(): void {
-    this.userApiService.getUserByKeycloakId(this.keycloakId)
-      .pipe(
-        tap(userInfo => {
-          this.userNeonDbId.set(userInfo.id);
-          this.loadData();
-        }),
-        catchError(err => {
-          console.error('[PatientEquipment] Failed to load user info', err);
-          return of(null);
-        }),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe();
+  // ─── SUGGESTIONS — getEquipmentSuggestions ───────────────────
+  loadSuggestions(): void {
+    if (!this.searchKeyword.trim()) return;
+    this.equipService.getEquipmentSuggestions(this.searchKeyword).pipe(
+      tap(s => this.suggestions.set(s)),
+      catchError(() => of([])),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
   }
 
-  private loadData(): void {
-    this.loadAllEquipment();
-    this.loadMyLoans();
+  // ─── FILTER BY CATEGORY — getEquipmentByCategory ─────────────
+  filterByCategory(cat: string): void {
+    this.categoryFilter = cat;
+    if (!cat) { this.loadAllEquipment(); return; }
+    this.equipService.getEquipmentByCategory(cat).pipe(
+      tap(res => this.allEquipment.set(res)),
+      catchError(() => of([])),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
   }
 
-  private loadAllEquipment(): void {
-    this.isLoading.set(true);
-    this.equipmentService.getAvailableEquipment()
-      .pipe(
-        tap(equipment => this.allEquipment.set(equipment)),
-        catchError(err => {
-          console.error('[PatientEquipment] Failed to load equipment', err);
-          return of([]);
-        }),
-        finalize(() => this.isLoading.set(false)),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe();
+  // ─── MY LOANS — getLoansByBorrowerId / getActiveLoansByBorrower
+  loadMyLoans(borrowerId: number): void {
+    this.isLoadingLoans.set(true);
+    // Prêts actifs
+    this.equipService.getActiveLoansByBorrower(borrowerId).pipe(
+      tap(loans => this.myLoans.set(loans)),
+      catchError(() => of([])),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
+    // Tout l'historique
+    this.equipService.getLoansByBorrowerId(borrowerId).pipe(
+      tap(loans => this.allLoans.set(loans)),
+      catchError(() => of([])),
+      finalize(() => this.isLoadingLoans.set(false)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
   }
 
-  private loadMyLoans(): void {
-    const borrowerId = this.userNeonDbId();
-    if (!borrowerId) return;
-
-    this.equipmentService.getActiveLoansByBorrower(borrowerId)
-      .pipe(
-        tap(loans => this.myLoans.set(loans)),
-        catchError(err => {
-          console.error('[PatientEquipment] Failed to load loans', err);
-          return of([]);
-        }),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe();
+  // ─── COUNT — countActiveLoansByBorrower ──────────────────────
+  loadActiveLoanCount(borrowerId: number): void {
+    this.equipService.countActiveLoansByBorrower(borrowerId).pipe(
+      tap(c => this.activeLoanCount.set(c || 0)),
+      catchError(() => of(0)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
   }
 
+  // ─── BORROW — borrowEquipment ─────────────────────────────────
+  openBorrowModal(equipment: EquipmentDTO): void {
+    this.selectedEquipment.set(equipment);
+    this.borrowForm = { purpose: '', notes: '', dueDate: '' };
+    this.showBorrowModal.set(true);
+  }
+
+  confirmBorrow(): void {
+    const eq = this.selectedEquipment();
+    const uid = this.userNeonDbId();
+    if (!eq?.id || !uid || !this.borrowForm.dueDate) {
+      this.notify('Veuillez remplir tous les champs obligatoires.', 'error');
+      return;
+    }
+    this.isSubmitting.set(true);
+    const loan: EquipmentLoanDTO = {
+      equipmentId: eq.id,
+      borrowerId: uid,
+      dueDate: new Date(this.borrowForm.dueDate).toISOString(),
+      purpose: this.borrowForm.purpose,
+      notes: this.borrowForm.notes
+    };
+    this.equipService.borrowEquipment(loan).pipe(
+      tap(() => {
+        this.notify(`✅ "${eq.name}" emprunté avec succès !`, 'success');
+        this.showBorrowModal.set(false);
+        this.loadAllEquipment();
+        this.loadMyLoans(uid);
+        this.loadActiveLoanCount(uid);
+      }),
+      catchError((err) => {
+        console.error('Erreur Borrow:', err);
+        this.notify('Erreur lors de l\'emprunt.', 'error');
+        return of(null);
+      }),
+      finalize(() => this.isSubmitting.set(false)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
+  }
+
+  // ─── RETURN — returnEquipment ─────────────────────────────────
+  returnLoan(loan: EquipmentLoanDTO): void {
+    if (!loan.id || !confirm(`Retourner "${loan.equipmentName}" ?`)) return;
+    this.equipService.returnEquipment(loan.id).pipe(
+      tap(() => {
+        this.notify(`✅ "${loan.equipmentName}" retourné !`, 'success');
+        const uid = this.userNeonDbId();
+        if (uid) { this.loadMyLoans(uid); this.loadActiveLoanCount(uid); }
+        this.loadAllEquipment();
+      }),
+      catchError(() => { this.notify('Erreur lors du retour.', 'error'); return of(null); }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
+  }
+
+  // ─── EXTEND — extendLoan ──────────────────────────────────────
+  extendLoan(loan: EquipmentLoanDTO): void {
+    if (!loan.id) return;
+    this.selectedLoan.set(loan);
+  }
+  confirmExtend(): void {
+    const loan = this.selectedLoan();
+    if (!loan?.id) return;
+    this.equipService.extendLoan(loan.id, this.extendDays).pipe(
+      tap(() => {
+        this.notify(`Prêt prolongé de ${this.extendDays} jours !`, 'success');
+        this.selectedLoan.set(null);
+        const uid = this.userNeonDbId();
+        if (uid) this.loadMyLoans(uid);
+      }),
+      catchError(() => { this.notify('Erreur lors de la prolongation.', 'error'); return of(null); }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
+  }
+
+  // ─── CANCEL — cancelLoan ──────────────────────────────────────
+  cancelLoan(loan: EquipmentLoanDTO): void {
+    if (!loan.id || !confirm(`Annuler l'emprunt de "${loan.equipmentName}" ?`)) return;
+    this.equipService.cancelLoan(loan.id).pipe(
+      tap(() => {
+        this.notify('Prêt annulé.', 'info');
+        const uid = this.userNeonDbId();
+        if (uid) { this.loadMyLoans(uid); this.loadActiveLoanCount(uid); }
+        this.loadAllEquipment();
+      }),
+      catchError(() => { this.notify('Erreur lors de l\'annulation.', 'error'); return of(null); }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
+  }
+
+  // ─── UTILS ────────────────────────────────────────────────────
   isOverdue(loan: EquipmentLoanDTO): boolean {
     if (!loan.dueDate) return false;
     return new Date(loan.dueDate) < new Date() && loan.status === LoanStatus.ACTIVE;
   }
 
-  get availableEquipment(): () => EquipmentDTO[] {
-    return () => {
-      return this.allEquipment().filter(eq => eq.status === EquipmentStatus.AVAILABLE);
-    };
+  getLoanStatusBadge(loan: EquipmentLoanDTO): { label: string; cls: string } {
+    if (this.isOverdue(loan)) return { label: '⚠️ En retard', cls: 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300' };
+    switch (loan.status) {
+      case LoanStatus.ACTIVE: return { label: '✅ Actif', cls: 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300' };
+      case LoanStatus.RETURNED: return { label: '↩️ Retourné', cls: 'bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-700 dark:text-slate-300' };
+      case LoanStatus.CANCELLED: return { label: '✕ Annulé', cls: 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-300' };
+      default: return { label: loan.status ?? '?', cls: 'bg-slate-100 text-slate-600' };
+    }
   }
+
+  getEquipmentStatusBadge(status?: EquipmentStatus): { label: string; cls: string } {
+    switch (status) {
+      case EquipmentStatus.AVAILABLE: return { label: '✅ Disponible', cls: 'bg-emerald-100 text-emerald-700' };
+      case EquipmentStatus.LOANED: return { label: '🔄 Emprunté', cls: 'bg-blue-100 text-blue-700' };
+      case EquipmentStatus.MAINTENANCE: return { label: '🔧 Maintenance', cls: 'bg-amber-100 text-amber-700' };
+      case EquipmentStatus.DONATED: return { label: '🎁 Donné', cls: 'bg-violet-100 text-violet-700' };
+      default: return { label: status ?? '?', cls: 'bg-slate-100 text-slate-600' };
+    }
+  }
+
+  setTab(tab: 'catalogue' | 'mes-prets' | 'historique'): void {
+    this.activeTab.set(tab);
+  }
+
+  get LoanStatus(): typeof LoanStatus { return LoanStatus; }
 }

@@ -28,13 +28,6 @@ interface Notification {
   type: 'success' | 'error' | 'info';
 }
 
-interface BorrowForm {
-  dueDate: string;
-  purpose: string;
-  notes: string;
-  manualBorrowerId?: number; 
-}
-
 interface EquipmentForm {
   name: string;
   description: string;
@@ -98,7 +91,6 @@ export class EquipmentManagementComponent implements OnInit {
   // ─── Modals ─────────────────────────────────────────────────
   showEquipmentModal = signal<boolean>(false);
   showDonateModal = signal<boolean>(false);
-  showBorrowModal = signal<boolean>(false);
   showExtendModal = signal<boolean>(false);
   showStatusModal = signal<boolean>(false);
   showDetailsModal = signal<boolean>(false);
@@ -111,7 +103,6 @@ export class EquipmentManagementComponent implements OnInit {
   // ─── Forms ──────────────────────────────────────────────────
   eqForm: EquipmentForm = { name: '', description: '', category: '', condition: '', status: EquipmentStatus.AVAILABLE };
   donateForm: EquipmentForm = { name: '', description: '', category: '', condition: '', status: EquipmentStatus.DONATED };
-  borrowForm: BorrowForm = { dueDate: '', purpose: '', notes: '', manualBorrowerId: undefined };
   extendDays = 7;
   newStatus: EquipmentStatus = EquipmentStatus.AVAILABLE;
 
@@ -558,91 +549,6 @@ export class EquipmentManagementComponent implements OnInit {
   closeDetailsModal(): void {
     this.showDetailsModal.set(false);
     this.detailsEquipment.set(null);
-  }
-
-  // ─── Borrow ──────────────────────────────────────────────────
-
-  openBorrowModal(eq: EquipmentDTO): void {
-    this.selectedEquipment.set(eq);
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 30);
-    // Format for datetime-local input: YYYY-MM-DDTHH:mm
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    const y = dueDate.getFullYear();
-    const mo = pad(dueDate.getMonth() + 1);
-    const d = pad(dueDate.getDate());
-    const h = pad(dueDate.getHours());
-    const mi = pad(dueDate.getMinutes());
-    this.borrowForm = { dueDate: `${y}-${mo}-${d}T${h}:${mi}`, purpose: '', notes: '' };
-    this.showBorrowModal.set(true);
-  }
-
-  closeBorrowModal(): void {
-    this.showBorrowModal.set(false);
-    this.selectedEquipment.set(null);
-  }
-
-  // No retry needed – we use manualBorrowerId if user service is down
-  private retryUserInfoThenBorrow(): void {
-    // This method is kept for future use only
-  }
-
-  confirmBorrow(): void {
-    const eq = this.selectedEquipment();
-
-    if (!eq?.id) {
-      this.notify('Équipement invalide', 'error');
-      return;
-    }
-
-    // Use userNeonDbId from service, OR the manually entered ID as fallback
-    const borrowerId = this.userNeonDbId() ?? this.borrowForm.manualBorrowerId;
-
-    if (!borrowerId) {
-      this.notify(
-        '⚠️ Votre ID utilisateur est requis. Le service utilisateur est indisponible – entrez votre ID manuellement dans le champ ci-dessous.',
-        'error'
-      );
-      return;
-    }
-    if (!this.borrowForm.dueDate) {
-      this.notify('La date de retour est requise', 'error');
-      return;
-    }
-    this.isSaving.set(true);
-    const loan: EquipmentLoanDTO = {
-      equipmentId: eq.id,
-      borrowerId,
-      dueDate: new Date(this.borrowForm.dueDate).toISOString(),
-      purpose: this.borrowForm.purpose || undefined,
-      notes: this.borrowForm.notes || undefined,
-      status: LoanStatus.ACTIVE,
-    };
-    this.equipmentService.borrowEquipment(loan)
-      .pipe(
-        tap(() => {
-          this.notify(`"${eq.name}" emprunté avec succès!`, 'success');
-          this.closeBorrowModal();
-          this.loadAllEquipment();
-          this.loadAllMyLoans();
-          this.loadMyActiveLoans();
-        }),
-        catchError(err => {
-          console.error('[EquipmentMgmt] borrowEquipment failed', err);
-          const status = err?.status;
-          if (status === 400) {
-            this.notify('❌ Emprunt refusé: l\'ID utilisateur ou la date est invalide.', 'error');
-          } else if (status === 500) {
-            this.notify('❌ Erreur serveur lors de l\'emprunt. Vérifiez que le medical-service est opérationnel.', 'error');
-          } else {
-            this.notify('Erreur lors de l\'emprunt', 'error');
-          }
-          return of(null);
-        }),
-        finalize(() => this.isSaving.set(false)),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe();
   }
 
   // ─── Return ──────────────────────────────────────────────────

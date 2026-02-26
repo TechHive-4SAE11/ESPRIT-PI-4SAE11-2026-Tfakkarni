@@ -87,7 +87,7 @@ public class IAnswerServiceImp implements IAnswerService {
         Answer answer = getAnswerById(answerId);
         return answer.getQuestion() != null &&
                 answer.getQuestion().getId().equals(questionId) &&
-                answer.isCorrect();
+                Boolean.TRUE.equals(answer.getIsCorrect());
     }
 
     @Override
@@ -137,8 +137,8 @@ public class IAnswerServiceImp implements IAnswerService {
                 Answer answer = new Answer();
                 answer.setText(dto.getText().trim());
                 answer.setIsCorrect(dto.getIsCorrect());
-                answer.setExplanation(dto.getExplanation() != null ? dto.getExplanation() :
-                        (dto.getIsCorrect() ? "Correct answer" : "Incorrect answer"));
+                answer.setExplanation(dto.getExplanation() != null ? dto.getExplanation()
+                        : (dto.getIsCorrect() ? "Correct answer" : "Incorrect answer"));
                 answer.setQuestion(question);
 
                 answers.add(answer);
@@ -169,7 +169,8 @@ public class IAnswerServiceImp implements IAnswerService {
             log.error("Question not found with id: {}", questionId);
             return;
         }
-        answerRepository.deleteByQuestionId(questionId);
+        List<Answer> answers = answerRepository.findByQuestionId(questionId);
+        answerRepository.deleteAll(answers);
     }
 
     @Override

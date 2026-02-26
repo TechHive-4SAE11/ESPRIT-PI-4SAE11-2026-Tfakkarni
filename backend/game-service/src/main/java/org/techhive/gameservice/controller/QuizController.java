@@ -14,6 +14,7 @@ import org.techhive.gameservice.service.IQuizService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Map;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -71,25 +72,37 @@ public class QuizController {
     }
 
     @GetMapping
-    public ResponseEntity<List<QuizDTO>> getAllQuizzes() {
+    public ResponseEntity<?> getAllQuizzes() {
         log.info("Fetching all quizzes");
 
-        List<Quiz> quizzes = quizService.getAllQuizzes();
-        List<QuizDTO> quizDTOs = quizzes.stream()
-                .map(QuizDTO::fromEntity)
-                .toList();
-        return ResponseEntity.ok(quizDTOs);
+        try {
+            List<Quiz> quizzes = quizService.getAllQuizzes();
+            List<QuizDTO> quizDTOs = quizzes.stream()
+                    .map(QuizDTO::fromEntity)
+                    .toList();
+            return ResponseEntity.ok(quizDTOs);
+        } catch (Exception e) {
+            log.error("Error fetching all quizzes: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch quizzes: " + e.getMessage()));
+        }
     }
 
     @GetMapping("/caregiver/{caregiverId}")
-    public ResponseEntity<List<QuizDTO>> getQuizzesByCaregiverId(@PathVariable Long caregiverId) {
+    public ResponseEntity<?> getQuizzesByCaregiverId(@PathVariable Long caregiverId) {
         log.info("Fetching quizzes for caregiver ID: {}", caregiverId);
 
-        List<Quiz> quizzes = quizService.getQuizzesByCaregiverId(caregiverId);
-        List<QuizDTO> quizDTOs = quizzes.stream()
-                .map(QuizDTO::fromEntity)
-                .toList();
-        return ResponseEntity.ok(quizDTOs);
+        try {
+            List<Quiz> quizzes = quizService.getQuizzesByCaregiverId(caregiverId);
+            List<QuizDTO> quizDTOs = quizzes.stream()
+                    .map(QuizDTO::fromEntity)
+                    .toList();
+            return ResponseEntity.ok(quizDTOs);
+        } catch (Exception e) {
+            log.error("Error fetching quizzes for caregiver {}: {}", caregiverId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch quizzes: " + e.getMessage()));
+        }
     }
 
     @GetMapping("/search")
@@ -104,15 +117,21 @@ public class QuizController {
     }
 
     @GetMapping("/caregiver/{caregiverId}/recent")
-    public ResponseEntity<List<QuizDTO>> getRecentQuizzesByCaregiver(
+    public ResponseEntity<?> getRecentQuizzesByCaregiver(
             @PathVariable Long caregiverId, @RequestParam(defaultValue = "5") int limit) {
         log.info("Fetching recent {} quizzes for caregiver ID: {}", limit, caregiverId);
 
-        List<Quiz> quizzes = quizService.getRecentQuizzesByCaregiver(caregiverId, limit);
-        List<QuizDTO> quizDTOs = quizzes.stream()
-                .map(QuizDTO::fromEntity)
-                .toList();
-        return ResponseEntity.ok(quizDTOs);
+        try {
+            List<Quiz> quizzes = quizService.getRecentQuizzesByCaregiver(caregiverId, limit);
+            List<QuizDTO> quizDTOs = quizzes.stream()
+                    .map(QuizDTO::fromEntity)
+                    .toList();
+            return ResponseEntity.ok(quizDTOs);
+        } catch (Exception e) {
+            log.error("Error fetching recent quizzes for caregiver {}: {}", caregiverId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch recent quizzes: " + e.getMessage()));
+        }
     }
 
     @GetMapping("/date-range")
@@ -140,11 +159,17 @@ public class QuizController {
     }
 
     @GetMapping("/caregiver/{caregiverId}/count")
-    public ResponseEntity<Long> getQuizCountByCaregiver(@PathVariable Long caregiverId) {
+    public ResponseEntity<?> getQuizCountByCaregiver(@PathVariable Long caregiverId) {
         log.info("Getting quiz count for caregiver ID: {}", caregiverId);
 
-        long count = quizService.getQuizCountByCaregiver(caregiverId);
-        return ResponseEntity.ok(count);
+        try {
+            long count = quizService.getQuizCountByCaregiver(caregiverId);
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            log.error("Error getting quiz count for caregiver {}: {}", caregiverId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to get quiz count: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/{id}/start")
@@ -173,18 +198,30 @@ public class QuizController {
     }
 
     @GetMapping("/caregiver/{caregiverId}/average-score")
-    public ResponseEntity<Double> getAverageScoreByCaregiver(@PathVariable Long caregiverId) {
+    public ResponseEntity<?> getAverageScoreByCaregiver(@PathVariable Long caregiverId) {
         log.info("Getting average score for caregiver ID: {}", caregiverId);
 
-        double averageScore = quizService.getAverageScoreByCaregiver(caregiverId);
-        return ResponseEntity.ok(averageScore);
+        try {
+            double averageScore = quizService.getAverageScoreByCaregiver(caregiverId);
+            return ResponseEntity.ok(averageScore);
+        } catch (Exception e) {
+            log.error("Error getting average score for caregiver {}: {}", caregiverId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to get average score: " + e.getMessage()));
+        }
     }
 
     @GetMapping("/caregiver/{caregiverId}/weak-topics")
-    public ResponseEntity<List<String>> getWeakTopicsByCaregiver(@PathVariable Long caregiverId) {
+    public ResponseEntity<?> getWeakTopicsByCaregiver(@PathVariable Long caregiverId) {
         log.info("Getting weak topics for caregiver ID: {}", caregiverId);
 
-        List<String> weakTopics = quizService.getWeakTopicsByCaregiver(caregiverId);
-        return ResponseEntity.ok(weakTopics);
+        try {
+            List<String> weakTopics = quizService.getWeakTopicsByCaregiver(caregiverId);
+            return ResponseEntity.ok(weakTopics);
+        } catch (Exception e) {
+            log.error("Error getting weak topics for caregiver {}: {}", caregiverId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to get weak topics: " + e.getMessage()));
+        }
     }
 }

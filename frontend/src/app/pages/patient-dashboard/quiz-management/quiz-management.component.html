@@ -11,9 +11,9 @@
     </div>
 
     @if (notification()) {
-    <div [class]="'p-4 rounded-lg flex items-center gap-3 text-sm font-medium animate-in fade-in slide-in-from-top-4 ' + 
-        (notification()?.type === 'success' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 
-         notification()?.type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' : 
+    <div [class]="'p-4 rounded-lg flex items-center gap-3 text-sm font-medium animate-in fade-in slide-in-from-top-4 ' +
+        (notification()?.type === 'success' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+         notification()?.type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
          'bg-blue-100 text-blue-800 border border-blue-200')">
         <span>{{ notification()?.type === 'success' ? '✅' : notification()?.type === 'error' ? '❌' : 'ℹ️' }}</span>
         <p>{{ notification()?.message }}</p>
@@ -373,20 +373,32 @@
                 <!-- Quick Answers section only for NEW question -->
                 @if (!isEditingQuestion()) {
                 <div class="p-4 bg-muted/40 rounded-lg border border-border mt-6">
-                    <h4 class="font-bold text-sm mb-3 text-primary uppercase tracking-wider">Réponses (Batch Création)
-                    </h4>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-sm text-primary uppercase tracking-wider">Réponses (Batch Création)
+                        </h4>
+                        <span class="text-xs text-muted-foreground italic">👈 Cochez la bonne réponse</span>
+                    </div>
 
                     @for (ans of newQuestionAnswers; track i; let i = $index) {
-                    <div class="flex items-center gap-3 mb-2">
+                    <div
+                        [class]="'flex items-center gap-3 mb-2 p-2 rounded-lg transition-colors ' + (i === correctAnswerIndex() ? 'bg-emerald-50 border border-emerald-200' : '')">
                         <input type="radio" name="quickCorrect" [checked]="i === correctAnswerIndex()"
-                            (change)="setCorrectAnswer(i)" class="w-4 h-4 text-primary">
+                            (change)="setCorrectAnswer(i)" class="w-4 h-4 accent-emerald-600 cursor-pointer">
                         <input type="text" [(ngModel)]="ans.text" class="flex-1 px-3 py-1.5 border rounded-md text-sm"
+                            [class.border-emerald-400]="i === correctAnswerIndex()"
                             placeholder="Choix de réponse {{i+1}}" />
+                        @if (i === correctAnswerIndex()) {
+                        <span class="text-emerald-600 text-xs font-bold shrink-0">✅ Correcte</span>
+                        }
                         @if (newQuestionAnswers.length > 2) {
                         <button class="text-red-500 hover:bg-red-50 p-1.5 rounded" (click)="removeAnswer(i)"><z-icon
                                 zType="x" class="w-4 h-4" /></button>
                         }
                     </div>
+                    }
+                    @if (correctAnswerIndex() === -1) {
+                    <p class="text-xs text-amber-600 font-semibold mt-2">⚠️ Veuillez sélectionner la bonne réponse en
+                        cliquant sur le bouton radio</p>
                     }
                     <button z-button zType="outline" zSize="sm" class="mt-2 w-full border-dashed" (click)="addAnswer()"
                         [disabled]="newQuestionAnswers.length>=6">
@@ -396,6 +408,11 @@
                 }
 
                 <div class="flex gap-3 justify-end mt-8 border-t border-border pt-4">
+                    @if (questionError()) {
+                    <span class="flex-1 text-sm text-red-600 font-semibold flex items-center gap-1">
+                        ⚠️ {{ questionError() }}
+                    </span>
+                    }
                     <button z-button zType="outline" (click)="cancelQuestionForm()">Annuler</button>
                     <button z-button [disabled]="isSubmittingQuestion()" (click)="submitQuestion()">
                         {{ isSubmittingQuestion() ? 'Patientez...' : 'Enregistrer' }}
@@ -472,4 +489,5 @@
         </z-card>
     </div>
     }
+
 </div>

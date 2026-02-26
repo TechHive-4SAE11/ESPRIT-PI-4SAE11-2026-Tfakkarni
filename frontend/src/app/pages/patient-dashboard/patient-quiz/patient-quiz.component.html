@@ -1,0 +1,338 @@
+<div class="min-h-screen space-y-6 pb-10">
+
+    <!-- ── Notification ── -->
+    @if (notification()) {
+    <div [class]="'fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-xl text-sm font-semibold flex items-center gap-3 animate-in slide-in-from-top-2 ' +
+      (notification()?.type === 'success' ? 'bg-emerald-500 text-white' :
+       notification()?.type === 'error'   ? 'bg-red-500 text-white'     : 'bg-blue-500 text-white')">
+        <span>{{ notification()?.type === 'success' ? '✅' : notification()?.type === 'error' ? '❌' : 'ℹ️' }}</span>
+        {{ notification()?.message }}
+    </div>
+    }
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!--               VUE: LISTE DES QUIZZ            -->
+    <!-- ══════════════════════════════════════════════ -->
+    @if (view() === 'list') {
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white">📝 Mes Quizz</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Testez vos connaissances et suivez vos progrès</p>
+        </div>
+        <button (click)="view.set('history')"
+            class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
+            🕐 Historique
+        </button>
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div
+            class="rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 p-4 text-white shadow-lg shadow-blue-200 dark:shadow-none">
+            <p class="text-blue-100 text-xs font-medium mb-1">Total Quizz</p>
+            <p class="text-3xl font-bold">{{ quizCount() || quizzes().length }}</p>
+        </div>
+        <div
+            class="rounded-2xl bg-gradient-to-br from-violet-500 to-violet-600 p-4 text-white shadow-lg shadow-violet-200 dark:shadow-none">
+            <p class="text-violet-100 text-xs font-medium mb-1">Score Moyen</p>
+            <p class="text-3xl font-bold">{{ avgScore() | number:'1.0-0' }}%</p>
+        </div>
+        <div
+            class="rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-4 text-white shadow-lg shadow-emerald-200 dark:shadow-none">
+            <p class="text-emerald-100 text-xs font-medium mb-1">Disponibles</p>
+            <p class="text-3xl font-bold">{{ availableQuizzes().length }}</p>
+        </div>
+        <div
+            class="rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 p-4 text-white shadow-lg shadow-amber-200 dark:shadow-none">
+            <p class="text-amber-100 text-xs font-medium mb-1">Points faibles</p>
+            <p class="text-xl font-bold truncate">{{ weakTopics().length > 0 ? weakTopics().join(', ') : 'Aucun' }}</p>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    @if (isLoading()) {
+    <div class="text-center py-20">
+        <p class="text-5xl mb-4 animate-pulse">⏳</p>
+        <p class="text-slate-500 dark:text-slate-400 text-lg">Chargement des quizz...</p>
+    </div>
+    } @else {
+
+    <!-- Quiz Cards -->
+    @if (availableQuizzes().length > 0) {
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (quiz of availableQuizzes(); track quiz.id) {
+        <div
+            class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all overflow-hidden flex flex-col">
+            <!-- Color header -->
+            <div class="h-2 bg-gradient-to-r from-blue-500 to-violet-500"></div>
+            <div class="p-5 flex-1 flex flex-col">
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1 line-clamp-2">{{ quiz.topic }}</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">{{ quiz.questions?.length ?? 0 }} questions
+                    </p>
+                    @if (quiz.totalScore !== undefined && quiz.totalScore !== null) {
+                    <div class="mt-2 flex items-center gap-1.5">
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Dernier score:</span>
+                        <span class="text-xs font-bold text-blue-600 dark:text-blue-400">{{ quiz.totalScore }}</span>
+                    </div>
+                    }
+                    @if (quiz.dateTaken) {
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ quiz.dateTaken | date:'dd/MM/yyyy' }}
+                    </p>
+                    }
+                </div>
+                <button (click)="startQuiz(quiz)"
+                    class="mt-4 w-full py-3 rounded-xl bg-blue-500 hover:bg-blue-600 active:scale-[0.98] text-white font-bold text-sm shadow-md shadow-blue-200 dark:shadow-none transition-all flex items-center justify-center gap-2">
+                    <span>▶️</span> Commencer
+                </button>
+            </div>
+        </div>
+        }
+    </div>
+    } @else {
+    <div class="text-center py-20">
+        <p class="text-6xl mb-4">😊</p>
+        <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">Aucun quiz disponible</h2>
+        <p class="text-slate-500 dark:text-slate-400">Demandez à votre aidant de créer des quizz pour vous !</p>
+    </div>
+    }
+    }
+    }
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!--               VUE: JOUER UN QUIZ              -->
+    <!-- ══════════════════════════════════════════════ -->
+    @if (view() === 'playing') {
+    <div class="space-y-5">
+        <!-- Header -->
+        <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold text-slate-800 dark:text-white truncate max-w-[70%]">{{ currentQuiz()?.topic }}
+            </h2>
+            <button (click)="cancelQuiz()"
+                class="px-4 py-2 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 text-sm font-semibold transition-all">
+                ✕ Abandonner
+            </button>
+        </div>
+
+        @if (currentQuestion(); as question) {
+        <div
+            class="rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 p-6 sm:p-8 shadow-xl">
+
+            <!-- Progress bar -->
+            <div class="mb-6">
+                <div class="flex justify-between text-sm text-slate-500 dark:text-slate-400 mb-2 font-medium">
+                    <span>Question {{ currentQuestionIndex() + 1 }} / {{ totalQuestions() }}</span>
+                    <span>Score: <strong class="text-blue-600 dark:text-blue-400">{{ quizScore() }}</strong></span>
+                </div>
+                <div class="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-blue-500 to-violet-500 rounded-full transition-all duration-500"
+                        [style.width.%]="((currentQuestionIndex() + 1) / totalQuestions()) * 100"></div>
+                </div>
+            </div>
+
+            <!-- Difficulty -->
+            <span
+                [class]="'inline-block px-3 py-1 rounded-full text-xs font-bold mb-4 ' + getDifficultyColor(question.difficultyLevel)">
+                {{ getDifficultyLabel(question.difficultyLevel) }}
+            </span>
+
+            <!-- Question text -->
+            <h3 class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white mb-6 leading-snug">
+                {{ question.text }}
+            </h3>
+
+            <!-- Media attachment -->
+            @if (question.mediaAttachment) {
+            <a [href]="question.mediaAttachment" target="_blank"
+                class="inline-flex items-center gap-1.5 text-sm text-blue-500 hover:underline mb-4">
+                🔗 Voir pièce jointe
+            </a>
+            }
+
+            <!-- Answers -->
+            @if (isLoadingAnswers()) {
+            <div class="space-y-3">
+                @for (i of [1,2,3,4]; track i) {
+                <div class="h-14 bg-slate-200 dark:bg-slate-700 rounded-xl animate-pulse"></div>
+                }
+            </div>
+            } @else {
+            <div class="space-y-3">
+                @for (answer of questionAnswers(); track answer.id) {
+                <button (click)="selectAnswer(answer)" [disabled]="answerSubmitted()" [class]="getAnswerClass(answer)">
+                    {{ answer.text }}
+                    @if (answerSubmitted() && answer.id === selectedAnswer()?.id) {
+                    <span class="ml-2">{{ answer.isCorrect ? '✅' : '❌' }}</span>
+                    }
+                    @if (answerSubmitted() && answer.isCorrect && answer.id !== selectedAnswer()?.id) {
+                    <span class="ml-2 text-emerald-600">✅ Bonne réponse</span>
+                    }
+                </button>
+                }
+            </div>
+
+            <!-- Validation result -->
+            @if (answerSubmitted() && lastValidation()) {
+            <div
+                [class]="'mt-4 p-4 rounded-xl font-medium text-sm flex items-start gap-3 ' +
+          (lastValidation()?.isCorrect ? 'bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 text-emerald-800 dark:text-emerald-300' :
+                                         'bg-red-50 dark:bg-red-900/30 border border-red-200 text-red-800 dark:text-red-300')">
+                <span class="text-xl mt-0.5">{{ lastValidation()?.isCorrect ? '✅' : '❌' }}</span>
+                <div>
+                    <p class="font-bold">{{ lastValidation()?.isCorrect ? 'Bonne réponse !' : 'Mauvaise réponse' }}</p>
+                    @if (lastValidation()?.explanation) {
+                    <p class="mt-1 opacity-80">{{ lastValidation()?.explanation }}</p>
+                    }
+                </div>
+            </div>
+            }
+
+            <!-- Submit -->
+            @if (!answerSubmitted()) {
+            <button (click)="submitAnswer()" [disabled]="!selectedAnswer() || isSubmitting()"
+                class="mt-6 w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-lg shadow-lg shadow-emerald-200 dark:shadow-none transition-all">
+                {{ isSubmitting() ? 'Validation...' : 'Valider ma réponse' }}
+            </button>
+            }
+
+            <!-- Next -->
+            @if (answerSubmitted()) {
+            <button (click)="nextQuestion()"
+                class="mt-4 w-full py-4 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-bold text-lg transition-all">
+                {{ currentQuestionIndex() + 1 >= totalQuestions() ? '🏁 Terminer le quiz' : 'Question suivante →' }}
+            </button>
+            }
+            }
+        </div>
+        } @else {
+        <!-- Summary before finish -->
+        <div
+            class="rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 p-8 text-center shadow-xl space-y-4">
+            <p class="text-5xl">🎉</p>
+            <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Quiz terminé !</h2>
+            <p class="text-slate-500 dark:text-slate-400">
+                Score final : <strong class="text-2xl text-blue-600">{{ quizScore() }} / {{ totalQuestions() }}</strong>
+            </p>
+            <button (click)="finishQuiz()"
+                class="px-10 py-4 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white font-bold text-lg shadow-lg shadow-blue-200 dark:shadow-none transition-all">
+                Enregistrer & Voir les résultats
+            </button>
+        </div>
+        }
+    </div>
+    }
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!--               VUE: RÉSULTATS                  -->
+    <!-- ══════════════════════════════════════════════ -->
+    @if (view() === 'result') {
+    <div class="flex flex-col items-center justify-center py-10 space-y-6">
+        <!-- Circular score -->
+        <div class="relative w-40 h-40">
+            <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
+                    stroke="#E2E8F0" stroke-width="3" />
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
+                    [attr.stroke]="getScoreColor(scorePercent())" stroke-width="3" stroke-linecap="round"
+                    [attr.stroke-dasharray]="scorePercent() + ', 100'" class="transition-all duration-1000" />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span class="text-3xl font-bold text-slate-800 dark:text-white">{{ scorePercent() }}%</span>
+                <span class="text-xs text-slate-500">{{ quizScore() }}/{{ totalQuestions() }}</span>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-1">
+                {{ scorePercent() >= 80 ? '🏆 Excellent !' : scorePercent() >= 50 ? '👍 Bien joué !' : '💪 Continuez !'
+                }}
+            </h2>
+            <p class="text-slate-500 dark:text-slate-400">{{ currentQuiz()?.topic }}</p>
+        </div>
+
+        <!-- Sujets faibles -->
+        @if (weakTopics().length > 0) {
+        <div
+            class="w-full max-w-sm rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4">
+            <p class="text-sm font-bold text-amber-800 dark:text-amber-300 mb-2">⚠️ Points à améliorer</p>
+            <div class="flex flex-wrap gap-2">
+                @for (topic of weakTopics(); track topic) {
+                <span
+                    class="px-3 py-1 bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 text-xs font-semibold rounded-full">{{
+                    topic }}</span>
+                }
+            </div>
+        </div>
+        }
+
+        <button (click)="backToList()"
+            class="px-10 py-4 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white font-bold text-lg shadow-lg shadow-blue-200 dark:shadow-none transition-all">
+            Retour aux quizz
+        </button>
+    </div>
+    }
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!--               VUE: HISTORIQUE                 -->
+    <!-- ══════════════════════════════════════════════ -->
+    @if (view() === 'history') {
+    <div class="space-y-5">
+        <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-bold text-slate-800 dark:text-white">🕐 Quizz Récents</h2>
+            <button (click)="view.set('list')"
+                class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
+                ← Retour
+            </button>
+        </div>
+
+        <!-- Stats résumé -->
+        <div class="grid grid-cols-2 gap-3">
+            <div class="rounded-2xl bg-gradient-to-br from-violet-500 to-violet-600 p-4 text-white">
+                <p class="text-violet-100 text-xs mb-1">Score moyen global</p>
+                <p class="text-3xl font-bold">{{ avgScore() | number:'1.0-0' }}%</p>
+            </div>
+            <div class="rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 p-4 text-white">
+                <p class="text-blue-100 text-xs mb-1">Total quizz passés</p>
+                <p class="text-3xl font-bold">{{ quizCount() }}</p>
+            </div>
+        </div>
+
+        <!-- Quizz récents -->
+        @if (recentQuizzes().length > 0) {
+        <div class="space-y-3">
+            @for (quiz of recentQuizzes(); track quiz.id) {
+            <div
+                class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 shadow-sm">
+                <div
+                    class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                    {{ (quiz.totalScore ?? 0) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-slate-800 dark:text-white truncate">{{ quiz.topic }}</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {{ quiz.dateTaken ? (quiz.dateTaken | date:'dd/MM/yyyy à HH:mm') : 'Non passé' }}
+                    </p>
+                </div>
+                <div class="text-right flex-shrink-0">
+                    @if (quiz.totalScore !== undefined && quiz.totalScore !== null) {
+                    <p class="font-bold text-blue-600 dark:text-blue-400">{{ quiz.totalScore }} pts</p>
+                    }
+                    <button (click)="startQuiz(quiz)" class="text-xs text-blue-500 hover:underline mt-1 block">
+                        Refaire ▶️
+                    </button>
+                </div>
+            </div>
+            }
+        </div>
+        } @else {
+        <div class="text-center py-12 text-slate-500 dark:text-slate-400">
+            <p class="text-5xl mb-4">📭</p>
+            <p>Aucun quizz récent trouvé.</p>
+        </div>
+        }
+    </div>
+    }
+
+</div>

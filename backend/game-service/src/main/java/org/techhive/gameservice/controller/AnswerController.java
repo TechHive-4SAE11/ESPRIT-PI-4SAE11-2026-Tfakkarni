@@ -11,6 +11,7 @@ import org.techhive.gameservice.entity.Answer;
 import org.techhive.gameservice.service.IAnswerService;
 
 import java.util.List;
+import java.util.Map;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -120,7 +121,7 @@ public class AnswerController {
                 request.getAnswerId(), request.getQuestionId(), request.getQuizId());
 
         Answer answer = answerService.getAnswerById(request.getAnswerId());
-        boolean isCorrect = answer.isCorrect();
+        boolean isCorrect = Boolean.TRUE.equals(answer.getIsCorrect());
 
         // Save the user's selection
         answerService.recordAnswerSelection(request.getQuizId(), request.getQuestionId(), request.getAnswerId());
@@ -142,7 +143,7 @@ public class AnswerController {
      */
     @PostMapping("/batch")
     @Transactional
-    public ResponseEntity<List<AnswerDTO>> createAnswersBatch(@Valid @RequestBody List<AnswerDTO> answerDTOs) {
+    public ResponseEntity<?> createAnswersBatch(@Valid @RequestBody List<AnswerDTO> answerDTOs) {
         log.info("=== BATCH ANSWERS REQUEST ===");
         log.info("Number of answers: {}", answerDTOs.size());
 
@@ -160,7 +161,8 @@ public class AnswerController {
             return new ResponseEntity<>(createdDTOs, HttpStatus.CREATED);
         } catch (Exception e) {
             log.error("Error creating answers batch", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to create answers batch: " + e.getMessage()));
         }
     }
 
@@ -173,8 +175,8 @@ public class AnswerController {
 
         Answer answer = answerService.getAnswerById(id);
         BooleanResponseDTO response = BooleanResponseDTO.builder()
-                .value(answer.isCorrect())
-                .message(answer.isCorrect() ? "Answer is correct" : "Answer is incorrect")
+                .value(Boolean.TRUE.equals(answer.getIsCorrect()))
+                .message(Boolean.TRUE.equals(answer.getIsCorrect()) ? "Answer is correct" : "Answer is incorrect")
                 .build();
         return ResponseEntity.ok(response);
     }

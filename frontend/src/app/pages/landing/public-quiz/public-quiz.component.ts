@@ -27,26 +27,37 @@ import { QuizDTO, QuestionDTO, AnswerDTO } from '@/core/models/quiz.model';
   ],
   template: `
     <div class="w-full max-w-4xl mx-auto">
-      @if (!quizStarted()) {
+      @if (!quizStarted() && !quizCompleted()) {
       <!-- Quiz Introduction -->
       <z-card class="p-8 text-center">
         <z-icon zType="brain" class="h-16 w-16 mx-auto mb-4 text-primary" />
-        <h2 class="text-3xl font-bold mb-4">Alzheimer Risk Assessment Quiz</h2>
+        <h2 class="text-3xl font-bold mb-4">Comprehensive Assessment</h2>
         <p class="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
-          Take this quick assessment to evaluate potential signs of Alzheimer's disease.
-          This quiz consists of {{ totalQuestions() }} questions and takes approximately 5 minutes.
+          Take this comprehensive assessment to evaluate your memory. This assessment includes questions across all our available topics.
         </p>
-        <p class="text-sm text-muted-foreground mb-8">
-          <strong>Note:</strong> This is a preliminary assessment. Please consult with a healthcare professional for a proper diagnosis.
-        </p>
-        <button z-button zSize="lg" (click)="startQuiz()" [disabled]="isLoading()">
+        <button z-button zSize="lg" (click)="startGlobalQuiz()" [disabled]="isLoading()">
           @if (isLoading()) {
           <z-icon zType="loader-2" class="mr-2 animate-spin" />
-          Loading Quiz...
+          Loading Assessment...
           } @else {
-          Start Assessment
+          Start All Assessments
           <z-icon zType="arrow-right" class="ml-2" />
           }
+        </button>
+      </z-card>
+      }
+
+      @if (quizCompleted() && !showResultsDialog()) {
+      <!-- Quiz Final Summary (Shown if user closes the modal) -->
+      <z-card class="p-8 text-center">
+        <z-icon zType="check-circle" class="h-16 w-16 mx-auto mb-4 text-green-500" />
+        <h2 class="text-3xl font-bold mb-4">Assessment Completed</h2>
+        <p class="text-lg text-muted-foreground mb-6">
+          Thank you for taking the comprehensive assessment. Your final score is {{ scorePercentage() }}%.
+        </p>
+        <button z-button zSize="lg" (click)="goToSignup()">
+          Create Account for Detailed Insights
+          <z-icon zType="arrow-right" class="ml-2" />
         </button>
       </z-card>
       }
@@ -82,7 +93,7 @@ import { QuizDTO, QuestionDTO, AnswerDTO } from '@/core/models/quiz.model';
         </div>
 
         <div class="flex gap-3">
-          <button z-button (click)="submitAnswer()" [disabled]="!selectedAnswer()">
+          <button z-button (click)="submitAnswer()" [disabled]="!selectedAnswer() || submitting()">
             @if (submitting()) {
             <z-icon zType="loader-2" class="mr-2 animate-spin" />
             Submitting...
@@ -187,66 +198,43 @@ export class PublicQuizComponent implements OnInit {
   showResultsDialog = signal<boolean>(false);
   isLoading = signal<boolean>(false);
   submitting = signal<boolean>(false);
-  
+
   // Quiz data
-  currentQuiz = signal<QuizDTO | null>(null);
+  allQuestions = signal<QuestionDTO[]>([]);
   currentQuestion = signal<QuestionDTO | null>(null);
   currentQuestionIndex = signal<number>(0);
   questionAnswers = signal<AnswerDTO[]>([]);
   selectedAnswer = signal<AnswerDTO | null>(null);
-  
+
   // Score tracking
   correctAnswers = signal<number>(0);
   totalQuestions = signal<number>(0);
 
   ngOnInit(): void {
-    // Load a default public quiz (you may need to create one or use quiz ID 1)
-    // For now, we'll try to load quiz with ID 1 or create a default one
+    // No initial fetch needed now
   }
 
-  startQuiz(): void {
+  startGlobalQuiz(): void {
     this.isLoading.set(true);
-    
-    // Try to get a public quiz - first try quiz ID 1, then fallback to all quizzes
-    this.quizService.getQuizById(1)
+
+    this.quizService.getAllQuestions()
       .pipe(
-        switchMap(quiz => {
-          if (quiz && quiz.questions && quiz.questions.length > 0) {
-            return of(quiz);
-          }
-          // If quiz 1 doesn't have questions, try to get all quizzes
-          return this.quizService.getAllQuizzes().pipe(
-            switchMap(quizzes => {
-              if (!quizzes || quizzes.length === 0) {
-                return of(null);
-              }
-              const publicQuiz = quizzes.find(q => 
-                q.topic?.toLowerCase().includes('public') || 
-                q.topic?.toLowerCase().includes('assessment') ||
-                q.topic?.toLowerCase().includes('alzheimer')
-              ) || quizzes[0];
-              
-              if (publicQuiz && publicQuiz.id) {
-                return this.quizService.getQuizById(publicQuiz.id);
-              }
-              return of(null);
-            })
-          );
-        }),
-        tap(quiz => {
-          if (quiz && quiz.questions && quiz.questions.length > 0) {
-            this.currentQuiz.set(quiz);
-            this.totalQuestions.set(quiz.questions.length);
+        tap(questions => {
+          if (questions && questions.length > 0) {
+            this.allQuestions.set(questions);
+            this.totalQuestions.set(questions.length);
             this.quizStarted.set(true);
+            this.quizCompleted.set(false);
             this.currentQuestionIndex.set(0);
+            this.correctAnswers.set(0); // Reset score
             this.loadCurrentQuestion();
           } else {
-            alert('No quiz available. Please contact support or create an account to access quizzes.');
+            alert('No questions available in the system.');
           }
         }),
         catchError(err => {
-          console.error('[PublicQuiz] Failed to load quiz', err);
-          alert('Failed to load quiz. Please try again later or create an account.');
+          console.error('[PublicQuiz] Failed to load questions', err);
+          alert('Failed to load questions. Please try again later.');
           return of(null);
         }),
         finalize(() => this.isLoading.set(false)),
@@ -256,14 +244,18 @@ export class PublicQuizComponent implements OnInit {
   }
 
   private loadCurrentQuestion(): void {
-    const quiz = this.currentQuiz();
-    if (!quiz || !quiz.questions) return;
+    const questions = this.allQuestions();
 
     const index = this.currentQuestionIndex();
-    const question = quiz.questions[index];
 
-    if (!question || !question.id) {
+    if (index >= questions.length) {
       // Quiz completed
+      this.completeQuiz();
+      return;
+    }
+
+    const question = questions[index];
+    if (!question || !question.id) {
       this.completeQuiz();
       return;
     }
@@ -289,6 +281,8 @@ export class PublicQuizComponent implements OnInit {
   }
 
   submitAnswer(): void {
+    if (this.submitting()) return;
+
     const answer = this.selectedAnswer();
     if (!answer) return;
 
@@ -309,6 +303,7 @@ export class PublicQuizComponent implements OnInit {
   }
 
   private completeQuiz(): void {
+    this.quizStarted.set(false); // Hide the quiz form entirely
     this.quizCompleted.set(true);
     this.showResultsDialog.set(true);
   }

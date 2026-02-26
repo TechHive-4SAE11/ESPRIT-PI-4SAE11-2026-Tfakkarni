@@ -14,17 +14,21 @@ import org.techhive.medicalservice.service.IEquipmentLoanService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.List;
 import java.util.Map;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/medical/loans")
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class EquipmentLoanController {
 
     private final IEquipmentLoanService loanService;
 
     @PostMapping
+    @Transactional
     public ResponseEntity<EquipmentLoanDTO> createLoan(@Valid @RequestBody EquipmentLoanDTO loanDTO) {
         log.info("Creating new loan for equipment ID: {}", loanDTO.getEquipmentId());
 
@@ -36,6 +40,7 @@ public class EquipmentLoanController {
     }
 
     @PostMapping("/borrow")
+    @Transactional
     public ResponseEntity<EquipmentLoanDTO> borrowEquipment(@Valid @RequestBody EquipmentLoanDTO loanDTO) {
         log.info("Borrowing equipment ID: {} for borrower ID: {}", loanDTO.getEquipmentId(), loanDTO.getBorrowerId());
 
@@ -47,7 +52,9 @@ public class EquipmentLoanController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<EquipmentLoanDTO> updateLoan(@PathVariable Long id, @Valid @RequestBody EquipmentLoanDTO loanDTO) {
+    @Transactional
+    public ResponseEntity<EquipmentLoanDTO> updateLoan(@PathVariable Long id,
+            @Valid @RequestBody EquipmentLoanDTO loanDTO) {
         log.info("Updating loan with ID: {}", id);
 
         loanDTO.setId(id);
@@ -59,6 +66,7 @@ public class EquipmentLoanController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<Void> deleteLoan(@PathVariable Long id) {
         log.info("Deleting loan with ID: {}", id);
 
@@ -184,6 +192,7 @@ public class EquipmentLoanController {
     }
 
     @PostMapping("/{id}/return")
+    @Transactional
     public ResponseEntity<EquipmentLoanDTO> returnEquipment(@PathVariable Long id) {
         log.info("Returning equipment for loan ID: {}", id);
 
@@ -195,6 +204,7 @@ public class EquipmentLoanController {
     }
 
     @PostMapping("/{id}/extend")
+    @Transactional
     public ResponseEntity<EquipmentLoanDTO> extendLoan(
             @PathVariable Long id, @RequestBody Map<String, Integer> request) {
         Integer days = request.get("days");
@@ -208,6 +218,7 @@ public class EquipmentLoanController {
     }
 
     @PostMapping("/{id}/cancel")
+    @Transactional
     public ResponseEntity<EquipmentLoanDTO> cancelLoan(@PathVariable Long id) {
         log.info("Cancelling loan ID: {}", id);
 
@@ -231,6 +242,7 @@ public class EquipmentLoanController {
     }
 
     @PostMapping("/check-overdue")
+    @Transactional
     public ResponseEntity<String> checkAndUpdateOverdueLoans() {
         log.info("Checking and updating overdue loans");
 

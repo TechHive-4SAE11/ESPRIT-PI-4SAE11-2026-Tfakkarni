@@ -133,11 +133,9 @@ export class QuizManagementComponent implements OnInit {
   }
 
   private loadCaregiverStats(caregiverId: number): void {
-    // Weak topics
     this.quizService.getWeakTopicsByCaregiver(caregiverId).subscribe(topics => {
       this.weakTopics.set(topics || []);
     });
-    // Average score
     this.quizService.getAverageScoreByCaregiver(caregiverId).subscribe(score => {
       this.avgScore.set(score || 0);
     });
@@ -149,7 +147,6 @@ export class QuizManagementComponent implements OnInit {
     if (!caregiverId) return;
 
     this.isLoading.set(true);
-    // Reset filters
     this.searchQuizQuery = '';
     this.minScoreFilter = null;
     this.startDateFilter = '';
@@ -171,11 +168,9 @@ export class QuizManagementComponent implements OnInit {
       .subscribe();
   }
 
-  // FILTERS FOR QUIZZES
   onSearchQuiz(query: string): void {
     if (query.trim().length >= 2) {
       this.quizService.searchQuizzesByTopic(query).subscribe(res => {
-        // filter by caregiver id since search is global
         const filtered = res.filter(q => q.caregiverId === this.userNeonDbId());
         this.displayedQuizzes.set(filtered);
       });
@@ -207,7 +202,6 @@ export class QuizManagementComponent implements OnInit {
     });
   }
 
-  // CRUD QUIZ
   openCreateQuizModal(): void {
     this.isEditing.set(false);
     this.newQuiz = { topic: '', caregiverId: this.userNeonDbId() ?? 0 };
@@ -286,7 +280,6 @@ export class QuizManagementComponent implements OnInit {
 
     this.isLoadingQuestions.set(true);
 
-    // total points
     this.quizService.calculateTotalPoints(quizId).subscribe(points => this.selectedQuizTotalPoints.set(points || 0));
 
     this.quizService.getQuestionsByQuizId(quizId)
@@ -316,7 +309,6 @@ export class QuizManagementComponent implements OnInit {
       .subscribe();
   }
 
-  // FILTERS FOR QUESTIONS
   onSearchQuestion(query: string): void {
     if (query.trim().length >= 2) {
       this.quizService.searchQuestions(query).subscribe(res => {
@@ -341,7 +333,6 @@ export class QuizManagementComponent implements OnInit {
     });
   }
 
-  // CRUD QUESTION
   deleteAllQuestionsInQuiz(): void {
     const quizId = this.selectedQuizId();
     if (!quizId || !confirm('Supprimer TOUTES les questions ? Irréversible.')) return;
@@ -401,36 +392,38 @@ export class QuizManagementComponent implements OnInit {
     } else {
       this.quizService.createQuestion({ ...this.newQuestion, quizId } as QuestionDTO).pipe(
         switchMap(createdQ => {
-          // BATCH CREATE ANSWERS using backend endpoint !
           const answersToCreate = this.newQuestionAnswers
             .filter(a => a.text?.trim())
             .map((a, i) => ({
               text: a.text!.trim(),
               isCorrect: i === correctIndex,
-              explanation: i === correctIndex ? 'Correct' : 'Faux',
+              explanation: i === correctIndex ? 'Correct ✅' : 'Mauvaise réponse ❌',
               questionId: createdQ.id!
-            }));
-          if (answersToCreate.length > 0) {
-            return this.quizService.createAnswersBatch(answersToCreate);
-          }
-          return of([]);
+            } as AnswerDTO));
+
+          if (answersToCreate.length === 0) return of([]);
+
+          // Créer chaque réponse individuellement (évite le batch défaillant)
+          const creates$ = answersToCreate.map(ans =>
+            this.quizService.createAnswer(ans).pipe(catchError(() => of(null)))
+          );
+          return forkJoin(creates$);
         })
       ).subscribe({
         next: () => {
-          this.notify('Question + Réponses créées', 'success');
+          this.notify('Question + Réponses créées avec succès !', 'success');
           this.cancelQuestionForm();
           this.loadSelectedQuizData();
           this.isSubmittingQuestion.set(false);
         },
-        error: () => {
-          this.questionError.set('Erreur création question batch');
+        error: (err) => {
+          this.questionError.set('Erreur lors de la création. Vérifiez la console.');
           this.isSubmittingQuestion.set(false);
         }
       });
     }
   }
 
-  // Quick form answers
   addAnswer(): void {
     if (this.newQuestionAnswers.length < 6) this.newQuestionAnswers.push({ text: '', isCorrect: false });
   }
@@ -474,7 +467,7 @@ export class QuizManagementComponent implements OnInit {
       this.notify('Choix de réponse ajouté', 'success');
       this.newSingleAnswerText = '';
       this.loadAnswersForSelectedQuestion(qId);
-      this.loadSelectedQuizData(); // sync main table
+      this.loadSelectedQuizData();
     });
   }
 
@@ -500,11 +493,9 @@ export class QuizManagementComponent implements OnInit {
     const ans = this.answersForSelectedQuestion().find(a => a.id === answerId);
     if (!ans) return;
 
-    // First ensure old correct answers are put to false
     const qId = ans.questionId;
     const answers = this.answersForSelectedQuestion();
 
-    // In a real scenario we could use a batch update or loop, I'll update the specific target
     const updates = answers.map(a =>
       this.quizService.updateAnswer(a.id!, { ...a, isCorrect: a.id === answerId })
     );
@@ -521,12 +512,11 @@ export class QuizManagementComponent implements OnInit {
     this.quizService.deleteAnswer(answerId).subscribe(() => {
       this.notify('Réponse supprimée', 'success');
       if (qId) this.loadAnswersForSelectedQuestion(qId);
-      this.loadSelectedQuizData(); // sync
+      this.loadSelectedQuizData();
     });
   }
 
   checkAnswerCorrectness(answerId: number): void {
-    // API Call to test /is-correct endpoint
     this.quizService.isAnswerCorrect(answerId).subscribe(res => {
       this.notify(`Backend vérifie: ${res.message}`, res.value ? 'success' : 'info');
     });

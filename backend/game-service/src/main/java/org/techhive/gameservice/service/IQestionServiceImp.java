@@ -1,6 +1,6 @@
 package org.techhive.gameservice.service;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import java.util.stream.StreamSupport;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class IQestionServiceImp implements IQuestionService{
+public class IQestionServiceImp implements IQuestionService {
 
     private final QuestionRepository questionRepository;
     private final QuizRepository quizRepository;
@@ -107,7 +107,8 @@ public class IQestionServiceImp implements IQuestionService{
             log.error("Quiz not found with id: {}", quizId);
             return;
         }
-        questionRepository.deleteByQuizId(quizId);
+        List<Question> questions = questionRepository.findByQuizId(quizId);
+        questionRepository.deleteAll(questions);
     }
 
     @Override
@@ -164,6 +165,5 @@ public class IQestionServiceImp implements IQuestionService{
         }
         return true;
     }
-
 
 }
