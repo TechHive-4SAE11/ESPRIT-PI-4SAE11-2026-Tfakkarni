@@ -149,15 +149,11 @@
 }
 
 @case ('Dossier médical') {
-<div class="flex items-center gap-2 mb-6">
-    <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
-        <z-icon zType="arrow-left" class="mr-1" />
-        Back
-    </button>
-    <h2 class="text-2xl font-bold">Dossier Médical</h2>
-</div>
-
-<app-medical-folder-list />
+<app-patient-dossier-view 
+  [keycloakId]="keycloakId"
+  [showBack]="true"
+  (goBack)="setPage('Home')"
+/>
 }
 
 @case ('Statistiques') {
