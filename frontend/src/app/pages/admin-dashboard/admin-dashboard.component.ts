@@ -1,5 +1,5 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, signal, computed, PLATFORM_ID, inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '@/core/auth';
 import { DashboardLayoutComponent, type SidebarMenuGroup } from '@/shared/components/dashboard-layout';
@@ -751,6 +751,8 @@ export class AdminDashboardComponent implements OnInit {
 
   adminKeycloakId = '';
 
+  private readonly platformId = inject(PLATFORM_ID);
+
   constructor(
     private readonly authService: AuthService,
     private readonly userApiService: UserApiService,
@@ -759,6 +761,8 @@ export class AdminDashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Skip API calls during SSR (no token available server-side)
+    if (!isPlatformBrowser(this.platformId)) return;
     const kc = this.keycloakService.getKeycloakInstance();
     this.adminKeycloakId = kc?.subject ?? kc?.tokenParsed?.['sub'] ?? '';
     this.loadData();
@@ -805,9 +809,18 @@ export class AdminDashboardComponent implements OnInit {
   // ─── Enable/Disable User ────────────────────────────────
   toggleUserEnabled(user: UserInfo): void {
     const newEnabled = !user.enabled;
+    // Mise à jour optimiste immédiate dans le signal
+    this.users.update(list =>
+      list.map(u => u.keycloakId === user.keycloakId ? { ...u, enabled: newEnabled } : u)
+    );
     this.userApiService.toggleEnabled(user.keycloakId, newEnabled).subscribe({
-      next: () => this.loadUsers(),
-      error: (err) => console.error('Failed to toggle user', err),
+      error: (err) => {
+        // Annuler la mise à jour optimiste en cas d'erreur
+        this.users.update(list =>
+          list.map(u => u.keycloakId === user.keycloakId ? { ...u, enabled: !newEnabled } : u)
+        );
+        console.error('Failed to toggle user', err);
+      },
     });
   }
 
