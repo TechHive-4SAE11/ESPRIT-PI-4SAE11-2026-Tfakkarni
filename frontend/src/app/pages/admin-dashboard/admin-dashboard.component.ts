@@ -230,14 +230,14 @@ import { finalize } from 'rxjs';
                   />
                 </div>
                 <div class="flex gap-2">
-                  @for (role of ['all', 'patient', 'doctor']; track role) {
-                    <button z-button
-                      [zType]="roleFilter() === role ? 'default' : 'outline'"
-                      zSize="sm"
-                      (click)="roleFilter.set(role)">
-                      {{ role === 'all' ? 'Tous' : getRoleLabel(role) }}
-                    </button>
-                  }
+                @for (role of ['all', 'patient', 'doctor']; track role) {
+                <button z-button
+                [zType]="roleFilter() === role ? 'default' : 'outline'"
+                zSize="sm"
+                (click)="roleFilter.set(role); userPage.set(1)">
+                {{ role === 'all' ? 'Tous' : getRoleLabel(role) }}
+                </button>
+                }
                 </div>
               </div>
             </z-card>
@@ -258,7 +258,7 @@ import { finalize } from 'rxjs';
                       </tr>
                     </thead>
                     <tbody z-table-body>
-                      @for (user of filteredUsers(); track user.id) {
+                      @for (user of pagedUsers(); track user.id) {
                         <tr z-table-row class="group">
                           <td z-table-cell class="pl-6">
                             <div class="flex items-center gap-3">
@@ -296,7 +296,16 @@ import { finalize } from 'rxjs';
                           </td>
                           <td z-table-cell class="text-muted-foreground">{{ user.createdAt | date:'dd MMM yyyy, HH:mm' }}</td>
                           <td z-table-cell class="text-right pr-6">
-                            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div class="flex items-center justify-end gap-1">
+                              <!-- Toggle actif/inactif -->
+                              <button z-button zType="ghost" zSize="sm"
+                                class="h-8 w-8 p-0"
+                                [title]="user.enabled ? 'Désactiver le compte' : 'Activer le compte'"
+                                (click)="toggleUserEnabled(user)">
+                                <z-icon [zType]="user.enabled ? 'x-circle' : 'check-circle'"
+                                  class="h-4 w-4"
+                                  [class]="user.enabled ? 'text-amber-500' : 'text-emerald-500'" />
+                              </button>
                               <button z-button zType="ghost" zSize="sm" (click)="openEditModal(user)"
                                 class="h-8 w-8 p-0" title="Modifier">
                                 <z-icon zType="edit" class="h-4 w-4" />
@@ -316,6 +325,45 @@ import { finalize } from 'rxjs';
                     <z-icon zType="search" class="h-12 w-12 mb-3 opacity-30" />
                     <p class="text-lg font-medium">Aucun résultat</p>
                     <p class="text-sm">Essayez un autre terme de recherche ou filtre</p>
+                  </div>
+                }
+
+                <!-- ── Pagination ── -->
+                @if (filteredUsers().length > userPerPage) {
+                  <div class="flex items-center justify-between px-6 py-4 border-t">
+                    <p class="text-sm text-muted-foreground">
+                      Affichage
+                      {{ (userPage() - 1) * userPerPage + 1 }}–{{ userPage() * userPerPage < filteredUsers().length ? userPage() * userPerPage : filteredUsers().length }}
+                      sur {{ filteredUsers().length }}
+                    </p>
+                    <div class="flex items-center gap-1">
+                      <!-- Prev -->
+                      <button z-button zType="outline" zSize="sm"
+                        class="h-8 w-8 p-0"
+                        [disabled]="userPage() === 1"
+                        (click)="setUserPage(userPage() - 1)">
+                        <z-icon zType="chevron-left" class="h-4 w-4" />
+                      </button>
+
+                      <!-- Page numbers -->
+                      @for (p of pagesArray(); track p) {
+                        <button z-button
+                          [zType]="p === userPage() ? 'default' : 'outline'"
+                          zSize="sm"
+                          class="h-8 w-8 p-0 text-xs"
+                          (click)="setUserPage(p)">
+                          {{ p }}
+                        </button>
+                      }
+
+                      <!-- Next -->
+                      <button z-button zType="outline" zSize="sm"
+                        class="h-8 w-8 p-0"
+                        [disabled]="userPage() === totalUserPages()"
+                        (click)="setUserPage(userPage() + 1)">
+                        <z-icon zType="chevron-right" class="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 }
               </div>
@@ -624,6 +672,10 @@ export class AdminDashboardComponent implements OnInit {
   searchQuery = signal('');
   roleFilter = signal<string>('all');
 
+  // Pagination utilisateurs
+  userPage    = signal(1);
+  userPerPage = 8;
+
   // Modal state
   showEditModal = signal(false);
   showDeleteModal = signal(false);
@@ -674,6 +726,14 @@ export class AdminDashboardComponent implements OnInit {
     return result;
   });
 
+  pagedUsers    = computed(() => {
+    const page  = this.userPage();
+    const start = (page - 1) * this.userPerPage;
+    return this.filteredUsers().slice(start, start + this.userPerPage);
+  });
+
+  totalUserPages = computed(() => Math.max(1, Math.ceil(this.filteredUsers().length / this.userPerPage)));
+
   roleDistribution = computed(() => {
     const all = this.nonAdminUsers();
     return [
@@ -683,6 +743,11 @@ export class AdminDashboardComponent implements OnInit {
   });
 
   enabledCount = computed(() => this.nonAdminUsers().filter(u => u.enabled).length);
+
+  pagesArray = computed(() => {
+    const total = this.totalUserPages();
+    return Array.from({ length: total }, (_, i) => i + 1);
+  });
 
   adminKeycloakId = '';
 
@@ -701,6 +766,10 @@ export class AdminDashboardComponent implements OnInit {
 
   setPage(page: string): void {
     this.currentPage.set(page);
+  }
+
+  setUserPage(p: number): void {
+    if (p >= 1 && p <= this.totalUserPages()) this.userPage.set(p);
   }
 
   countByRole(role: string): number {

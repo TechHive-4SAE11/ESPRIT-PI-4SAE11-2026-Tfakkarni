@@ -30,9 +30,12 @@
           </div>
 
           <div class="space-y-2">
-            <label for="password" class="text-sm font-medium leading-none">
-              Password
-            </label>
+            <div class="flex items-center justify-between">
+              <label for="password" class="text-sm font-medium leading-none">Password</label>
+              <a routerLink="/forgot-password" class="text-xs text-cyan-700 hover:text-cyan-800 hover:underline font-medium">
+                Mot de passe oublié ?
+              </a>
+            </div>
             <input z-input type="password" id="password" name="password" [(ngModel)]="password"
               placeholder="Enter your password" class="w-full auth-input" required />
           </div>

@@ -135,15 +135,6 @@ import { UserApiService, UserInfo } from '@/core/services/user-api.service';
 
           <div class="space-y-4">
             <div>
-              <label class="text-sm font-medium text-foreground mb-1.5 block">Mot de passe actuel</label>
-              <input z-input
-                type="password"
-                class="w-full"
-                placeholder="Entrez votre mot de passe actuel"
-                [(ngModel)]="currentPassword"
-              />
-            </div>
-            <div>
               <label class="text-sm font-medium text-foreground mb-1.5 block">Nouveau mot de passe</label>
               <input z-input
                 type="password"
@@ -201,7 +192,6 @@ export class ProfileComponent implements OnInit {
   role = '';
 
   // Password form fields
-  currentPassword = '';
   newPassword = '';
   confirmPassword = '';
 
@@ -283,14 +273,14 @@ export class ProfileComponent implements OnInit {
   changePassword(): void {
     this.passwordMessage.set('');
 
-    if (!this.currentPassword || !this.newPassword || !this.confirmPassword) {
+    if (!this.newPassword || !this.confirmPassword) {
       this.passwordMessage.set('Veuillez remplir tous les champs');
       this.passwordSuccess.set(false);
       return;
     }
 
     if (this.newPassword.length < 6) {
-      this.passwordMessage.set('Le nouveau mot de passe doit contenir au moins 6 caractères');
+      this.passwordMessage.set('Le mot de passe doit contenir au moins 6 caractères');
       this.passwordSuccess.set(false);
       return;
     }
@@ -303,10 +293,7 @@ export class ProfileComponent implements OnInit {
 
     this.isChangingPassword.set(true);
 
-    this.userApiService.changePassword(this.keycloakId, {
-      currentPassword: this.currentPassword,
-      newPassword: this.newPassword,
-    })
+    this.userApiService.adminResetPassword(this.keycloakId, this.newPassword)
       .pipe(
         finalize(() => this.isChangingPassword.set(false)),
         takeUntilDestroyed(this.destroyRef),
@@ -315,7 +302,6 @@ export class ProfileComponent implements OnInit {
         next: () => {
           this.passwordMessage.set('Mot de passe modifié avec succès');
           this.passwordSuccess.set(true);
-          this.currentPassword = '';
           this.newPassword = '';
           this.confirmPassword = '';
         },

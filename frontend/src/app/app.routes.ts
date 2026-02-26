@@ -25,6 +25,13 @@ export const routes: Routes = [
       import('@/pages/signup/signup.component').then((m) => m.SignupComponent),
   },
   {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('@/pages/forgot-password/forgot-password.component').then(
+        (m) => m.ForgotPasswordComponent
+      ),
+  },
+  {
     path: 'admin',
     loadComponent: () =>
       import('@/pages/admin-dashboard/admin-dashboard.component').then(

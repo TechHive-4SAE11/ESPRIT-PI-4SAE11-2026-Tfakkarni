@@ -65,4 +65,12 @@ export class UserApiService {
   toggleEnabled(keycloakId: string, enabled: boolean): Observable<UserInfo> {
     return this.http.put<UserInfo>(`${this.baseUrl}/toggle-enabled/${keycloakId}`, { enabled });
   }
+
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl.replace('/api/users', '/api/password-reset')}/forgot`, { email });
+  }
+
+  verifyAndResetPassword(email: string, code: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl.replace('/api/users', '/api/password-reset')}/verify`, { email, code, newPassword });
+  }
 }

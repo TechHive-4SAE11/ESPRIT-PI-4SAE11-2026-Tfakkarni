@@ -34,6 +34,10 @@ public class KeycloakUserService {
   @Value("${keycloak.client-secret:}")
   private String clientSecret;
 
+  // Client frontend pour vérification du mot de passe actuel (direct access grants activés)
+  @Value("${keycloak.frontend-client-id:tfakkarni-frontend}")
+  private String frontendClientId;
+
   /**
    * Register a new user in Keycloak under the configured realm.
    */
@@ -278,14 +282,10 @@ public class KeycloakUserService {
 
     MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
     body.add("grant_type", "password");
-    body.add("client_id", clientId);
+    // Utiliser le client frontend qui a les direct access grants activés
+    body.add("client_id", frontendClientId);
     body.add("username", email);
     body.add("password", password);
-
-    // Add client_secret if configured (for confidential clients)
-    if (clientSecret != null && !clientSecret.isBlank()) {
-      body.add("client_secret", clientSecret);
-    }
 
     try {
       restTemplate.exchange(tokenUrl, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
