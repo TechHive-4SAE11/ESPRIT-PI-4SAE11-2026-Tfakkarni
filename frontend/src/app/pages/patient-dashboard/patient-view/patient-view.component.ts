@@ -119,7 +119,7 @@ export class PatientViewComponent implements OnInit {
     this.loadStats();
     this.loadCustomGames();
     this.loadAndCacheUserGender();
-    this.loadNotifications();
+    // Notifications are loaded inside loadUserNeonDbId() after neon ID is available
     // Médicaments : charger via le service partagé (évite un double-fetch si déjà chargé)
     this.logState.loadTodayLog(this.keycloakId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -129,9 +129,10 @@ export class PatientViewComponent implements OnInit {
   // ── Notification Methods ────────────────────────────────────────────────────
 
   loadNotifications(): void {
-    if (!this.keycloakId) return;
+    const neonId = this.userNeonDbId();
+    if (!neonId) return;
     this.isLoadingNotifs.set(true);
-    this.notificationService.getNotifications(this.keycloakId)
+    this.notificationService.getNotifications(neonId.toString())
       .pipe(
         tap((res: NotificationResponse) => {
           this.notifications.set(res.notifications || []);
@@ -160,8 +161,9 @@ export class PatientViewComponent implements OnInit {
   }
 
   markNotifAsRead(notif: MedicationNotification): void {
-    if (notif.read) return;
-    this.notificationService.markAsRead(this.keycloakId, notif.id)
+    const neonId = this.userNeonDbId();
+    if (notif.read || !neonId) return;
+    this.notificationService.markAsRead(neonId.toString(), notif.id)
       .pipe(
         tap(() => {
           this.notifications.update(list =>
@@ -176,7 +178,9 @@ export class PatientViewComponent implements OnInit {
   }
 
   markAllNotifsAsRead(): void {
-    this.notificationService.markAllAsRead(this.keycloakId)
+    const neonId = this.userNeonDbId();
+    if (!neonId) return;
+    this.notificationService.markAllAsRead(neonId.toString())
       .pipe(
         tap(() => {
           this.notifications.update(list =>
@@ -191,8 +195,10 @@ export class PatientViewComponent implements OnInit {
   }
 
   refreshNotifications(): void {
+    const neonId = this.userNeonDbId();
+    if (!neonId) return;
     this.isLoadingNotifs.set(true);
-    this.notificationService.refreshNotifications(this.keycloakId)
+    this.notificationService.refreshNotifications(neonId.toString())
       .pipe(
         tap((res: NotificationResponse) => {
           this.notifications.set(res.notifications || []);
@@ -362,6 +368,8 @@ export class PatientViewComponent implements OnInit {
           console.log('[PatientView] User info retrieved. DB ID:', userInfo.id);
           this.userNeonDbId.set(userInfo.id);
           this.currentUser.set(userInfo);
+          // Load notifications now that we have the neon DB ID
+          this.loadNotifications();
         }),
         catchError(err => {
           console.error('[PatientView] Failed to load user info', err);
