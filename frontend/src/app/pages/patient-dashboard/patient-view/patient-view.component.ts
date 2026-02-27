@@ -16,6 +16,7 @@ import { type IntakeStatus, type MedicationIntakeLogResponse } from '@/core/mode
 import { AuthService } from '@/core/auth';
 import { AudioGameService, type SpeechLanguage } from '@/core/services/audio-game.service';
 import { ThemeService } from '@/core/services/theme.service';
+import { NotificationService, type MedicationNotification, type NotificationResponse } from '@/core/services/notification.service';
 import { GuessPlaceComponent } from './guess-place/guess-place.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
 import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-plan-list.component';
@@ -34,15 +35,16 @@ function nowTime(): string {
   templateUrl: './patient-view.component.html',
 })
 export class PatientViewComponent implements OnInit {
-  private readonly destroyRef            = inject(DestroyRef);
-  private readonly gameService           = inject(GameService);
-  private readonly movieGameService      = inject(MovieGameService);
-  private readonly userApiService        = inject(UserApiService);
-  private readonly customGameService     = inject(CustomGameService);
-  private readonly router                = inject(Router);
-  private readonly authService           = inject(AuthService);
-  private readonly audioGameService      = inject(AudioGameService);
-  readonly themeService                  = inject(ThemeService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly gameService = inject(GameService);
+  private readonly movieGameService = inject(MovieGameService);
+  private readonly userApiService = inject(UserApiService);
+  private readonly customGameService = inject(CustomGameService);
+  private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly audioGameService = inject(AudioGameService);
+  readonly themeService = inject(ThemeService);
+  private readonly notificationService = inject(NotificationService);
 
   // ── Service partagé (source unique de vérité pour les médicaments) ─────────
   readonly logState = inject(DailyLogStateService);
@@ -54,29 +56,29 @@ export class PatientViewComponent implements OnInit {
   currentPage = signal<string>('Home');
 
   // ── Game data ──────────────────────────────────────────────────────────────
-  games      = signal<GameResponse[]>([]);
+  games = signal<GameResponse[]>([]);
   movieGames = signal<MovieGameResponse[]>([]);
-  stats      = signal<GameStatsResponse | null>(null);
+  stats = signal<GameStatsResponse | null>(null);
   customGames = signal<CustomGameResponse[]>([]);
 
   // ── Loading flags ──────────────────────────────────────────────────────────
-  isLoadingGames        = signal(false);
-  isLoadingMovieGames   = signal(false);
-  isLoadingStats        = signal(false);
-  isLoadingCustomGames  = signal<boolean>(false);
+  isLoadingGames = signal(false);
+  isLoadingMovieGames = signal(false);
+  isLoadingStats = signal(false);
+  isLoadingCustomGames = signal<boolean>(false);
 
   // ── Médicaments — lus depuis le service partagé ────────────────────────────
   /** Proxy computed vers les signaux du service partagé */
-  readonly todayMedications    = computed(() => this.logState.todayMedications());
-  readonly isLoadingMeds       = computed(() => this.logState.loading());
-  readonly medsTakenCount      = computed(() => this.logState.medsTakenCount());
-  readonly medsTotal           = computed(() => this.logState.medsTotal());
+  readonly todayMedications = computed(() => this.logState.todayMedications());
+  readonly isLoadingMeds = computed(() => this.logState.loading());
+  readonly medsTakenCount = computed(() => this.logState.medsTakenCount());
+  readonly medsTotal = computed(() => this.logState.medsTotal());
   readonly medsProgressPercent = computed(() => this.logState.medsProgressPercent());
 
   // ── Toast ──────────────────────────────────────────────────────────────────
-  updatingMedId  = signal<number | null>(null);
-  medToastMsg    = signal('');
-  medToastType   = signal<'success' | 'error'>('success');
+  updatingMedId = signal<number | null>(null);
+  medToastMsg = signal('');
+  medToastType = signal<'success' | 'error'>('success');
 
   // ── User info ──────────────────────────────────────────────────────────────
   userNeonDbId = signal<number | null>(null);
@@ -84,6 +86,12 @@ export class PatientViewComponent implements OnInit {
 
   // ── Language preference for TTS ────────────────────────────────────────────
   selectedLanguage = signal<SpeechLanguage>(this.audioGameService.getPreferredLanguage());
+
+  // ── Notifications ──────────────────────────────────────────────────────────
+  notifications = signal<MedicationNotification[]>([]);
+  unreadNotifCount = signal(0);
+  isNotifPanelOpen = signal(false);
+  isLoadingNotifs = signal(false);
 
   // ── Computed ───────────────────────────────────────────────────────────────
   playableGames = computed(() => this.games().filter(g => g.imageCount >= 2));
@@ -93,8 +101,8 @@ export class PatientViewComponent implements OnInit {
   }
 
   setPage(page: string): void { this.currentPage.set(page); }
-  playGame(id: number):       void { this.router.navigate(['/patient/play', id]); }
-  playMovieGame(id: number):  void { this.router.navigate(['/patient/play-movie', id]); }
+  playGame(id: number): void { this.router.navigate(['/patient/play', id]); }
+  playMovieGame(id: number): void { this.router.navigate(['/patient/play-movie', id]); }
   logout(): void { this.authService.logout(); }
 
   /** Switch TTS language and persist the preference */
@@ -111,9 +119,89 @@ export class PatientViewComponent implements OnInit {
     this.loadStats();
     this.loadCustomGames();
     this.loadAndCacheUserGender();
+    this.loadNotifications();
     // Médicaments : charger via le service partagé (évite un double-fetch si déjà chargé)
     this.logState.loadTodayLog(this.keycloakId)
       .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
+  }
+
+  // ── Notification Methods ────────────────────────────────────────────────────
+
+  loadNotifications(): void {
+    if (!this.keycloakId) return;
+    this.isLoadingNotifs.set(true);
+    this.notificationService.getNotifications(this.keycloakId)
+      .pipe(
+        tap((res: NotificationResponse) => {
+          this.notifications.set(res.notifications || []);
+          this.unreadNotifCount.set(res.unreadCount);
+        }),
+        catchError(() => {
+          console.warn('[PatientView] Failed to load notifications');
+          return of(null);
+        }),
+        finalize(() => this.isLoadingNotifs.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  toggleNotifPanel(): void {
+    const isOpen = !this.isNotifPanelOpen();
+    this.isNotifPanelOpen.set(isOpen);
+    if (isOpen && this.notifications().length === 0) {
+      this.loadNotifications();
+    }
+  }
+
+  closeNotifPanel(): void {
+    this.isNotifPanelOpen.set(false);
+  }
+
+  markNotifAsRead(notif: MedicationNotification): void {
+    if (notif.read) return;
+    this.notificationService.markAsRead(this.keycloakId, notif.id)
+      .pipe(
+        tap(() => {
+          this.notifications.update(list =>
+            list.map(n => n.id === notif.id ? { ...n, read: true } : n)
+          );
+          this.unreadNotifCount.update(c => Math.max(0, c - 1));
+        }),
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  markAllNotifsAsRead(): void {
+    this.notificationService.markAllAsRead(this.keycloakId)
+      .pipe(
+        tap(() => {
+          this.notifications.update(list =>
+            list.map(n => ({ ...n, read: true }))
+          );
+          this.unreadNotifCount.set(0);
+        }),
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  refreshNotifications(): void {
+    this.isLoadingNotifs.set(true);
+    this.notificationService.refreshNotifications(this.keycloakId)
+      .pipe(
+        tap((res: NotificationResponse) => {
+          this.notifications.set(res.notifications || []);
+          this.unreadNotifCount.set(res.unreadCount);
+        }),
+        catchError(() => of(null)),
+        finalize(() => this.isLoadingNotifs.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe();
   }
 
