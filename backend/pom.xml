@@ -28,6 +28,7 @@
 		<module>alert-service</module>
 		<module>ml-service</module>
 		<module>medical-service</module>
+		<module>medicament-validation-service</module>
 	</modules>
 	<dependencyManagement>
 		<dependencies>

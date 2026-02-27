@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, finalize, of, tap, switchMap } from 'rxjs';
 import { KeycloakService } from 'keycloak-angular';
+import { NotificationService, type MedicationNotification, type NotificationResponse } from '@/core/services/notification.service';
 
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
@@ -67,6 +68,13 @@ export class HelperViewComponent implements OnInit {
   userNeonDbId = signal<number | null>(null);
   currentUser = signal<UserInfo | null>(null);
 
+  // ── Notifications ──────────────────────────────────────────────────────────
+  private readonly notificationService = inject(NotificationService);
+  notifications = signal<MedicationNotification[]>([]);
+  unreadNotifCount = signal(0);
+  isNotifPanelOpen = signal(false);
+  isLoadingNotifs = signal(false);
+
   ngOnInit(): void {
     if (this.keycloakId) {
       this.loadUserNeonDbId();
@@ -85,6 +93,7 @@ export class HelperViewComponent implements OnInit {
           console.log('[HelperView] User info retrieved. DB ID:', userInfo.id);
           this.userNeonDbId.set(userInfo.id);
           this.currentUser.set(userInfo);
+          this.loadNotifications();
         }),
         catchError(err => {
           console.error('[HelperView] Failed to load user info', err);
@@ -93,4 +102,90 @@ export class HelperViewComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
-  }}
+  }
+
+  // ── Notification Methods ────────────────────────────────────────────────────
+
+  loadNotifications(): void {
+    const neonId = this.userNeonDbId();
+    if (!neonId) return;
+    this.isLoadingNotifs.set(true);
+    this.notificationService.getNotifications(neonId.toString())
+      .pipe(
+        tap((res: NotificationResponse) => {
+          this.notifications.set(res.notifications || []);
+          this.unreadNotifCount.set(res.unreadCount);
+        }),
+        catchError(() => {
+          console.warn('[HelperView] Failed to load notifications');
+          return of(null);
+        }),
+        finalize(() => this.isLoadingNotifs.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  toggleNotifPanel(): void {
+    const isOpen = !this.isNotifPanelOpen();
+    this.isNotifPanelOpen.set(isOpen);
+    if (isOpen && this.notifications().length === 0) {
+      this.loadNotifications();
+    }
+  }
+
+  closeNotifPanel(): void {
+    this.isNotifPanelOpen.set(false);
+  }
+
+  markNotifAsRead(notif: MedicationNotification): void {
+    const neonId = this.userNeonDbId();
+    if (notif.read || !neonId) return;
+    this.notificationService.markAsRead(neonId.toString(), notif.id)
+      .pipe(
+        tap(() => {
+          this.notifications.update(list =>
+            list.map(n => n.id === notif.id ? { ...n, read: true } : n)
+          );
+          this.unreadNotifCount.update(c => Math.max(0, c - 1));
+        }),
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  markAllNotifsAsRead(): void {
+    const neonId = this.userNeonDbId();
+    if (!neonId) return;
+    this.notificationService.markAllAsRead(neonId.toString())
+      .pipe(
+        tap(() => {
+          this.notifications.update(list =>
+            list.map(n => ({ ...n, read: true }))
+          );
+          this.unreadNotifCount.set(0);
+        }),
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  refreshNotifications(): void {
+    const neonId = this.userNeonDbId();
+    if (!neonId) return;
+    this.isLoadingNotifs.set(true);
+    this.notificationService.refreshNotifications(neonId.toString())
+      .pipe(
+        tap((res: NotificationResponse) => {
+          this.notifications.set(res.notifications || []);
+          this.unreadNotifCount.set(res.unreadCount);
+        }),
+        catchError(() => of(null)),
+        finalize(() => this.isLoadingNotifs.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+}
