@@ -5,9 +5,9 @@ spring:
   application:
     name: medical-service
   datasource:
-    url: jdbc:postgresql://ep-damp-bar-agi72bgl-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
+    url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
     username: neondb_owner
-    password: npg_8ZUiCsXMu0jd
+    password: npg_3uElGswIc7gk
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -18,9 +18,18 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:demo-key}
+      model: gpt-3.5-turbo
+
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
+
+# Alert service (for appointment reminders)
+alert-service:
+  url: http://localhost:18084

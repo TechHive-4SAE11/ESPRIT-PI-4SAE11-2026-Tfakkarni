@@ -74,6 +74,61 @@ export const routes: Routes = [
         (m) => m.AccessDeniedComponent
       ),
   },
+  
+  // ===== ROUTES POUR LES RENDEZ-VOUS =====
+  {
+    path: 'appointments',
+    loadComponent: () =>
+      import('@/pages/appointments/appointments-list/appointments-list.component').then(
+        (m) => m.AppointmentsListComponent
+      ),
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'appointments/new',
+    loadComponent: () =>
+      import('@/pages/appointments/appointment-add/appointment-add.component').then(
+        (m) => m.AppointmentAddComponent
+      ),
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'appointments/edit/:id',
+    loadComponent: () =>
+      import('@/pages/appointments/appointment-edit/appointment-edit.component').then(
+        (m) => m.AppointmentEditComponent
+      ),
+    canActivate: [AuthGuard],
+  },
+  
+  // ===== ROUTES POUR LES RAPPELS =====
+  {
+    path: 'appointments/:appointmentId/reminders/new',
+    loadComponent: () =>
+      import('@/pages/appointments/create-reminder/create-reminder.component').then(
+        (m) => m.CreateReminderComponent
+      ),
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'reminders/:reminderId/edit',
+    loadComponent: () =>
+      import('@/pages/appointments/edit-reminder/edit-reminder.component').then(
+        (m) => m.EditReminderComponent
+      ),
+    canActivate: [AuthGuard],
+  },
+  
+  // ===== ROUTE GÉNÉRIQUE (À METTRE APRÈS LES SPÉCIFIQUES) =====
+  {
+    path: 'appointments/:id',
+    loadComponent: () =>
+      import('@/pages/appointments/appointment-detail/appointment-detail.component').then(
+        (m) => m.AppointmentDetailComponent
+      ),
+    canActivate: [AuthGuard],
+  },
+  
   {
     path: '**',
     redirectTo: 'landing',

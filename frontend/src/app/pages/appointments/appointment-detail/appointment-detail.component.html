@@ -1,0 +1,216 @@
+<div class="space-y-6 max-w-2xl">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <button
+      z-button
+      zType="outline"
+      zSize="lg"
+      class="rounded-full px-6"
+      type="button"
+      (click)="goBack()"
+    >
+      ← Retour
+    </button>
+  </div>
+
+  @if (errorMessage) {
+    <div class="rounded-2xl border border-red-200 bg-red-50 dark:bg-red-950/30 px-5 py-4 text-red-700 dark:text-red-300 shadow-sm">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (isLoading) {
+    <div class="rounded-2xl border bg-muted/10 shadow-sm px-6 py-16 text-center text-muted-foreground">
+      Chargement du rendez-vous...
+    </div>
+  } @else if (appointment) {
+    <z-card class="p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50">
+      <div class="space-y-6">
+        <div class="flex items-start gap-4">
+          <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-3xl shadow-sm">
+            {{ typeEmoji(appointment.type) }}
+          </div>
+          <div class="min-w-0 flex-1">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+              {{ appointment.title }}
+            </h1>
+            <p class="mt-1 text-sm text-muted-foreground">
+              {{ appointment.startTime | date: 'EEEE d MMMM yyyy · HH:mm' }}
+            </p>
+            <div class="mt-3">
+              <z-badge
+                zType="secondary"
+                class="rounded-full px-3 py-1 text-xs font-medium"
+                [class]="statusBadgeClasses(appointment.status)"
+              >
+                {{ appointment.status }}
+              </z-badge>
+            </div>
+          </div>
+        </div>
+
+        @if (appointment.description) {
+          <div class="rounded-xl bg-gray-50 dark:bg-gray-800/50 p-4">
+            <p class="text-sm font-medium text-muted-foreground mb-1">Description</p>
+            <p class="text-gray-800 dark:text-gray-200">{{ appointment.description }}</p>
+          </div>
+        }
+
+        @if (appointment.notes) {
+          <div class="rounded-xl bg-gray-50 dark:bg-gray-800/50 p-4">
+            <p class="text-sm font-medium text-muted-foreground mb-1">Notes</p>
+            <p class="text-gray-800 dark:text-gray-200">{{ appointment.notes }}</p>
+          </div>
+        }
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="rounded-xl bg-blue-50/50 dark:bg-blue-950/20 p-4 border border-blue-100/50 dark:border-blue-900/30">
+            <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Patient</p>
+            <p class="mt-1 font-medium text-gray-900 dark:text-white">👤 {{ appointment.patientId }}</p>
+          </div>
+          @if (appointment.doctorId) {
+            <div class="rounded-xl bg-blue-50/50 dark:bg-blue-950/20 p-4 border border-blue-100/50 dark:border-blue-900/30">
+              <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Médecin</p>
+              <p class="mt-1 font-medium text-gray-900 dark:text-white">👨‍⚕️ {{ appointment.doctorId }}</p>
+            </div>
+          }
+        </div>
+
+        <!-- ========== SECTION RAPPELS AJOUTÉE ========== -->
+        <div class="mt-6 space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              Rappels
+            </h2>
+            <button
+              z-button
+              zSize="lg"
+              class="rounded-full px-5"
+              type="button"
+              (click)="goToCreateReminder()"
+            >
+              + Nouveau rappel
+            </button>
+          </div>
+
+          @if (remindersError) {
+            <div
+              class="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm text-red-700 dark:text-red-300"
+            >
+              {{ remindersError }}
+            </div>
+          } @else if (remindersLoading) {
+            <div
+              class="rounded-xl border bg-muted/10 px-4 py-6 text-sm text-muted-foreground"
+            >
+              Chargement des rappels...
+            </div>
+          } @else if (reminders.length === 0) {
+            <div
+              class="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 px-4 py-6 text-sm text-muted-foreground text-center"
+            >
+              Aucun rappel n'est encore configuré pour ce rendez-vous.
+            </div>
+          } @else {
+            <div class="space-y-3">
+              @for (reminder of reminders; track reminder.id) {
+                <div
+                  class="flex items-start justify-between gap-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/40 px-4 py-3"
+                >
+                  <div class="flex items-start gap-3">
+                    <div
+                      class="mt-1 flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950/40 text-xl"
+                    >
+                      {{ reminderEmoji(reminder.reminderType) }}
+                    </div>
+                    <div class="space-y-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span
+                          class="text-sm font-semibold text-gray-900 dark:text-white"
+                        >
+                          {{ reminder.reminderType }}
+                        </span>
+                        <z-badge
+                          zType="secondary"
+                          class="rounded-full px-2 py-0.5 text-xs font-medium"
+                          [class]="reminderStatusClasses(reminder.status)"
+                        >
+                          {{ reminder.status || 'PENDING' }}
+                        </z-badge>
+                      </div>
+                      <p class="text-xs text-muted-foreground">
+                        {{ reminder.reminderTime | date: 'EEEE d MMMM yyyy · HH:mm' }}
+                        · {{ reminder.channel }}
+                      </p>
+                      @if (reminder.message) {
+                        <p class="text-sm text-gray-800 dark:text-gray-200">
+                          {{ reminder.message }}
+                        </p>
+                      }
+                    </div>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <button
+                      z-button
+                      zType="outline"
+                      zSize="sm"
+                      class="rounded-full px-3"
+                      type="button"
+                      (click)="editReminder(reminder.id!)"
+                    >
+                      ✏️ Modifier
+                    </button>
+                    <button
+                      z-button
+                      zType="destructive"
+                      zSize="sm"
+                      class="rounded-full px-3"
+                      type="button"
+                      (click)="deleteReminder(reminder.id!)"
+                    >
+                      🗑️ Supprimer
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+        <!-- ========== FIN SECTION RAPPELS ========== -->
+
+        <div class="flex flex-wrap gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+          <button
+            z-button
+            zType="outline"
+            zSize="lg"
+            class="rounded-full px-6"
+            type="button"
+            (click)="goBack()"
+          >
+            Retour
+          </button>
+          @if (appointment.status !== 'CANCELLED' && appointment.status !== 'COMPLETED') {
+            <button
+              z-button
+              zSize="lg"
+              class="rounded-full px-6"
+              type="button"
+              (click)="edit()"
+            >
+              ✏️ Modifier
+            </button>
+            <button
+              z-button
+              zType="destructive"
+              zSize="lg"
+              class="rounded-full px-6"
+              type="button"
+              (click)="cancelAppointment()"
+            >
+              Annuler le rendez-vous
+            </button>
+          }
+        </div>
+      </div>
+    </z-card>
+  }
+</div>

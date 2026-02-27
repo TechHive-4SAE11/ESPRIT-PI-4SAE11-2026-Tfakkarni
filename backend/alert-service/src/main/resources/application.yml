@@ -17,7 +17,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-  # Redis configuration
+  # Redis configuration (ajouté par Hadil)
   data:
     redis:
       host: live-bullfrog-45869.upstash.io
