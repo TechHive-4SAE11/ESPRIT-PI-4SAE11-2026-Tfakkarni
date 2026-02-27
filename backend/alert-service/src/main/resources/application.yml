@@ -1,26 +1,20 @@
-server:
-  port: 18084
-
 spring:
   application:
     name: alert-service
-  datasource:
-    url: jdbc:postgresql://ep-damp-bar-agi72bgl-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
-    username: neondb_owner
-    password: npg_8ZUiCsXMu0jd
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
+  # config service/client
+  cloud:
+    config:
+      enabled: true
+  config:
+    import: optional:configserver:http://localhost:8888
+
+# actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
