@@ -1,14 +1,14 @@
 package org.techhive.medicalservice.entity;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.techhive.medicalservice.entity.enums.EquipmentStatus;
+import org.techhive.medicalservice.entity.enums.EquipmentCategory;
+import org.techhive.medicalservice.entity.enums.EquipmentCondition;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
 
 @Entity
 @Getter
@@ -24,19 +24,21 @@ public class Equipment {
 
     private String name;
     private String description;
-    private String category;
+    @Enumerated(EnumType.STRING)
+    private EquipmentCategory category;
 
     @Enumerated(EnumType.STRING)
     private EquipmentStatus status;
 
     private LocalDateTime donationDate;
-    private String condition;
+
+    @Enumerated(EnumType.STRING)
+    private EquipmentCondition condition;
 
     @Column(name = "donor_id")
     private Long donorId;
 
     @OneToMany(mappedBy = "equipment", cascade = CascadeType.ALL)
     private List<EquipmentLoan> loans;
-
 
 }

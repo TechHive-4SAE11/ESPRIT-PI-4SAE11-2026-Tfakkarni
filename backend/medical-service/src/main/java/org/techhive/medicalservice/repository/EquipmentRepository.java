@@ -6,10 +6,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.techhive.medicalservice.entity.Equipment;
 import org.techhive.medicalservice.entity.enums.EquipmentStatus;
+import org.techhive.medicalservice.entity.enums.EquipmentCategory;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
 
 public interface EquipmentRepository extends JpaRepository<Equipment, Long> {
 
@@ -17,7 +17,7 @@ public interface EquipmentRepository extends JpaRepository<Equipment, Long> {
     List<Equipment> findByStatus(EquipmentStatus status);
 
     // Find by category
-    List<Equipment> findByCategory(String category);
+    List<Equipment> findByCategory(EquipmentCategory category);
 
     // Find by donor
     List<Equipment> findByDonorId(Long donorId);
@@ -30,7 +30,7 @@ public interface EquipmentRepository extends JpaRepository<Equipment, Long> {
     List<Equipment> findByNameContainingIgnoreCase(String name);
 
     // Find by category and status
-    List<Equipment> findByCategoryAndStatus(String category, EquipmentStatus status);
+    List<Equipment> findByCategoryAndStatus(EquipmentCategory category, EquipmentStatus status);
 
     // Find donated after date
     List<Equipment> findByDonationDateAfter(LocalDateTime date);

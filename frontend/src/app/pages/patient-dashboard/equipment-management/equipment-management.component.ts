@@ -17,7 +17,9 @@ import {
   EquipmentDTO,
   EquipmentLoanDTO,
   EquipmentStatus,
-  LoanStatus
+  LoanStatus,
+  EquipmentCategory,
+  EquipmentCondition
 } from '@/core/models/equipment.model';
 import { UserApiService } from '@/core/services/user-api.service';
 
@@ -63,6 +65,21 @@ export class EquipmentManagementComponent implements OnInit {
     LoanStatus.OVERDUE,
     LoanStatus.CANCELLED
   ];
+  equipmentCategories: EquipmentCategory[] = [
+    EquipmentCategory.MOBILITY,
+    EquipmentCategory.RESPIRATORY,
+    EquipmentCategory.CARDIAC,
+    EquipmentCategory.ORTHOPEDIC,
+    EquipmentCategory.FURNITURE,
+    EquipmentCategory.OTHER
+  ];
+  equipmentConditions: EquipmentCondition[] = [
+    EquipmentCondition.NEW,
+    EquipmentCondition.EXCELLENT,
+    EquipmentCondition.GOOD,
+    EquipmentCondition.FAIR,
+    EquipmentCondition.POOR
+  ];
 
   // ─── State ──────────────────────────────────────────────────
   activeTab = signal<TabType>('equipment');
@@ -101,8 +118,8 @@ export class EquipmentManagementComponent implements OnInit {
   detailsEquipment = signal<EquipmentDTO | null>(null);
 
   // ─── Forms ──────────────────────────────────────────────────
-  eqForm: EquipmentForm = { name: '', description: '', category: '', condition: '', status: EquipmentStatus.AVAILABLE };
-  donateForm: EquipmentForm = { name: '', description: '', category: '', condition: '', status: EquipmentStatus.DONATED };
+  eqForm: EquipmentForm = { name: '', description: '', category: EquipmentCategory.OTHER, condition: EquipmentCondition.GOOD, status: EquipmentStatus.AVAILABLE };
+  donateForm: EquipmentForm = { name: '', description: '', category: EquipmentCategory.OTHER, condition: EquipmentCondition.GOOD, status: EquipmentStatus.DONATED };
   extendDays = 7;
   newStatus: EquipmentStatus = EquipmentStatus.AVAILABLE;
 
@@ -358,7 +375,7 @@ export class EquipmentManagementComponent implements OnInit {
 
   openAddEquipmentModal(): void {
     this.editingEquipment.set(null);
-    this.eqForm = { name: '', description: '', category: '', condition: '', status: EquipmentStatus.AVAILABLE };
+    this.eqForm = { name: '', description: '', category: EquipmentCategory.OTHER, condition: EquipmentCondition.GOOD, status: EquipmentStatus.AVAILABLE };
     this.showEquipmentModal.set(true);
   }
 
@@ -367,8 +384,8 @@ export class EquipmentManagementComponent implements OnInit {
     this.eqForm = {
       name: eq.name,
       description: eq.description || '',
-      category: eq.category,
-      condition: eq.condition || '',
+      category: eq.category || EquipmentCategory.OTHER,
+      condition: eq.condition || EquipmentCondition.GOOD,
       status: eq.status || EquipmentStatus.AVAILABLE
     };
     this.showEquipmentModal.set(true);
@@ -388,8 +405,8 @@ export class EquipmentManagementComponent implements OnInit {
     const payload: EquipmentDTO = {
       name: this.eqForm.name,
       description: this.eqForm.description,
-      category: this.eqForm.category,
-      condition: this.eqForm.condition,
+      category: this.eqForm.category as EquipmentCategory,
+      condition: this.eqForm.condition as EquipmentCondition,
       status: this.eqForm.status as EquipmentStatus,
       donorId: this.userNeonDbId() ?? 1,
     };
@@ -444,7 +461,7 @@ export class EquipmentManagementComponent implements OnInit {
   // ─── Donation ────────────────────────────────────────────────
 
   openDonateModal(): void {
-    this.donateForm = { name: '', description: '', category: '', condition: '', status: EquipmentStatus.DONATED };
+    this.donateForm = { name: '', description: '', category: EquipmentCategory.OTHER, condition: EquipmentCondition.GOOD, status: EquipmentStatus.DONATED };
     this.showDonateModal.set(true);
   }
 
@@ -461,8 +478,8 @@ export class EquipmentManagementComponent implements OnInit {
     const payload: EquipmentDTO = {
       name: this.donateForm.name,
       description: this.donateForm.description,
-      category: this.donateForm.category,
-      condition: this.donateForm.condition,
+      category: this.donateForm.category as EquipmentCategory,
+      condition: this.donateForm.condition as EquipmentCondition,
       status: EquipmentStatus.DONATED,
       donorId: this.userNeonDbId() ?? 1,
     };

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.techhive.medicalservice.dto.EquipmentDTO;
 import org.techhive.medicalservice.entity.Equipment;
 import org.techhive.medicalservice.entity.enums.EquipmentStatus;
+import org.techhive.medicalservice.entity.enums.EquipmentCategory;
 import org.techhive.medicalservice.service.IEquipmentService;
 
 import java.time.LocalDateTime;
@@ -106,14 +107,11 @@ public class EquipmentController {
     }
 
     @GetMapping("/category/{category}")
-    public ResponseEntity<List<EquipmentDTO>> getEquipmentByCategory(@PathVariable String category) {
-        log.info("Fetching equipment in category: {}", category);
-
-        List<Equipment> equipmentList = equipmentService.getEquipmentByCategory(category);
-        List<EquipmentDTO> equipmentDTOs = equipmentList.stream()
+    public ResponseEntity<List<EquipmentDTO>> getEquipmentByCategory(@PathVariable EquipmentCategory category) {
+        List<Equipment> equipment = equipmentService.getEquipmentByCategory(category);
+        return ResponseEntity.ok(equipment.stream()
                 .map(EquipmentDTO::fromEntity)
-                .toList();
-        return ResponseEntity.ok(equipmentDTOs);
+                .toList());
     }
 
     @GetMapping("/donor/{donorId}")
@@ -149,16 +147,13 @@ public class EquipmentController {
         return ResponseEntity.ok(equipmentDTOs);
     }
 
-    @GetMapping("/category/{category}/status/{status}")
+    @GetMapping("/filter/{category}/{status}")
     public ResponseEntity<List<EquipmentDTO>> getEquipmentByCategoryAndStatus(
-            @PathVariable String category, @PathVariable EquipmentStatus status) {
-        log.info("Fetching equipment in category {} with status {}", category, status);
-
-        List<Equipment> equipmentList = equipmentService.getEquipmentByCategoryAndStatus(category, status);
-        List<EquipmentDTO> equipmentDTOs = equipmentList.stream()
+            @PathVariable EquipmentCategory category, @PathVariable EquipmentStatus status) {
+        List<Equipment> equipment = equipmentService.getEquipmentByCategoryAndStatus(category, status);
+        return ResponseEntity.ok(equipment.stream()
                 .map(EquipmentDTO::fromEntity)
-                .toList();
-        return ResponseEntity.ok(equipmentDTOs);
+                .toList());
     }
 
     @GetMapping("/donated-after")

@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.techhive.medicalservice.dto.EquipmentDTO;
 import org.techhive.medicalservice.entity.Equipment;
 import org.techhive.medicalservice.entity.enums.EquipmentStatus;
+import org.techhive.medicalservice.entity.enums.EquipmentCategory;
 import org.techhive.medicalservice.repository.EquipmentRepository;
 
 import java.time.LocalDateTime;
@@ -85,7 +86,7 @@ public class IEquipmentServiceImp implements IEquipmentService {
     }
 
     @Override
-    public List<Equipment> getEquipmentByCategory(String category) {
+    public List<Equipment> getEquipmentByCategory(EquipmentCategory category) {
         return equipmentRepository.findByCategory(category);
     }
 
@@ -108,7 +109,7 @@ public class IEquipmentServiceImp implements IEquipmentService {
     }
 
     @Override
-    public List<Equipment> getEquipmentByCategoryAndStatus(String category, EquipmentStatus status) {
+    public List<Equipment> getEquipmentByCategoryAndStatus(EquipmentCategory category, EquipmentStatus status) {
         return equipmentRepository.findByCategoryAndStatus(category, status);
     }
 
@@ -172,7 +173,7 @@ public class IEquipmentServiceImp implements IEquipmentService {
             log.error("Equipment name cannot be empty");
             return false;
         }
-        if (equipment.getCategory() == null || equipment.getCategory().trim().isEmpty()) {
+        if (equipment.getCategory() == null) {
             log.error("Equipment category cannot be empty");
             return false;
         }

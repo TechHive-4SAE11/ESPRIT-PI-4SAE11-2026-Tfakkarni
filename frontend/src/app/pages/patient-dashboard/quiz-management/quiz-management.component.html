@@ -325,12 +325,16 @@
                     <label class="text-sm font-semibold mb-1.5 block text-foreground">Sujet du Quiz <span
                             class="text-red-500">*</span></label>
                     <input class="w-full px-4 py-2 border border-border rounded-lg" [(ngModel)]="newQuiz.topic"
-                        placeholder="Sujet..." />
+                        name="quizTopic" #quizTopicRef="ngModel" required minlength="3" placeholder="Sujet..." />
+                    @if (quizTopicRef.invalid && quizTopicRef.touched) {
+                    <p class="text-xs text-red-500 mt-1">Sujet du quiz requis (min 3 caractères).</p>
+                    }
                 </div>
 
                 <div class="flex gap-3 justify-end mt-8 border-t border-border pt-4">
                     <button z-button zType="outline" (click)="cancelCreate()">Annuler</button>
-                    <button z-button [disabled]="!newQuiz.topic || creating()" (click)="saveQuiz()">
+                    <button z-button [disabled]="!newQuiz.topic || newQuiz.topic.length < 3 || creating()"
+                        (click)="saveQuiz()">
                         {{ creating() ? 'Sauvegarde...' : 'Sauvegarder' }}
                     </button>
                 </div>
@@ -351,7 +355,10 @@
                     <label class="text-sm font-semibold mb-1 block">Texte de la question <span
                             class="text-red-500">*</span></label>
                     <textarea class="w-full px-4 py-2 border rounded-lg" [(ngModel)]="newQuestion.text"
-                        rows="2"></textarea>
+                        name="questionText" #qTextRef="ngModel" required minlength="5" rows="2"></textarea>
+                    @if (qTextRef.invalid && qTextRef.touched) {
+                    <p class="text-xs text-red-500 mt-1">Texte de la question requis (min 5 caractères).</p>
+                    }
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
@@ -440,9 +447,11 @@
 
             <!-- Add new Answer bar -->
             <div class="flex gap-2 mb-6 bg-muted/30 p-3 rounded-lg border border-border">
-                <input type="text" [(ngModel)]="newSingleAnswerText" placeholder="Nouvelle réponse possible..."
-                    class="flex-1 px-3 py-2 border rounded-md">
-                <button z-button (click)="addSingleAnswerToQuestion()">Ajouter</button>
+                <input type="text" [(ngModel)]="newSingleAnswerText" name="newAns" #newAnsRef="ngModel" required
+                    minlength="1" placeholder="Nouvelle réponse possible..." class="flex-1 px-3 py-2 border rounded-md"
+                    [class.border-red-500]="newAnsRef.invalid && newAnsRef.touched">
+                <button z-button [disabled]="!newSingleAnswerText.trim()"
+                    (click)="addSingleAnswerToQuestion()">Ajouter</button>
             </div>
 
             <!-- List of Answers -->

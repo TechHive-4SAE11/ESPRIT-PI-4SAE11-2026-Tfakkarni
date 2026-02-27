@@ -380,8 +380,12 @@
     <div class="space-y-4">
       <div>
         <label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">Nom *</label>
-        <input [(ngModel)]="eqForm.name" type="text" placeholder="Ex: Fauteuil roulant"
+        <input [(ngModel)]="eqForm.name" name="eqName" #eqNameRef="ngModel" required minlength="3" type="text"
+          placeholder="Ex: Fauteuil roulant"
           class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+        @if (eqNameRef.invalid && eqNameRef.touched) {
+        <p class="text-xs text-red-500 mt-1">Le nom est requis (3 caractères min).</p>
+        }
       </div>
       <div>
         <label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">Description</label>
@@ -391,13 +395,24 @@
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">Catégorie *</label>
-          <input [(ngModel)]="eqForm.category" type="text" placeholder="Ex: Mobilité"
-            class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+          <select [(ngModel)]="eqForm.category" name="eqCategory" #eqCatRef="ngModel" required
+            class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            @for (c of equipmentCategories; track c) {
+            <option [value]="c">{{ c }}</option>
+            }
+          </select>
+          @if (eqCatRef.invalid && eqCatRef.touched) {
+          <p class="text-xs text-red-500 mt-1">La catégorie est requise.</p>
+          }
         </div>
         <div>
           <label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">Condition</label>
-          <input [(ngModel)]="eqForm.condition" type="text" placeholder="Ex: Bon état"
-            class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+          <select [(ngModel)]="eqForm.condition" name="eqCondition"
+            class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            @for (cond of equipmentConditions; track cond) {
+            <option [value]="cond">{{ cond }}</option>
+            }
+          </select>
         </div>
       </div>
       @if (!editingEquipment()) {
@@ -417,8 +432,9 @@
         class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 font-medium text-sm transition-colors">
         Annuler
       </button>
-      <button (click)="saveEquipment()" [disabled]="isSaving()"
-        class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold text-sm transition-colors shadow">
+      <button (click)="saveEquipment()"
+        [disabled]="isSaving() || (!eqForm.name.trim() || !eqForm.category.trim() || eqForm.name.length < 3)"
+        class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors shadow">
         @if (isSaving()) { ⏳ Sauvegarde... } @else { 💾 Sauvegarder }
       </button>
     </div>
@@ -440,8 +456,12 @@
     <div class="space-y-4">
       <div>
         <label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">Nom *</label>
-        <input [(ngModel)]="donateForm.name" type="text" placeholder="Nom de l'équipement"
+        <input [(ngModel)]="donateForm.name" name="donateName" #donNameRef="ngModel" required minlength="3" type="text"
+          placeholder="Nom de l'équipement"
           class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm" />
+        @if (donNameRef.invalid && donNameRef.touched) {
+        <p class="text-xs text-red-500 mt-1">Le nom est requis (3 caractères min).</p>
+        }
       </div>
       <div>
         <label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">Description</label>
@@ -451,21 +471,33 @@
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">Catégorie *</label>
-          <input [(ngModel)]="donateForm.category" type="text" placeholder="Catégorie"
-            class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm" />
+          <select [(ngModel)]="donateForm.category" name="donateCat" #donCatRef="ngModel" required
+            class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm">
+            @for (c of equipmentCategories; track c) {
+            <option [value]="c">{{ c }}</option>
+            }
+          </select>
+          @if (donCatRef.invalid && donCatRef.touched) {
+          <p class="text-xs text-red-500 mt-1">La catégorie est requise.</p>
+          }
         </div>
         <div>
           <label class="block text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">Condition</label>
-          <input [(ngModel)]="donateForm.condition" type="text" placeholder="État"
-            class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm" />
+          <select [(ngModel)]="donateForm.condition" name="donateCondition"
+            class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm">
+            @for (cond of equipmentConditions; track cond) {
+            <option [value]="cond">{{ cond }}</option>
+            }
+          </select>
         </div>
       </div>
     </div>
     <div class="flex justify-end gap-3 mt-6">
       <button (click)="closeDonateModal()"
         class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 font-medium text-sm transition-colors">Annuler</button>
-      <button (click)="registerDonation()" [disabled]="isSaving()"
-        class="px-5 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white font-semibold text-sm transition-colors shadow">
+      <button (click)="registerDonation()"
+        [disabled]="isSaving() || (!donateForm.name.trim() || !donateForm.category.trim() || donateForm.name.length < 3)"
+        class="px-5 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors shadow">
         @if (isSaving()) { ⏳ Enregistrement... } @else { 🎁 Enregistrer le Don }
       </button>
     </div>

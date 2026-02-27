@@ -9,6 +9,7 @@ import org.techhive.medicalservice.entity.enums.LoanStatus;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 
 @Data
@@ -26,19 +27,27 @@ public class EquipmentLoanDTO {
     @NotNull(message = "Borrower ID is required")
     private Long borrowerId;
 
+    @NotNull(message = "Loan start date is required")
     private LocalDateTime loanDate;
 
     @Future(message = "Due date must be in the future")
+    @NotNull(message = "Due date is required")
     private LocalDateTime dueDate;
 
     private LocalDateTime returnDate;
+
+    @NotBlank(message = "Purpose is required")
     private String purpose;
+
     private String notes;
+
+    @NotNull(message = "Loan status is required")
     private LoanStatus status;
 
     // Convert Entity to DTO
     public static EquipmentLoanDTO fromEntity(EquipmentLoan loan) {
-        if (loan == null) return null;
+        if (loan == null)
+            return null;
 
         EquipmentLoanDTOBuilder builder = EquipmentLoanDTO.builder()
                 .id(loan.getId())

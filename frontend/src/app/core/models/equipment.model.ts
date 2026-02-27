@@ -7,6 +7,23 @@ export enum EquipmentStatus {
   MAINTENANCE = 'MAINTENANCE'
 }
 
+export enum EquipmentCategory {
+  MOBILITY = 'MOBILITY',
+  RESPIRATORY = 'RESPIRATORY',
+  CARDIAC = 'CARDIAC',
+  ORTHOPEDIC = 'ORTHOPEDIC',
+  FURNITURE = 'FURNITURE',
+  OTHER = 'OTHER'
+}
+
+export enum EquipmentCondition {
+  NEW = 'NEW',
+  EXCELLENT = 'EXCELLENT',
+  GOOD = 'GOOD',
+  FAIR = 'FAIR',
+  POOR = 'POOR'
+}
+
 export enum LoanStatus {
   ACTIVE = 'ACTIVE',
   RETURNED = 'RETURNED',
@@ -18,10 +35,10 @@ export interface EquipmentDTO {
   id?: number;
   name: string;
   description?: string;
-  category: string;
+  category: EquipmentCategory;
   status?: EquipmentStatus;
   donationDate?: string;
-  condition?: string;
+  condition?: EquipmentCondition;
   donorId: number;
   loans?: EquipmentLoanDTO[];
 }

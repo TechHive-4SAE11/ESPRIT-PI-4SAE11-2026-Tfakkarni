@@ -6,9 +6,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.techhive.medicalservice.entity.Equipment;
 import org.techhive.medicalservice.entity.enums.EquipmentStatus;
+import org.techhive.medicalservice.entity.enums.EquipmentCategory;
+import org.techhive.medicalservice.entity.enums.EquipmentCondition;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,14 +25,20 @@ public class EquipmentDTO {
     @NotBlank(message = "Equipment name is required")
     private String name;
 
+    @NotBlank(message = "Description is required")
     private String description;
 
-    @NotBlank(message = "Category is required")
-    private String category;
+    @NotNull(message = "Category is required")
+    private EquipmentCategory category;
 
+    @NotNull(message = "Equipment status is required")
     private EquipmentStatus status;
+
+    @PastOrPresent(message = "Donation date cannot be in the future")
     private LocalDateTime donationDate;
-    private String condition;
+
+    @NotNull(message = "Equipment condition is required")
+    private EquipmentCondition condition;
 
     @NotNull(message = "Donor ID is required")
     private Long donorId;
@@ -38,7 +47,8 @@ public class EquipmentDTO {
 
     // Convert Entity to DTO
     public static EquipmentDTO fromEntity(Equipment equipment) {
-        if (equipment == null) return null;
+        if (equipment == null)
+            return null;
 
         EquipmentDTOBuilder builder = EquipmentDTO.builder()
                 .id(equipment.getId())

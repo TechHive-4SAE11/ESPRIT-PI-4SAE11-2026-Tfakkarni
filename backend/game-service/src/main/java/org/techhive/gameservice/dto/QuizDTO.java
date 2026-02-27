@@ -8,6 +8,8 @@ import org.techhive.gameservice.entity.Quiz;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PastOrPresent;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -21,7 +23,11 @@ public class QuizDTO {
     @NotBlank(message = "Quiz topic is required")
     private String topic;
 
+    @NotNull(message = "Total score must not be null")
+    @Min(value = 0, message = "Total score cannot be negative")
     private Integer totalScore;
+
+    @PastOrPresent(message = "Date taken cannot be in the future")
     private LocalDateTime dateTaken;
 
     @NotNull(message = "Caregiver ID is required")
@@ -31,7 +37,8 @@ public class QuizDTO {
 
     // Convert Entity to DTO
     public static QuizDTO fromEntity(Quiz quiz) {
-        if (quiz == null) return null;
+        if (quiz == null)
+            return null;
 
         QuizDTOBuilder builder = QuizDTO.builder()
                 .id(quiz.getId())
