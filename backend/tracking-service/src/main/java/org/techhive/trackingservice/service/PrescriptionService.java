@@ -34,6 +34,7 @@ public class PrescriptionService {
 
     /**
      * Validate all medication names against the medicament-validation-service.
+     * Validates against Tunisian (TN) drug database by default.
      * Throws IllegalArgumentException if any medication is invalid.
      */
     private void validateMedications(List<Medication> medications) {
@@ -64,7 +65,7 @@ public class PrescriptionService {
 
         if (!invalidMedications.isEmpty()) {
             throw new IllegalArgumentException(
-                    "The following medications are not recognized in the FDA database: " +
+                    "The following medications are not recognized in the approved drug database: " +
                     String.join("; ", invalidMedications));
         }
     }

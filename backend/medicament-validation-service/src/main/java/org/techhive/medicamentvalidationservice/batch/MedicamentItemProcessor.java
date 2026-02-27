@@ -20,26 +20,21 @@ public class MedicamentItemProcessor implements ItemProcessor<OpenFdaDrugRespons
     public ValidMedicament process(OpenFdaDrugResponse.DrugResult item) {
         ValidMedicament medicament = new ValidMedicament();
 
-        // Extract application number
         medicament.setApplicationNumber(item.getApplicationNumber());
 
-        // Extract brand name (from openfda or products)
         String brandName = extractBrandName(item);
         medicament.setBrandName(brandName);
 
-        // Extract generic name
         String genericName = extractGenericName(item);
         medicament.setGenericName(genericName);
 
-        // Set drug name (prefer brand name, fall back to generic)
         String drugName = brandName != null ? brandName : genericName;
         if (drugName == null || drugName.isBlank()) {
             log.debug("Skipping drug record with no identifiable name: {}", item.getApplicationNumber());
-            return null; // Skip records with no name (processor returning null = skip)
+            return null;
         }
         medicament.setDrugName(drugName.trim());
 
-        // Extract active ingredients
         String activeIngredients = extractActiveIngredients(item);
         medicament.setActiveIngredients(activeIngredients);
 
@@ -47,11 +42,9 @@ public class MedicamentItemProcessor implements ItemProcessor<OpenFdaDrugRespons
     }
 
     private String extractBrandName(OpenFdaDrugResponse.DrugResult item) {
-        // Try openfda.brand_name first
         if (item.getOpenfda() != null && item.getOpenfda().getBrandName() != null && !item.getOpenfda().getBrandName().isEmpty()) {
             return item.getOpenfda().getBrandName().get(0);
         }
-        // Fall back to products.brand_name
         if (item.getProducts() != null && !item.getProducts().isEmpty()) {
             for (OpenFdaDrugResponse.Product product : item.getProducts()) {
                 if (product.getBrandName() != null && !product.getBrandName().isBlank()) {
@@ -70,11 +63,9 @@ public class MedicamentItemProcessor implements ItemProcessor<OpenFdaDrugRespons
     }
 
     private String extractActiveIngredients(OpenFdaDrugResponse.DrugResult item) {
-        // Try openfda.substance_name
         if (item.getOpenfda() != null && item.getOpenfda().getSubstanceName() != null && !item.getOpenfda().getSubstanceName().isEmpty()) {
             return String.join(", ", item.getOpenfda().getSubstanceName());
         }
-        // Fall back to products.active_ingredients
         if (item.getProducts() != null) {
             return item.getProducts().stream()
                     .filter(p -> p.getActiveIngredients() != null)

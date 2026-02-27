@@ -25,10 +25,6 @@ public class MedicamentValidationController {
     private final MedicamentValidationService validationService;
     private final MedicamentBatchScheduler batchScheduler;
 
-    /**
-     * Validate a single medicament name.
-     * GET /api/medicament-validation/validate?name=ibuprofen
-     */
     @GetMapping("/validate")
     public ResponseEntity<ValidationResultDTO> validateDrug(@RequestParam String name) {
         log.info("Validating medicament: {}", name);
@@ -36,11 +32,6 @@ public class MedicamentValidationController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * Validate multiple medicament names at once.
-     * POST /api/medicament-validation/validate-batch
-     * Body: ["Drug1", "Drug2", ...]
-     */
     @PostMapping("/validate-batch")
     public ResponseEntity<BatchValidationResultDTO> validateBatch(@RequestBody List<String> names) {
         log.info("Batch validating {} medicaments", names.size());
@@ -48,10 +39,6 @@ public class MedicamentValidationController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * Get the current status of the loaded drug database.
-     * GET /api/medicament-validation/status
-     */
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus() {
         long count = validationService.getMedicamentCount();
@@ -64,10 +51,6 @@ public class MedicamentValidationController {
         ));
     }
 
-    /**
-     * Manually trigger a refresh of the drug database.
-     * POST /api/medicament-validation/refresh
-     */
     @PostMapping("/refresh")
     public ResponseEntity<Map<String, String>> refreshDatabase() {
         log.info("Manual refresh of medicament database triggered");

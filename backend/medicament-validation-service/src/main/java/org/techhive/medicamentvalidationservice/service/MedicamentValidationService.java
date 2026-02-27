@@ -31,8 +31,6 @@ public class MedicamentValidationService {
         }
 
         String trimmedName = name.trim();
-
-        // Check if the drug exists by any name field
         boolean exists = repository.existsByAnyNameIgnoreCase(trimmedName);
 
         if (exists) {
@@ -40,7 +38,6 @@ public class MedicamentValidationService {
             return new ValidationResultDTO(trimmedName, true, "Valid medicament name");
         }
 
-        // Not found — try to suggest similar names
         List<String> suggestions = findSuggestions(trimmedName);
 
         String message = "Medicament '" + trimmedName + "' not found in FDA approved drug database";
@@ -69,20 +66,13 @@ public class MedicamentValidationService {
         return new BatchValidationResultDTO(results, results.size(), validCount, invalidCount);
     }
 
-    /**
-     * Find similar drug names for suggestions.
-     */
     private List<String> findSuggestions(String name) {
-        // Search with a minimum of 3 characters for meaningful results
-        if (name.length() < 3) {
-            return new ArrayList<>();
-        }
+        if (name.length() < 3) return new ArrayList<>();
 
         List<String> drugNames = repository.findSimilarDrugNames(name);
         List<String> brandNames = repository.findSimilarBrandNames(name);
         List<String> genericNames = repository.findSimilarGenericNames(name);
 
-        // Combine and deduplicate, limit to 5 suggestions
         return Stream.of(drugNames, brandNames, genericNames)
                 .flatMap(List::stream)
                 .distinct()
@@ -90,9 +80,6 @@ public class MedicamentValidationService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get total count of loaded medicaments.
-     */
     public long getMedicamentCount() {
         return repository.count();
     }
