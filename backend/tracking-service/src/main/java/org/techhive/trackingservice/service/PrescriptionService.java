@@ -1,10 +1,13 @@
 package org.techhive.trackingservice.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.techhive.trackingservice.client.MedicamentValidationClient;
+import org.techhive.trackingservice.dto.MedicamentValidationResultDTO;
 import org.techhive.trackingservice.entity.Medication;
 import org.techhive.trackingservice.entity.Prescription;
 import org.techhive.trackingservice.enums.MedicationStatus;
@@ -14,9 +17,11 @@ import org.techhive.trackingservice.repository.SessionRepository;
 import org.techhive.trackingservice.util.DurationParser;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -25,8 +30,49 @@ public class PrescriptionService {
     private final PrescriptionRepository prescriptionRepository;
     private final SessionRepository sessionRepository;
     private final MedicationIntakeLogRepository medicationIntakeLogRepository;
+    private final MedicamentValidationClient medicamentValidationClient;
+
+    /**
+     * Validate all medication names against the medicament-validation-service.
+     * Throws IllegalArgumentException if any medication is invalid.
+     */
+    private void validateMedications(List<Medication> medications) {
+        if (medications == null || medications.isEmpty()) {
+            return;
+        }
+
+        List<String> invalidMedications = new ArrayList<>();
+
+        for (Medication medication : medications) {
+            if (medication.getMedicationName() != null && !medication.getMedicationName().isBlank()) {
+                try {
+                    MedicamentValidationResultDTO result = medicamentValidationClient
+                            .validateMedicament(medication.getMedicationName());
+                    if (!result.isValid()) {
+                        String errorMsg = medication.getMedicationName();
+                        if (result.getSuggestions() != null && !result.getSuggestions().isEmpty()) {
+                            errorMsg += " (Did you mean: " + String.join(", ", result.getSuggestions()) + "?)";
+                        }
+                        invalidMedications.add(errorMsg);
+                    }
+                } catch (Exception e) {
+                    log.warn("Could not validate medication '{}': {}. Allowing it through.",
+                            medication.getMedicationName(), e.getMessage());
+                }
+            }
+        }
+
+        if (!invalidMedications.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "The following medications are not recognized in the FDA database: " +
+                    String.join("; ", invalidMedications));
+        }
+    }
 
     public Prescription createPrescription(Prescription prescription) {
+        // Validate medication names before saving
+        validateMedications(prescription.getMedications());
+
         // Set bidirectional relationship for medications
         if (prescription.getMedications() != null) {
             for (Medication medication : prescription.getMedications()) {
@@ -38,6 +84,9 @@ public class PrescriptionService {
     }
 
     public Prescription createPrescriptionForSession(Long sessionId, Prescription prescription) {
+        // Validate medication names before saving
+        validateMedications(prescription.getMedications());
+
         return sessionRepository.findById(sessionId)
                 .map(session -> {
                     prescription.setSession(session);
@@ -108,6 +157,9 @@ public class PrescriptionService {
 
     @Transactional
     public Prescription updatePrescription(Long id, Prescription prescription) {
+        // Validate medication names before updating
+        validateMedications(prescription.getMedications());
+
         return prescriptionRepository.findById(id)
                 .map(existing -> {
                     // Delete intake logs for existing medications before removing them

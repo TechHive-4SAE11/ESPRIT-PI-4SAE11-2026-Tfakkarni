@@ -133,7 +133,7 @@ public class PrescriptionController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PrescriptionResponseDTO> updatePrescription(
+    public ResponseEntity<?> updatePrescription(
             @PathVariable Long id,
             @Valid @RequestBody PrescriptionRequestDTO requestDTO) {
         Prescription prescription = new Prescription();
@@ -149,6 +149,10 @@ public class PrescriptionController {
         try {
             Prescription updated = prescriptionService.updatePrescription(id, prescription);
             return ResponseEntity.ok(prescriptionMapper.toResponseDTO(updated));
+        } catch (IllegalArgumentException e) {
+            log.error("Validation error updating prescription: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
