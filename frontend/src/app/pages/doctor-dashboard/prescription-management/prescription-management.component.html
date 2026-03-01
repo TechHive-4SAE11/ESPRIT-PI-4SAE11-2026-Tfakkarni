@@ -1,11 +1,94 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <h3 class="text-xl font-semibold">Prescriptions for {{ patient.firstName }} {{ patient.lastName }}</h3>
-        <button z-button (click)="openCreateDialog()">
-            <z-icon zType="plus" class="mr-2" />
-            New Prescription
-        </button>
+        <div class="flex gap-2">
+            <button z-button zType="outline" (click)="showManageTemplates.set(!showManageTemplates())">
+                <z-icon zType="bookmark" class="mr-2 w-4 h-4" />
+                {{ showManageTemplates() ? 'Hide Templates' : 'My Templates' }}
+                @if (templates().length > 0) {
+                <span
+                    class="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                    {{ templates().length }}
+                </span>
+                }
+            </button>
+            <button z-button (click)="openCreateDialog()">
+                <z-icon zType="plus" class="mr-2" />
+                New Prescription
+            </button>
+        </div>
     </div>
+
+    <!-- Template Management Panel -->
+    @if (showManageTemplates()) {
+    <div class="border rounded-lg bg-muted/20 p-4 space-y-3">
+        <div class="flex items-center justify-between">
+            <h4 class="font-semibold flex items-center gap-2">
+                <z-icon zType="bookmark" class="w-5 h-5 text-primary" />
+                Prescription Templates
+            </h4>
+            <p class="text-sm text-muted-foreground">{{ templates().length }} template(s) saved</p>
+        </div>
+
+        @if (templates().length > 0) {
+        <div class="grid gap-3">
+            @for (t of templates(); track t.id) {
+            <div class="bg-background border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1 space-y-1">
+                        <div class="flex items-center gap-2">
+                            <h5 class="font-medium">{{ t.name }}</h5>
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary">
+                                {{ t.medications.length }} {{ t.medications.length === 1 ? 'med' : 'meds' }}
+                            </span>
+                        </div>
+                        @if (t.description) {
+                        <p class="text-sm text-muted-foreground">{{ t.description }}</p>
+                        }
+                        <div class="flex flex-wrap gap-1.5 mt-2">
+                            @for (med of t.medications.slice(0, 4); track med.medicationName) {
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground">
+                                {{ med.medicationName }} — {{ med.dosage }}
+                            </span>
+                            }
+                            @if (t.medications.length > 4) {
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground">
+                                +{{ t.medications.length - 4 }} more
+                            </span>
+                            }
+                        </div>
+                        <p class="text-xs text-muted-foreground mt-1">
+                            Created {{ t.createdAt | date:'mediumDate' }}
+                        </p>
+                    </div>
+                    <div class="flex gap-1 ml-3">
+                        <button z-button zType="outline" zSize="sm"
+                            (click)="selectedTemplate.set(t); showViewTemplateDialog.set(true)"
+                            title="View template details">
+                            <z-icon zType="eye" class="w-4 h-4" />
+                        </button>
+                        <button z-button zType="destructive" zSize="sm" (click)="deleteTemplate(t.id)"
+                            title="Delete template">
+                            <z-icon zType="trash-2" class="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+        } @else {
+        <div class="text-center py-6 border-2 border-dashed rounded-lg bg-muted/10">
+            <z-icon zType="bookmark" class="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+            <p class="text-sm text-muted-foreground">No templates saved yet</p>
+            <p class="text-xs text-muted-foreground mt-1">Create a prescription and use "Save as Template" to get
+                started</p>
+        </div>
+        }
+    </div>
+    }
 
     <!-- Loading State -->
     @if (isLoadingPrescriptions()) {
@@ -48,7 +131,8 @@
                         <!-- Medication list preview -->
                         <div class="flex flex-wrap gap-2">
                             @for (med of prescription.medications.slice(0, 3); track med.id) {
-                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                            <div
+                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
                                 <span>{{ med.medicationName }} — {{ med.dosage }}</span>
                                 <z-badge [zType]="getStatusBadgeType(med.status)" class="text-[10px] px-1.5 py-0.5">
                                     {{ getStatusLabel(med.status) }}
@@ -94,306 +178,351 @@
 
     <!-- Create/Edit Prescription Dialog (rendered at body level via CDK Portal) -->
     <ng-template #createDialogTpl>
-    <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-        <div class="bg-background rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col relative">
-            <div class="flex items-center justify-between p-6 pb-4 border-b">
-                <h2 class="text-xl font-bold">{{ editingPrescriptionId() ? 'Edit Prescription' : 'New Prescription' }}</h2>
-                <button class="text-muted-foreground hover:text-foreground" (click)="closeCreateDialog()">
-                    <z-icon zType="x" class="w-5 h-5" />
-                </button>
-            </div>
-
-            <form [formGroup]="prescriptionForm" (ngSubmit)="onSubmit()" class="flex flex-col flex-1 min-h-0">
-                <div class="overflow-y-auto p-6 space-y-4">
-
-                <!-- Session Selection -->
-                @if (!editingPrescriptionId()) {
-                <div class="space-y-2">
-                    <label class="text-sm font-medium">
-                        Session 
-                        <span class="text-destructive">*</span>
-                    </label>
-                    <select formControlName="sessionId" 
-                        [class]="'w-full p-2 border rounded-md bg-background transition-colors' + 
-                                 (shouldShowError(prescriptionForm.get('sessionId')) ? ' border-destructive focus:ring-destructive' : ' border-input')">
-                        <option [ngValue]="null" disabled>Select a session</option>
-                        @for (session of sessions(); track session.id) {
-                        <option [value]="session.id">
-                            {{ session.sessionDate | date:'short' }}
-                        </option>
-                        }
-                    </select>
-                    <p class="text-xs text-slate-500 italic">
-                        Note: Only sessions without an existing prescription are listed here.
-                    </p>
-                    @if (sessions().length === 0 && !isLoadingSessions()) {
-                    <p class="text-xs text-destructive">No available sessions found. Please create a new consultation
-                        session.</p>
-                    }
-                    @if (isLoadingSessions()) {
-                    <p class="text-xs text-muted-foreground">Loading sessions...</p>
-                    }
-                    @if (shouldShowError(prescriptionForm.get('sessionId'))) {
-                    <p class="text-xs text-destructive font-medium flex items-center gap-1">
-                        <z-icon zType="alert-triangle" class="w-3 h-3" />
-                        {{ getErrorMessage(prescriptionForm.get('sessionId')) }}
-                    </p>
-                    }
-                </div>
-                }
-
-                <!-- Medications List -->
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between">
-                        <label class="text-sm font-medium">
-                            Medications 
-                            <span class="text-destructive">*</span>
-                        </label>
-                        <button type="button" z-button zType="outline" zSize="sm" (click)="addMedication()">
-                            <z-icon zType="plus" class="mr-1" /> Add Medication
-                        </button>
-                    </div>
-
-                    <div formArrayName="medications" class="space-y-3 max-h-60 overflow-y-auto pr-2">
-                        @for (med of medications.controls; track $index) {
-                        <div [formGroupName]="$index" class="p-3 border rounded-md space-y-3 relative">
-                            <button type="button"
-                                class="absolute top-2 right-2 text-muted-foreground hover:text-destructive"
-                                (click)="removeMedication($index)">
-                                <z-icon zType="x" class="w-4 h-4" />
-                            </button>
-
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="text-xs font-medium text-muted-foreground mb-1 block">
-                                        Medication Name <span class="text-destructive">*</span>
-                                    </label>
-                                    <input type="text" 
-                                        formControlName="medicationName" 
-                                        placeholder="e.g., Aspirin"
-                                        [class]="'p-2 border rounded-md text-sm w-full transition-colors' + 
-                                                 (shouldShowError(getMedicationControl($index, 'medicationName')) ? ' border-destructive focus:ring-destructive' : ' border-input')" />
-                                    @if (shouldShowError(getMedicationControl($index, 'medicationName'))) {
-                                    <p class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
-                                        <z-icon zType="alert-triangle" class="w-3 h-3" />
-                                        {{ getErrorMessage(getMedicationControl($index, 'medicationName')) }}
-                                    </p>
-                                    }
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium text-muted-foreground mb-1 block">
-                                        Dosage <span class="text-destructive">*</span>
-                                    </label>
-                                    <input type="text" 
-                                        formControlName="dosage" 
-                                        placeholder="e.g., 500mg, 2 tablets"
-                                        [class]="'p-2 border rounded-md text-sm w-full transition-colors' + 
-                                                 (shouldShowError(getMedicationControl($index, 'dosage')) ? ' border-destructive focus:ring-destructive' : ' border-input')" />
-                                    @if (shouldShowError(getMedicationControl($index, 'dosage'))) {
-                                    <p class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
-                                        <z-icon zType="alert-triangle" class="w-3 h-3" />
-                                        {{ getErrorMessage(getMedicationControl($index, 'dosage')) }}
-                                    </p>
-                                    }
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="text-xs font-medium text-muted-foreground mb-1 block">
-                                        Frequency <span class="text-destructive">*</span>
-                                    </label>
-                                    <input type="text" 
-                                        formControlName="frequency"
-                                        placeholder="e.g., 2x/day, every 8h"
-                                        [class]="'p-2 border rounded-md text-sm w-full transition-colors' + 
-                                                 (shouldShowError(getMedicationControl($index, 'frequency')) ? ' border-destructive focus:ring-destructive' : ' border-input')" />
-                                    @if (shouldShowError(getMedicationControl($index, 'frequency'))) {
-                                    <p class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
-                                        <z-icon zType="alert-triangle" class="w-3 h-3" />
-                                        {{ getErrorMessage(getMedicationControl($index, 'frequency')) }}
-                                    </p>
-                                    }
-                                </div>
-                                <div>
-                                    <label class="text-xs font-medium text-muted-foreground mb-1 block">
-                                        Duration <span class="text-destructive">*</span>
-                                    </label>
-                                    <input type="text" 
-                                        formControlName="duration" 
-                                        placeholder="e.g., 7 days, 2 weeks, 1 month, ongoing"
-                                        [class]="'p-2 border rounded-md text-sm w-full transition-colors' + 
-                                                 (shouldShowError(getMedicationControl($index, 'duration')) ? ' border-destructive focus:ring-destructive' : ' border-input')" />
-                                    @if (shouldShowError(getMedicationControl($index, 'duration'))) {
-                                    <p class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
-                                        <z-icon zType="alert-triangle" class="w-3 h-3" />
-                                        {{ getErrorMessage(getMedicationControl($index, 'duration')) }}
-                                    </p>
-                                    } @else {
-                                    <p class="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                        <z-icon zType="info" class="w-3 h-3" />
-                                        <span>Format: "number unit" - Valid units: days, weeks, months. Or use "ongoing"</span>
-                                    </p>
-                                    }
-                                </div>
-                            </div>
-                            <div>
-                                <label class="text-xs font-medium text-muted-foreground mb-1 block">
-                                    Special Instructions <span class="text-muted-foreground text-xs">(optional)</span>
-                                </label>
-                                <textarea 
-                                    formControlName="instructions" 
-                                    placeholder="e.g., Take with food, avoid alcohol"
-                                    rows="2" 
-                                    class="p-2 border border-input rounded-md text-sm w-full"></textarea>
-                            </div>
-                        </div>
-                        }
-                    </div>
-                    @if (medications.length === 0) {
-                    <p class="text-xs text-destructive font-medium flex items-center gap-1 p-3 bg-destructive/10 rounded-md">
-                        <z-icon zType="alert-triangle" class="w-4 h-4" />
-                        Please add at least one medication to create a prescription
-                    </p>
-                    }
-                </div>
-
-                @if (errorMessage()) {
-                <div class="p-3 bg-destructive/10 border border-destructive rounded-md">
-                    <div class="flex items-start gap-2">
-                        <z-icon zType="alert-triangle" class="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-                        <div class="flex-1">
-                            <p class="text-sm font-semibold text-destructive">Validation Error</p>
-                            <p class="text-sm text-destructive mt-1">{{ errorMessage() }}</p>
-                        </div>
-                    </div>
-                </div>
-                }
-                </div>
-
-                <div class="flex justify-end gap-2 p-6 pt-4 border-t bg-background">
-                    <button type="button" z-button zType="ghost" (click)="closeCreateDialog()">Cancel</button>
-                    <button type="submit" z-button [disabled]="prescriptionForm.invalid || isSubmitting()">
-                        @if (isSubmitting()) { <z-icon zType="loader-2" class="animate-spin mr-2" /> }
-                        {{ editingPrescriptionId() ? 'Update Prescription' : 'Create Prescription' }}
+        <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div class="bg-background rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col relative">
+                <div class="flex items-center justify-between p-6 pb-4 border-b">
+                    <h2 class="text-xl font-bold">{{ editingPrescriptionId() ? 'Edit Prescription' : 'New Prescription'
+                        }}</h2>
+                    <button class="text-muted-foreground hover:text-foreground" (click)="closeCreateDialog()">
+                        <z-icon zType="x" class="w-5 h-5" />
                     </button>
                 </div>
-            </form>
+
+                <form [formGroup]="prescriptionForm" (ngSubmit)="onSubmit()" class="flex flex-col flex-1 min-h-0">
+                    <div class="overflow-y-auto p-6 space-y-4">
+
+                        <!-- Load from Template -->
+                        @if (templates().length > 0) {
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium flex items-center gap-2">
+                                <z-icon zType="bookmark" class="w-4 h-4" />
+                                Load from Template
+                            </label>
+                            <div class="flex gap-2">
+                                <select id="templateSelect"
+                                    class="flex-1 p-2 border border-input rounded-md bg-background text-sm"
+                                    (change)="$event.target && loadFromTemplate(templates()[$any($event.target).selectedIndex - 1]); $any($event.target).selectedIndex = 0">
+                                    <option selected disabled>Select a template to auto-fill medications...</option>
+                                    @for (t of templates(); track t.id) {
+                                    <option [value]="t.id">
+                                        {{ t.name }} ({{ t.medications.length }} meds)
+                                    </option>
+                                    }
+                                </select>
+                            </div>
+                            <p class="text-xs text-muted-foreground italic flex items-center gap-1">
+                                <z-icon zType="info" class="w-3 h-3" />
+                                Selecting a template will replace the current medications list.
+                            </p>
+                        </div>
+                        }
+
+                        <!-- Session Selection -->
+                        @if (!editingPrescriptionId()) {
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium">
+                                Session
+                                <span class="text-destructive">*</span>
+                            </label>
+                            <select formControlName="sessionId"
+                                [class]="'w-full p-2 border rounded-md bg-background transition-colors' + 
+                                 (shouldShowError(prescriptionForm.get('sessionId')) ? ' border-destructive focus:ring-destructive' : ' border-input')">
+                                <option [ngValue]="null" disabled>Select a session</option>
+                                @for (session of sessions(); track session.id) {
+                                <option [value]="session.id">
+                                    {{ session.sessionDate | date:'short' }}
+                                </option>
+                                }
+                            </select>
+                            <p class="text-xs text-slate-500 italic">
+                                Note: Only sessions without an existing prescription are listed here.
+                            </p>
+                            @if (sessions().length === 0 && !isLoadingSessions()) {
+                            <p class="text-xs text-destructive">No available sessions found. Please create a new
+                                consultation
+                                session.</p>
+                            }
+                            @if (isLoadingSessions()) {
+                            <p class="text-xs text-muted-foreground">Loading sessions...</p>
+                            }
+                            @if (shouldShowError(prescriptionForm.get('sessionId'))) {
+                            <p class="text-xs text-destructive font-medium flex items-center gap-1">
+                                <z-icon zType="alert-triangle" class="w-3 h-3" />
+                                {{ getErrorMessage(prescriptionForm.get('sessionId')) }}
+                            </p>
+                            }
+                        </div>
+                        }
+
+                        <!-- Medications List -->
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm font-medium">
+                                    Medications
+                                    <span class="text-destructive">*</span>
+                                </label>
+                                <button type="button" z-button zType="outline" zSize="sm" (click)="addMedication()">
+                                    <z-icon zType="plus" class="mr-1" /> Add Medication
+                                </button>
+                            </div>
+
+                            <div formArrayName="medications" class="space-y-3 max-h-60 overflow-y-auto pr-2">
+                                @for (med of medications.controls; track $index) {
+                                <div [formGroupName]="$index" class="p-3 border rounded-md space-y-3 relative">
+                                    <button type="button"
+                                        class="absolute top-2 right-2 text-muted-foreground hover:text-destructive"
+                                        (click)="removeMedication($index)">
+                                        <z-icon zType="x" class="w-4 h-4" />
+                                    </button>
+
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="text-xs font-medium text-muted-foreground mb-1 block">
+                                                Medication Name <span class="text-destructive">*</span>
+                                            </label>
+                                            <input type="text" formControlName="medicationName"
+                                                placeholder="e.g., Aspirin"
+                                                [class]="'p-2 border rounded-md text-sm w-full transition-colors' + 
+                                                 (shouldShowError(getMedicationControl($index, 'medicationName')) ? ' border-destructive focus:ring-destructive' : ' border-input')" />
+                                            @if (shouldShowError(getMedicationControl($index, 'medicationName'))) {
+                                            <p
+                                                class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
+                                                <z-icon zType="alert-triangle" class="w-3 h-3" />
+                                                {{ getErrorMessage(getMedicationControl($index, 'medicationName')) }}
+                                            </p>
+                                            }
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-medium text-muted-foreground mb-1 block">
+                                                Dosage <span class="text-destructive">*</span>
+                                            </label>
+                                            <input type="text" formControlName="dosage"
+                                                placeholder="e.g., 500mg, 2 tablets"
+                                                [class]="'p-2 border rounded-md text-sm w-full transition-colors' + 
+                                                 (shouldShowError(getMedicationControl($index, 'dosage')) ? ' border-destructive focus:ring-destructive' : ' border-input')" />
+                                            @if (shouldShowError(getMedicationControl($index, 'dosage'))) {
+                                            <p
+                                                class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
+                                                <z-icon zType="alert-triangle" class="w-3 h-3" />
+                                                {{ getErrorMessage(getMedicationControl($index, 'dosage')) }}
+                                            </p>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="text-xs font-medium text-muted-foreground mb-1 block">
+                                                Frequency <span class="text-destructive">*</span>
+                                            </label>
+                                            <input type="text" formControlName="frequency"
+                                                placeholder="e.g., 2x/day, every 8h"
+                                                [class]="'p-2 border rounded-md text-sm w-full transition-colors' + 
+                                                 (shouldShowError(getMedicationControl($index, 'frequency')) ? ' border-destructive focus:ring-destructive' : ' border-input')" />
+                                            @if (shouldShowError(getMedicationControl($index, 'frequency'))) {
+                                            <p
+                                                class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
+                                                <z-icon zType="alert-triangle" class="w-3 h-3" />
+                                                {{ getErrorMessage(getMedicationControl($index, 'frequency')) }}
+                                            </p>
+                                            }
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-medium text-muted-foreground mb-1 block">
+                                                Duration <span class="text-destructive">*</span>
+                                            </label>
+                                            <input type="text" formControlName="duration"
+                                                placeholder="e.g., 7 days, 2 weeks, 1 month, ongoing"
+                                                [class]="'p-2 border rounded-md text-sm w-full transition-colors' + 
+                                                 (shouldShowError(getMedicationControl($index, 'duration')) ? ' border-destructive focus:ring-destructive' : ' border-input')" />
+                                            @if (shouldShowError(getMedicationControl($index, 'duration'))) {
+                                            <p
+                                                class="text-xs text-destructive mt-1 font-medium flex items-center gap-1">
+                                                <z-icon zType="alert-triangle" class="w-3 h-3" />
+                                                {{ getErrorMessage(getMedicationControl($index, 'duration')) }}
+                                            </p>
+                                            } @else {
+                                            <p class="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                                <z-icon zType="info" class="w-3 h-3" />
+                                                <span>Format: "number unit" - Valid units: days, weeks, months. Or use
+                                                    "ongoing"</span>
+                                            </p>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-medium text-muted-foreground mb-1 block">
+                                            Special Instructions <span
+                                                class="text-muted-foreground text-xs">(optional)</span>
+                                        </label>
+                                        <textarea formControlName="instructions"
+                                            placeholder="e.g., Take with food, avoid alcohol" rows="2"
+                                            class="p-2 border border-input rounded-md text-sm w-full"></textarea>
+                                    </div>
+                                </div>
+                                }
+                            </div>
+                            @if (medications.length === 0) {
+                            <p
+                                class="text-xs text-destructive font-medium flex items-center gap-1 p-3 bg-destructive/10 rounded-md">
+                                <z-icon zType="alert-triangle" class="w-4 h-4" />
+                                Please add at least one medication to create a prescription
+                            </p>
+                            }
+                        </div>
+
+                        @if (errorMessage()) {
+                        <div class="p-3 bg-destructive/10 border border-destructive rounded-md">
+                            <div class="flex items-start gap-2">
+                                <z-icon zType="alert-triangle" class="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-destructive">Validation Error</p>
+                                    <p class="text-sm text-destructive mt-1">{{ errorMessage() }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        }
+                    </div>
+
+                    <div class="flex justify-between gap-2 p-6 pt-4 border-t bg-background">
+                        <button type="button" z-button zType="outline" (click)="openSaveTemplateDialog()"
+                            [disabled]="medications.length === 0"
+                            title="Save current medications as a reusable template">
+                            <z-icon zType="bookmark" class="mr-1 w-4 h-4" />
+                            Save as Template
+                        </button>
+                        <div class="flex gap-2">
+                            <button type="button" z-button zType="ghost" (click)="closeCreateDialog()">Cancel</button>
+                            <button type="submit" z-button [disabled]="prescriptionForm.invalid || isSubmitting()">
+                                @if (isSubmitting()) { <z-icon zType="loader-2" class="animate-spin mr-2" /> }
+                                {{ editingPrescriptionId() ? 'Update Prescription' : 'Create Prescription' }}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
     </ng-template>
 
     <!-- View Detail Dialog (rendered at body level via CDK Portal) -->
     <ng-template #viewDialogTpl>
-    <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div class="bg-background rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative">
-            <button class="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
-                (click)="closeViewDialog()">
-                <z-icon zType="x" class="w-5 h-5" />
-            </button>
+        <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div class="bg-background rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative">
+                <button class="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+                    (click)="closeViewDialog()">
+                    <z-icon zType="x" class="w-5 h-5" />
+                </button>
 
-            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
-                <z-icon zType="pill" class="w-6 h-6 text-primary" />
-                Prescription Details
-            </h2>
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                    <z-icon zType="pill" class="w-6 h-6 text-primary" />
+                    Prescription Details
+                </h2>
 
-            @let p = selectedPrescription()!;
-            <div class="space-y-6">
-                <!-- Meta Information -->
-                <div class="grid grid-cols-1 gap-4">
-                    <div class="bg-muted/30 p-4 rounded-lg">
-                        <div class="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                            <z-icon zType="calendar" class="w-4 h-4" />
-                            <span>Prescribed Date</span>
+                @let p = selectedPrescription()!;
+                <div class="space-y-6">
+                    <!-- Meta Information -->
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="bg-muted/30 p-4 rounded-lg">
+                            <div class="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                                <z-icon zType="calendar" class="w-4 h-4" />
+                                <span>Prescribed Date</span>
+                            </div>
+                            <p class="font-semibold text-lg">{{ p.createdAt | date:'medium' }}</p>
                         </div>
-                        <p class="font-semibold text-lg">{{ p.createdAt | date:'medium' }}</p>
                     </div>
-                </div>
 
-                <!-- Medications Section -->
-                <div>
-                    <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-                        <z-icon zType="pill" class="w-5 h-5" />
-                        Medications ({{ p.medications.length }})
-                    </h3>
-                    <div class="space-y-3">
-                        @for (m of p.medications; track m.id) {
-                        <div class="border border-primary/20 bg-primary/5 rounded-lg p-4 space-y-2">
-                            <div class="flex items-start justify-between">
-                                <div class="flex-1">
-                                    <div class="flex items-center gap-2 flex-wrap mb-1">
-                                        <h4 class="font-semibold text-lg">{{ m.medicationName }}</h4>
-                                        <z-badge [zType]="getStatusBadgeType(m.status)" class="flex items-center gap-1">
-                                            <z-icon [zType]="getStatusIcon(m.status)" class="h-3 w-3" />
-                                            <span>{{ getStatusLabel(m.status) }}</span>
-                                        </z-badge>
+                    <!-- Medications Section -->
+                    <div>
+                        <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                            <z-icon zType="pill" class="w-5 h-5" />
+                            Medications ({{ p.medications.length }})
+                        </h3>
+                        <div class="space-y-3">
+                            @for (m of p.medications; track m.id) {
+                            <div class="border border-primary/20 bg-primary/5 rounded-lg p-4 space-y-2">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                                            <h4 class="font-semibold text-lg">{{ m.medicationName }}</h4>
+                                            <z-badge [zType]="getStatusBadgeType(m.status)"
+                                                class="flex items-center gap-1">
+                                                <z-icon [zType]="getStatusIcon(m.status)" class="h-3 w-3" />
+                                                <span>{{ getStatusLabel(m.status) }}</span>
+                                            </z-badge>
+                                        </div>
+                                        <p class="text-sm text-muted-foreground">{{ m.dosage }}</p>
                                     </div>
-                                    <p class="text-sm text-muted-foreground">{{ m.dosage }}</p>
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">
+                                            {{ m.frequency }}
+                                        </span>
+                                        @if (m.status !== 'DISCONTINUED') {
+                                        <button z-button zType="outline" zSize="sm"
+                                            (click)="discontinueMedication(m.id)" title="Discontinue this medication">
+                                            <z-icon zType="x" class="w-3 h-3 mr-1" />
+                                            Discontinue
+                                        </button>
+                                        }
+                                    </div>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <span
-                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">
-                                        {{ m.frequency }}
-                                    </span>
-                                    @if (m.status !== 'DISCONTINUED') {
-                                    <button z-button zType="outline" zSize="sm" 
-                                            (click)="discontinueMedication(m.id)"
-                                            title="Discontinue this medication">
-                                        <z-icon zType="x" class="w-3 h-3 mr-1" />
-                                        Discontinue
-                                    </button>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                                    <div class="flex items-center gap-2">
+                                        <z-icon zType="clock" class="w-4 h-4 text-muted-foreground" />
+                                        <span class="text-muted-foreground">Duration:</span>
+                                        <span class="font-medium">{{ m.duration }}</span>
+                                    </div>
+                                    @if (m.startDate) {
+                                    <div class="flex items-center gap-2">
+                                        <z-icon zType="play" class="w-4 h-4 text-green-500" />
+                                        <span class="text-muted-foreground">Start:</span>
+                                        <span class="font-medium">{{ m.startDate | date:'mediumDate' }}</span>
+                                    </div>
+                                    }
+                                    @if (m.endDate) {
+                                    <div class="flex items-center gap-2">
+                                        <z-icon zType="calendar" class="w-4 h-4 text-red-500" />
+                                        <span class="text-muted-foreground">End:</span>
+                                        <span class="font-medium">{{ m.endDate | date:'mediumDate' }}</span>
+                                    </div>
                                     }
                                 </div>
-                            </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                                <div class="flex items-center gap-2">
-                                    <z-icon zType="clock" class="w-4 h-4 text-muted-foreground" />
-                                    <span class="text-muted-foreground">Duration:</span>
-                                    <span class="font-medium">{{ m.duration }}</span>
-                                </div>
-                                @if (m.startDate) {
-                                <div class="flex items-center gap-2">
-                                    <z-icon zType="play" class="w-4 h-4 text-green-500" />
-                                    <span class="text-muted-foreground">Start:</span>
-                                    <span class="font-medium">{{ m.startDate | date:'mediumDate' }}</span>
-                                </div>
-                                }
-                                @if (m.endDate) {
-                                <div class="flex items-center gap-2">
-                                    <z-icon zType="calendar" class="w-4 h-4 text-red-500" />
-                                    <span class="text-muted-foreground">End:</span>
-                                    <span class="font-medium">{{ m.endDate | date:'mediumDate' }}</span>
-                                </div>
-                                }
-                            </div>
-
-                            @if (m.instructions) {
-                            <div class="bg-background rounded-md p-3 mt-2">
-                                <div class="flex items-start gap-2">
-                                    <z-icon zType="info" class="w-4 h-4 text-primary mt-0.5" />
-                                    <div class="flex-1">
-                                        <p class="text-xs font-medium text-muted-foreground mb-1">Special Instructions
-                                        </p>
-                                        <p class="text-sm">{{ m.instructions }}</p>
+                                @if (m.instructions) {
+                                <div class="bg-background rounded-md p-3 mt-2">
+                                    <div class="flex items-start gap-2">
+                                        <z-icon zType="info" class="w-4 h-4 text-primary mt-0.5" />
+                                        <div class="flex-1">
+                                            <p class="text-xs font-medium text-muted-foreground mb-1">Special
+                                                Instructions
+                                            </p>
+                                            <p class="text-sm">{{ m.instructions }}</p>
+                                        </div>
                                     </div>
                                 </div>
+                                }
                             </div>
                             }
                         </div>
-                        }
                     </div>
-                </div>
 
-                <div class="flex justify-end gap-2 pt-4 border-t">
-                    <button z-button zType="outline" (click)="closeViewDialog()">Close</button>
-                    <button z-button (click)="openEditDialog(p); closeViewDialog()">
-                        <z-icon zType="save" class="mr-2 w-4 h-4" />
-                        Edit Prescription
-                    </button>
+                    <div class="flex justify-between gap-2 pt-4 border-t">
+                        <button z-button zType="outline" (click)="openSaveTemplateDialog(p.id)"
+                            title="Save this prescription's medications as a reusable template">
+                            <z-icon zType="bookmark" class="mr-1 w-4 h-4" />
+                            Save as Template
+                        </button>
+                        <div class="flex gap-2">
+                            <button z-button zType="outline" (click)="closeViewDialog()">Close</button>
+                            <button z-button (click)="openEditDialog(p); closeViewDialog()">
+                                <z-icon zType="save" class="mr-2 w-4 h-4" />
+                                Edit Prescription
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
     </ng-template>
 
     <!-- Discontinue Medication Dialog -->
@@ -418,25 +547,22 @@
                     <label for="discontinue-reason" class="text-sm font-medium text-foreground">
                         Reason for Discontinuation
                     </label>
-                    <textarea 
-                        id="discontinue-reason"
-                        z-input
-                        rows="4"
+                    <textarea id="discontinue-reason" z-input rows="4"
                         placeholder="e.g., Patient experienced side effects, allergic reaction, medication switch, treatment completed..."
-                        [value]="discontinueReason()"
-                        (input)="discontinueReason.set($any($event.target).value)"
+                        [value]="discontinueReason()" (input)="discontinueReason.set($any($event.target).value)"
                         class="resize-none"></textarea>
                     <p class="text-xs text-muted-foreground flex items-start gap-1">
                         <z-icon zType="info" class="w-3 h-3 mt-0.5 flex-shrink-0" />
                         <span>This reason will be permanently added to the medication's instruction field.</span>
                     </p>
                 </div>
-                
+
                 <div class="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
                     <p class="text-xs text-destructive-foreground flex items-start gap-2">
                         <z-icon zType="alert-triangle" class="w-4 h-4 mt-0.5 flex-shrink-0" />
                         <span>
-                            <strong>Warning:</strong> Discontinuing this medication will mark it as stopped and set the end date to today. 
+                            <strong>Warning:</strong> Discontinuing this medication will mark it as stopped and set the
+                            end date to today.
                             The patient will no longer be prompted to take this medication.
                         </span>
                     </p>
@@ -450,6 +576,122 @@
                 <button z-button zType="destructive" (click)="confirmDiscontinue()">
                     <z-icon zType="x" class="mr-2 w-4 h-4" />
                     Discontinue
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- Save as Template Dialog -->
+    @if (showSaveTemplateDialog()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-background rounded-lg shadow-lg w-full max-w-md p-6 relative">
+            <button class="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+                (click)="closeSaveTemplateDialog()">
+                <z-icon zType="x" class="w-5 h-5" />
+            </button>
+
+            <h2 class="text-xl font-bold mb-2 flex items-center gap-2">
+                <z-icon zType="bookmark" class="w-6 h-6 text-primary" />
+                Save as Template
+            </h2>
+            <p class="text-sm text-muted-foreground mb-6">
+                Save the current medications as a reusable template for future prescriptions.
+            </p>
+
+            <div class="space-y-4 mb-6">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">
+                        Template Name <span class="text-destructive">*</span>
+                    </label>
+                    <input type="text" placeholder="e.g., Standard Alzheimer Protocol"
+                        class="w-full p-2 border border-input rounded-md text-sm" [value]="templateName()"
+                        (input)="templateName.set($any($event.target).value)" />
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">
+                        Description <span class="text-muted-foreground text-xs">(optional)</span>
+                    </label>
+                    <textarea placeholder="e.g., First-line treatment for mild to moderate Alzheimer's" rows="3"
+                        class="w-full p-2 border border-input rounded-md text-sm resize-none"
+                        [value]="templateDescription()"
+                        (input)="templateDescription.set($any($event.target).value)"></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button z-button zType="outline" (click)="closeSaveTemplateDialog()">Cancel</button>
+                <button z-button (click)="confirmSaveTemplate()"
+                    [disabled]="!templateName().trim() || isSavingTemplate()">
+                    @if (isSavingTemplate()) { <z-icon zType="loader-2" class="animate-spin mr-1" /> }
+                    <z-icon zType="bookmark" class="mr-1 w-4 h-4" />
+                    Save Template
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- View Template Detail Dialog -->
+    @if (showViewTemplateDialog() && selectedTemplate()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-background rounded-lg shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto p-6 relative">
+            <button class="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+                (click)="showViewTemplateDialog.set(false); selectedTemplate.set(null)">
+                <z-icon zType="x" class="w-5 h-5" />
+            </button>
+
+            <h2 class="text-xl font-bold mb-1 flex items-center gap-2">
+                <z-icon zType="bookmark" class="w-6 h-6 text-primary" />
+                {{ selectedTemplate()!.name }}
+            </h2>
+            @if (selectedTemplate()!.description) {
+            <p class="text-sm text-muted-foreground mb-4">{{ selectedTemplate()!.description }}</p>
+            }
+            <p class="text-xs text-muted-foreground mb-4">Created {{ selectedTemplate()!.createdAt | date:'medium' }}
+            </p>
+
+            <div class="space-y-3">
+                <h3 class="font-semibold text-sm flex items-center gap-2">
+                    <z-icon zType="pill" class="w-4 h-4" />
+                    Medications ({{ selectedTemplate()!.medications.length }})
+                </h3>
+                @for (med of selectedTemplate()!.medications; track med.medicationName) {
+                <div class="border rounded-lg p-3 space-y-1 bg-primary/5">
+                    <h4 class="font-medium">{{ med.medicationName }}</h4>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div class="flex items-center gap-1">
+                            <span class="text-muted-foreground">Dosage:</span>
+                            <span class="font-medium">{{ med.dosage }}</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="text-muted-foreground">Frequency:</span>
+                            <span class="font-medium">{{ med.frequency }}</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="text-muted-foreground">Duration:</span>
+                            <span class="font-medium">{{ med.duration }}</span>
+                        </div>
+                    </div>
+                    @if (med.instructions) {
+                    <div class="text-sm mt-1">
+                        <span class="text-muted-foreground">Instructions:</span>
+                        <span> {{ med.instructions }}</span>
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+
+            <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+                <button z-button zType="destructive" zSize="sm"
+                    (click)="deleteTemplate(selectedTemplate()!.id); showViewTemplateDialog.set(false); selectedTemplate.set(null)">
+                    <z-icon zType="trash-2" class="mr-1 w-4 h-4" />
+                    Delete
+                </button>
+                <button z-button zType="outline"
+                    (click)="showViewTemplateDialog.set(false); selectedTemplate.set(null)">
+                    Close
                 </button>
             </div>
         </div>
