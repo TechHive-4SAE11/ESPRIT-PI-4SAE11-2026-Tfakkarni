@@ -57,6 +57,10 @@ spring:
           uri: lb://tracking-service
           predicates:
             - Path=/api/prescriptions/**
+        - id: prescription-templates
+          uri: lb://tracking-service
+          predicates:
+            - Path=/api/prescription-templates/**
         - id: sessions
           uri: lb://tracking-service
           predicates:
