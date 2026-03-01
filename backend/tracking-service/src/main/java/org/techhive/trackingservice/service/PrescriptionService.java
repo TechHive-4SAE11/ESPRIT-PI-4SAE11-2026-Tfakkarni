@@ -141,6 +141,19 @@ public class PrescriptionService {
         return prescriptionRepository.findById(id);
     }
 
+    /**
+     * Resolve the doctor's keycloakId for a given prescription.
+     * Must run inside a transaction to safely traverse LAZY relationships.
+     */
+    @Transactional(readOnly = true)
+    public String getDoctorKeycloakIdForPrescription(Long prescriptionId) {
+        return prescriptionRepository.findById(prescriptionId)
+                .map(p -> p.getSession())
+                .map(s -> s.getMedicalFolder())
+                .map(mf -> mf.getIdDoctor())
+                .orElse(null);
+    }
+
     @Transactional(readOnly = true)
     public List<Prescription> getPrescriptionsBySession(Long sessionId) {
         return prescriptionRepository.findBySessionId(sessionId);
