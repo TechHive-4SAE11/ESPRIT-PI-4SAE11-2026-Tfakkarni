@@ -40,6 +40,9 @@ public class User {
   @Column(name = "kyc_session_id")
   private String kycSessionId;
 
+  @Column(name = "signature_image", columnDefinition = "BYTEA")
+  private byte[] signatureImage;
+
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
@@ -148,6 +151,14 @@ public class User {
 
   public void setKycSessionId(String kycSessionId) {
     this.kycSessionId = kycSessionId;
+  }
+
+  public byte[] getSignatureImage() {
+    return signatureImage;
+  }
+
+  public void setSignatureImage(byte[] signatureImage) {
+    this.signatureImage = signatureImage;
   }
 
   public LocalDateTime getCreatedAt() {

@@ -16,7 +16,11 @@ import java.time.format.DateTimeFormatter;
 @Service
 public class PrescriptionPdfService {
 
-    public byte[] generatePrescriptionPdf(Prescription prescription) throws DocumentException, IOException {
+    /**
+     * Generate a prescription PDF.
+     * If signatureImage is non-null, the doctor's signature will appear at the bottom.
+     */
+    public byte[] generatePrescriptionPdf(Prescription prescription, byte[] signatureImage) throws DocumentException, IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Document document = new Document();
         PdfWriter.getInstance(document, out);
@@ -75,6 +79,53 @@ public class PrescriptionPdfService {
         }
 
         document.add(table);
+
+        // Doctor Signature Section (if available)
+        if (signatureImage != null && signatureImage.length > 0) {
+            document.add(Chunk.NEWLINE);
+            document.add(Chunk.NEWLINE);
+
+            // Right-aligned signature block
+            PdfPTable sigTable = new PdfPTable(1);
+            sigTable.setWidthPercentage(40);
+            sigTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
+
+            // Label
+            PdfPCell labelCell = new PdfPCell(new Phrase("Signature du médecin:", 
+                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.DARK_GRAY)));
+            labelCell.setBorder(Rectangle.NO_BORDER);
+            labelCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            labelCell.setPaddingBottom(8f);
+            sigTable.addCell(labelCell);
+
+            // Signature image
+            try {
+                Image signatureImg = Image.getInstance(signatureImage);
+                signatureImg.scaleToFit(150, 60);
+                PdfPCell imgCell = new PdfPCell(signatureImg, false);
+                imgCell.setBorder(Rectangle.NO_BORDER);
+                imgCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                imgCell.setPaddingBottom(4f);
+                sigTable.addCell(imgCell);
+            } catch (Exception e) {
+                // If the image fails to load, add a placeholder text
+                PdfPCell errorCell = new PdfPCell(new Phrase("[Signature]", 
+                    FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 10, Color.GRAY)));
+                errorCell.setBorder(Rectangle.NO_BORDER);
+                errorCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                sigTable.addCell(errorCell);
+            }
+
+            // Separator line under signature
+            PdfPCell lineCell = new PdfPCell();
+            lineCell.setBorder(Rectangle.TOP);
+            lineCell.setBorderColor(Color.DARK_GRAY);
+            lineCell.setBorderWidth(1f);
+            lineCell.setFixedHeight(2f);
+            sigTable.addCell(lineCell);
+
+            document.add(sigTable);
+        }
         
         // Footer Note
         document.add(Chunk.NEWLINE);
@@ -86,6 +137,13 @@ public class PrescriptionPdfService {
         document.close();
 
         return out.toByteArray();
+    }
+
+    /**
+     * Overload for backward compatibility (no signature).
+     */
+    public byte[] generatePrescriptionPdf(Prescription prescription) throws DocumentException, IOException {
+        return generatePrescriptionPdf(prescription, null);
     }
 
     private void addTableHeader(PdfPTable table, Color bgColor) {
