@@ -10,6 +10,7 @@ export interface UserInfo {
   lastName: string;
   email: string;
   role: string;
+  phone?: string;
   enabled: boolean;
   createdAt: string;
 }
@@ -38,7 +39,7 @@ export class UserApiService {
     return this.http.get<UserInfo>(`${this.baseUrl}/${id}`);
   }
 
-  updateProfile(keycloakId: string, data: { firstName: string; lastName: string; email: string }): Observable<UserInfo> {
+  updateProfile(keycloakId: string, data: { firstName: string; lastName: string; email: string; phone?: string }): Observable<UserInfo> {
     return this.http.put<UserInfo>(`${this.baseUrl}/profile/${keycloakId}`, data);
   }
 

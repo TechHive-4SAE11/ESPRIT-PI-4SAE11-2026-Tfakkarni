@@ -64,6 +64,9 @@ public class UserService {
     if (request.getEmail() != null && !request.getEmail().isBlank()) {
       user.setEmail(request.getEmail().trim());
     }
+    if (request.getPhone() != null) {
+      user.setPhone(request.getPhone().trim().isEmpty() ? null : request.getPhone().trim());
+    }
 
     return userRepository.save(user);
   }

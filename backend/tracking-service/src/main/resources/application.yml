@@ -40,6 +40,17 @@ eureka:
     fetch-registry: true
     register-with-eureka: true
 
+# Mailtrap Sandbox (incident alerts)
+mailtrap:
+  token: f4ed6c5f383c7fe7e305eba8d1bcaef9
+  inbox-id: 4413425
+  from: noreply@tfakkarni.com
+
+# Telegram Bot — alerts on GRAVE incidents
+telegram:
+  bot-token: "8761174713:AAEG23SiwUmSEDTFTlMm-7GLzUZQpqDJzzg"
+  default-chat-id: "5674590232"
+
 # ElevenLabs Speech-to-Text API
 elevenlabs:
   api:

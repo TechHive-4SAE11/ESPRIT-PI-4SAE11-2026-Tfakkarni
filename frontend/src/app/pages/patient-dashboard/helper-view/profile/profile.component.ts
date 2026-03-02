@@ -91,6 +91,18 @@ import { UserApiService, UserInfo } from '@/core/services/user-api.service';
               />
             </div>
             <div>
+              <label class="text-sm font-medium text-foreground mb-1.5 block">
+                📞 Téléphone
+                <span class="text-xs text-muted-foreground font-normal ml-1">(utilisé pour les alertes urgentes)</span>
+              </label>
+              <input z-input
+                type="tel"
+                class="w-full"
+                placeholder="+216 XX XXX XXX"
+                [(ngModel)]="phone"
+              />
+            </div>
+            <div>
               <label class="text-sm font-medium text-foreground mb-1.5 block">Rôle</label>
               <input z-input
                 type="text"
@@ -189,6 +201,7 @@ export class ProfileComponent implements OnInit {
   firstName = '';
   lastName = '';
   email = '';
+  phone = '';
   role = '';
 
   // Password form fields
@@ -224,6 +237,7 @@ export class ProfileComponent implements OnInit {
           this.firstName = user.firstName;
           this.lastName = user.lastName;
           this.email = user.email;
+          this.phone = user.phone ?? '';
           this.role = user.role;
         },
         error: (err) => {
@@ -249,6 +263,7 @@ export class ProfileComponent implements OnInit {
       firstName: this.firstName.trim(),
       lastName: this.lastName.trim(),
       email: this.email.trim(),
+      phone: this.phone.trim(),
     })
       .pipe(
         finalize(() => this.isSavingProfile.set(false)),
@@ -259,6 +274,7 @@ export class ProfileComponent implements OnInit {
           this.firstName = updatedUser.firstName;
           this.lastName = updatedUser.lastName;
           this.email = updatedUser.email;
+          this.phone = updatedUser.phone ?? '';
           this.profileMessage.set('Profil mis à jour avec succès');
           this.profileSuccess.set(true);
         },

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, PLATFORM_ID, inject } from '@angular/core';
+import { Component, OnInit, signal, PLATFORM_ID, inject, OnDestroy } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { AuthService } from '@/core/auth';
 import { DashboardLayoutComponent, type SidebarMenuGroup } from '@/shared/components/dashboard-layout';
@@ -11,6 +11,8 @@ import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardProgressBarComponent } from '@/shared/components/progress-bar';
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 import { GameService, type GameStatsResponse } from '@/core/services/game.service';
+import { NotificationService } from '@/core/services/notification.service';
+import { type DoctorNotification } from '@/core/models/notification.model';
 import { PrescriptionManagementComponent } from './prescription-management/prescription-management.component';
 import { SuiviQuotidienComponent } from '@/pages/patient-dashboard/helper-view/suivi-quotidien/suivi-quotidien.component';
 import { CarePlanManagementComponent } from './care-plan-management/care-plan-management.component';
@@ -44,7 +46,165 @@ import { KeycloakService } from 'keycloak-angular';
     >
       @switch (currentPage()) {
         @case ('Home') {
-          <h2 class="text-2xl font-bold mb-6">Doctor Dashboard</h2>
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold">Doctor Dashboard</h2>
+            <!-- 🔔 Notification Bell -->
+            <div class="relative">
+              <button z-button zType="ghost" zSize="sm"
+                class="relative p-2"
+                (click)="toggleNotificationPanel()">
+                <z-icon zType="bell" class="h-5 w-5" />
+                @if (notifService.unreadCount() > 0) {
+                  <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1
+                               text-[10px] font-bold rounded-full bg-red-500 text-white
+                               flex items-center justify-center leading-none">
+                    {{ notifService.unreadCount() > 99 ? '99+' : notifService.unreadCount() }}
+                  </span>
+                }
+              </button>
+
+              @if (showNotifications()) {
+                <div class="absolute right-0 top-10 z-50 w-96 max-h-[540px] overflow-hidden
+                            rounded-2xl shadow-2xl border border-border bg-background
+                            flex flex-col"
+                  (click)="$event.stopPropagation()">
+                  <!-- Panel header -->
+                  <div class="flex items-center justify-between px-4 py-3 border-b border-border">
+                    <div class="flex items-center gap-2">
+                      <z-icon zType="bell" class="h-4 w-4 text-primary" />
+                      <span class="font-semibold text-sm">Notifications d'incidents</span>
+                      @if (notifService.unreadCount() > 0) {
+                        <span class="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-100 text-red-600">
+                          {{ notifService.unreadCount() }} non lu(s)
+                        </span>
+                      }
+                    </div>
+                    <div class="flex gap-1">
+                      @if (notifService.unreadCount() > 0) {
+                        <button z-button zType="ghost" zSize="sm"
+                          class="text-xs text-primary"
+                          (click)="markAllRead()">Tout lire</button>
+                      }
+                      <button z-button zType="ghost" zSize="sm" (click)="showNotifications.set(false)">
+                        <z-icon zType="x" class="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <!-- Notification list -->
+                  <div class="overflow-y-auto flex-1">
+                    @if (notifService.notifications().length === 0) {
+                      <div class="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                        <z-icon zType="bell" class="h-8 w-8 mb-2 opacity-30" />
+                        <p class="text-sm">Aucune notification</p>
+                      </div>
+                    }
+                    @for (notif of notifService.notifications(); track notif.id) {
+                      <div
+                        class="px-4 py-3 border-b border-border/50 cursor-pointer transition-colors"
+                        [class]="notif.read ? 'bg-background hover:bg-muted/30' : 'bg-amber-50/60 dark:bg-amber-900/10 hover:bg-amber-50'"
+                        (click)="openNotification(notif)">
+                        <div class="flex items-start gap-3">
+                          <!-- Severity icon -->
+                          <div class="shrink-0 mt-0.5 p-1.5 rounded-lg"
+                            [class]="notif.severity === 'GRAVE' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'">
+                            <z-icon zType="triangle-alert" class="h-3.5 w-3.5" />
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                              <span class="font-semibold text-sm truncate">{{ notif.patientName }}</span>
+                              <span class="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                                [class]="notif.severity === 'GRAVE' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'">
+                                {{ notif.severity }}
+                              </span>
+                              @if (!notif.read) {
+                                <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                              }
+                            </div>
+                            <p class="text-xs text-muted-foreground mt-0.5 truncate">{{ notif.incidentType }} — {{ notif.description }}</p>
+                            <p class="text-[10px] text-muted-foreground mt-1">{{ formatNotifDate(notif.createdAt) }}</p>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Notification detail modal -->
+          @if (selectedNotif()) {
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+              (click)="selectedNotif.set(null)">
+              <div class="w-full max-w-md rounded-2xl bg-background shadow-2xl border border-border p-6"
+                (click)="$event.stopPropagation()">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-2">
+                    <div class="p-2 rounded-lg"
+                      [class]="selectedNotif()!.severity === 'GRAVE' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'">
+                      <z-icon zType="triangle-alert" class="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 class="font-bold text-base">Incident {{ selectedNotif()!.severity }}</h3>
+                      <p class="text-xs text-muted-foreground">{{ formatNotifDate(selectedNotif()!.createdAt) }}</p>
+                    </div>
+                  </div>
+                  <button z-button zType="ghost" zSize="sm" (click)="selectedNotif.set(null)">
+                    <z-icon zType="x" class="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div class="space-y-3 text-sm">
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="p-3 rounded-xl bg-muted/40">
+                      <p class="text-xs text-muted-foreground mb-1">Patient</p>
+                      <p class="font-semibold">{{ selectedNotif()!.patientName }}</p>
+                    </div>
+                    <div class="p-3 rounded-xl bg-muted/40">
+                      <p class="text-xs text-muted-foreground mb-1">Type d'incident</p>
+                      <p class="font-semibold">{{ selectedNotif()!.incidentType }}</p>
+                    </div>
+                    <div class="p-3 rounded-xl bg-muted/40">
+                      <p class="text-xs text-muted-foreground mb-1">Date</p>
+                      <p class="font-semibold">{{ selectedNotif()!.logDate }}</p>
+                    </div>
+                    @if (selectedNotif()!.occurredAt) {
+                      <div class="p-3 rounded-xl bg-muted/40">
+                        <p class="text-xs text-muted-foreground mb-1">Heure</p>
+                        <p class="font-semibold">{{ selectedNotif()!.occurredAt }}</p>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="p-3 rounded-xl"
+                    [class]="selectedNotif()!.severity === 'GRAVE' ? 'bg-red-50 border border-red-200' : 'bg-orange-50 border border-orange-200'">
+                    <p class="text-xs font-semibold mb-1"
+                      [class]="selectedNotif()!.severity === 'GRAVE' ? 'text-red-700' : 'text-orange-700'">Description</p>
+                    <p class="text-sm">{{ selectedNotif()!.description }}</p>
+                  </div>
+
+                  @if (selectedNotif()!.location) {
+                    <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                      <z-icon zType="map-pin" class="h-4 w-4 shrink-0" />
+                      <span>{{ selectedNotif()!.location }}</span>
+                    </div>
+                  }
+                  @if (selectedNotif()!.actionTaken) {
+                    <div class="flex items-start gap-2 text-sm">
+                      <z-icon zType="check" class="h-4 w-4 shrink-0 text-green-600 mt-0.5" />
+                      <span class="text-green-700">{{ selectedNotif()!.actionTaken }}</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="mt-5 flex gap-2">
+                  <button z-button class="flex-1" (click)="viewPatientFromNotif(selectedNotif()!)">Voir le journal patient</button>
+                  <button z-button zType="outline" (click)="selectedNotif.set(null)">Fermer</button>
+                </div>
+              </div>
+            </div>
+          }
+
           <div class="grid gap-4 md:grid-cols-3 mb-8">
             <z-card class="p-6">
               <div class="flex items-center justify-between">
@@ -228,7 +388,7 @@ import { KeycloakService } from 'keycloak-angular';
     </app-dashboard-layout>
   `,
 })
-export class DoctorDashboardComponent implements OnInit {
+export class DoctorDashboardComponent implements OnInit, OnDestroy {
   currentPage = signal('Home');
   patients = signal<UserInfo[]>([]);
   patientStats = signal<Map<string, GameStatsResponse>>(new Map());
@@ -239,6 +399,11 @@ export class DoctorDashboardComponent implements OnInit {
   error = signal<string | null>(null);
   totalPatientGames = 0;
   avgPatientScore = 0;
+
+  // Notifications
+  showNotifications = signal(false);
+  selectedNotif = signal<DoctorNotification | null>(null);
+  private notifInterval: ReturnType<typeof setInterval> | null = null;
 
   menuGroups: SidebarMenuGroup[] = [
     {
@@ -267,6 +432,7 @@ export class DoctorDashboardComponent implements OnInit {
     private readonly userApiService: UserApiService,
     private readonly gameService: GameService,
     private readonly keycloakService: KeycloakService,
+    public readonly notifService: NotificationService,
   ) {
     this.platformId = inject(PLATFORM_ID);
   }
@@ -288,7 +454,19 @@ export class DoctorDashboardComponent implements OnInit {
       }
 
       this.loadPatients();
+
+      // Load notifications and poll every 30s
+      if (this.doctorKeycloakId) {
+        this.notifService.loadNotifications(this.doctorKeycloakId).subscribe();
+        this.notifInterval = setInterval(() => {
+          this.notifService.loadNotifications(this.doctorKeycloakId).subscribe();
+        }, 30_000);
+      }
     }
+  }
+
+  ngOnDestroy(): void {
+    if (this.notifInterval) clearInterval(this.notifInterval);
   }
 
   setPage(page: string): void {
@@ -321,6 +499,51 @@ export class DoctorDashboardComponent implements OnInit {
 
   retryLoadPatients(): void {
     this.loadPatients();
+  }
+
+  // ── Notification methods ─────────────────────────────────────────────────
+
+  toggleNotificationPanel(): void {
+    this.showNotifications.update(v => !v);
+    if (this.showNotifications()) {
+      this.selectedNotif.set(null);
+    }
+  }
+
+  openNotification(notif: DoctorNotification): void {
+    this.selectedNotif.set(notif);
+    this.showNotifications.set(false);
+    if (!notif.read) {
+      this.notifService.markAsRead(notif.id).subscribe();
+    }
+  }
+
+  markAllRead(): void {
+    if (this.doctorKeycloakId) {
+      this.notifService.markAllAsRead(this.doctorKeycloakId).subscribe();
+    }
+  }
+
+  viewPatientFromNotif(notif: DoctorNotification): void {
+    const patient = this.patients().find(p => p.keycloakId === notif.patientKeycloakId);
+    if (patient) {
+      this.selectedNotif.set(null);
+      this.viewDailyLog(patient);
+    }
+  }
+
+  formatNotifDate(dateStr: string): string {
+    try {
+      const d = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now.getTime() - d.getTime();
+      const diffMin = Math.floor(diffMs / 60000);
+      if (diffMin < 1) return 'À l\'instant';
+      if (diffMin < 60) return `Il y a ${diffMin} min`;
+      const diffH = Math.floor(diffMin / 60);
+      if (diffH < 24) return `Il y a ${diffH}h`;
+      return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    } catch { return dateStr; }
   }
 
   private loadPatients(): void {
