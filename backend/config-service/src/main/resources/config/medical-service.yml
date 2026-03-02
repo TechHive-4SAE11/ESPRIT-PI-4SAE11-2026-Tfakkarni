@@ -1,9 +1,9 @@
 server:
-  port: 18083
+  port: 18086
 
 spring:
   application:
-    name: tracking-service
+    name: medical-service
   datasource:
     url: jdbc:postgresql://ep-damp-bar-agi72bgl-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
     username: neondb_owner
@@ -24,3 +24,4 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
+

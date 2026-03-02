@@ -29,7 +29,7 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(List.of("http://localhost:4200"));
+    config.setAllowedOriginPatterns(List.of("*"));
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
     config.setAllowedHeaders(List.of("*"));
     config.setAllowCredentials(true);
@@ -44,10 +44,12 @@ public class SecurityConfig {
     http
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .csrf(ServerHttpSecurity.CsrfSpec::disable)
+        .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
         .authorizeExchange(exchanges -> exchanges
             // Allow all CORS preflight requests
             .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             // Public endpoints - no authentication required
+            .pathMatchers("/auth/**").permitAll()
             .pathMatchers("/public/**").permitAll()
             .pathMatchers("/actuator/**").permitAll()
             .pathMatchers("/api/users/register").permitAll()

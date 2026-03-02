@@ -11,8 +11,8 @@ spring:
       globalcors:
         cors-configurations:
           "[/**]":
-            allowedOrigins:
-              - "http://localhost:4200"
+            allowedOriginPatterns:
+              - "*"
             allowedMethods:
               - GET
               - POST
@@ -27,6 +27,13 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
+        - id: keycloak
+          uri: http://localhost:8280
+          predicates:
+            - Path=/auth/**
+          filters:
+            - StripPrefix=1
+            - RemoveRequestHeader=Origin
         - id: user-service
           uri: lb://user-service
           predicates:
@@ -81,3 +88,7 @@ logging:
   level:
     org.springframework.cloud.gateway: DEBUG
     org.springframework.security: DEBUG
+
+recaptcha:
+  secret:
+    key: "6LfSr30sAAAAAO3Nu-3tXILWfm0IBZezbpMAQG1I"

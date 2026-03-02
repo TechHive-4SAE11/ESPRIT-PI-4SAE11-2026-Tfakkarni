@@ -9,6 +9,9 @@ import { provideClientHydration } from '@angular/platform-browser';
 import { provideZard } from '@/shared/core/provider/providezard';
 import { environment } from '../environments/environment';
 
+// Keycloak server URL used for SSO init – bypass gateway to avoid X-Frame-Options
+const KC_DIRECT_URL = 'http://localhost:8280';
+
 /**
  * Initializes Keycloak with the configuration for the esprit-realm.
  * The init runs before the Angular app bootstraps, ensuring the auth
@@ -29,16 +32,17 @@ function initializeKeycloak(keycloak: KeycloakService, platformId: object) {
     return keycloak
       .init({
         config: {
-          url: environment.keycloakUrl,
+          // Point directly to Keycloak (not via Gateway) so X-Frame-Options
+          // from the gateway doesn't block the 3rd-party-cookie iframe check.
+          url: KC_DIRECT_URL,
           realm: 'techhive',
           clientId: 'tfakkarni-frontend',
         },
         initOptions: {
-          // check-sso: silently check if the user is already logged in
-          onLoad: 'check-sso',
-          silentCheckSsoRedirectUri:
-            globalThis.location.origin + '/assets/silent-check-sso.html',
+          // Disable ALL iframe-based checks — avoids X-Frame-Options / CSP issues
           checkLoginIframe: false,
+          // Don't auto-check SSO on startup — we manually restore tokens from localStorage
+          onLoad: undefined,
         },
         // Attach the Bearer token to all API calls going to the gateway
         enableBearerInterceptor: true,

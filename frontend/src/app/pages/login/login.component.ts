@@ -10,6 +10,7 @@ import { AuthService } from '@/core/auth';
 import { ZardButtonComponent } from '@/shared/components/button/button.component';
 import { ZardCardComponent } from '@/shared/components/card/card.component';
 import { ZardInputDirective } from '@/shared/components/input/input.directive';
+import { RecaptchaModule, RecaptchaFormsModule } from 'ng-recaptcha';
 
 @Component({
   selector: 'app-login',
@@ -21,6 +22,8 @@ import { ZardInputDirective } from '@/shared/components/input/input.directive';
     ZardButtonComponent,
     ZardCardComponent,
     ZardInputDirective,
+    RecaptchaModule,
+    RecaptchaFormsModule,
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css'],
@@ -31,6 +34,9 @@ export class LoginComponent implements OnInit {
   password = '';
   errorMessage = '';
   isLoading = false;
+  recaptchaToken: string | null = null;
+  // Google reCAPTCHA v2 site key
+  readonly siteKey = '6LfSr30sAAAAAOd0KqmB__bCHLg3T7FtEdkMkvcr';
   private readonly platformId = inject(PLATFORM_ID);
 
   constructor(
@@ -63,11 +69,16 @@ export class LoginComponent implements OnInit {
       return;
     }
 
+    if (!this.recaptchaToken) {
+      this.errorMessage = 'Please confirm you are not a robot';
+      return;
+    }
+
     this.isLoading = true;
     this.errorMessage = '';
 
     try {
-      const tokenEndpoint = `${environment.keycloakUrl}/realms/techhive/protocol/openid-connect/token`;
+      const tokenEndpoint = `http://localhost:8280/realms/techhive/protocol/openid-connect/token`;
       console.log('[LOGIN] Requesting token from:', tokenEndpoint);
 
       const body = new URLSearchParams();

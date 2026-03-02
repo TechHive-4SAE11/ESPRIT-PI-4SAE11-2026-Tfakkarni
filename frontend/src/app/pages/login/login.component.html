@@ -41,8 +41,14 @@
           </div>
           }
 
+          <!-- reCAPTCHA -->
+          <div class="flex justify-center">
+            <re-captcha [(ngModel)]="recaptchaToken" name="recaptcha" [siteKey]="siteKey" required>
+            </re-captcha>
+          </div>
+
           <!-- Sign In Button -->
-          <button z-button type="submit" class="w-full" zSize="lg" [disabled]="isLoading">
+          <button z-button type="submit" class="w-full" zSize="lg" [disabled]="isLoading || !recaptchaToken">
             @if (isLoading) {
             <span>Signing in...</span>
             } @else {
