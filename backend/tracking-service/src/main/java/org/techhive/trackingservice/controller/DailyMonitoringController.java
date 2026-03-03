@@ -140,12 +140,20 @@ public class DailyMonitoringController {
     @PostMapping(value = "/{logId}/voice-note", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadVoiceNote(
             @PathVariable Long logId,
-            @RequestParam("audio") MultipartFile audioFile) {
+            @RequestParam("audio") MultipartFile audioFile,
+            @RequestParam(value = "language", required = false) String language) {
         try {
             if (audioFile.isEmpty()) {
                 return ResponseEntity.badRequest().body(java.util.Map.of("error", "Le fichier audio est vide"));
             }
-            String transcribedText = elevenLabsService.transcribeAudio(audioFile);
+            // Map frontend language codes to ElevenLabs ISO 639-3 codes
+            String languageCode = null;
+            if ("ar".equals(language)) {
+                languageCode = "ara"; // Arabic (ISO 639-3)
+            } else if ("fr".equals(language)) {
+                languageCode = "fra"; // French
+            }
+            String transcribedText = elevenLabsService.transcribeAudio(audioFile, languageCode);
             svc.updateVoiceNote(logId, transcribedText);
             return ResponseEntity.ok(java.util.Map.of("text", transcribedText));
         } catch (RuntimeException e) {

@@ -412,15 +412,34 @@ function isNumericOrEmpty(v: string): boolean {
 
       <!-- Note Vocale -->
       <div>
-        <h3 class="font-semibold text-base flex items-center gap-2 mb-3">
-          <span class="p-1.5 rounded-lg bg-purple-100 text-purple-600"><z-icon zType="activity" class="h-4 w-4" /></span>
-          Note vocale
-        </h3>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-base flex items-center gap-2">
+            <span class="p-1.5 rounded-lg bg-purple-100 text-purple-600"><z-icon zType="activity" class="h-4 w-4" /></span>
+            {{ voiceLanguage() === 'ar' ? 'ملاحظة صوتية' : 'Note vocale' }}
+          </h3>
+          @if (!readOnly) {
+            <!-- Language Toggle FR / AR -->
+            <button
+              (click)="toggleVoiceLanguage()"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 text-xs font-medium"
+              [class]="voiceLanguage() === 'ar'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'
+                : 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'"
+            >
+              <span class="text-sm">{{ voiceLanguage() === 'fr' ? '🇫🇷' : '🇸🇦' }}</span>
+              <span>{{ voiceLanguage() === 'fr' ? 'FR' : 'AR' }}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+              </svg>
+              <span class="text-sm">{{ voiceLanguage() === 'fr' ? '🇸🇦' : '🇫🇷' }}</span>
+            </button>
+          }
+        </div>
         @if (log()?.voiceNoteText) {
           <z-card class="p-4 bg-purple-50/50 border-purple-200">
             <div class="flex items-start justify-between gap-3">
               <div class="flex-1">
-                <p class="text-sm text-muted-foreground whitespace-pre-wrap">{{ log()!.voiceNoteText }}</p>
+                <p class="text-sm text-muted-foreground whitespace-pre-wrap" [dir]="voiceNoteDir()">{{ log()!.voiceNoteText }}</p>
               </div>
               @if (!readOnly) {
                 <button z-button zType="ghost" zSize="sm" class="text-destructive shrink-0" (click)="deleteVoiceNote()">
@@ -436,27 +455,42 @@ function isNumericOrEmpty(v: string): boolean {
                 <div class="h-16 w-16 rounded-full bg-red-500 animate-pulse flex items-center justify-center">
                   <z-icon zType="activity" class="h-8 w-8 text-white" />
                 </div>
-                <p class="text-sm font-medium">Enregistrement en cours...</p>
+                <p class="text-sm font-medium">
+                  {{ voiceLanguage() === 'ar' ? '...جاري التسجيل' : 'Enregistrement en cours...' }}
+                </p>
                 <button z-button zType="destructive" (click)="stopRecording()">
-                  <z-icon zType="square" class="h-4 w-4 mr-2" /> Arr&#234;ter
+                  <z-icon zType="square" class="h-4 w-4 mr-2" /> {{ voiceLanguage() === 'ar' ? 'إيقاف' : 'Arr\u00eater' }}
                 </button>
               </div>
             } @else if (isTranscribing()) {
               <div class="flex flex-col items-center gap-2">
                 <z-icon zType="loader-2" class="h-8 w-8 text-primary animate-spin" />
-                <p class="text-sm text-muted-foreground">Transcription en cours...</p>
+                <p class="text-sm text-muted-foreground">
+                  {{ voiceLanguage() === 'ar' ? '...جاري التحويل إلى نص' : 'Transcription en cours...' }}
+                </p>
               </div>
             } @else {
-              <button z-button (click)="startRecording()">
-                <z-icon zType="activity" class="h-4 w-4 mr-2" /> Enregistrer une note vocale
-              </button>
-              <p class="text-xs text-muted-foreground text-center">
-                Cliquez pour enregistrer une note qui sera automatiquement convertie en texte
-              </p>
+              <div class="flex flex-col items-center gap-2">
+                <div class="flex items-center gap-2 mb-1 text-xs font-medium"
+                     [class]="voiceLanguage() === 'ar' ? 'text-emerald-600' : 'text-blue-600'">
+                  <span>{{ voiceLanguage() === 'fr' ? '🇫🇷 Français' : '🇸🇦 العربية' }}</span>
+                </div>
+                <button z-button (click)="startRecording()">
+                  <z-icon zType="activity" class="h-4 w-4 mr-2" />
+                  {{ voiceLanguage() === 'ar' ? 'تسجيل ملاحظة صوتية' : 'Enregistrer une note vocale' }}
+                </button>
+                <p class="text-xs text-muted-foreground text-center">
+                  {{ voiceLanguage() === 'ar'
+                    ? 'انقر للتسجيل — سيتم تحويل الصوت تلقائيًا إلى نص بالعربية'
+                    : 'Cliquez pour enregistrer une note qui sera automatiquement convertie en texte' }}
+                </p>
+              </div>
             }
           </div>
         } @else {
-          <p class="text-center py-4 text-sm text-muted-foreground border border-dashed rounded-xl">Aucune note vocale</p>
+          <p class="text-center py-4 text-sm text-muted-foreground border border-dashed rounded-xl">
+            {{ voiceLanguage() === 'ar' ? 'لا توجد ملاحظة صوتية' : 'Aucune note vocale' }}
+          </p>
         }
       </div>
     </div>
@@ -1177,6 +1211,26 @@ export class SuiviQuotidienComponent implements OnInit {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
 
+  // ── Voice language toggle (FR / AR) ────────────────────────────────
+  voiceLanguage = signal<'fr' | 'ar'>(
+    (localStorage.getItem('tfk_voice_language') as 'fr' | 'ar') || 'fr'
+  );
+  voiceLangLabel = computed(() => this.voiceLanguage() === 'fr' ? 'Français' : 'العربية');
+
+  /** Detects if the transcribed voice note contains Arabic characters → RTL */
+  voiceNoteDir = computed<'rtl' | 'ltr'>(() => {
+    const text = this.log()?.voiceNoteText;
+    if (!text) return 'ltr';
+    const arabicRegex = /[\u0600-\u06FF]/;
+    return arabicRegex.test(text) ? 'rtl' : 'ltr';
+  });
+
+  toggleVoiceLanguage(): void {
+    const next = this.voiceLanguage() === 'fr' ? 'ar' : 'fr';
+    this.voiceLanguage.set(next);
+    localStorage.setItem('tfk_voice_language', next);
+  }
+
   // ── Toggle rapide médicament (sans ouvrir le modal) ───────────────────
   _togglingMedId = signal<number | null>(null);
   healthScore   = signal<HealthScoreResponse | null>(null);
@@ -1879,14 +1933,17 @@ export class SuiviQuotidienComponent implements OnInit {
     const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
     formData.append('audio', blob, `voice-note.${ext}`);
 
-    this.svc.uploadVoiceNote(logId, formData).subscribe({
+    this.svc.uploadVoiceNote(logId, formData, this.voiceLanguage()).subscribe({
       next: () => {
         this.isTranscribing.set(false);
         this.loadLog();
       },
       error: (err) => {
         this.isTranscribing.set(false);
-        this.errorMsg.set(err?.error?.error || 'Erreur lors de la transcription');
+        const defaultErr = this.voiceLanguage() === 'ar'
+          ? 'خطأ أثناء تحويل الصوت إلى نص'
+          : 'Erreur lors de la transcription';
+        this.errorMsg.set(err?.error?.error || defaultErr);
       }
     });
   }

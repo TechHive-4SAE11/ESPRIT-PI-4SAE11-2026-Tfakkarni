@@ -67,8 +67,12 @@ export class DailyMonitoringService {
   }
 
   // ── Voice note ────────────────────────────────────────────────────────────
-  uploadVoiceNote(logId: number, formData: FormData): Observable<{ text: string }> {
-    return this.http.post<{ text: string }>(`${this.base}/${logId}/voice-note`, formData);
+  uploadVoiceNote(logId: number, formData: FormData, language?: 'fr' | 'ar'): Observable<{ text: string }> {
+    let url = `${this.base}/${logId}/voice-note`;
+    if (language) {
+      url += `?language=${language}`;
+    }
+    return this.http.post<{ text: string }>(url, formData);
   }
   deleteVoiceNote(logId: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${logId}/voice-note`);

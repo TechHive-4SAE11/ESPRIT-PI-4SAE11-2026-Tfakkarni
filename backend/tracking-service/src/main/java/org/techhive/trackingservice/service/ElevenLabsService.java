@@ -33,8 +33,20 @@ public class ElevenLabsService {
      * @param audioFile the audio file (webm, mp4, mp3, wav, etc.)
      * @return the transcribed text
      */
-    @SuppressWarnings("unchecked")
     public String transcribeAudio(MultipartFile audioFile) {
+        return transcribeAudio(audioFile, null);
+    }
+
+    /**
+     * Transcribes the given audio file to text using ElevenLabs STT
+     * with an optional language hint.
+     *
+     * @param audioFile    the audio file (webm, mp4, mp3, wav, etc.)
+     * @param languageCode ISO 639-3 language code (e.g. "fra", "arb") or null for auto-detect
+     * @return the transcribed text
+     */
+    @SuppressWarnings("unchecked")
+    public String transcribeAudio(MultipartFile audioFile, String languageCode) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
@@ -54,6 +66,12 @@ public class ElevenLabsService {
 
             body.add("file", fileResource);
             body.add("model_id", "scribe_v1"); // ElevenLabs Scribe model
+
+            // Add language hint if provided (improves accuracy)
+            if (languageCode != null && !languageCode.isBlank()) {
+                body.add("language_code", languageCode);
+                log.info("Transcribing audio with language hint: {}", languageCode);
+            }
 
             HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(body, headers);
 
