@@ -16,6 +16,8 @@ import { type IntakeStatus, type MedicationIntakeLogResponse } from '@/core/mode
 import { AuthService } from '@/core/auth';
 import { AudioGameService, type SpeechLanguage } from '@/core/services/audio-game.service';
 import { ThemeService } from '@/core/services/theme.service';
+import { StatisticsService } from '@/core/services/statistics.service';
+import type { StreakResponse } from '@/core/models/statistics.model';
 import { GuessPlaceComponent } from './guess-place/guess-place.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
 import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-plan-list.component';
@@ -42,6 +44,7 @@ export class PatientViewComponent implements OnInit {
   private readonly router                = inject(Router);
   private readonly authService           = inject(AuthService);
   private readonly audioGameService      = inject(AudioGameService);
+  private readonly statisticsService     = inject(StatisticsService);
   readonly themeService                  = inject(ThemeService);
 
   // ── Service partagé (source unique de vérité pour les médicaments) ─────────
@@ -49,6 +52,9 @@ export class PatientViewComponent implements OnInit {
 
   @Input() keycloakId = '';
   @Output() switchToHelper = new EventEmitter<void>();
+
+  // ── Expose Math for template expressions ───────────────────────────────────
+  readonly Math = Math;
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   currentPage = signal<string>('Home');
@@ -64,6 +70,10 @@ export class PatientViewComponent implements OnInit {
   isLoadingMovieGames   = signal(false);
   isLoadingStats        = signal(false);
   isLoadingCustomGames  = signal<boolean>(false);
+  isLoadingStreak       = signal(false);
+
+  // ── Win Streak (Duolingo-style) ────────────────────────────────────────────
+  streak = signal<StreakResponse | null>(null);
 
   // ── Médicaments — lus depuis le service partagé ────────────────────────────
   /** Proxy computed vers les signaux du service partagé */
@@ -110,6 +120,7 @@ export class PatientViewComponent implements OnInit {
     this.loadMovieGames();
     this.loadStats();
     this.loadCustomGames();
+    this.loadStreak();
     this.loadAndCacheUserGender();
     // Médicaments : charger via le service partagé (évite un double-fetch si déjà chargé)
     this.logState.loadTodayLog(this.keycloakId)
@@ -262,6 +273,21 @@ export class PatientViewComponent implements OnInit {
           return of([]);
         }),
         finalize(() => this.isLoadingCustomGames.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  private loadStreak(): void {
+    this.isLoadingStreak.set(true);
+    this.statisticsService.getStreak(this.keycloakId)
+      .pipe(
+        tap(s => this.streak.set(s)),
+        catchError(err => {
+          console.error('[PatientView] Failed to load streak', err);
+          return of(null);
+        }),
+        finalize(() => this.isLoadingStreak.set(false)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
