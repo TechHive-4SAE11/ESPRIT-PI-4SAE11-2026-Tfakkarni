@@ -441,11 +441,29 @@ function isNumericOrEmpty(v: string): boolean {
               <div class="flex-1">
                 <p class="text-sm text-muted-foreground whitespace-pre-wrap" [dir]="voiceNoteDir()">{{ log()!.voiceNoteText }}</p>
               </div>
-              @if (!readOnly) {
-                <button z-button zType="ghost" zSize="sm" class="text-destructive shrink-0" (click)="deleteVoiceNote()">
-                  <z-icon zType="trash-2" class="h-3.5 w-3.5" />
+              <div class="flex items-center gap-1 shrink-0">
+                <!-- TTS Play/Stop button -->
+                <button z-button zType="ghost" zSize="sm"
+                  [class]="isSpeaking() ? 'text-purple-600 animate-pulse' : 'text-purple-500 hover:text-purple-700'"
+                  (click)="speakVoiceNote()"
+                  [title]="isSpeaking() ? 'Arrêter la lecture' : 'Écouter la note'">
+                  @if (isSpeaking()) {
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/>
+                      <rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/>
+                    </svg>
+                  } @else {
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M11.383 3.07C11.009 2.89 10.579 2.905 10.22 3.11L4.934 6H2c-1.103 0-2 .897-2 2v8c0 1.103.897 2 2 2h2.934l5.286 2.89c.176.096.369.144.563.144.187 0 .375-.048.546-.144.353-.195.571-.567.571-.976V4.046c0-.409-.218-.781-.571-.976h.054zM18.657 3.343a1 1 0 00-1.414 1.414c3.124 3.124 3.124 8.202 0 11.326a1 1 0 001.414 1.414c3.905-3.905 3.905-10.249 0-14.154zM15.828 6.172a1 1 0 00-1.414 1.414 4.017 4.017 0 010 5.656 1 1 0 001.414 1.414 6.017 6.017 0 000-8.484z"/>
+                    </svg>
+                  }
                 </button>
-              }
+                @if (!readOnly) {
+                  <button z-button zType="ghost" zSize="sm" class="text-destructive shrink-0" (click)="deleteVoiceNote()">
+                    <z-icon zType="trash-2" class="h-3.5 w-3.5" />
+                  </button>
+                }
+              </div>
             </div>
           </z-card>
         } @else if (!readOnly) {
@@ -1229,6 +1247,47 @@ export class SuiviQuotidienComponent implements OnInit {
     const next = this.voiceLanguage() === 'fr' ? 'ar' : 'fr';
     this.voiceLanguage.set(next);
     localStorage.setItem('tfk_voice_language', next);
+  }
+
+  // ── TTS playback ──────────────────────────────────────────────────────
+  isSpeaking     = signal(false);
+  private ttsAudio: HTMLAudioElement | null = null;
+
+  speakVoiceNote(): void {
+    // If already playing, stop it
+    if (this.ttsAudio && !this.ttsAudio.paused) {
+      this.ttsAudio.pause();
+      this.ttsAudio.currentTime = 0;
+      this.isSpeaking.set(false);
+      return;
+    }
+
+    const logId = this.log()?.id;
+    if (!logId) return;
+
+    this.isSpeaking.set(true);
+    const lang = this.voiceNoteDir() === 'rtl' ? 'ar' : 'fr';
+
+    this.svc.speakVoiceNote(logId, lang).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        this.ttsAudio = new Audio(url);
+        this.ttsAudio.onended = () => {
+          this.isSpeaking.set(false);
+          URL.revokeObjectURL(url);
+        };
+        this.ttsAudio.onerror = () => {
+          this.isSpeaking.set(false);
+          this.errorMsg.set(lang === 'ar' ? 'خطأ في تشغيل الصوت' : 'Erreur de lecture audio');
+          URL.revokeObjectURL(url);
+        };
+        this.ttsAudio.play();
+      },
+      error: () => {
+        this.isSpeaking.set(false);
+        this.errorMsg.set(lang === 'ar' ? 'خطأ في توليد الصوت' : 'Erreur lors de la synthèse vocale');
+      }
+    });
   }
 
   // ── Toggle rapide médicament (sans ouvrir le modal) ───────────────────

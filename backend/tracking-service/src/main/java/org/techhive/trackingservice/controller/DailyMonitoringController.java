@@ -172,6 +172,34 @@ public class DailyMonitoringController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Text-to-Speech: reads the voice note text aloud via ElevenLabs TTS.
+     * Returns MP3 audio bytes.
+     */
+    @PostMapping("/{logId}/voice-note/tts")
+    public ResponseEntity<?> textToSpeech(
+            @PathVariable Long logId,
+            @RequestParam(value = "language", defaultValue = "fr") String language) {
+        try {
+            var log = svc.getLogById(logId);
+            if (log == null) {
+                return ResponseEntity.notFound().build();
+            }
+            String text = log.getVoiceNoteText();
+            if (text == null || text.isBlank()) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("error", "Aucune note vocale à lire"));
+            }
+            byte[] audio = elevenLabsService.textToSpeech(text, language);
+            return ResponseEntity.ok()
+                    .contentType(org.springframework.http.MediaType.parseMediaType("audio/mpeg"))
+                    .body(audio);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(java.util.Map.of("error", "Erreur interne TTS"));
+        }
+    }
+
     // ── Mini-mappers ───────────────────────────────────────────────────────
 
     private NutritionEntryResponse toNutritionResponse(NutritionEntry e) {

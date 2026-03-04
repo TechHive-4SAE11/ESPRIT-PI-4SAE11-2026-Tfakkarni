@@ -78,6 +78,13 @@ export class DailyMonitoringService {
     return this.http.delete<void>(`${this.base}/${logId}/voice-note`);
   }
 
+  /** Text-to-Speech: returns MP3 audio blob from the voice note text */
+  speakVoiceNote(logId: number, language: 'fr' | 'ar' = 'fr'): Observable<Blob> {
+    return this.http.post(`${this.base}/${logId}/voice-note/tts?language=${language}`, null, {
+      responseType: 'blob'
+    });
+  }
+
   // ── Incidents ──────────────────────────────────────────────────────────
   addIncident(logId: number, dto: IncidentEntryRequest): Observable<IncidentEntryResponse> {
     return this.http.post<IncidentEntryResponse>(`${this.base}/${logId}/incidents`, dto);

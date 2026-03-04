@@ -102,4 +102,59 @@ public class ElevenLabsService {
             throw new RuntimeException("Erreur lors de la transcription audio : " + e.getMessage());
         }
     }
+
+    // ── Text-to-Speech ──────────────────────────────────────────────────
+
+    private static final String ELEVENLABS_TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech/";
+
+    /**
+     * Converts text to speech using ElevenLabs TTS API.
+     *
+     * @param text     the text to convert
+     * @param language "ar" for Arabic voice, "fr" for French voice
+     * @return MP3 audio bytes
+     */
+    public byte[] textToSpeech(String text, String language) {
+        try {
+            // Use a single multilingual voice — ElevenLabs eleven_multilingual_v2
+            // automatically detects the language from the text (Arabic, French, etc.)
+            String voiceId = "EXAVITQu4vr4xnSDxMaL"; // Sarah — fully multilingual (FR + AR)
+
+            String url = ELEVENLABS_TTS_URL + voiceId;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("xi-api-key", apiKey);
+            headers.set("Accept", "audio/mpeg");
+
+            java.util.Map<String, Object> body = new java.util.HashMap<>();
+            body.put("text", text);
+            body.put("model_id", "eleven_multilingual_v2"); // Best multilingual model (FR, AR, ...)
+
+            java.util.Map<String, Object> voiceSettings = new java.util.HashMap<>();
+            voiceSettings.put("stability", 0.5);
+            voiceSettings.put("similarity_boost", 0.75);
+            body.put("voice_settings", voiceSettings);
+
+            HttpEntity<java.util.Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+            ResponseEntity<byte[]> response = restTemplate.exchange(
+                    url, HttpMethod.POST, request, byte[].class
+            );
+
+            byte[] audio = response.getBody();
+            if (audio == null || audio.length == 0) {
+                throw new RuntimeException("Réponse audio vide de l'API ElevenLabs TTS");
+            }
+
+            log.info("TTS generated successfully ({} bytes, lang={})", audio.length, language);
+            return audio;
+
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("ElevenLabs TTS error", e);
+            throw new RuntimeException("Erreur lors de la synthèse vocale : " + e.getMessage());
+        }
+    }
 }
