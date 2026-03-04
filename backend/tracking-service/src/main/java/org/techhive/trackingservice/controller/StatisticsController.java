@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.techhive.trackingservice.dto.*;
+import org.techhive.trackingservice.dto.StreakResponse;
 import org.techhive.trackingservice.service.StatisticsService;
 
 import java.time.LocalDate;
@@ -13,10 +14,10 @@ import java.time.YearMonth;
  * API Statistiques.
  *
  * Paramètres de période (pour tous les endpoints) :
- *   ?startDate=2025-01-01&endDate=2025-01-31   → période calendaire exacte
- *   ?period=current_month                       → mois courant complet
- *   ?period=previous_month                      → mois précédent complet
- *   ?days=7  (ou ?days=30)                      → fenêtre glissante (rétro-compat)
+ * ?startDate=2025-01-01&endDate=2025-01-31 → période calendaire exacte
+ * ?period=current_month → mois courant complet
+ * ?period=previous_month → mois précédent complet
+ * ?days=7 (ou ?days=30) → fenêtre glissante (rétro-compat)
  *
  * Si aucun paramètre n'est fourni, on retourne les 7 derniers jours.
  */
@@ -88,16 +89,21 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getActivityTrend(patientId, range[0], range[1]));
     }
 
+    @GetMapping("/{patientId}/streak")
+    public ResponseEntity<StreakResponse> getStreak(@PathVariable String patientId) {
+        return ResponseEntity.ok(statisticsService.getStreak(patientId));
+    }
+
     // ── Résolution de la période ──────────────────────────────────────────
 
     /**
      * Priorité : startDate+endDate > period > days
      */
     private LocalDate[] resolveRange(String startDate, String endDate,
-                                      String period, int days) {
+            String period, int days) {
         // 1. Dates explicites
         if (startDate != null && endDate != null) {
-            return new LocalDate[]{ LocalDate.parse(startDate), LocalDate.parse(endDate) };
+            return new LocalDate[] { LocalDate.parse(startDate), LocalDate.parse(endDate) };
         }
 
         LocalDate today = LocalDate.now();
@@ -107,15 +113,15 @@ public class StatisticsController {
             return switch (period) {
                 case "current_month" -> {
                     YearMonth ym = YearMonth.from(today);
-                    yield new LocalDate[]{ ym.atDay(1), ym.atEndOfMonth() };
+                    yield new LocalDate[] { ym.atDay(1), ym.atEndOfMonth() };
                 }
                 case "previous_month" -> {
                     YearMonth ym = YearMonth.from(today).minusMonths(1);
-                    yield new LocalDate[]{ ym.atDay(1), ym.atEndOfMonth() };
+                    yield new LocalDate[] { ym.atDay(1), ym.atEndOfMonth() };
                 }
                 case "current_week" -> {
                     LocalDate mon = today.minusDays(today.getDayOfWeek().getValue() - 1);
-                    yield new LocalDate[]{ mon, mon.plusDays(6) };
+                    yield new LocalDate[] { mon, mon.plusDays(6) };
                 }
                 default -> rollingDays(today, Math.max(1, Math.min(365, days)));
             };
@@ -126,6 +132,6 @@ public class StatisticsController {
     }
 
     private LocalDate[] rollingDays(LocalDate today, int days) {
-        return new LocalDate[]{ today.minusDays(days - 1), today };
+        return new LocalDate[] { today.minusDays(days - 1), today };
     }
 }

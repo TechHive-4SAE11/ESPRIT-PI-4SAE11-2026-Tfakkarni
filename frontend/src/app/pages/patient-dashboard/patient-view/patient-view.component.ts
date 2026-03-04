@@ -16,6 +16,8 @@ import { type IntakeStatus, type MedicationIntakeLogResponse } from '@/core/mode
 import { AuthService } from '@/core/auth';
 import { AudioGameService, type SpeechLanguage } from '@/core/services/audio-game.service';
 import { ThemeService } from '@/core/services/theme.service';
+import { StatisticsService } from '@/core/services/statistics.service';
+import type { StreakResponse } from '@/core/models/statistics.model';
 import { NotificationService, type MedicationNotification, type NotificationResponse } from '@/core/services/notification.service';
 import { GuessPlaceComponent } from './guess-place/guess-place.component';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
@@ -35,22 +37,26 @@ function nowTime(): string {
   templateUrl: './patient-view.component.html',
 })
 export class PatientViewComponent implements OnInit {
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly gameService = inject(GameService);
-  private readonly movieGameService = inject(MovieGameService);
-  private readonly userApiService = inject(UserApiService);
-  private readonly customGameService = inject(CustomGameService);
-  private readonly router = inject(Router);
-  private readonly authService = inject(AuthService);
-  private readonly audioGameService = inject(AudioGameService);
-  readonly themeService = inject(ThemeService);
-  private readonly notificationService = inject(NotificationService);
+  private readonly destroyRef            = inject(DestroyRef);
+  private readonly gameService           = inject(GameService);
+  private readonly movieGameService      = inject(MovieGameService);
+  private readonly userApiService        = inject(UserApiService);
+  private readonly customGameService     = inject(CustomGameService);
+  private readonly router                = inject(Router);
+  private readonly authService           = inject(AuthService);
+  private readonly audioGameService      = inject(AudioGameService);
+  private readonly statisticsService     = inject(StatisticsService);
+  readonly themeService                  = inject(ThemeService);
+  private readonly notificationService   = inject(NotificationService);
 
   // ── Service partagé (source unique de vérité pour les médicaments) ─────────
   readonly logState = inject(DailyLogStateService);
 
   @Input() keycloakId = '';
   @Output() switchToHelper = new EventEmitter<void>();
+
+  // ── Expose Math for template expressions ───────────────────────────────────
+  readonly Math = Math;
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   currentPage = signal<string>('Home');
@@ -62,10 +68,14 @@ export class PatientViewComponent implements OnInit {
   customGames = signal<CustomGameResponse[]>([]);
 
   // ── Loading flags ──────────────────────────────────────────────────────────
-  isLoadingGames = signal(false);
-  isLoadingMovieGames = signal(false);
-  isLoadingStats = signal(false);
-  isLoadingCustomGames = signal<boolean>(false);
+  isLoadingGames        = signal(false);
+  isLoadingMovieGames   = signal(false);
+  isLoadingStats        = signal(false);
+  isLoadingCustomGames  = signal<boolean>(false);
+  isLoadingStreak       = signal(false);
+
+  // ── Win Streak (Duolingo-style) ────────────────────────────────────────────
+  streak = signal<StreakResponse | null>(null);
 
   // ── Médicaments — lus depuis le service partagé ────────────────────────────
   /** Proxy computed vers les signaux du service partagé */
@@ -118,6 +128,7 @@ export class PatientViewComponent implements OnInit {
     this.loadMovieGames();
     this.loadStats();
     this.loadCustomGames();
+    this.loadStreak();
     this.loadAndCacheUserGender();
     // Notifications are loaded inside loadUserNeonDbId() after neon ID is available
     // Médicaments : charger via le service partagé (évite un double-fetch si déjà chargé)
@@ -356,6 +367,22 @@ export class PatientViewComponent implements OnInit {
           return of([]);
         }),
         finalize(() => this.isLoadingCustomGames.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  private loadStreak(): void {
+    this.isLoadingStreak.set(true);
+    this.statisticsService.getStreak(this.keycloakId)
+      .pipe(
+        tap(s => this.streak.set(s)),
+        catchError(err => {
+          this.streak.set(null);
+          this.showMedToast('Impossible de charger la série', 'error');
+          return of(null);
+        }),
+        finalize(() => this.isLoadingStreak.set(false)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();

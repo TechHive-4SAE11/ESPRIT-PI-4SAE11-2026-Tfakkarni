@@ -27,3 +27,21 @@ export interface ActivityTrendResponse {
   dates: string[];
   values: number[];
 }
+
+/** Réponse API - win streak (Duolingo-style) */
+export interface StreakResponse {
+  currentStreak: number;
+  livesRemaining: number;
+  premiumUnlocked: boolean;
+  last14Days: StreakDay[];
+}
+
+export interface StreakDay {
+  date: string;
+  score: number;
+  passed: boolean;
+  today: boolean;
+  dayLabel: string;
+  /** True if the day is within the streak tracking period (on or after first daily log). */
+  active: boolean;
+}

@@ -8,6 +8,7 @@ import type {
   MedicationComplianceResponse,
   HydrationTrendResponse,
   ActivityTrendResponse,
+  StreakResponse,
 } from '@/core/models/statistics.model';
 
 export type PeriodMode =
@@ -67,6 +68,13 @@ export class StatisticsService {
     return this.http.get<ActivityTrendResponse>(
       `${this.base}/${encodeURIComponent(patientId)}/activity-trend`,
       { params: this.params(mode) }
+    );
+  }
+
+  /** Duolingo-style win streak based on daily health score >= 85. */
+  getStreak(patientId: string): Observable<StreakResponse> {
+    return this.http.get<StreakResponse>(
+      `${this.base}/${encodeURIComponent(patientId)}/streak`
     );
   }
 }
