@@ -51,6 +51,8 @@ public class Appointment {
 
     private String createdBy;
 
+    private String googleEventId;
+
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
@@ -153,5 +155,12 @@ public class Appointment {
     public void setCreatedBy(String createdBy) {
         this.createdBy = createdBy;
     }
-}
 
+    public String getGoogleEventId() {
+        return googleEventId;
+    }
+
+    public void setGoogleEventId(String googleEventId) {
+        this.googleEventId = googleEventId;
+    }
+}

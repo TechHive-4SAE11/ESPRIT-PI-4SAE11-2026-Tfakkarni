@@ -15,6 +15,7 @@ import { Subject, takeUntil, Observable } from 'rxjs';
 import { AppointmentService } from '@/services/appointment.service';
 import { Appointment } from '@/models/appointment.model';
 import { AuthService } from '@/core/auth';
+import { IdMappingService } from '@/services/id-mapping.service';
 
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardButtonComponent } from '@/shared/components/button';
@@ -57,32 +58,28 @@ export class AppointmentAddComponent implements OnDestroy, OnInit {
   successMessage = '';
   previewDates: string[] = [];
   readonly typeOptions = TYPES;
-  readonly patientOptions = [
-    { value: 'patient123', label: 'Patient 123' },
-    { value: 'patient456', label: 'Patient 456' },
-  ];
-  readonly doctorOptions = [
-    { value: 'doctor456', label: 'Dr. Martin' },
-    { value: 'doctor789', label: 'Dr. Dupont' },
-  ];
-  
-  // ✅ MODIFICATION ICI : toujours true pour que la section apparaisse
+  patientSuggestions: { name: string; id: string }[] = [];
+  doctorSuggestions: { name: string; id: string }[] = [];
+
   readonly isCaregiver = true;
-  
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
     private appointmentService: AppointmentService,
-    private authService: AuthService,
+    public authService: AuthService,
+    private idMappingService: IdMappingService,
     private router: Router
   ) {
     this.form = this.fb.group(
       {
         title: ['', [Validators.required, Validators.minLength(3)]],
         description: [''],
-        patientId: ['patient123', Validators.required],
-        doctorId: ['doctor456'],
+        patientName: ['', Validators.required],
+        patientId: [''],
+        doctorName: [''],
+        doctorId: [''],
         startTime: ['', Validators.required],
         endTime: ['', Validators.required],
         type: ['CONSULTATION', Validators.required],
@@ -91,7 +88,7 @@ export class AppointmentAddComponent implements OnDestroy, OnInit {
         recurringFrequency: ['DAILY'],
         recurringOccurrences: [1, [Validators.min(1), Validators.max(52)]],
       },
-      { validators: endTimeAfterStartValidator() }
+      {validators: endTimeAfterStartValidator()}
     );
   }
 
@@ -100,17 +97,87 @@ export class AppointmentAddComponent implements OnDestroy, OnInit {
   }
 
   ngOnInit(): void {
+    this.patientSuggestions = this.idMappingService.getAllNames('patient');
+    this.doctorSuggestions = this.idMappingService.getAllNames('doctor');
+
+    // ✅ Récupérer les rôles de l'utilisateur
+    const userRoles = this.authService.getUserRoles();
+    const isDoctor = userRoles.includes('doctor');
+
+    // ✅ SI C'EST UN DOCTEUR, PRÉ-REMPLIR LE CHAMP MÉDECIN
+    if (isDoctor) {
+      // ✅ GESTION DE L'ERREUR TOKEN NULL
+      const token = localStorage.getItem('access_token');
+
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+
+          const doctorName = payload.name || payload.preferred_username || 'Dr. Martin';
+          const doctorId = payload.sub; // C'est l'ID Keycloak !
+
+          this.form.patchValue({
+            doctorName: doctorName,
+            doctorId: doctorId
+          });
+
+          this.form.get('doctorName')?.disable();
+
+          console.log('✅ Médecin pré-rempli avec ID:', doctorId);
+        } catch (e) {
+          console.error('❌ Erreur parsing token:', e);
+          // Fallback
+          this.form.patchValue({
+            doctorName: 'Dr. Martin',
+            doctorId: 'doctor456'
+          });
+          this.form.get('doctorName')?.disable();
+        }
+      } else {
+        console.warn('⚠️ Token non trouvé, utilisation des valeurs par défaut');
+        // Fallback
+        this.form.patchValue({
+          doctorName: 'Dr. Martin',
+          doctorId: 'doctor456'
+        });
+        this.form.get('doctorName')?.disable();
+      }
+    }
+
+    // Surveiller les changements du patient
+    this.form.get('patientName')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(name => {
+      if (name) {
+        const id = this.idMappingService.getIdForName(name, 'patient');
+        this.form.get('patientId')?.setValue(id, {emitEvent: false});
+      } else {
+        this.form.get('patientId')?.setValue('', {emitEvent: false});
+      }
+    });
+
+    // Surveiller les changements du médecin (seulement si ce n'est pas un docteur)
+    if (!isDoctor) {
+      this.form.get('doctorName')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(name => {
+        if (name) {
+          const id = this.idMappingService.getIdForName(name, 'doctor');
+          this.form.get('doctorId')?.setValue(id, {emitEvent: false});
+        } else {
+          this.form.get('doctorId')?.setValue('', {emitEvent: false});
+        }
+      });
+    }
+
+    // Le reste du code inchangé...
     this.form
       .get('type')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe((type) => {
-        const doctorId = this.form.get('doctorId');
+        const doctorName = this.form.get('doctorName');
         if (type === 'CONSULTATION') {
-          doctorId?.setValidators([Validators.required]);
+          doctorName?.setValidators([Validators.required]);
         } else {
-          doctorId?.clearValidators();
+          doctorName?.clearValidators();
         }
-        doctorId?.updateValueAndValidity();
+        doctorName?.updateValueAndValidity();
       });
 
     this.form
@@ -174,8 +241,10 @@ export class AppointmentAddComponent implements OnDestroy, OnInit {
 
   onSubmit(): void {
     if (this.form.invalid || this.isSubmitting) return;
-    
-    const v = this.form.value;
+
+    const v = this.form.getRawValue();
+    console.log('📤 Envoi du rendez-vous avec doctorId:', v.doctorId);
+
     const payload = {
       title: v.title,
       description: v.description || undefined,
@@ -187,17 +256,17 @@ export class AppointmentAddComponent implements OnDestroy, OnInit {
       notes: v.notes || undefined,
       status: 'SCHEDULED' as const,
     };
-    
+
     this.isSubmitting = true;
     this.errorMessage = '';
     this.successMessage = '';
-    
+
     const isRecurring = v.isRecurring;
     const frequency = v.recurringFrequency;
     const occurrences: number = v.recurringOccurrences ?? 1;
 
     let request$: Observable<Appointment | Appointment[]>;
-    
+
     if (isRecurring) {
       request$ = this.appointmentService.createRecurringAppointments(payload, frequency, occurrences);
     } else {
@@ -206,14 +275,14 @@ export class AppointmentAddComponent implements OnDestroy, OnInit {
 
     request$.subscribe({
       next: (result) => {
-        const count = Array.isArray(result) ? result.length : 1;
+        const resultCount = Array.isArray(result) ? result.length : 1;
         this.successMessage = isRecurring
-          ? `${count} rendez-vous récurrents créés. Redirection...`
+          ? `${resultCount} rendez-vous récurrents créés. Redirection...`
           : 'Rendez-vous créé. Redirection...';
         this.isSubmitting = false;
         setTimeout(() => this.router.navigate(['/appointments']), 800);
       },
-      error: (err: any) => { 
+      error: (err: any) => {
         const msg = err?.error ?? err?.message;
         this.errorMessage = typeof msg === 'string' ? msg : 'Une erreur est survenue. Réessayez.';
         this.isSubmitting = false;

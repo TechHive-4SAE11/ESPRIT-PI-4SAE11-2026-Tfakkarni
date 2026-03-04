@@ -12,12 +12,21 @@ import { SlotSuggestion } from '@/models/suggestion.model';
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardBadgeComponent } from '@/shared/components/badge';
- // Vérifier si on est dans le navigateur
+import { DashboardLayoutComponent, type SidebarMenuGroup } from '@/shared/components/dashboard-layout';
+
+// Vérifier si on est dans le navigateur
 const isBrowser = typeof window !== 'undefined';
+
 @Component({
   selector: 'app-appointments-list',
   standalone: true,
-  imports: [CommonModule, ZardCardComponent, ZardButtonComponent, ZardBadgeComponent],
+  imports: [
+    CommonModule,
+    ZardCardComponent,
+    ZardButtonComponent,
+    ZardBadgeComponent,
+    DashboardLayoutComponent  // ← IMPORTANT
+  ],
   templateUrl: './appointments-list.component.html',
   styleUrls: ['./appointments-list.component.css'],
 })
@@ -32,11 +41,20 @@ export class AppointmentsListComponent implements OnInit, OnDestroy {
   isLoadingSuggestions = false;
   private readonly destroy$ = new Subject<void>();
 
+  // Menu groups pour le sidebar (copié du patient-dashboard)
+  menuGroups: SidebarMenuGroup[] = [];
+
+  // Propriétés pour le sidebar
+  userName = 'Aminam Im';
+  userRole = 'Helper';
+
   constructor(
     private readonly appointmentService: AppointmentService,
     private readonly suggestionService: SuggestionService,
     private readonly router: Router
-  ) {}
+  ) {
+    this.buildMenuGroups();
+  }
 
   ngOnInit(): void {
     if (isBrowser) {
@@ -57,6 +75,38 @@ export class AppointmentsListComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private buildMenuGroups(): void {
+    this.menuGroups = [
+      {
+        label: 'Helper',
+        items: [
+          { icon: 'house', label: 'Home', action: () => this.router.navigate(['/patient']) },
+          { icon: 'file-text', label: 'Suivi Quotidien', action: () => this.router.navigate(['/patient/suivi']) },
+          { icon: 'bar-chart-3', label: 'Statistiques', action: () => this.router.navigate(['/patient/statistiques']) },
+          { icon: 'gamepad-2', label: 'Manage Games', action: () => this.router.navigate(['/patient/games']) },
+          { icon: 'bar-chart-3', label: 'Progress', action: () => this.router.navigate(['/patient/progress']) },
+          { icon: 'pill', label: 'My Prescriptions', action: () => this.router.navigate(['/patient/prescriptions']) },
+          { icon: 'pill', label: 'Prescriptions', action: () => this.router.navigate(['/patient/prescriptions']) },
+
+        ],
+      },
+      {
+        label: 'Compte',
+        items: [
+          { icon: 'user', label: 'Mon Profil', action: () => this.router.navigate(['/patient/profile']) },
+        ],
+      },
+      {
+        label: 'Game Builder',
+        items: [
+          { icon: 'folder', label: 'Data Library', action: () => this.router.navigate(['/patient/data-library']) },
+          { icon: 'search', label: 'Manage Tags', action: () => this.router.navigate(['/patient/manage-tags']) },
+          { icon: 'zap', label: 'Build Game', action: () => this.router.navigate(['/patient/build-game']) },
+        ],
+      },
+    ];
   }
 
   loadAppointments(): void {
@@ -102,6 +152,10 @@ export class AppointmentsListComponent implements OnInit, OnDestroy {
 
   goToNewAppointment(): void {
     this.router.navigate(['/appointments/new']);
+  }
+
+  goToAnalytics(): void {
+    this.router.navigate(['/analytics/absences']);
   }
 
   viewAppointment(id: number): void {
@@ -180,5 +234,22 @@ export class AppointmentsListComponent implements OnInit, OnDestroy {
         error: (err) => console.error('Erreur replanification', err),
       });
   }
-}
 
+
+
+  getUserName(): string {
+    return this.userName;
+  }
+
+  getUserInitials(): string {
+    return this.getUserName()
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  }
+
+  toggleDarkMode(): void {
+    document.documentElement.classList.toggle('dark');
+  }
+}

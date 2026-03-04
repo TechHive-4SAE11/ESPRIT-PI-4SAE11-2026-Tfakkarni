@@ -215,6 +215,16 @@
             </div>
         </div>
     </z-card>
+
+  <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="goToAppointments()">
+    <div class="flex items-center gap-3">
+      <z-icon zType="calendar" class="text-primary h-10 w-10" />
+      <div>
+        <h3 class="font-semibold">Appointments and Reminders</h3>
+        <p class="text-sm text-muted-foreground">View Appointments</p>
+      </div>
+    </div>
+  </z-card>
 </div>
 }
 

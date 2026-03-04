@@ -14,6 +14,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, finalize, of, tap, switchMap } from 'rxjs';
 import { KeycloakService } from 'keycloak-angular';
 import { NotificationService, type MedicationNotification, type NotificationResponse } from '@/core/services/notification.service';
+import { Router } from '@angular/router';
 
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
@@ -59,6 +60,7 @@ export class HelperViewComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly keycloakService = inject(KeycloakService);
   private readonly userApiService = inject(UserApiService);
+  private readonly router = inject(Router);
 
   @Input() keycloakId = '';
   @Output() pageChange = new EventEmitter<string>();
@@ -86,6 +88,11 @@ export class HelperViewComponent implements OnInit {
     this.pageChange.emit(page);
   }
 
+
+  goToAppointments(): void {
+    this.router.navigate(['/appointments']);
+  }
+
   private loadUserNeonDbId(): void {
     this.userApiService.getUserByKeycloakId(this.keycloakId)
       .pipe(
@@ -104,7 +111,7 @@ export class HelperViewComponent implements OnInit {
       .subscribe();
   }
 
-  // ── Notification Methods ────────────────────────────────────────────────────
+  // ── Notification Methods ───────────────────────────────────────────────────
 
   loadNotifications(): void {
     const neonId = this.userNeonDbId();

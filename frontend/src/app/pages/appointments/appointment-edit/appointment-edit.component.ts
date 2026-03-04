@@ -14,6 +14,7 @@ import { Subject, takeUntil } from 'rxjs';
 
 import { AppointmentService } from '@/services/appointment.service';
 import { Appointment } from '@/models/appointment.model';
+import { IdMappingService } from '@/services/id-mapping.service';
 
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardButtonComponent } from '@/shared/components/button';
@@ -67,19 +68,15 @@ export class AppointmentEditComponent implements OnInit, OnDestroy {
   errorMessage = '';
   successMessage = '';
   readonly typeOptions = TYPES;
-  readonly patientOptions = [
-    { value: 'patient123', label: 'Patient 123' },
-    { value: 'patient456', label: 'Patient 456' },
-  ];
-  readonly doctorOptions = [
-    { value: 'doctor456', label: 'Dr. Martin' },
-    { value: 'doctor789', label: 'Dr. Dupont' },
-  ];
+  patientSuggestions: { name: string; id: string }[] = [];
+  doctorSuggestions: { name: string; id: string }[] = [];
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
     private appointmentService: AppointmentService,
+    private idMappingService: IdMappingService,
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -87,8 +84,10 @@ export class AppointmentEditComponent implements OnInit, OnDestroy {
       {
         title: ['', [Validators.required, Validators.minLength(3)]],
         description: [''],
-        patientId: ['patient123', Validators.required],
-        doctorId: ['doctor456'],
+        patientName: ['', Validators.required],
+        patientId: [''],
+        doctorName: [''],
+        doctorId: [''],
         startTime: ['', Validators.required],
         endTime: ['', Validators.required],
         type: ['CONSULTATION', Validators.required],
@@ -103,17 +102,38 @@ export class AppointmentEditComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.patientSuggestions = this.idMappingService.getAllNames('patient');
+    this.doctorSuggestions = this.idMappingService.getAllNames('doctor');
+
+    this.form.get('patientName')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(name => {
+      if (name) {
+        const id = this.idMappingService.getIdForName(name, 'patient');
+        this.form.get('patientId')?.setValue(id, { emitEvent: false });
+      } else {
+        this.form.get('patientId')?.setValue('', { emitEvent: false });
+      }
+    });
+
+    this.form.get('doctorName')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(name => {
+      if (name) {
+        const id = this.idMappingService.getIdForName(name, 'doctor');
+        this.form.get('doctorId')?.setValue(id, { emitEvent: false });
+      } else {
+        this.form.get('doctorId')?.setValue('', { emitEvent: false });
+      }
+    });
+
     this.form
       .get('type')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe((type) => {
-        const doctorId = this.form.get('doctorId');
+        const doctorName = this.form.get('doctorName');
         if (type === 'CONSULTATION') {
-          doctorId?.setValidators([Validators.required]);
+          doctorName?.setValidators([Validators.required]);
         } else {
-          doctorId?.clearValidators();
+          doctorName?.clearValidators();
         }
-        doctorId?.updateValueAndValidity();
+        doctorName?.updateValueAndValidity();
       });
 
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe((params) => {
@@ -152,10 +172,23 @@ export class AppointmentEditComponent implements OnInit, OnDestroy {
       typeof a.startTime === 'string' ? (a.startTime as string).slice(0, 16) : toDatetimeLocal(a.startTime);
     const end =
       typeof a.endTime === 'string' ? (a.endTime as string).slice(0, 16) : toDatetimeLocal(a.endTime);
+
+    let pName = '';
+    if (a.patientId) {
+      pName = this.idMappingService.getNameFromId(a.patientId) || a.patientId;
+    }
+
+    let dName = '';
+    if (a.doctorId) {
+      dName = this.idMappingService.getNameFromId(a.doctorId) || a.doctorId;
+    }
+
     this.form.patchValue({
       title: a.title,
       description: a.description ?? '',
+      patientName: pName,
       patientId: a.patientId,
+      doctorName: dName,
       doctorId: a.doctorId ?? '',
       startTime: start,
       endTime: end,

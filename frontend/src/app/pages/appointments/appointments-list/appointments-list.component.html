@@ -1,195 +1,159 @@
-<div class="space-y-6">
-  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-    <div>
-      <h2 class="text-2xl font-bold">Rendez-vous</h2>
-      <p class="text-muted-foreground">
-        Gérez vos rendez-vous médicaux et personnels
-      </p>
-    </div>
-
-    <button
-      z-button
-      zSize="lg"
-      class="rounded-full px-6"
-      type="button"
-      (click)="goToNewAppointment()"
-    >
-      ➕ Nouveau rendez-vous
-    </button>
-  </div>
-
-  @if (errorMessage) {
-    <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-      {{ errorMessage }}
-    </div>
-  }
-  @if (successMessage) {
-    <div class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-      {{ successMessage }}
-    </div>
-  }
-
-  @if (isLoading) {
-    <div class="rounded-xl border bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
-      Chargement des rendez-vous...
-    </div>
-  } @else {
-    @if (appointments.length === 0) {
-      <div class="rounded-xl border-2 border-dashed bg-muted/10 px-4 py-10 text-center">
-        <div class="text-3xl mb-2">📅</div>
-        <p class="text-base font-medium text-muted-foreground">Aucun rendez-vous</p>
-        <p class="text-sm text-muted-foreground mt-1">
-          Créez votre premier rendez-vous pour commencer.
+<app-dashboard-layout
+  [menuGroups]="menuGroups"
+  pageTitle="Rendez-vous"
+  basePath="/appointments"
+>
+  <!-- Contenu existant -->
+  <div class="space-y-6">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-2xl font-bold">Rendez-vous</h2>
+        <p class="text-muted-foreground">
+          Gérez vos rendez-vous médicaux et personnels
         </p>
-        <div class="mt-4">
-          <button
-            z-button
-            zType="outline"
-            zSize="lg"
-            class="rounded-full px-6"
-            type="button"
-            (click)="goToNewAppointment()"
-          >
-            ➕ Nouveau rendez-vous
-          </button>
-        </div>
       </div>
-    } @else {
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        @for (appointment of appointments; track appointment.id) {
-          <z-card>
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex items-start gap-3 min-w-0">
-                <div class="text-2xl leading-none mt-0.5">
-                  {{ typeEmoji(appointment.type) }}
-                </div>
-                <div class="min-w-0">
-                  <div class="font-semibold truncate">{{ appointment.title }}</div>
-                  <div class="text-sm text-muted-foreground">
-                    {{ appointment.startTime | date: 'dd MMM yyyy · HH:mm' }}
-                  </div>
-                </div>
-              </div>
 
-              <z-badge
-                zType="secondary"
-                class="rounded-full px-2.5 py-1 text-xs font-medium"
-                [class]="statusBadgeClasses(appointment.status)"
-              >
-                {{ appointment.status }}
-              </z-badge>
-            </div>
+      <div class="flex gap-2">
+        <button z-button zType="outline" class="rounded-full px-4 border-blue-500 text-blue-600 hover:bg-blue-50"
+                (click)="goToAnalytics()">
+          📊 Analyse prédictive
+        </button>
+        <button z-button zSize="lg" class="rounded-full px-6" type="button" (click)="goToNewAppointment()">
+          ➕ Nouveau rendez-vous
+        </button>
+      </div>
+    </div>
 
-            @if (appointment.description || appointment.notes) {
-              <p class="mt-4 text-sm text-muted-foreground line-clamp-3">
-                {{ appointment.description || appointment.notes }}
-              </p>
-            }
-
-            <div card-footer class="mt-5 flex justify-end gap-2">
-              <button
-                z-button
-                zType="outline"
-                zSize="icon-sm"
-                zShape="circle"
-                type="button"
-                title="Voir"
-                (click)="viewAppointment(appointment.id!)"
-              >
-                👁️
-              </button>
-              <button
-                z-button
-                zType="outline"
-                zSize="icon-sm"
-                zShape="circle"
-                type="button"
-                title="Modifier"
-                (click)="editAppointment(appointment.id!)"
-              >
-                ✏️
-              </button>
-              
-              <!-- ✅ BOUTON RESCHEDULE CORRIGÉ - Plus de zType="primary" -->
-              <button
-                z-button
-                zSize="icon-sm"
-                zShape="circle"
-                type="button"
-                class="rounded-full px-3 bg-purple-600 hover:bg-purple-700 text-white"
-                (click)="openRescheduleModal(appointment)"
-                title="Reschedule intelligent"
-              >
-                🤖
-              </button>
-              
-              <button
-                z-button
-                zType="destructive"
-                zSize="icon-sm"
-                zShape="circle"
-                type="button"
-                title="Annuler"
-                (click)="cancelAppointment(appointment.id!)"
-              >
-                🗑️
-              </button>
-            </div>
-          </z-card>
-        }
+    @if (errorMessage) {
+      <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        {{ errorMessage }}
       </div>
     }
-  }
-</div>
-
-<!-- Modal Reschedule Intelligent -->
-@if (showRescheduleModal) {
-  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <z-card class="max-w-md w-full p-6 rounded-2xl">
-      <div class="flex justify-between items-start mb-4">
-        <h2 class="text-xl font-bold">🤖 Reschedule intelligent</h2>
-        <button (click)="closeRescheduleModal()" class="text-gray-500 hover:text-gray-700">✕</button>
+    @if (successMessage) {
+      <div class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+        {{ successMessage }}
       </div>
+    }
 
-      <p class="text-sm text-muted-foreground mb-4">
-        Voici 3 créneaux suggérés par l'IA pour replanifier ce rendez-vous :
-      </p>
-
-      @if (isLoadingSuggestions) {
-        <div class="text-center py-8">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          <p class="text-sm text-muted-foreground">Analyse de vos habitudes...</p>
+    @if (isLoading) {
+      <div class="rounded-xl border bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+        Chargement des rendez-vous...
+      </div>
+    } @else {
+      @if (appointments.length === 0) {
+        <div class="rounded-xl border-2 border-dashed bg-muted/10 px-4 py-10 text-center">
+          <div class="text-3xl mb-2">📅</div>
+          <p class="text-base font-medium text-muted-foreground">Aucun rendez-vous</p>
+          <p class="text-sm text-muted-foreground mt-1">
+            Créez votre premier rendez-vous pour commencer.
+          </p>
+          <div class="mt-4">
+            <button z-button zType="outline" zSize="lg" class="rounded-full px-6" type="button"
+                    (click)="goToNewAppointment()">
+              ➕ Nouveau rendez-vous
+            </button>
+          </div>
         </div>
       } @else {
-        <div class="space-y-3 mb-4">
-          @for (slot of suggestions; track $index) {
-            <button
-              class="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-all"
-              (click)="selectSuggestion(slot)"
-            >
-              <p class="font-medium">
-                {{ slot.start | date: 'EEEE d MMMM yyyy' }}
-              </p>
-              <p class="text-sm">
-                {{ slot.start | date: 'HH:mm' }} - {{ slot.end | date: 'HH:mm' }}
-              </p>
-              <p class="text-xs text-blue-600 mt-1">
-                💡 {{ slot.reason }}
-              </p>
-            </button>
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          @for (appointment of appointments; track appointment.id) {
+            <z-card>
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex items-start gap-3 min-w-0">
+                  <div class="text-2xl leading-none mt-0.5">
+                    {{ typeEmoji(appointment.type) }}
+                  </div>
+                  <div class="min-w-0">
+                    <div class="font-semibold truncate">{{ appointment.title }}</div>
+                    <div class="text-sm text-muted-foreground">
+                      {{ appointment.startTime | date: 'dd MMM yyyy · HH:mm' }}
+                    </div>
+                  </div>
+                </div>
+
+                <z-badge zType="secondary" class="rounded-full px-2.5 py-1 text-xs font-medium"
+                         [class]="statusBadgeClasses(appointment.status)">
+                  {{ appointment.status }}
+                </z-badge>
+              </div>
+
+              @if (appointment.description || appointment.notes) {
+                <p class="mt-4 text-sm text-muted-foreground line-clamp-3">
+                  {{ appointment.description || appointment.notes }}
+                </p>
+              }
+
+              <div card-footer class="mt-5 flex justify-end gap-2">
+                <button z-button zType="outline" zSize="icon-sm" zShape="circle" type="button" title="Voir"
+                        (click)="viewAppointment(appointment.id!)">
+                  👁️
+                </button>
+                <button z-button zType="outline" zSize="icon-sm" zShape="circle" type="button" title="Modifier"
+                        (click)="editAppointment(appointment.id!)">
+                  ✏️
+                </button>
+
+                <!-- ✅ BOUTON RESCHEDULE -->
+                <button z-button zSize="icon-sm" zShape="circle" type="button"
+                        class="rounded-full px-3 bg-purple-600 hover:bg-purple-700 text-white"
+                        (click)="openRescheduleModal(appointment)" title="Reschedule intelligent">
+                  🤖
+                </button>
+
+                <button z-button zType="destructive" zSize="icon-sm" zShape="circle" type="button" title="Annuler"
+                        (click)="cancelAppointment(appointment.id!)">
+                  🗑️
+                </button>
+              </div>
+            </z-card>
           }
         </div>
       }
-
-      <button
-        z-button
-        zType="outline"
-        zSize="lg"
-        class="w-full rounded-full"
-        (click)="closeRescheduleModal()"
-      >
-        Annuler
-      </button>
-    </z-card>
+    }
   </div>
-}
+
+  <!-- Modal Reschedule Intelligent -->
+  @if (showRescheduleModal) {
+    <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <z-card class="max-w-md w-full p-6 rounded-2xl">
+        <div class="flex justify-between items-start mb-4">
+          <h2 class="text-xl font-bold">🤖 Reschedule intelligent</h2>
+          <button (click)="closeRescheduleModal()" class="text-gray-500 hover:text-gray-700">✕</button>
+        </div>
+
+        <p class="text-sm text-muted-foreground mb-4">
+          Voici 3 créneaux suggérés par l'IA pour replanifier ce rendez-vous :
+        </p>
+
+        @if (isLoadingSuggestions) {
+          <div class="text-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+            <p class="text-sm text-muted-foreground">Analyse de vos habitudes...</p>
+          </div>
+        } @else {
+          <div class="space-y-3 mb-4">
+            @for (slot of suggestions; track $index) {
+              <button
+                class="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-all"
+                (click)="selectSuggestion(slot)">
+                <p class="font-medium">
+                  {{ slot.start | date: 'EEEE d MMMM yyyy' }}
+                </p>
+                <p class="text-sm">
+                  {{ slot.start | date: 'HH:mm' }} - {{ slot.end | date: 'HH:mm' }}
+                </p>
+                <p class="text-xs text-blue-600 mt-1">
+                  💡 {{ slot.reason }}
+                </p>
+              </button>
+            }
+          </div>
+        }
+
+        <button z-button zType="outline" zSize="lg" class="w-full rounded-full" (click)="closeRescheduleModal()">
+          Annuler
+        </button>
+      </z-card>
+    </div>
+  }
+</app-dashboard-layout>

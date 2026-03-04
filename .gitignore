@@ -20,4 +20,4 @@
 # Compiled files
 *.class
 *.jar
-*.war
+*.warbackend/medical-service/src/main/resources/credentials.json

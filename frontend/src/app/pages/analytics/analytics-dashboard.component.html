@@ -1,0 +1,98 @@
+<!-- Le reste de ton code reste inchangé -->
+<ng-container *ngIf="stats">
+  <!-- KPIs -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+      <p class="text-sm font-medium text-gray-500">Total Rendez-vous</p>
+      <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.totalAppointments }}</p>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+      <p class="text-sm font-medium text-gray-500">Taux d'absence global</p>
+      <p class="text-3xl font-bold mt-2" [class.text-red-600]="stats.globalNoShowRate > 20">
+        {{ stats.globalNoShowRate | number:'1.1-1' }}%
+      </p>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+      <p class="text-sm font-medium text-gray-500">Taux d'absence (mois)</p>
+      <p class="text-3xl font-bold mt-2">{{ stats.monthlyNoShowRate | number:'1.1-1' }}%</p>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <apx-chart
+        [series]="chartOptionsCancellations.series"
+        [chart]="chartOptionsCancellations.chart"
+        [xaxis]="chartOptionsCancellations.xaxis"
+        [colors]="chartOptionsCancellations.colors"
+        [title]="chartOptionsCancellations.title"
+      ></apx-chart>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <apx-chart
+        [series]="chartOptionsDoctors.series"
+        [chart]="chartOptionsDoctors.chart"
+        [xaxis]="chartOptionsDoctors.xaxis"
+        [colors]="chartOptionsDoctors.colors"
+        [title]="chartOptionsDoctors.title"
+      ></apx-chart>
+    </div>
+  </div>
+
+  <!-- Patients à risque et prochains rendez-vous -->
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+    <!-- Patients à Risque Élevé -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="p-4 border-b border-gray-200 bg-gray-50">
+        <h2 class="text-lg font-semibold text-gray-800">⚠️ Patients à Risque Élevé (>70%)</h2>
+      </div>
+      <div class="p-4 space-y-4 max-h-[400px] overflow-y-auto">
+        <div *ngIf="stats.highRiskPatients.length === 0" class="text-center text-gray-500 py-4">
+          Aucun patient à haut risque.
+        </div>
+        <div *ngFor="let p of stats.highRiskPatients"
+             class="border border-red-200 bg-red-50 rounded-lg p-4">
+          <div class="flex justify-between">
+            <span class="font-medium">Patient: {{ p.patientId }}</span>
+            <span class="font-bold text-red-600">{{ p.riskScore }}%</span>
+          </div>
+          <div class="text-sm mt-2">Recommandation: {{ p.recommendation }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prochains Rendez-vous -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="p-4 border-b border-gray-200 bg-gray-50">
+        <h2 class="text-lg font-semibold text-gray-800">📅 Prochains Rendez-vous</h2>
+      </div>
+      <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left">Patient</th>
+            <th class="px-4 py-3 text-left">Date</th>
+            <th class="px-4 py-3 text-left">Risque</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let a of stats.upcomingAppointments" class="border-t">
+            <td class="px-4 py-3">{{ a.patientId }}</td>
+            <td class="px-4 py-3">{{ a.date }} {{ a.time }}</td>
+            <td class="px-4 py-3">
+                <span class="px-2 py-1 rounded-full text-xs font-medium"
+                      [ngClass]="getRiskColorClass(a.riskScore)">
+                  {{ a.riskScore }}%
+                </span>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</ng-container>
