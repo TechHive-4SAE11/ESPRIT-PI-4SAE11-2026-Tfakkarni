@@ -5,12 +5,11 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { KeycloakService } from 'keycloak-angular';
-import { environment } from '../../../environments/environment';
 import { AuthService } from '@/core/auth';
 import { ZardButtonComponent } from '@/shared/components/button/button.component';
 import { ZardCardComponent } from '@/shared/components/card/card.component';
 import { ZardInputDirective } from '@/shared/components/input/input.directive';
-import { RecaptchaModule, RecaptchaFormsModule, RECAPTCHA_LANGUAGE } from 'ng-recaptcha';
+import { MockRecaptchaComponent } from '@/shared/components/mock-recaptcha/mock-recaptcha.component';
 
 @Component({
   selector: 'app-login',
@@ -22,17 +21,10 @@ import { RecaptchaModule, RecaptchaFormsModule, RECAPTCHA_LANGUAGE } from 'ng-re
     ZardButtonComponent,
     ZardCardComponent,
     ZardInputDirective,
-    RecaptchaModule,
-    RecaptchaFormsModule,
+    MockRecaptchaComponent,
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css'],
-  providers: [
-    {
-      provide: RECAPTCHA_LANGUAGE,
-      useValue: 'en', // Force English locally
-    },
-  ],
 })
 export class LoginComponent implements OnInit {
   isLoggedIn = false;
@@ -41,8 +33,6 @@ export class LoginComponent implements OnInit {
   errorMessage = '';
   isLoading = false;
   recaptchaToken: string | null = null;
-  // Google reCAPTCHA v2 site key
-  readonly siteKey = '6LfSr30sAAAAAOd0KqmB__bCHLg3T7FtEdkMkvcr';
   private readonly platformId = inject(PLATFORM_ID);
 
   constructor(

@@ -1,6 +1,6 @@
 package org.techhive.medicalservice.entity;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -20,8 +20,9 @@ public class EquipmentLoan {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "equipment_id")
+    @JsonIgnoreProperties("loans")
     private Equipment equipment;
 
     @Column(name = "borrower_id")
@@ -36,6 +37,5 @@ public class EquipmentLoan {
 
     @Enumerated(EnumType.STRING)
     private LoanStatus status;
-
 
 }

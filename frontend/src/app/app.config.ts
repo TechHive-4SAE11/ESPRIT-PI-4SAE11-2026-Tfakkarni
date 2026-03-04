@@ -8,7 +8,6 @@ import { routes } from './app.routes';
 import { provideClientHydration } from '@angular/platform-browser';
 import { provideZard } from '@/shared/core/provider/providezard';
 import { environment } from '../environments/environment';
-import { RECAPTCHA_LANGUAGE } from 'ng-recaptcha';
 
 // Keycloak server URL used for SSO init – bypass gateway to avoid X-Frame-Options
 const KC_DIRECT_URL = 'http://localhost:8280';
@@ -132,10 +131,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptorsFromDi()),
     provideZard(),
     KeycloakService,
-    {
-      provide: RECAPTCHA_LANGUAGE,
-      useValue: 'en', // Force English globally for Recaptcha
-    },
+
     {
       provide: APP_INITIALIZER,
       useFactory: initializeKeycloak,

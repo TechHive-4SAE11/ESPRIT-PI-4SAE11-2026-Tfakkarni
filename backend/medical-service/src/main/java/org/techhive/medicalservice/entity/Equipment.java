@@ -1,5 +1,6 @@
 package org.techhive.medicalservice.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -38,7 +39,8 @@ public class Equipment {
     @Column(name = "donor_id")
     private Long donorId;
 
-    @OneToMany(mappedBy = "equipment", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "equipment", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonIgnoreProperties("equipment")
     private List<EquipmentLoan> loans;
 
 }

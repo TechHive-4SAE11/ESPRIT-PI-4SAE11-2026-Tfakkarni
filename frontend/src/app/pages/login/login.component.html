@@ -41,10 +41,10 @@
           </div>
           }
 
-          <!-- reCAPTCHA -->
+          <!-- reCAPTCHA (mock – offline dev mode) -->
           <div class="flex justify-center">
-            <re-captcha [(ngModel)]="recaptchaToken" name="recaptcha" [siteKey]="siteKey" required>
-            </re-captcha>
+            <app-mock-recaptcha [(ngModel)]="recaptchaToken" name="recaptcha" required>
+            </app-mock-recaptcha>
           </div>
 
           <!-- Sign In Button -->

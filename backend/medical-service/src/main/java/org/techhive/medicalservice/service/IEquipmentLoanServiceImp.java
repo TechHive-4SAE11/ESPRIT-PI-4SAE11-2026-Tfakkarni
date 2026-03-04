@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.techhive.medicalservice.dto.EquipmentLoanDTO;
 import org.techhive.medicalservice.entity.Equipment;
 import org.techhive.medicalservice.entity.EquipmentLoan;
@@ -253,13 +254,24 @@ public class IEquipmentLoanServiceImp implements IEquipmentLoanService {
 
     @Override
     @Transactional
+    @Scheduled(cron = "0 0 * * * *") // Runs every hour
     public void checkAndUpdateOverdueLoans() {
+        // Find loans where the due date has passed but they are still ACTIVE.
+        // Instead of marking them as OVERDUE, the user requested that they
+        // automatically become AVAILABLE physically.
         List<EquipmentLoan> overdueLoans = loanRepository.findOverdueLoans();
 
         for (EquipmentLoan loan : overdueLoans) {
-            loan.setStatus(LoanStatus.OVERDUE);
+            log.info("Auto-returning equipment {} for expired loan {}", loan.getEquipment().getName(), loan.getId());
+            loan.setStatus(LoanStatus.RETURNED);
+            loan.setReturnDate(LocalDateTime.now());
+
+            // Release the equipment back to available
+            if (loan.getEquipment() != null) {
+                loan.getEquipment().setStatus(EquipmentStatus.AVAILABLE);
+                equipmentRepository.save(loan.getEquipment());
+            }
             loanRepository.save(loan);
-            log.info("Marked loan {} as overdue", loan.getId());
         }
     }
 
