@@ -135,6 +135,8 @@ export class PatientDashboardComponent implements OnInit {
           { icon: 'bar-chart-3', label: 'Progress', action: () => this.helperView?.setPage('Progress') },
           { icon: 'pill', label: 'My Prescriptions', action: () => this.helperView?.setPage('Prescriptions') },
           { icon: 'pill', label: 'Prescriptions', action: () => this.helperView?.setPage('Prescriptions') },
+
+          { icon: 'calendar', label: 'Appointments', action: () => this.router.navigate(['/appointments']) },
         ],
       },
       {
