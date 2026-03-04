@@ -16,6 +16,7 @@ import { ZardInputDirective } from '@/shared/components/input';
 
 import { UserInfo } from '@/core/services/user-api.service';
 import { PrescriptionService } from '@/core/services/prescription.service';
+import { PrescriptionTemplateService } from '@/core/services/prescription-template.service';
 import { MedicalFolderService } from '@/core/services/medical-folder.service';
 import { SessionService, SessionResponseDTO } from '@/core/services/session.service';
 import { MedicationService } from '@/core/services/medication.service';
@@ -25,6 +26,10 @@ import {
   MedicationRequestDTO,
   MedicationStatus
 } from '@/core/models/prescription.model';
+import {
+  PrescriptionTemplateResponseDTO,
+  PrescriptionTemplateRequestDTO
+} from '@/core/models/prescription-template.model';
 
 @Component({
   selector: 'app-prescription-management',
@@ -46,6 +51,7 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly prescriptionService = inject(PrescriptionService);
   private readonly medicationService = inject(MedicationService);
+  private readonly templateService = inject(PrescriptionTemplateService);
 
   // CDK Portal - render dialogs at body level to escape overflow:auto containers
   private readonly appRef = inject(ApplicationRef);
@@ -68,6 +74,17 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
   selectedPrescription = signal<PrescriptionResponseDTO | null>(null);
   discontinueReason = signal('');
   private currentMedicationToDiscontinue: number | null = null;
+
+  // Template signals
+  templates = signal<PrescriptionTemplateResponseDTO[]>([]);
+  showSaveTemplateDialog = signal(false);
+  showManageTemplates = signal(false);
+  selectedTemplate = signal<PrescriptionTemplateResponseDTO | null>(null);
+  showViewTemplateDialog = signal(false);
+  templateName = signal('');
+  templateDescription = signal('');
+  isSavingTemplate = signal(false);
+  saveTemplatePrescriptionId = signal<number | null>(null);
 
   // UI state signals
   showCreateDialog = signal(false);
@@ -131,6 +148,7 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
     this.prescriptionForm = this.createPrescriptionForm();
     this.loadPrescriptions();
     this.loadSessions();
+    this.loadTemplates();
   }
 
   get medications(): FormArray {
@@ -580,6 +598,122 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
+  }
+
+  // ==================== Template Management ====================
+
+  loadTemplates(): void {
+    if (!this.doctor?.id) return;
+    const doctorDbId = String(this.doctor.id);
+    this.templateService.getTemplatesByDoctor(doctorDbId)
+      .pipe(
+        tap(data => {
+          console.log('[PrescriptionManagement] Loaded templates:', data);
+          this.templates.set(data);
+        }),
+        catchError(error => {
+          console.error('[PrescriptionManagement] Error loading templates:', error);
+          this.templates.set([]);
+          return of([]);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  loadFromTemplate(template: PrescriptionTemplateResponseDTO): void {
+    // Clear existing medications and populate from template
+    this.medications.clear();
+    for (const med of template.medications) {
+      const requestDto: MedicationRequestDTO = {
+        medicationName: med.medicationName,
+        dosage: med.dosage,
+        frequency: med.frequency,
+        duration: med.duration,
+        instructions: med.instructions || ''
+      };
+      this.medications.push(this.createMedicationFormGroup(requestDto));
+    }
+    this.errorMessage.set(null);
+  }
+
+  openSaveTemplateDialog(prescriptionId: number | null = null): void {
+    this.saveTemplatePrescriptionId.set(prescriptionId);
+    this.templateName.set('');
+    this.templateDescription.set('');
+    this.showSaveTemplateDialog.set(true);
+  }
+
+  closeSaveTemplateDialog(): void {
+    this.showSaveTemplateDialog.set(false);
+    this.templateName.set('');
+    this.templateDescription.set('');
+    this.saveTemplatePrescriptionId.set(null);
+  }
+
+  confirmSaveTemplate(): void {
+    const name = this.templateName().trim();
+    if (!name) return;
+    if (!this.doctor?.id) return;
+
+    this.isSavingTemplate.set(true);
+    const doctorDbId = String(this.doctor.id);
+    const description = this.templateDescription().trim() || undefined;
+    const prescriptionId = this.saveTemplatePrescriptionId();
+
+    const operation$ = prescriptionId
+      ? this.templateService.createFromPrescription(prescriptionId, name, doctorDbId, description)
+      : this.templateService.createTemplate({
+        name,
+        description,
+        doctorId: doctorDbId,
+        medications: this.prescriptionForm.value.medications || []
+      });
+
+    operation$.pipe(
+      tap(() => {
+        this.closeSaveTemplateDialog();
+        this.loadTemplates();
+        this.alertDialog.info({
+          zTitle: 'Template Saved',
+          zDescription: `Template "${name}" has been saved successfully.`,
+          zOkText: 'OK'
+        });
+      }),
+      catchError(error => {
+        console.error('[PrescriptionManagement] Error saving template:', error);
+        this.alertDialog.info({
+          zTitle: 'Error',
+          zDescription: 'Failed to save template. Please try again.',
+          zOkText: 'OK'
+        });
+        return of(null);
+      }),
+      finalize(() => this.isSavingTemplate.set(false)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
+  }
+
+  deleteTemplate(id: number): void {
+    this.alertDialog.confirm({
+      zTitle: 'Delete Template',
+      zDescription: 'Are you sure you want to delete this template? This action cannot be undone.',
+      zOkText: 'Delete',
+      zCancelText: 'Cancel',
+      zOkDestructive: true,
+      zOnOk: () => {
+        this.templateService.deleteTemplate(id)
+          .pipe(
+            tap(() => this.loadTemplates()),
+            catchError(error => {
+              console.error('[PrescriptionManagement] Error deleting template:', error);
+              return of(null);
+            }),
+            takeUntilDestroyed(this.destroyRef)
+          )
+          .subscribe();
+      }
+    });
   }
 
   ngOnDestroy(): void {

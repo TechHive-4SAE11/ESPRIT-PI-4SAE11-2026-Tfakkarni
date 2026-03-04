@@ -53,7 +53,14 @@ public class PrescriptionMapper {
                 medication.getStatus(),
                 medication.getStartDate(),
                 medication.getEndDate(),
-                medication.getCreatedAt()
+                medication.getCreatedAt(),
+                medication.getPrescription() != null && medication.getPrescription().getSession() != null ?
+                    medication.getPrescription().getSession().getId() : null,
+                medication.getPrescription() != null && medication.getPrescription().getSession() != null ?
+                    medication.getPrescription().getSession().getSessionDate() : null,
+                medication.getPrescription() != null && medication.getPrescription().getSession() != null &&
+                    medication.getPrescription().getSession().getMedicalFolder() != null ?
+                    medication.getPrescription().getSession().getMedicalFolder().getIdDoctor() : null
         );
     }
 }

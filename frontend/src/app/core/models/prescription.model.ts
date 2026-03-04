@@ -26,6 +26,9 @@ export interface MedicationResponseDTO {
   startDate: string | null;
   endDate: string | null;
   createdAt: string;
+  sessionId?: number;
+  sessionDate?: string;
+  doctorId?: string;
 }
 
 export interface PrescriptionRequestDTO {

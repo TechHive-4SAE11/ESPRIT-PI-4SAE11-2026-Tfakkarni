@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -7,6 +7,7 @@ import {
   CarePlanRequestDTO,
   CarePlanResponseDTO,
 } from '@/core/models/care-plan.model';
+import { PagedResponse } from '@/core/models/paged-response.model';
 
 @Injectable({
   providedIn: 'root',
@@ -30,6 +31,25 @@ export class CarePlanService {
 
   getCarePlansByPatient(patientId: string): Observable<CarePlanResponseDTO[]> {
     return this.http.get<CarePlanResponseDTO[]>(`${this.baseUrl}/patient/${patientId}`);
+  }
+  
+  getCarePlansByPatientPaginated(
+    patientId: string, 
+    page: number = 0, 
+    size: number = 10,
+    sortBy: string = 'createdAt',
+    sortDir: 'ASC' | 'DESC' = 'DESC'
+  ): Observable<PagedResponse<CarePlanResponseDTO>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('sortBy', sortBy)
+      .set('sortDir', sortDir);
+    
+    return this.http.get<PagedResponse<CarePlanResponseDTO>>(
+      `${this.baseUrl}/patient/${patientId}/paginated`,
+      { params }
+    );
   }
 
   createCarePlan(carePlan: CarePlanRequestDTO): Observable<CarePlanResponseDTO> {

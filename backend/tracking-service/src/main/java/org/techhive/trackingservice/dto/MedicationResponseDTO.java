@@ -22,4 +22,7 @@ public class MedicationResponseDTO {
     private LocalDate startDate;
     private LocalDate endDate;
     private LocalDateTime createdAt;
+    private Long sessionId;
+    private LocalDateTime sessionDate;
+    private String doctorId;
 }

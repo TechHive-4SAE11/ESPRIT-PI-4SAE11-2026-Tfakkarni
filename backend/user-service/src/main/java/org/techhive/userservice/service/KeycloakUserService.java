@@ -48,7 +48,7 @@ public class KeycloakUserService {
     assignRole(adminToken, keycloakId, request.getRole());
 
     User user = new User(keycloakId, request.getFirstName(), request.getLastName(),
-        request.getEmail(), request.getRole());
+        request.getEmail(), request.getRole(), request.getGender());
     userRepository.save(user);
 
     log.info("User '{}' registered successfully with role '{}', keycloakId='{}'",

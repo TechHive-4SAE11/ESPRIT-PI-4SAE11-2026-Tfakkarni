@@ -10,8 +10,9 @@ import {
   ElementRef,
   ViewChild,
   inject,
+  PLATFORM_ID,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { KeycloakService } from 'keycloak-angular';
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
@@ -19,7 +20,6 @@ import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardBadgeComponent } from '@/shared/components/badge';
 import { ZardAlertDialogService } from '@/shared/components/alert-dialog';
 import { PlaceService, type PlaceResponse, type CreatePlaceRequest } from '@/core/services/place.service';
-import * as L from 'leaflet';
 
 @Component({
   selector: 'app-add-place',
@@ -165,9 +165,11 @@ export class AddPlaceComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
 
-  private map: L.Map | null = null;
-  private marker: L.Marker | null = null;
+  private map: any = null;
+  private marker: any = null;
+  private L: any = null;
   private readonly alertDialog = inject(ZardAlertDialogService);
+  private readonly platformId = inject(PLATFORM_ID);
 
   editingPlaceId = signal<number | null>(null);
   placeName = signal('');
@@ -191,7 +193,9 @@ export class AddPlaceComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    this.initMap();
+    if (isPlatformBrowser(this.platformId)) {
+      this.initMap();
+    }
   }
 
   ngOnDestroy(): void {
@@ -210,9 +214,14 @@ export class AddPlaceComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  private initMap(): void {
+  private async initMap(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
+    // Dynamically import Leaflet only in browser
+    this.L = await import('leaflet');
+    
     // Fix Leaflet default icon paths (common issue with bundlers)
-    const iconDefault = L.icon({
+    const iconDefault = this.L.icon({
       iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
       iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
       shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
@@ -221,16 +230,16 @@ export class AddPlaceComponent implements OnInit, AfterViewInit, OnDestroy {
       popupAnchor: [1, -34],
       shadowSize: [41, 41],
     });
-    L.Marker.prototype.options.icon = iconDefault;
+    this.L.Marker.prototype.options.icon = iconDefault;
 
-    this.map = L.map(this.mapContainer.nativeElement).setView([36.8, 10.18], 12);
+    this.map = this.L.map(this.mapContainer.nativeElement).setView([36.8, 10.18], 12);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 19,
     }).addTo(this.map);
 
-    this.map.on('click', (e: L.LeafletMouseEvent) => {
+    this.map.on('click', (e: any) => {
       const { lat, lng } = e.latlng;
       this.selectedLat.set(lat);
       this.selectedLng.set(lng);
@@ -238,7 +247,7 @@ export class AddPlaceComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this.marker) {
         this.marker.setLatLng(e.latlng);
       } else {
-        this.marker = L.marker(e.latlng).addTo(this.map!);
+        this.marker = this.L.marker(e.latlng).addTo(this.map!);
       }
     });
   }
@@ -303,18 +312,20 @@ export class AddPlaceComponent implements OnInit, AfterViewInit, OnDestroy {
     this.successMessage.set('');
 
     // Update the map marker
-    if (this.map) {
-      const latlng = L.latLng(place.latitude, place.longitude);
+    if (this.map && this.L) {
+      const latlng = this.L.latLng(place.latitude, place.longitude);
       if (this.marker) {
         this.marker.setLatLng(latlng);
       } else {
-        this.marker = L.marker(latlng).addTo(this.map);
+        this.marker = this.L.marker(latlng).addTo(this.map);
       }
       this.map.setView(latlng, 14);
     }
 
     // Scroll to top of form
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (isPlatformBrowser(this.platformId)) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   deletePlace(id: number): void {

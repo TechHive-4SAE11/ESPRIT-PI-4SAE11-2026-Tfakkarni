@@ -2,11 +2,16 @@ package org.techhive.trackingservice.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.techhive.trackingservice.dto.CarePlanRequestDTO;
 import org.techhive.trackingservice.dto.CarePlanResponseDTO;
+import org.techhive.trackingservice.dto.PagedResponse;
 import org.techhive.trackingservice.entity.CareActivity;
 import org.techhive.trackingservice.entity.CarePlan;
 import org.techhive.trackingservice.mapper.CarePlanMapper;
@@ -110,6 +115,36 @@ public class CarePlanController {
                 .map(carePlanMapper::toResponseDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(responseDTOs);
+    }
+    
+    @GetMapping("/patient/{idPatient}/paginated")
+    public ResponseEntity<PagedResponse<CarePlanResponseDTO>> getCarePlansByPatientPaginated(
+            @PathVariable String idPatient,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir) {
+        
+        Sort.Direction direction = sortDir.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        
+        Page<CarePlan> carePlanPage = carePlanService.getCarePlansByPatientPaginated(idPatient, pageable);
+        
+        List<CarePlanResponseDTO> responseDTOs = carePlanPage.getContent().stream()
+                .map(carePlanMapper::toResponseDTO)
+                .collect(Collectors.toList());
+        
+        PagedResponse<CarePlanResponseDTO> response = PagedResponse.<CarePlanResponseDTO>builder()
+                .content(responseDTOs)
+                .page(carePlanPage.getNumber())
+                .size(carePlanPage.getSize())
+                .totalElements(carePlanPage.getTotalElements())
+                .totalPages(carePlanPage.getTotalPages())
+                .first(carePlanPage.isFirst())
+                .last(carePlanPage.isLast())
+                .build();
+        
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/activities/{activityId}/status")

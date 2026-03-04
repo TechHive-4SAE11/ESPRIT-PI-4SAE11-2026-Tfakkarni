@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, PLATFORM_ID, inject, OnDestroy } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Router } from '@angular/router';
 import { AuthService } from '@/core/auth';
 import { DashboardLayoutComponent, type SidebarMenuGroup } from '@/shared/components/dashboard-layout';
 import { ZardCardComponent } from '@/shared/components/card';
@@ -11,11 +12,12 @@ import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardProgressBarComponent } from '@/shared/components/progress-bar';
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 import { GameService, type GameStatsResponse } from '@/core/services/game.service';
-import { NotificationService } from '@/core/services/notification.service';
+import { DoctorNotificationService } from '@/core/services/doctor-notification.service';
 import { type DoctorNotification } from '@/core/models/notification.model';
 import { PrescriptionManagementComponent } from './prescription-management/prescription-management.component';
 import { SuiviQuotidienComponent } from '@/pages/patient-dashboard/helper-view/suivi-quotidien/suivi-quotidien.component';
 import { CarePlanManagementComponent } from './care-plan-management/care-plan-management.component';
+import { MedicationManagementComponent } from '../medications/medications.component';
 import { PatientAnalyticsComponent } from './patient-analytics/patient-analytics.component';
 import { ProfileComponent } from '@/pages/patient-dashboard/helper-view/profile/profile.component';
 import { KeycloakService } from 'keycloak-angular';
@@ -35,10 +37,72 @@ import { KeycloakService } from 'keycloak-angular';
     PrescriptionManagementComponent,
     SuiviQuotidienComponent,
     CarePlanManagementComponent,
+    MedicationManagementComponent,
     PatientAnalyticsComponent,
     ProfileComponent,
   ],
   template: `
+    @if (kycChecking()) {
+      <div class="flex items-center justify-center min-h-screen">
+        <div class="text-center space-y-4">
+          <z-icon zType="loader-2" class="w-8 h-8 animate-spin mx-auto text-primary" />
+          <p class="text-muted-foreground">Checking verification status...</p>
+        </div>
+      </div>
+    } @else if (isKycBlocked) {
+      <div class="flex items-center justify-center min-h-screen bg-background">
+        <z-card class="w-full max-w-md">
+          <div class="p-8 text-center space-y-6">
+            <div class="mx-auto w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
+              <z-icon zType="shield" class="w-8 h-8 text-amber-600" />
+            </div>
+            <div class="space-y-2">
+              <h2 class="text-2xl font-bold">Identity Verification Required</h2>
+              <p class="text-muted-foreground">
+                As a doctor, you need to verify your identity before accessing the platform.
+                This helps us ensure the safety of our patients.
+              </p>
+            </div>
+
+            @if (kycStatus() === 'pending') {
+              <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+                Your verification is being processed. Click "Check Status" to refresh.
+              </div>
+            } @else if (kycStatus() === 'declined') {
+              <div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                Your verification was declined. Please try again with valid documents.
+              </div>
+            } @else if (kycStatus() === 'expired') {
+              <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+                Your verification session has expired. Please start a new one.
+              </div>
+            }
+
+            <div class="space-y-3">
+              @if (kycStatus() === 'none' || kycStatus() === 'declined' || kycStatus() === 'expired') {
+                <button z-button class="w-full" zSize="lg" (click)="startKycVerification()">
+                  <z-icon zType="shield" class="mr-2" />
+                  Start Verification
+                </button>
+              }
+              @if (kycStatus() === 'pending') {
+                <button z-button class="w-full" zSize="lg" (click)="refreshKycStatus()">
+                  <z-icon zType="rotate-ccw" class="mr-2" />
+                  Check Status
+                </button>
+              }
+              <button z-button zType="outline" class="w-full" [disabled]="kycSkipping()" (click)="skipKyc()">
+                @if (kycSkipping()) {
+                  Skipping...
+                } @else {
+                  Skip KYC (Dev Build)
+                }
+              </button>
+            </div>
+          </div>
+        </z-card>
+      </div>
+    } @else {
     <app-dashboard-layout
       [menuGroups]="menuGroups"
       [pageTitle]="currentPage()"
@@ -281,8 +345,12 @@ import { KeycloakService } from 'keycloak-angular';
                                <z-icon zType="bar-chart-3" class="mr-1" />
                                Progress
                              </button>
-                             <button z-button zType="ghost" zSize="sm" (click)="managePrescriptions(patient)">
+                             <button z-button zType="ghost" zSize="sm" (click)="viewMedications(patient)">
                                <z-icon zType="pill" class="mr-1" />
+                               Meds
+                             </button>
+                             <button z-button zType="ghost" zSize="sm" (click)="managePrescriptions(patient)">
+                               <z-icon zType="file-text" class="mr-1" />
                                Rx
                              </button>
                              <button z-button zType="ghost" zSize="sm" (click)="viewDailyLog(patient)">
@@ -384,8 +452,32 @@ import { KeycloakService } from 'keycloak-angular';
              </div>
           }
         }
+
+        @case ('Medications') {
+          @if (selectedPatient(); as patient) {
+             <div class="flex items-center gap-2 mb-6">
+              <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
+                <z-icon zType="arrow-left" class="mr-1" />
+                Back to List
+              </button>
+            </div>
+            
+            <app-medication-management [patient]="patient" [doctor]="currentDoctor()" viewMode="patient"></app-medication-management>
+          } @else {
+             <div class="space-y-4">
+               <h2 class="text-2xl font-bold">Medications</h2>
+               <div class="p-8 border rounded-lg text-center bg-muted/20">
+                 <z-icon zType="pill" class="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                 <h3 class="text-lg font-semibold mb-2">No Patient Selected</h3>
+                 <p class="text-muted-foreground mb-4">Please select a patient from the main list to view their medications.</p>
+                 <button z-button (click)="setPage('Home')">Go to Patient List</button>
+               </div>
+             </div>
+          }
+        }
       }
     </app-dashboard-layout>
+    }
   `,
 })
 export class DoctorDashboardComponent implements OnInit, OnDestroy {
@@ -405,6 +497,11 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   selectedNotif = signal<DoctorNotification | null>(null);
   private notifInterval: ReturnType<typeof setInterval> | null = null;
 
+  // KYC state
+  kycStatus = signal<string>('none');
+  kycChecking = signal(true);
+  kycSkipping = signal(false);
+
   menuGroups: SidebarMenuGroup[] = [
     {
       label: 'Navigation',
@@ -414,6 +511,7 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
         { icon: 'bar-chart-3', label: 'Patient Progress', action: () => this.setPage('Patient Progress') },
         { icon: 'pill', label: 'Prescriptions', action: () => this.setPage('Prescriptions') },
         { icon: 'activity', label: 'Care Plans', action: () => this.setPage('CarePlans') },
+        { icon: 'heart', label: 'Medications', action: () => this.setPage('Medications') },
       ],
     },
     {
@@ -432,7 +530,7 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
     private readonly userApiService: UserApiService,
     private readonly gameService: GameService,
     private readonly keycloakService: KeycloakService,
-    public readonly notifService: NotificationService,
+    public readonly notifService: DoctorNotificationService,
   ) {
     this.platformId = inject(PLATFORM_ID);
   }
@@ -448,9 +546,25 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
       const doctorKeycloakId = this.authService.getKeycloakId();
       if (doctorKeycloakId) {
         this.userApiService.getUserByKeycloakId(doctorKeycloakId).subscribe({
-          next: doctor => this.currentDoctor.set(doctor),
-          error: err => console.error('Failed to load doctor info', err)
+          next: doctor => {
+            this.currentDoctor.set(doctor);
+            // Check KYC status from the user record
+            const status = doctor.kycStatus ?? 'none';
+            this.kycStatus.set(status);
+            this.kycChecking.set(false);
+
+            // If pending, try refreshing from Didit
+            if (status === 'pending') {
+              this.refreshKycStatus();
+            }
+          },
+          error: err => {
+            console.error('Failed to load doctor info', err);
+            this.kycChecking.set(false);
+          }
         });
+      } else {
+        this.kycChecking.set(false);
       }
 
       this.loadPatients();
@@ -489,6 +603,11 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   manageCarePlans(patient: UserInfo): void {
     this.selectedPatient.set(patient);
     this.setPage('CarePlans');
+  }
+
+  viewMedications(patient: UserInfo): void {
+    this.selectedPatient.set(patient);
+    this.setPage('Medications');
   }
 
 
@@ -544,6 +663,57 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
       if (diffH < 24) return `Il y a ${diffH}h`;
       return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
     } catch { return dateStr; }
+  }
+
+  // ─── KYC Methods ──────────────────────────────────────────────
+
+  get isKycBlocked(): boolean {
+    const status = this.kycStatus();
+    return status !== 'approved' && status !== 'skipped';
+  }
+
+  refreshKycStatus(): void {
+    const keycloakId = this.authService.getKeycloakId();
+    if (!keycloakId) return;
+
+    this.userApiService.getKycStatus(keycloakId).subscribe({
+      next: result => {
+        this.kycStatus.set(result.kyc_status);
+      },
+      error: err => console.error('Failed to check KYC status', err),
+    });
+  }
+
+  startKycVerification(): void {
+    const keycloakId = this.authService.getKeycloakId();
+    if (!keycloakId) return;
+
+    this.userApiService.startKyc(keycloakId).subscribe({
+      next: result => {
+        if (result.url) {
+          window.open(result.url, '_blank');
+          this.kycStatus.set('pending');
+        }
+      },
+      error: err => console.error('Failed to start KYC', err),
+    });
+  }
+
+  skipKyc(): void {
+    const keycloakId = this.authService.getKeycloakId();
+    if (!keycloakId) return;
+
+    this.kycSkipping.set(true);
+    this.userApiService.skipKyc(keycloakId).subscribe({
+      next: () => {
+        this.kycStatus.set('skipped');
+        this.kycSkipping.set(false);
+      },
+      error: err => {
+        console.error('Failed to skip KYC', err);
+        this.kycSkipping.set(false);
+      },
+    });
   }
 
   private loadPatients(): void {

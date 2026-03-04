@@ -11,8 +11,23 @@ export interface UserInfo {
   email: string;
   role: string;
   phone?: string;
+  gender?: string;
   enabled: boolean;
   createdAt: string;
+  kycStatus?: string;
+  kycSessionId?: string;
+}
+
+export interface KycSessionResponse {
+  session_id: string;
+  url: string;
+  status: string;
+}
+
+export interface KycStatusResponse {
+  kyc_status: string;
+  session_id: string;
+  didit_status: string;
 }
 
 @Injectable({
@@ -67,11 +82,47 @@ export class UserApiService {
     return this.http.put<UserInfo>(`${this.baseUrl}/toggle-enabled/${keycloakId}`, { enabled });
   }
 
+  // ─── Password Reset Methods ──────────────────────────────
+
   forgotPassword(email: string): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.baseUrl.replace('/api/users', '/api/password-reset')}/forgot`, { email });
   }
 
   verifyAndResetPassword(email: string, code: string, newPassword: string): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.baseUrl.replace('/api/users', '/api/password-reset')}/verify`, { email, code, newPassword });
+  }
+
+  // ─── KYC Methods ──────────────────────────────────────────
+
+  startKyc(keycloakId: string): Observable<KycSessionResponse> {
+    return this.http.post<KycSessionResponse>(`${this.baseUrl}/kyc/start/${keycloakId}`, {});
+  }
+
+  getKycStatus(keycloakId: string): Observable<KycStatusResponse> {
+    return this.http.get<KycStatusResponse>(`${this.baseUrl}/kyc/status/${keycloakId}`);
+  }
+
+  skipKyc(keycloakId: string): Observable<{ message: string; kycStatus: string }> {
+    return this.http.put<{ message: string; kycStatus: string }>(`${this.baseUrl}/kyc/skip/${keycloakId}`, {});
+  }
+
+  // ─── Signature Methods ──────────────────────────────────
+
+  uploadSignature(userId: number, file: File): Observable<{ message: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ message: string }>(`${this.baseUrl}/signature/${userId}`, formData);
+  }
+
+  getSignatureUrl(userId: number): string {
+    return `${this.baseUrl}/signature/${userId}`;
+  }
+
+  getSignatureBlob(userId: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/signature/${userId}`, { responseType: 'blob' });
+  }
+
+  deleteSignature(userId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.baseUrl}/signature/${userId}`);
   }
 }

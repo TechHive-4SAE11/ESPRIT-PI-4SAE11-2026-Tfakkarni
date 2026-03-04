@@ -2,15 +2,19 @@ package org.techhive.userservice.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.multipart.MultipartFile;
 import org.techhive.userservice.dto.AdminResetPasswordRequest;
 import org.techhive.userservice.dto.ChangePasswordRequest;
 import org.techhive.userservice.dto.RegisterRequest;
 import org.techhive.userservice.dto.UpdateProfileRequest;
 import org.techhive.userservice.entity.User;
+import org.techhive.userservice.service.DiditKycService;
 import org.techhive.userservice.service.KeycloakUserService;
 import org.techhive.userservice.service.UserService;
 
@@ -25,6 +29,7 @@ public class UserController {
 
   private final KeycloakUserService keycloakUserService;
   private final UserService userService;
+  private final DiditKycService diditKycService;
 
   @PostMapping("/register")
   public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
@@ -213,6 +218,143 @@ public class UserController {
       log.error("Unexpected error toggling user", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body(Map.of("error", "Échec de la modification du statut"));
+    }
+  }
+
+  // ─── KYC Endpoints ────────────────────────────────────────────
+
+  /**
+   * Start a Didit KYC verification session for a doctor.
+   * Returns session_id, verification url, and status.
+   */
+  @PostMapping("/kyc/start/{keycloakId}")
+  public ResponseEntity<?> startKyc(@PathVariable String keycloakId) {
+    try {
+      Map<String, String> result = diditKycService.createSession(keycloakId);
+      return ResponseEntity.ok(result);
+    } catch (RuntimeException e) {
+      log.error("KYC start failed for keycloakId: {}", keycloakId, e);
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body(Map.of("error", e.getMessage()));
+    }
+  }
+
+  /**
+   * Check the KYC verification status for a user.
+   */
+  @GetMapping("/kyc/status/{keycloakId}")
+  public ResponseEntity<?> getKycStatus(@PathVariable String keycloakId) {
+    try {
+      Map<String, String> result = diditKycService.getSessionStatus(keycloakId);
+      return ResponseEntity.ok(result);
+    } catch (RuntimeException e) {
+      log.error("KYC status check failed for keycloakId: {}", keycloakId, e);
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body(Map.of("error", e.getMessage()));
+    }
+  }
+
+  /**
+   * Skip KYC verification (dev/testing only).
+   */
+  @PutMapping("/kyc/skip/{keycloakId}")
+  public ResponseEntity<?> skipKyc(@PathVariable String keycloakId) {
+    try {
+      User user = diditKycService.skipKyc(keycloakId);
+      return ResponseEntity.ok(Map.of("message", "KYC skipped", "kycStatus", user.getKycStatus()));
+    } catch (RuntimeException e) {
+      log.error("KYC skip failed for keycloakId: {}", keycloakId, e);
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body(Map.of("error", e.getMessage()));
+    }
+  }
+
+  // ─── Signature Endpoints ─────────────────────────────────────
+
+  /**
+   * Upload doctor signature image (PNG).
+   * Uses the Neon DB user id (Long).
+   */
+  @PostMapping(value = "/signature/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<?> uploadSignature(
+      @PathVariable Long id,
+      @RequestParam("file") MultipartFile file) {
+    try {
+      if (file.isEmpty()) {
+        return ResponseEntity.badRequest().body(Map.of("error", "Le fichier est vide"));
+      }
+      if (file.getSize() > 2 * 1024 * 1024) {
+        return ResponseEntity.badRequest().body(Map.of("error", "La taille maximale est de 2 Mo"));
+      }
+
+      User user = userService.getUserById(id)
+          .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+      user.setSignatureImage(file.getBytes());
+      userService.save(user);
+
+      log.info("Signature uploaded for user #{} ({})", id, user.getEmail());
+      return ResponseEntity.ok(Map.of("message", "Signature téléchargée avec succès"));
+    } catch (RuntimeException e) {
+      log.error("Signature upload failed for user #{}", id, e);
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body(Map.of("error", e.getMessage()));
+    } catch (Exception e) {
+      log.error("Unexpected error uploading signature", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(Map.of("error", "Échec du téléchargement de la signature"));
+    }
+  }
+
+  /**
+   * Download doctor signature image by user DB id.
+   */
+  @GetMapping(value = "/signature/{id}", produces = MediaType.IMAGE_PNG_VALUE)
+  public ResponseEntity<byte[]> getSignature(@PathVariable Long id) {
+    return userService.getUserById(id)
+        .filter(u -> u.getSignatureImage() != null)
+        .map(u -> {
+          HttpHeaders headers = new HttpHeaders();
+          headers.setContentType(MediaType.IMAGE_PNG);
+          return new ResponseEntity<>(u.getSignatureImage(), headers, HttpStatus.OK);
+        })
+        .orElse(ResponseEntity.notFound().build());
+  }
+
+  /**
+   * Download doctor signature image by keycloakId.
+   * Used by tracking-service for PDF generation.
+   */
+  @GetMapping(value = "/signature/keycloak/{keycloakId}", produces = MediaType.IMAGE_PNG_VALUE)
+  public ResponseEntity<byte[]> getSignatureByKeycloakId(@PathVariable String keycloakId) {
+    return userService.getUserByKeycloakId(keycloakId)
+        .filter(u -> u.getSignatureImage() != null)
+        .map(u -> {
+          HttpHeaders headers = new HttpHeaders();
+          headers.setContentType(MediaType.IMAGE_PNG);
+          return new ResponseEntity<>(u.getSignatureImage(), headers, HttpStatus.OK);
+        })
+        .orElse(ResponseEntity.notFound().build());
+  }
+
+  /**
+   * Delete doctor signature image.
+   */
+  @DeleteMapping("/signature/{id}")
+  public ResponseEntity<?> deleteSignature(@PathVariable Long id) {
+    try {
+      User user = userService.getUserById(id)
+          .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+      user.setSignatureImage(null);
+      userService.save(user);
+
+      log.info("Signature deleted for user #{}", id);
+      return ResponseEntity.ok(Map.of("message", "Signature supprimée avec succès"));
+    } catch (RuntimeException e) {
+      log.error("Signature delete failed for user #{}", id, e);
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body(Map.of("error", e.getMessage()));
     }
   }
 }

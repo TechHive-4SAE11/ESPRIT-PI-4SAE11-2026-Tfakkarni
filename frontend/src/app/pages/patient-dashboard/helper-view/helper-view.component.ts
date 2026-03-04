@@ -13,12 +13,14 @@ import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, finalize, of, tap, switchMap } from 'rxjs';
 import { KeycloakService } from 'keycloak-angular';
+import { NotificationService, type MedicationNotification, type NotificationResponse } from '@/core/services/notification.service';
 
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { PrescriptionListComponent } from '@/shared/components/prescription-list/prescription-list.component';
 import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-plan-list.component';
+import { MedicationManagementComponent } from '@/pages/medications/medications.component';
 import { DataLibraryComponent } from './data-library/data-library.component';
 import { TagManagerComponent } from './tag-manager/tag-manager.component';
 import { GameBuilderComponent } from './game-builder/game-builder.component';
@@ -30,7 +32,7 @@ import { CarePlanService } from '@/core/services/care-plan.service';
 import { CarePlanResponseDTO } from '@/core/models/care-plan.model';
 import { SuiviQuotidienComponent } from './suivi-quotidien/suivi-quotidien.component';
 import { StatisticsDashboardComponent } from './statistics-dashboard/statistics-dashboard.component';
-import { UserApiService } from '@/core/services/user-api.service';
+import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 
 @Component({
   selector: 'app-helper-view',
@@ -42,6 +44,7 @@ import { UserApiService } from '@/core/services/user-api.service';
     ZardCardComponent,
     ZardIconComponent,
     ZardButtonComponent,
+    MedicationManagementComponent,
     SuiviQuotidienComponent,
     PrescriptionListComponent,
     StatisticsDashboardComponent,
@@ -55,8 +58,6 @@ import { UserApiService } from '@/core/services/user-api.service';
 export class HelperViewComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly keycloakService = inject(KeycloakService);
-  private readonly prescriptionService = inject(PrescriptionService);
-  private readonly carePlanService = inject(CarePlanService);
   private readonly userApiService = inject(UserApiService);
 
   @Input() keycloakId = '';
@@ -64,18 +65,19 @@ export class HelperViewComponent implements OnInit {
 
   // State Signals
   currentPage = signal<string>('Home');
-  prescriptions = signal<PrescriptionResponseDTO[]>([]);
-  carePlans = signal<CarePlanResponseDTO[]>([]);
   userNeonDbId = signal<number | null>(null);
+  currentUser = signal<UserInfo | null>(null);
 
-  // Loading Signals
-  isLoadingPrescriptions = signal<boolean>(false);
-  isLoadingCarePlans = signal<boolean>(false);
+  // ── Notifications ──────────────────────────────────────────────────────────
+  private readonly notificationService = inject(NotificationService);
+  notifications = signal<MedicationNotification[]>([]);
+  unreadNotifCount = signal(0);
+  isNotifPanelOpen = signal(false);
+  isLoadingNotifs = signal(false);
 
   ngOnInit(): void {
     if (this.keycloakId) {
-      this.loadPrescriptions();
-      this.loadCarePlans();
+      this.loadUserNeonDbId();
     }
   }
 
@@ -84,59 +86,104 @@ export class HelperViewComponent implements OnInit {
     this.pageChange.emit(page);
   }
 
-
-  private loadPrescriptions(): void {
-    if (!this.keycloakId) {
-      console.warn('[HelperView] No keycloakId provided, skipping prescription load');
-      return;
-    }
-
-    this.isLoadingPrescriptions.set(true);
+  private loadUserNeonDbId(): void {
     this.userApiService.getUserByKeycloakId(this.keycloakId)
       .pipe(
         tap(userInfo => {
+          console.log('[HelperView] User info retrieved. DB ID:', userInfo.id);
           this.userNeonDbId.set(userInfo.id);
-        }),
-        switchMap(userInfo => {
-          const neonDbId = userInfo.id.toString();
-          return this.prescriptionService.getPrescriptionsByPatient(neonDbId);
-        }),
-        tap(prescriptions => {
-          this.prescriptions.set(prescriptions);
+          this.currentUser.set(userInfo);
+          this.loadNotifications();
         }),
         catchError(err => {
-          console.error('[HelperView] Failed to load prescriptions', err);
-          return of([]);
+          console.error('[HelperView] Failed to load user info', err);
+          return of(null);
         }),
-        finalize(() => this.isLoadingPrescriptions.set(false)),
-        takeUntilDestroyed(this.destroyRef),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
   }
 
-  private loadCarePlans(): void {
-    if (!this.keycloakId) {
-      console.warn('[HelperView] No keycloakId, skipping care plan load');
-      return;
-    }
+  // ── Notification Methods ────────────────────────────────────────────────────
 
-    this.isLoadingCarePlans.set(true);
-
-    this.userApiService.getUserByKeycloakId(this.keycloakId)
+  loadNotifications(): void {
+    const neonId = this.userNeonDbId();
+    if (!neonId) return;
+    this.isLoadingNotifs.set(true);
+    this.notificationService.getNotifications(neonId.toString())
       .pipe(
-        switchMap(userInfo => {
-          const neonDbId = userInfo.id.toString();
-          return this.carePlanService.getCarePlansByPatient(neonDbId);
+        tap((res: NotificationResponse) => {
+          this.notifications.set(res.notifications || []);
+          this.unreadNotifCount.set(res.unreadCount);
         }),
-        tap(carePlans => {
-          console.log('[HelperView] Care Plans loaded:', carePlans.length);
-          this.carePlans.set(carePlans);
+        catchError(() => {
+          console.warn('[HelperView] Failed to load notifications');
+          return of(null);
         }),
-        catchError(err => {
-          console.error('[HelperView] Failed to load care plans', err);
-          return of([]);
+        finalize(() => this.isLoadingNotifs.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  toggleNotifPanel(): void {
+    const isOpen = !this.isNotifPanelOpen();
+    this.isNotifPanelOpen.set(isOpen);
+    if (isOpen && this.notifications().length === 0) {
+      this.loadNotifications();
+    }
+  }
+
+  closeNotifPanel(): void {
+    this.isNotifPanelOpen.set(false);
+  }
+
+  markNotifAsRead(notif: MedicationNotification): void {
+    const neonId = this.userNeonDbId();
+    if (notif.read || !neonId) return;
+    this.notificationService.markAsRead(neonId.toString(), notif.id)
+      .pipe(
+        tap(() => {
+          this.notifications.update(list =>
+            list.map(n => n.id === notif.id ? { ...n, read: true } : n)
+          );
+          this.unreadNotifCount.update(c => Math.max(0, c - 1));
         }),
-        finalize(() => this.isLoadingCarePlans.set(false)),
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  markAllNotifsAsRead(): void {
+    const neonId = this.userNeonDbId();
+    if (!neonId) return;
+    this.notificationService.markAllAsRead(neonId.toString())
+      .pipe(
+        tap(() => {
+          this.notifications.update(list =>
+            list.map(n => ({ ...n, read: true }))
+          );
+          this.unreadNotifCount.set(0);
+        }),
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+  }
+
+  refreshNotifications(): void {
+    const neonId = this.userNeonDbId();
+    if (!neonId) return;
+    this.isLoadingNotifs.set(true);
+    this.notificationService.refreshNotifications(neonId.toString())
+      .pipe(
+        tap((res: NotificationResponse) => {
+          this.notifications.set(res.notifications || []);
+          this.unreadNotifCount.set(res.unreadCount);
+        }),
+        catchError(() => of(null)),
+        finalize(() => this.isLoadingNotifs.set(false)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();

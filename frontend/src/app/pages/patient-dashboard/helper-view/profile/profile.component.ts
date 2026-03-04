@@ -133,6 +133,65 @@ import { UserApiService, UserInfo } from '@/core/services/user-api.service';
           </div>
         </z-card>
 
+        <!-- ═══════ Doctor Signature Section (doctor only) ═══════ -->
+        @if (role === 'doctor') {
+          <z-card class="p-6">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400">
+                <z-icon zType="edit" class="h-6 w-6" />
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold">Signature du médecin</h3>
+                <p class="text-sm text-muted-foreground">Téléchargez votre signature pour l'inclure dans les ordonnances PDF</p>
+              </div>
+            </div>
+
+            <!-- Current signature preview -->
+            @if (signatureUrl()) {
+              <div class="mb-4 flex flex-col items-center gap-3">
+                <div class="border border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                  <img [src]="signatureUrl()" alt="Signature" class="max-h-24 max-w-[250px] object-contain" />
+                </div>
+                <p class="text-xs text-muted-foreground">Signature actuelle</p>
+              </div>
+            } @else {
+              <div class="mb-4 flex flex-col items-center gap-3">
+                <div class="border border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 bg-muted/30 text-center">
+                  <z-icon zType="upload" class="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                  <p class="text-sm font-medium text-muted-foreground">Vous n'avez pas encore de signature</p>
+                  <p class="text-xs text-muted-foreground mt-1">Téléchargez votre signature pour qu'elle apparaisse sur vos ordonnances PDF</p>
+                </div>
+              </div>
+            }
+
+            @if (signatureMessage()) {
+              <div class="mb-4 text-sm px-3 py-2 rounded-md"
+                   [class]="signatureSuccess() ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'">
+                {{ signatureMessage() }}
+              </div>
+            }
+
+            <div class="flex gap-3 justify-end">
+              <input type="file" #signatureInput accept="image/png" class="hidden" (change)="onSignatureFileSelected($event)" />
+              <button z-button zType="outline"
+                [disabled]="isUploadingSignature()"
+                (click)="signatureInput.click()">
+                @if (isUploadingSignature()) {
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                }
+                <z-icon zType="upload" class="mr-2 h-4 w-4" />
+                {{ signatureUrl() ? 'Remplacer' : 'Télécharger' }}
+              </button>
+              @if (signatureUrl()) {
+                <button z-button zType="destructive" zSize="sm" (click)="deleteSignature()">
+                  <z-icon zType="trash-2" class="mr-2 h-4 w-4" />
+                  Supprimer
+                </button>
+              }
+            </div>
+          </z-card>
+        }
+
         <!-- ═══════ Password Section ═══════ -->
         <z-card class="p-6">
           <div class="flex items-center gap-3 mb-6">
@@ -203,6 +262,7 @@ export class ProfileComponent implements OnInit {
   email = '';
   phone = '';
   role = '';
+  userId: number | null = null;
 
   // Password form fields
   newPassword = '';
@@ -216,6 +276,12 @@ export class ProfileComponent implements OnInit {
   profileSuccess = signal(false);
   passwordMessage = signal('');
   passwordSuccess = signal(false);
+
+  // Signature signals
+  signatureUrl = signal<string | null>(null);
+  signatureMessage = signal('');
+  signatureSuccess = signal(false);
+  isUploadingSignature = signal(false);
 
   ngOnInit(): void {
     this.loadUserProfile();
@@ -239,6 +305,12 @@ export class ProfileComponent implements OnInit {
           this.email = user.email;
           this.phone = user.phone ?? '';
           this.role = user.role;
+          this.userId = user.id;
+
+          // Load signature preview for doctors
+          if (user.role === 'doctor' && user.id) {
+            this.loadSignaturePreview(user.id);
+          }
         },
         error: (err) => {
           console.error('[Profile] Failed to load user', err);
@@ -325,6 +397,84 @@ export class ProfileComponent implements OnInit {
           const msg = err?.error?.error || 'Échec du changement de mot de passe';
           this.passwordMessage.set(msg);
           this.passwordSuccess.set(false);
+        },
+      });
+  }
+
+  // ─── Signature Methods ────────────────────────────────────────
+
+  private loadSignaturePreview(userId: number): void {
+    const url = this.userApiService.getSignatureUrl(userId);
+    this.userApiService.getSignatureBlob(userId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          const reader = new FileReader();
+          reader.onloadend = () => this.signatureUrl.set(reader.result as string);
+          reader.readAsDataURL(blob);
+        },
+        error: () => {
+          // No signature uploaded yet — that's fine
+          this.signatureUrl.set(null);
+        },
+      });
+  }
+
+  onSignatureFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file || !this.userId) return;
+
+    if (!file.type.startsWith('image/')) {
+      this.signatureMessage.set('Veuillez sélectionner un fichier image (PNG)');
+      this.signatureSuccess.set(false);
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      this.signatureMessage.set('La taille maximale est de 2 Mo');
+      this.signatureSuccess.set(false);
+      return;
+    }
+
+    this.isUploadingSignature.set(true);
+    this.signatureMessage.set('');
+
+    this.userApiService.uploadSignature(this.userId, file)
+      .pipe(
+        finalize(() => this.isUploadingSignature.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => {
+          this.signatureMessage.set('Signature téléchargée avec succès');
+          this.signatureSuccess.set(true);
+          this.loadSignaturePreview(this.userId!);
+          input.value = '';
+        },
+        error: (err) => {
+          const msg = err?.error?.error || 'Échec du téléchargement de la signature';
+          this.signatureMessage.set(msg);
+          this.signatureSuccess.set(false);
+        },
+      });
+  }
+
+  deleteSignature(): void {
+    if (!this.userId) return;
+
+    this.signatureMessage.set('');
+    this.userApiService.deleteSignature(this.userId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.signatureUrl.set(null);
+          this.signatureMessage.set('Signature supprimée');
+          this.signatureSuccess.set(true);
+        },
+        error: (err) => {
+          const msg = err?.error?.error || 'Échec de la suppression';
+          this.signatureMessage.set(msg);
+          this.signatureSuccess.set(false);
         },
       });
   }

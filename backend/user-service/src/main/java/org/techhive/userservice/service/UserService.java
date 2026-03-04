@@ -80,4 +80,11 @@ public class UserService {
     user.setEnabled(enabled);
     return userRepository.save(user);
   }
+
+  /**
+   * Save/update a user entity directly.
+   */
+  public User save(User user) {
+    return userRepository.save(user);
+  }
 }

@@ -5,7 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const envPath = path.resolve(__dirname, "..", ".env");
+const envPath = path.resolve(__dirname, "..", "..", ".env");
 const outPath = path.resolve(
   __dirname,
   "..",

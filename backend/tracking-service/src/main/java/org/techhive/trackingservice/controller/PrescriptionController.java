@@ -1,7 +1,13 @@
 package org.techhive.trackingservice.controller;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.techhive.trackingservice.dto.PagedResponse;
+import org.techhive.trackingservice.client.UserServiceClient;
 import org.techhive.trackingservice.service.PrescriptionPdfService;
 import com.lowagie.text.DocumentException;
 import java.io.IOException;
@@ -33,6 +39,7 @@ public class PrescriptionController {
     private final PrescriptionService prescriptionService;
     private final PrescriptionMapper prescriptionMapper;
     private final PrescriptionPdfService prescriptionPdfService;
+    private final UserServiceClient userServiceClient;
 
     @PostMapping
     public ResponseEntity<?> createPrescription(@Valid @RequestBody PrescriptionRequestDTO requestDTO) {
@@ -96,9 +103,39 @@ public class PrescriptionController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(responseDTOs);
     }
+    
+    @GetMapping("/patient/{idPatient}/paginated")
+    public ResponseEntity<PagedResponse<PrescriptionResponseDTO>> getPrescriptionsByPatientPaginated(
+            @PathVariable String idPatient,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir) {
+        
+        Sort.Direction direction = sortDir.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        
+        Page<Prescription> prescriptionPage = prescriptionService.getPrescriptionsByPatientPaginated(idPatient, pageable);
+        
+        List<PrescriptionResponseDTO> responseDTOs = prescriptionPage.getContent().stream()
+                .map(prescriptionMapper::toResponseDTO)
+                .collect(Collectors.toList());
+        
+        PagedResponse<PrescriptionResponseDTO> response = PagedResponse.<PrescriptionResponseDTO>builder()
+                .content(responseDTOs)
+                .page(prescriptionPage.getNumber())
+                .size(prescriptionPage.getSize())
+                .totalElements(prescriptionPage.getTotalElements())
+                .totalPages(prescriptionPage.getTotalPages())
+                .first(prescriptionPage.isFirst())
+                .last(prescriptionPage.isLast())
+                .build();
+        
+        return ResponseEntity.ok(response);
+    }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PrescriptionResponseDTO> updatePrescription(
+    public ResponseEntity<?> updatePrescription(
             @PathVariable Long id,
             @Valid @RequestBody PrescriptionRequestDTO requestDTO) {
         Prescription prescription = new Prescription();
@@ -114,6 +151,10 @@ public class PrescriptionController {
         try {
             Prescription updated = prescriptionService.updatePrescription(id, prescription);
             return ResponseEntity.ok(prescriptionMapper.toResponseDTO(updated));
+        } catch (IllegalArgumentException e) {
+            log.error("Validation error updating prescription: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -132,7 +173,23 @@ public class PrescriptionController {
         }
         Prescription prescription = prescriptionService.getPrescriptionById(id).get();
         try {
-            byte[] pdfBytes = prescriptionPdfService.generatePrescriptionPdf(prescription);
+            // Resolve doctor signature from user-service (by Neon DB id)
+            byte[] signatureImage = null;
+            try {
+                String doctorId = prescriptionService
+                        .getDoctorKeycloakIdForPrescription(id);
+                log.info("Resolved doctorId='{}' for prescription #{}", doctorId, id);
+                if (doctorId != null && !doctorId.isBlank()) {
+                    Long userId = Long.parseLong(doctorId);
+                    signatureImage = userServiceClient.getDoctorSignature(userId);
+                    log.info("Signature fetch result: {} bytes",
+                            signatureImage != null ? signatureImage.length : "null");
+                }
+            } catch (Exception e) {
+                log.warn("Could not fetch doctor signature for prescription #{}: {}", id, e.getMessage());
+            }
+
+            byte[] pdfBytes = prescriptionPdfService.generatePrescriptionPdf(prescription, signatureImage);
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
             headers.setContentDispositionFormData("attachment", "prescription_" + id + ".pdf");

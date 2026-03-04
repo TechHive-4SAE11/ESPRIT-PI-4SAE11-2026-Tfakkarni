@@ -8,7 +8,15 @@ import java.util.Optional;
 
 public interface DailyLogRepository extends JpaRepository<DailyLog, Long> {
     Optional<DailyLog> findByPatientKeycloakIdAndLogDate(String patientKeycloakId, LocalDate logDate);
+
     List<DailyLog> findByPatientKeycloakIdOrderByLogDateDesc(String patientKeycloakId);
+
     List<DailyLog> findByPatientKeycloakIdAndLogDateBetweenOrderByLogDateAsc(
             String patientKeycloakId, LocalDate start, LocalDate end);
+
+    /**
+     * Find the earliest daily log for a patient (to determine streak start
+     * boundary).
+     */
+    Optional<DailyLog> findFirstByPatientKeycloakIdOrderByLogDateAsc(String patientKeycloakId);
 }
