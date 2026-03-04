@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { z } from 'zod';
 import { createZodValidator } from '@/core/utils/zod-validator';
 import { ZardButtonComponent } from '@/shared/components/button';
+import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardInputDirective } from '@/shared/components/input/input.directive';
 import { Z_MODAL_DATA } from '@/shared/components/dialog/dialog.service';
 import type { MedicalFolder, CreateMedicalFolderRequest, UpdateMedicalFolderRequest } from '@/core/services/medical-folder.service';
@@ -20,28 +21,42 @@ export interface MedicalFolderDialogData {
 // ─── Zod Validation Schema ──────────────────────────────────────────────────────
 const medicalFolderSchema = z.object({
   patientId: z.string()
-    .min(1, { message: 'Patient is required' })
-    .min(1, { message: 'Patient ID must be at least 1 character' })
-    .max(255, { message: 'Patient ID must not exceed 255 characters' })
+    .min(1, { message: 'Patient selection is required' })
     .trim(),
+  bloodType: z.string()
+    .max(10, { message: 'Blood type must not exceed 10 characters' })
+    .optional()
+    .or(z.literal(''))
+    .transform(v => v?.trim() || undefined),
+  height: z.preprocess(
+    (val) => (val === '' || val === null ? undefined : val),
+    z.coerce.number()
+      .min(0, { message: 'Height must be positive' })
+      .max(300, { message: 'Height must not exceed 300 cm' })
+  ).nullable().optional(),
+  weight: z.preprocess(
+    (val) => (val === '' || val === null ? undefined : val),
+    z.coerce.number()
+      .min(0, { message: 'Weight must be positive' })
+      .max(1000, { message: 'Weight must not exceed 1000 kg' })
+  ).nullable().optional(),
 });
 
 @Component({
   selector: 'app-medical-folder-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ZardButtonComponent, ZardInputDirective],
+  imports: [CommonModule, ReactiveFormsModule, ZardButtonComponent, ZardIconComponent, ZardInputDirective],
   template: `
-    <form (ngSubmit)="onSubmit($event)" class="flex flex-col gap-4">
-      <!-- Doctor is the connected user (from JWT on backend); no field needed -->
-      <!-- Patient Selection with Dropdown -->
-      <div>
-        <label for="patientSearch" class="block text-sm font-medium mb-1">Patient</label>
-        <div class="relative">
+    <form (ngSubmit)="onSubmit($event)" class="flex flex-col gap-5 p-1">
+      <!-- Patient Selection -->
+      <div class="space-y-1.5">
+        <label for="patientSearch" class="block text-sm font-semibold text-muted-foreground">Patient</label>
+        <div class="relative group">
           <input
             id="patientSearch"
             type="text"
             z-input
-            class="w-full"
+            class="w-full focus:ring-primary/20"
             [value]="selectedPatientDisplay() || searchPatientInput()"
             (input)="searchPatients($any($event.target).value)"
             (focus)="showPatientDropdown.set(true)"
@@ -49,45 +64,112 @@ const medicalFolderSchema = z.object({
             placeholder="Search patient by name or ID..."
           />
           @if (showPatientDropdown() && filteredPatients().length > 0) {
-            <div class="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-md shadow-lg z-10 max-h-48 overflow-y-auto">
+            <div class="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-xl shadow-xl z-[100] max-h-56 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 p-1 custom-scrollbar">
               @for (patient of filteredPatients(); track patient.keycloakId) {
                 <button
                   type="button"
-                  class="w-full text-left px-3 py-2 hover:bg-accent text-sm border-b border-border last:border-b-0"
+                  class="w-full text-left px-4 py-2.5 hover:bg-muted rounded-lg text-sm transition-colors mb-0.5 last:mb-0 group/item"
                   (mousedown)="$event.preventDefault()"
                   (click)="selectPatient(patient)"
                 >
-                  <div class="font-medium">{{ patient.firstName }} {{ patient.lastName }}</div>
+                  <div class="font-semibold group-hover/item:text-primary transition-colors">{{ patient.firstName }} {{ patient.lastName }}</div>
                   <div class="text-xs text-muted-foreground">{{ patient.email }}</div>
                 </button>
               }
             </div>
           }
         </div>
-        @if (form.controls.patientId.touched && form.controls.patientId.errors) {
-          <p class="text-destructive text-sm mt-1">{{ form.controls.patientId.errors['required'] ? 'Patient is required' : '' }}</p>
+        @if ((form.controls.patientId.touched || formSubmitted()) && form.controls.patientId.errors) {
+          <p class="text-destructive text-xs mt-1 font-medium animate-in fade-in slide-in-from-top-1">{{ form.controls.patientId.errors['message'] || 'Patient selection is required' }}</p>
         }
       </div>
 
-      <div class="flex gap-2 justify-end pt-2">
-        <button type="button" z-button zType="outline" (click)="onCancel()">Cancel</button>
-        <button type="button" z-button [disabled]="form.invalid || isSubmitting()" (click)="onSubmit($event)">
-          {{ isSubmitting() ? 'Creating...' : (folderId() ? 'Update' : 'Create') }}
+      <!-- Medical Information -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/30 rounded-2xl border border-border/50">
+        <div class="space-y-1.5">
+          <label for="bloodType" class="block text-xs font-bold uppercase tracking-wider text-muted-foreground">Blood Type</label>
+          <input
+            id="bloodType"
+            type="text"
+            z-input
+            class="w-full h-9 text-center font-bold"
+            [formControl]="form.controls.bloodType"
+            placeholder="e.g., A+"
+            maxlength="10"
+          />
+          @if ((form.controls.bloodType.touched || formSubmitted()) && form.controls.bloodType.errors) {
+            <p class="text-destructive text-[10px] mt-1 font-medium">{{ form.controls.bloodType.errors['message'] }}</p>
+          }
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="height" class="block text-xs font-bold uppercase tracking-wider text-muted-foreground">Height (cm)</label>
+          <input
+            id="height"
+            type="number"
+            z-input
+            class="w-full h-9 text-center"
+            [formControl]="form.controls.height"
+            placeholder="175"
+            min="0"
+            max="300"
+          />
+          @if ((form.controls.height.touched || formSubmitted()) && form.controls.height.errors) {
+            <p class="text-destructive text-[10px] mt-1 font-medium">{{ form.controls.height.errors['message'] }}</p>
+          }
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="weight" class="block text-xs font-bold uppercase tracking-wider text-muted-foreground">Weight (kg)</label>
+          <input
+            id="weight"
+            type="number"
+            z-input
+            class="w-full h-9 text-center"
+            [formControl]="form.controls.weight"
+            placeholder="70"
+            min="0"
+            max="1000"
+          />
+          @if ((form.controls.weight.touched || formSubmitted()) && form.controls.weight.errors) {
+            <p class="text-destructive text-[10px] mt-1 font-medium">{{ form.controls.weight.errors['message'] }}</p>
+          }
+        </div>
+      </div>
+
+      <div class="flex gap-3 justify-end pt-5 border-t border-border mt-2">
+        <button type="button" z-button zType="outline" class="min-w-[100px]" (click)="onCancel()">Annuler</button>
+        <button type="button" z-button [disabled]="(form.invalid && formSubmitted()) || isSubmitting()" class="min-w-[120px]" (click)="onSubmit($event)">
+          {{ isSubmitting() ? 'Envoi...' : (folderId() ? 'Enregistrer' : 'Créer') }}
         </button>
       </div>
 
-      @if (form.invalid && form.touched) {
-        <div class="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 rounded text-sm text-red-700">
-          <p class="font-medium mb-1">Form validation errors:</p>
-          <ul class="list-disc list-inside">
-            @if (form.controls.patientId.touched && form.controls.patientId.errors?.['required']) {
-              <li>Patient is required</li>
-            }
-          </ul>
+      @if (form.invalid && formSubmitted()) {
+        <div class="mt-2 p-3 bg-destructive/5 border border-destructive/10 rounded-xl text-xs text-destructive animate-in bounce-in-95">
+            <p class="font-bold flex items-center mb-2 uppercase tracking-tight">
+                <z-icon zType="circle-alert" size="14" class="mr-1.5"></z-icon>
+                Veuillez corriger les erreurs suivantes :
+            </p>
+            <ul class="list-disc list-inside space-y-1 ml-1 opacity-90">
+                @if (form.controls.patientId.errors) { <li>Sélectionnez un patient</li> }
+                @if (form.controls.bloodType.errors) { <li>{{ form.controls.bloodType.errors['message'] }}</li> }
+                @if (form.controls.height.errors) { <li>{{ form.controls.height.errors['message'] }}</li> }
+                @if (form.controls.weight.errors) { <li>{{ form.controls.weight.errors['message'] }}</li> }
+            </ul>
         </div>
       }
     </form>
   `,
+  styles: [`
+    :host {
+      display: block;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    form {
+      width: 100%;
+    }
+  `]
 })
 export class MedicalFolderFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -98,11 +180,17 @@ export class MedicalFolderFormComponent implements OnInit {
     if (value) {
       this.folderId.set(value.id);
       // Only set patientId - doctorId comes from JWT token
-      this.form.patchValue({ patientId: value.patientId });
+      this.form.patchValue({
+        patientId: value.patientId,
+        bloodType: value.bloodType || '',
+        height: value.height || null,
+        weight: value.weight || null
+      });
       this.selectedPatientDisplay.set(value.patientId);
     } else {
       this.folderId.set(null);
       this.form.reset();
+      this.formSubmitted.set(false);
       this.selectedPatientDisplay.set('');
       this.searchPatientInput.set('');
       this.showPatientDropdown.set(false);
@@ -113,11 +201,12 @@ export class MedicalFolderFormComponent implements OnInit {
 
   folderId = signal<number | null>(null);
   isSubmitting = signal(false);
+  formSubmitted = signal(false);
   patients = signal<UserInfo[]>([]);
   searchPatientInput = signal('');
   selectedPatientDisplay = signal('');
   showPatientDropdown = signal(false);
-  
+
   onSubmitCallback: ((data: CreateMedicalFolderRequest | UpdateMedicalFolderRequest) => void) | null = null;
   onCancelCallback: (() => void) | null = null;
 
@@ -133,6 +222,9 @@ export class MedicalFolderFormComponent implements OnInit {
 
   form = this.fb.nonNullable.group({
     patientId: ['', createZodValidator(medicalFolderSchema.shape.patientId)],
+    bloodType: ['', createZodValidator(medicalFolderSchema.shape.bloodType)],
+    height: [null as number | null, createZodValidator(medicalFolderSchema.shape.height)],
+    weight: [null as number | null, createZodValidator(medicalFolderSchema.shape.weight)],
     // doctorId is extracted from JWT token on backend, not needed in form
   });
 
@@ -167,11 +259,17 @@ export class MedicalFolderFormComponent implements OnInit {
   onSubmit(event?: Event): void {
     event?.preventDefault();
     event?.stopPropagation();
+    this.formSubmitted.set(true);
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
     this.isSubmitting.set(true);
-    const payload = { patientId: this.form.getRawValue().patientId } as CreateMedicalFolderRequest;
+    const payload = {
+      patientId: this.form.getRawValue().patientId,
+      bloodType: this.form.getRawValue().bloodType || undefined,
+      height: this.form.getRawValue().height || undefined,
+      weight: this.form.getRawValue().weight || undefined
+    } as CreateMedicalFolderRequest;
     const submitFn = this.modalData?.callbacks?.onSubmit ?? this.onSubmitCallback;
 
     if (submitFn) {

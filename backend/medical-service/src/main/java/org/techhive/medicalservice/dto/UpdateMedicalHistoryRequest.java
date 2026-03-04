@@ -13,4 +13,7 @@ public class UpdateMedicalHistoryRequest {
 	private String allergies;
 	private String conditions;
 	private String surgeries;
+	private String symptoms;
+	private String recommendedTreatment;
+	private String familyHistory;
 }

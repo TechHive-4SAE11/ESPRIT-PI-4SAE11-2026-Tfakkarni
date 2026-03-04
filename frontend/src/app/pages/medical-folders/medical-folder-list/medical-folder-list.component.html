@@ -1,8 +1,7 @@
 <div class="medical-folders-page space-y-4">
   <!-- Top bar: title + action icons only -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-    <span
-      class="inline-flex items-center px-4 py-2 rounded-lg bg-primary/10 text-primary font-medium text-sm shrink-0">
+    <span class="inline-flex items-center px-4 py-2 rounded-lg bg-primary/10 text-primary font-medium text-sm shrink-0">
       Medical Folders
     </span>
     <div class="flex items-center gap-1 shrink-0">
@@ -26,7 +25,8 @@
   </z-card>
   } @else if (showDetail() && folderToView()) {
   <!-- Detail view only: no stat cards, no search/filters – just Diagnostics / Medical History etc. -->
-  <div class="mt-4"><app-medical-folder-detail [folderId]="folderToView()!.id" (back)="closeDetail()" (updated)="loadFolders()" /></div>
+  <div class="mt-4"><app-medical-folder-detail [folderId]="folderToView()!.id" (back)="closeDetail()"
+      (updated)="loadFolders()" /></div>
   } @else {
   <!-- List view: stat cards + search/filters + table or empty -->
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -109,8 +109,8 @@
       <table z-table class="medical-folders-table w-full">
         <thead z-table-header class="bg-muted/50">
           <tr z-table-row>
-            <th z-table-head class="font-semibold text-foreground">Patient ID</th>
-            <th z-table-head class="font-semibold text-foreground">Patient Name</th>
+            <th z-table-head class="font-semibold text-foreground">Patient</th>
+            <th z-table-head class="font-semibold text-foreground">Vitals</th>
             <th z-table-head class="font-semibold text-foreground">Created</th>
             <th z-table-head class="font-semibold text-foreground">Updated</th>
             <th z-table-head class="font-semibold text-foreground text-right w-40">Actions</th>
@@ -120,12 +120,36 @@
           @for (f of paginatedFolders(); track f.id; let i = $index) {
           <tr z-table-row [class.medical-folders-row-alt]="i % 2 === 1">
             <td z-table-cell class="font-medium">
-              <span class="inline-flex items-center gap-2">
-                <z-icon zType="user" class="h-4 w-4 text-muted-foreground shrink-0" />
-                {{ f.patientId }}
-              </span>
+              <div class="flex flex-col gap-0.5">
+                <span class="inline-flex items-center gap-2">
+                  <z-icon zType="user" class="h-4 w-4 text-muted-foreground shrink-0" />
+                  {{ getPatientName(f.patientId) || f.patientId }}
+                </span>
+                <span class="text-xs text-muted-foreground">{{ f.patientId }}</span>
+              </div>
             </td>
-            <td z-table-cell>{{ getPatientName(f.patientId) }}</td>
+            <td z-table-cell>
+              <div class="flex flex-wrap gap-1">
+                @if (f.bloodType) {
+                <span
+                  class="inline-flex items-center rounded bg-red-50 px-1.5 py-0.5 text-xs font-medium text-red-700">🩸
+                  {{ f.bloodType }}</span>
+                }
+                @if (f.height) {
+                <span
+                  class="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">📏
+                  {{ f.height }}cm</span>
+                }
+                @if (f.weight) {
+                <span
+                  class="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">⚖️
+                  {{ f.weight }}kg</span>
+                }
+                @if (!f.bloodType && !f.height && !f.weight) {
+                <span class="text-xs text-muted-foreground">—</span>
+                }
+              </div>
+            </td>
             <td z-table-cell class="text-muted-foreground">
               <span class="inline-flex items-center gap-1.5">
                 <z-icon zType="calendar" class="h-3.5 w-3.5 shrink-0" />

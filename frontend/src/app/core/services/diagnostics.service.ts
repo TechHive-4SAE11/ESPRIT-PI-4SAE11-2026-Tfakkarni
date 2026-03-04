@@ -12,6 +12,23 @@ export interface Diagnostics {
   diagnosisDate: string;
   createdAt: string;
   updatedAt: string;
+  attachments?: DiagnosticAttachment[];
+}
+
+export interface DiagnosticAttachment {
+  id: number;
+  diagnosticId: number;
+  fileName: string;
+  originalFileName: string;
+  contentType: string;
+  fileSize: number;
+  description?: string;
+  fileType?: string;
+  createdAt: string;
+  updatedAt: string;
+  isImage?: boolean;
+  isPdf?: boolean;
+  formattedFileSize?: string;
 }
 
 export interface CreateDiagnosticsRequest {
@@ -61,5 +78,44 @@ export class DiagnosticsService {
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  // File attachment methods
+  uploadFile(file: File, description?: string, diagnosticId?: number): Observable<DiagnosticAttachment> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (description) formData.append('description', description);
+    if (diagnosticId) formData.append('diagnosticId', diagnosticId.toString());
+    
+    return this.http.post<DiagnosticAttachment>(`${environment.apiBaseUrl}/api/diagnostic-attachments/upload`, formData);
+  }
+
+  uploadMultipleFiles(files: File[], descriptions?: string[], diagnosticId?: number): Observable<DiagnosticAttachment[]> {
+    const formData = new FormData();
+    files.forEach((file, index) => {
+      formData.append('files', file);
+    });
+    if (descriptions) {
+      descriptions.forEach((desc, index) => {
+        formData.append('descriptions', desc);
+      });
+    }
+    if (diagnosticId) formData.append('diagnosticId', diagnosticId.toString());
+    
+    return this.http.post<DiagnosticAttachment[]>(`${environment.apiBaseUrl}/api/diagnostic-attachments/upload-multiple`, formData);
+  }
+
+  downloadFile(id: number): Observable<Blob> {
+    return this.http.get(`${environment.apiBaseUrl}/api/diagnostic-attachments/download/${id}`, {
+      responseType: 'blob'
+    });
+  }
+
+  deleteFile(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiBaseUrl}/api/diagnostic-attachments/${id}`);
+  }
+
+  getAttachmentsByDiagnostic(diagnosticId: number): Observable<DiagnosticAttachment[]> {
+    return this.http.get<DiagnosticAttachment[]>(`${environment.apiBaseUrl}/api/diagnostic-attachments/diagnostic/${diagnosticId}`);
   }
 }

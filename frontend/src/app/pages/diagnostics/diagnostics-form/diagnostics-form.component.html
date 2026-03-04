@@ -1,0 +1,207 @@
+<div class="p-1">
+    <form (ngSubmit)="onSubmit($event)" class="flex flex-col gap-5">
+        <!-- AI Critical Alert Banner -->
+        @if (pilotData()?.isCriticalAlert) {
+        <div
+            class="bg-destructive/15 border-2 border-destructive/30 rounded-2xl p-4 flex items-center gap-4 animate-in zoom-in-95 shadow-lg shadow-destructive/20 mb-2">
+            <div
+                class="w-12 h-12 rounded-full bg-destructive/20 flex items-center justify-center text-destructive animate-pulse">
+                <z-icon zType="circle-alert" size="24"></z-icon>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-sm font-black text-destructive uppercase tracking-wider">Critical AI Detection</h3>
+                <p class="text-xs font-bold text-destructive/80">{{ pilotData()?.alertMessage }}</p>
+            </div>
+            <div
+                class="px-3 py-1 bg-destructive text-destructive-foreground text-[10px] font-black rounded-full animate-bounce">
+                URGENT
+            </div>
+        </div>
+        }
+
+        @if (!prefilledFolderId()) {
+        <div class="space-y-1.5">
+            <label for="medicalFolderId" class="block text-sm font-semibold text-muted-foreground">Medical
+                Folder</label>
+            <select id="medicalFolderId"
+                class="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                [value]="form.controls.medicalFolderId.value"
+                (change)="form.controls.medicalFolderId.setValue(+$any($event.target).value)">
+                <option [value]="null">Select folder</option>
+                @for (f of folders(); track f.id) {
+                <option [value]="f.id">{{ f.patientId }} (ID: {{ f.id }})</option>
+                }
+            </select>
+            @if ((form.controls.medicalFolderId.touched || formSubmitted()) && form.controls.medicalFolderId.errors) {
+            <p class="text-destructive text-xs mt-1 font-medium animate-in fade-in slide-in-from-top-1">{{
+                form.controls.medicalFolderId.errors['message'] || 'Required' }}</p>
+            }
+        </div>
+        }
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+                <label for="diseaseName" class="block text-sm font-semibold text-muted-foreground flex justify-between">
+                    <span>Disease Name</span>
+                    <span class="text-[10px] text-primary flex items-center gap-1 opacity-70">
+                        <z-icon zType="brain" size="10"></z-icon> Pilot Active
+                    </span>
+                </label>
+                <input id="diseaseName" type="text" z-input class="w-full" [formControl]="form.controls.diseaseName"
+                    placeholder="Disease name" (input)="onFieldInput()" />
+                @if ((form.controls.diseaseName.touched || formSubmitted()) && form.controls.diseaseName.errors) {
+                <p class="text-destructive text-xs mt-1 font-medium animate-in fade-in slide-in-from-top-1">
+                    {{ form.controls.diseaseName.errors['message'] || 'Disease name is required' }}
+                </p>
+                }
+            </div>
+
+            <div class="space-y-1.5">
+                <label for="stage" class="block text-sm font-semibold text-muted-foreground">Stage (optional)</label>
+                <input id="stage" type="text" z-input class="w-full" [formControl]="form.controls.stage"
+                    placeholder="e.g., Stage 2" />
+                @if ((form.controls.stage.touched || formSubmitted()) && form.controls.stage.errors) {
+                <p class="text-destructive text-xs mt-1 font-medium animate-in fade-in slide-in-from-top-1">{{
+                    form.controls.stage.errors['message'] }}</p>
+                }
+            </div>
+        </div>
+
+        <div class="space-y-1.5">
+            <label for="comorbidities" class="block text-sm font-semibold text-muted-foreground flex justify-between">
+                <span>Comorbidities (optional)</span>
+            </label>
+            <textarea id="comorbidities" z-input class="w-full min-h-[100px] text-sm"
+                [formControl]="form.controls.comorbidities" placeholder="List any related conditions..."
+                (input)="onFieldInput()"></textarea>
+            @if ((form.controls.comorbidities.touched || formSubmitted()) && form.controls.comorbidities.errors) {
+            <p class="text-destructive text-xs mt-1 font-medium animate-in fade-in slide-in-from-top-1">{{
+                form.controls.comorbidities.errors['message'] }}</p>
+            }
+        </div>
+
+        <!-- File Upload Section -->
+        <div class="space-y-2.5">
+            <label class="block text-sm font-semibold text-muted-foreground">Medical Attachments</label>
+            <div class="group relative border-2 border-dashed border-muted-foreground/20 hover:border-primary/50 rounded-xl p-8 text-center cursor-pointer transition-all bg-muted/30"
+                [class.border-primary]="isDragging()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)"
+                (drop)="onDrop($event)">
+                @if (selectedFiles().length === 0) {
+                <div class="space-y-3">
+                    <div
+                        class="mx-auto w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <z-icon zType="upload" size="20"></z-icon>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium">Drag and drop files here, or click to select</p>
+                        <p class="text-xs text-muted-foreground mt-1">Images, PDFs (max 10MB)</p>
+                    </div>
+                    <button type="button" z-button size="sm" class="mt-2" (click)="triggerFileSelect()">Browse
+                        Files</button>
+                </div>
+                } @else {
+                <div class="space-y-4">
+                    <p class="text-sm font-semibold text-primary">
+                        <z-icon zType="check-circle" size="14" class="inline mr-1"></z-icon>
+                        {{ selectedFiles().length }} file(s) ready to upload
+                    </p>
+                    <div class="flex flex-wrap gap-2 justify-center max-h-[120px] overflow-y-auto p-1 custom-scrollbar">
+                        @for (file of selectedFiles(); track $index) {
+                        <div
+                            class="flex items-center space-x-2 py-1.5 px-3 bg-background border border-border rounded-lg text-xs shadow-sm hover:border-primary/30 transition-all animate-in zoom-in-95">
+                            <z-icon zType="file-text" size="12" class="text-muted-foreground"></z-icon>
+                            <span class="truncate max-w-[120px]" [title]="file.name">{{ file.name }}</span>
+                            <button type="button"
+                                class="text-muted-foreground hover:text-destructive transition-colors ml-1"
+                                (click)="removeFile($index)" title="Remove">✕</button>
+                        </div>
+                        }
+                    </div>
+                    <div class="flex gap-2 justify-center">
+                        <button type="button" z-button zType="outline" size="sm" class="h-8"
+                            (click)="clearFiles()">Clear
+                            All</button>
+                        <button type="button" z-button size="sm" class="h-8" (click)="triggerFileSelect()">Add
+                            More</button>
+                    </div>
+                </div>
+                }
+            </div>
+
+            <input type="file" multiple accept="image/*,.pdf" class="hidden" id="fileInput"
+                (change)="onFileSelected($event)" />
+
+            @if (selectedFiles().length > 0) {
+            <div
+                class="mt-4 space-y-3 p-4 border border-border rounded-xl bg-muted/20 animate-in slide-in-from-bottom-2">
+                <label class="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">File
+                    Descriptions</label>
+                <div class="space-y-2.5 max-h-[180px] overflow-y-auto pr-2 custom-scrollbar">
+                    @for (file of selectedFiles(); track $index) {
+                    <div class="file-row">
+                        <span class="text-xs text-muted-foreground truncate font-medium" [title]="file.name">{{
+                            file.name
+                            }}</span>
+                        <input type="text" placeholder="Add a description..."
+                            class="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs focus:ring-1 focus:ring-primary/30 outline-none transition-all"
+                            [value]="fileDescriptions()[$index] || ''"
+                            (input)="updateFileDescription($index, $any($event.target).value)" />
+                    </div>
+                    }
+                </div>
+            </div>
+            }
+        </div>
+
+        <div class="space-y-1.5">
+            <label for="diagnosisDate" class="block text-sm font-semibold text-muted-foreground">Diagnosis Date</label>
+            <div class="relative group">
+                <input id="diagnosisDate" type="datetime-local"
+                    class="w-full h-9 rounded-md border border-input bg-background pl-3 pr-10 py-1 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all cursor-pointer"
+                    [value]="diagnosisDateValue()" (input)="onDiagnosisDateInput($any($event.target).value)"
+                    (click)="$any($event.target).showPicker ? $any($event.target).showPicker() : null" />
+                <div
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground group-hover:text-primary pointer-events-none transition-colors">
+                    <z-icon zType="calendar" size="16"></z-icon>
+                </div>
+            </div>
+            @if ((form.controls.diagnosisDate.touched || formSubmitted()) && form.controls.diagnosisDate.errors) {
+            <p class="text-destructive text-xs mt-1 font-medium animate-in fade-in slide-in-from-top-1">{{
+                form.controls.diagnosisDate.errors['message'] || 'Required' }}</p>
+            }
+        </div>
+
+        <div class="flex gap-3 justify-end pt-4 border-t border-border mt-2">
+            <button type="button" z-button zType="outline" class="min-w-[100px]"
+                (click)="onCancelClick()">Annuler</button>
+            <button type="button" z-button [disabled]="(form.invalid && formSubmitted()) || isSubmitting()"
+                class="min-w-[120px]" (click)="onSubmit($event)">
+                {{ isSubmitting() ? 'Submitting...' : (editModelSignal() ? 'Enregistrer' : 'Créer') }}
+            </button>
+        </div>
+
+        @if (form.invalid && formSubmitted()) {
+        <div
+            class="mt-2 p-3 bg-destructive/5 border border-destructive/10 rounded-xl text-xs text-destructive animate-in bounce-in-95">
+            <p class="font-bold flex items-center mb-2 uppercase tracking-tight">
+                <z-icon zType="circle-alert" size="14" class="mr-1.5"></z-icon>
+                Please correct the following fields:
+            </p>
+            <ul class="list-disc list-inside space-y-1 ml-1 opacity-90">
+                @if (form.controls.medicalFolderId.errors) { <li>Select a medical folder</li> }
+                @if (form.controls.diseaseName.errors) { <li>Disease name is required</li> }
+                @if (form.controls.stage.errors) { <li>{{ form.controls.stage.errors['message'] }}</li> }
+                @if (form.controls.comorbidities.errors) { <li>{{ form.controls.comorbidities.errors['message'] }}</li>
+                }
+                @if (form.controls.diagnosisDate.errors) { <li>Diagnosis date is required</li> }
+            </ul>
+        </div>
+        }
+        <!-- AI Co-Pilot Inline Panel -->
+        @if (pilotData()?.isCriticalAlert || pilotData()?.predictions?.length || isAnalyzing()) {
+        <div class="border border-primary/20 bg-card/50 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2">
+            <z-symptom-co-pilot [data]="pilotData()" [loading]="isAnalyzing()"></z-symptom-co-pilot>
+        </div>
+        }
+    </form>
+</div>

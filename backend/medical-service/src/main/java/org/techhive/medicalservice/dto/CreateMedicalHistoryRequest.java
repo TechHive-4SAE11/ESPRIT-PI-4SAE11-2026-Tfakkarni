@@ -25,4 +25,13 @@ public class CreateMedicalHistoryRequest {
 	
 	@Size(max = 2000, message = "Surgeries must not exceed 2000 characters")
 	private String surgeries;
+
+	@Size(max = 2000, message = "Symptoms must not exceed 2000 characters")
+	private String symptoms;
+
+	@Size(max = 2000, message = "Recommended treatment must not exceed 2000 characters")
+	private String recommendedTreatment;
+
+	@Size(max = 2000, message = "Family history must not exceed 2000 characters")
+	private String familyHistory;
 }

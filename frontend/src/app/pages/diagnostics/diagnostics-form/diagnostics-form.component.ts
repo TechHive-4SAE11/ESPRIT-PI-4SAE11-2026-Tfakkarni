@@ -7,9 +7,13 @@ import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardInputDirective } from '@/shared/components/input/input.directive';
 import { Z_MODAL_DATA } from '@/shared/components/dialog/dialog.service';
-import type { Diagnostics, CreateDiagnosticsRequest, UpdateDiagnosticsRequest } from '@/core/services/diagnostics.service';
+import type { Diagnostics, CreateDiagnosticsRequest, UpdateDiagnosticsRequest, DiagnosticAttachment } from '@/core/services/diagnostics.service';
 import type { MedicalFolder } from '@/core/services/medical-folder.service';
 import { MedicalFolderService } from '@/core/services/medical-folder.service';
+import { DiagnosticsService } from '@/core/services/diagnostics.service';
+import { SymptomPilotService, SymptomPilotResponse } from '@/core/services/symptom-pilot.service';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { SymptomCoPilotComponent } from '@/shared/components/symptom-co-pilot/symptom-co-pilot.component';
 
 export interface DiagnosticsDialogData {
   medicalFolderId?: number;
@@ -17,7 +21,7 @@ export interface DiagnosticsDialogData {
 
 // ─── Zod Validation Schema ──────────────────────────────────────────────────────
 const diagnosticsSchema = z.object({
-  medicalFolderId: z.number().min(1, { message: 'Medical folder is required' }),
+  medicalFolderId: z.coerce.number().min(1, { message: 'Medical folder is required' }),
   diseaseName: z.string()
     .min(1, { message: 'Disease name is required' })
     .min(2, { message: 'Disease name must be at least 2 characters' })
@@ -40,72 +44,51 @@ const diagnosticsSchema = z.object({
 @Component({
   selector: 'app-diagnostics-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ZardButtonComponent, ZardIconComponent, ZardInputDirective],
-  template: `
-    <form (ngSubmit)="onSubmit($event)" class="flex flex-col gap-4">
-      @if (!prefilledFolderId()) {
-      <div>
-        <label for="medicalFolderId" class="block text-sm font-medium mb-1">Medical Folder</label>
-        <select
-          id="medicalFolderId"
-          class="w-full flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-          [value]="form.controls.medicalFolderId.value"
-          (change)="form.controls.medicalFolderId.setValue(+$any($event.target).value)"
-        >
-          <option [value]="null">Select folder</option>
-          @for (f of folders(); track f.id) {
-            <option [value]="f.id">{{ f.patientId }} ({{ f.id }})</option>
-          }
-        </select>
-        @if (form.controls.medicalFolderId.touched && form.controls.medicalFolderId.errors) {
-          <p class="text-destructive text-sm mt-1">Required</p>
-        }
-      </div>
+  imports: [CommonModule, ReactiveFormsModule, ZardButtonComponent, ZardIconComponent, ZardInputDirective, SymptomCoPilotComponent],
+  templateUrl: './diagnostics-form.component.html',
+  styles: [`
+    :host {
+      display: block;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    form {
+      width: 100%;
+    }
+    .file-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    @media (max-width: 480px) {
+      .file-row {
+        grid-template-columns: 1fr;
       }
-      <div>
-        <label for="diseaseName" class="block text-sm font-medium mb-1">Disease Name</label>
-        <input id="diseaseName" type="text" z-input class="w-full" [formControl]="form.controls.diseaseName" placeholder="Disease name" />
-        @if (form.controls.diseaseName.touched && form.controls.diseaseName.errors) {
-          <p class="text-destructive text-sm mt-1">
-            {{ form.controls.diseaseName.errors['zodError'] || 'Disease name is required' }}
-          </p>
-        }
-      </div>
-      <div>
-        <label for="stage" class="block text-sm font-medium mb-1">Stage (optional)</label>
-        <input id="stage" type="text" z-input class="w-full" [formControl]="form.controls.stage" placeholder="Stage" />
-      </div>
-      <div>
-        <label for="comorbidities" class="block text-sm font-medium mb-1">Comorbidities (optional)</label>
-        <textarea id="comorbidities" z-input class="w-full min-h-[80px]" [formControl]="form.controls.comorbidities" placeholder="Comorbidities"></textarea>
-      </div>
-      <div>
-        <label for="diagnosisDate" class="block text-sm font-medium mb-1">Diagnosis Date</label>
-        <input
-          id="diagnosisDate"
-          type="datetime-local"
-          class="w-full flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-          [value]="diagnosisDateValue()"
-          (input)="onDiagnosisDateInput($any($event.target).value)"
-        />
-        @if (form.controls.diagnosisDate.touched && form.controls.diagnosisDate.errors) {
-          <p class="text-destructive text-sm mt-1">Required</p>
-        }
-      </div>
-      <div class="flex gap-2 justify-end pt-2">
-        <button type="button" z-button zType="outline" (click)="onCancelClick()">Cancel</button>
-        <button type="button" z-button [disabled]="form.invalid || isSubmitting()" (click)="onSubmit($event)">{{ editModelSignal() ? 'Update' : 'Create' }}</button>
-      </div>
-    </form>
-  `,
+    }
+  `]
 })
 export class DiagnosticsFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly medicalFolderService = inject(MedicalFolderService);
+  private readonly diagnosticsService = inject(DiagnosticsService);
+  private readonly symptomPilotService = inject(SymptomPilotService);
   private readonly modalData = inject<DiagnosticsDialogData | null>(Z_MODAL_DATA, { optional: true });
+
+  private readonly destroy$ = new Subject<void>();
+  private readonly aiTrigger$ = new Subject<string>();
+
+  pilotData = signal<SymptomPilotResponse | null>(null);
+  isAnalyzing = signal(false);
 
   /** When set (e.g. from folder detail), medical folder is fixed and the folder selector is hidden. */
   prefilledFolderId = signal<number | null>(null);
+  formSubmitted = signal(false);
+
+  /** File upload handling */
+  selectedFiles = signal<File[]>([]);
+  fileDescriptions = signal<string[]>([]);
+  isDragging = signal(false);
 
   @Input() set prefillFolderId(id: number | null) {
     this.prefilledFolderId.set(id ?? null);
@@ -120,6 +103,36 @@ export class DiagnosticsFormComponent implements OnInit {
       this.prefilledFolderId.set(folderId);
       this.form.controls.medicalFolderId.setValue(folderId);
     }
+
+    // AI Pilot Listener
+    this.aiTrigger$.pipe(
+      debounceTime(1000),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(value => {
+      if (!value.trim() || value.length < 5) {
+        this.pilotData.set(null);
+        return;
+      }
+      this.isAnalyzing.set(true);
+      this.symptomPilotService.analyze(value).subscribe({
+        next: (res) => {
+          this.pilotData.set(res);
+          this.isAnalyzing.set(false);
+        },
+        error: () => this.isAnalyzing.set(false)
+      });
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  onFieldInput(): void {
+    const combined = `${this.form.controls.diseaseName.value} ${this.form.controls.comorbidities.value}`;
+    this.aiTrigger$.next(combined);
   }
 
   @Input() set editModel(m: Diagnostics | null) {
@@ -134,6 +147,9 @@ export class DiagnosticsFormComponent implements OnInit {
         comorbidities: m.comorbidities ?? '',
         diagnosisDate: m.diagnosisDate ? new Date(m.diagnosisDate).toISOString() : '',
       });
+    } else {
+      this.form.reset();
+      this.formSubmitted.set(false);
     }
   }
 
@@ -167,6 +183,7 @@ export class DiagnosticsFormComponent implements OnInit {
   onSubmit(event?: Event): void {
     event?.preventDefault();
     event?.stopPropagation();
+    this.formSubmitted.set(true);
     this.form.markAllAsTouched();
     if (this.form.invalid || !this.onSubmitCallback) return;
     const raw = this.form.getRawValue();
@@ -197,5 +214,73 @@ export class DiagnosticsFormComponent implements OnInit {
 
   onCancelClick(): void {
     if (this.onCancelCallback) this.onCancelCallback();
+  }
+
+  // File handling methods
+  triggerFileSelect(): void {
+    const input = document.getElementById('fileInput') as HTMLInputElement;
+    input?.click();
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const newFiles = Array.from(input.files);
+      const currentFiles = this.selectedFiles();
+      const updatedFiles = [...currentFiles, ...newFiles];
+      this.selectedFiles.set(updatedFiles);
+      const currentDescriptions = this.fileDescriptions();
+      const newDescriptions = new Array(newFiles.length).fill('');
+      this.fileDescriptions.set([...currentDescriptions, ...newDescriptions]);
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(true);
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(false);
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(false);
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      const newFiles = Array.from(files);
+      const currentFiles = this.selectedFiles();
+      const updatedFiles = [...currentFiles, ...newFiles];
+      this.selectedFiles.set(updatedFiles);
+      const currentDescriptions = this.fileDescriptions();
+      const newDescriptions = new Array(newFiles.length).fill('');
+      this.fileDescriptions.set([...currentDescriptions, ...newDescriptions]);
+    }
+  }
+
+  removeFile(index: number): void {
+    const currentFiles = this.selectedFiles();
+    const currentDescriptions = this.fileDescriptions();
+    currentFiles.splice(index, 1);
+    currentDescriptions.splice(index, 1);
+    this.selectedFiles.set([...currentFiles]);
+    this.fileDescriptions.set([...currentDescriptions]);
+  }
+
+  clearFiles(): void {
+    this.selectedFiles.set([]);
+    this.fileDescriptions.set([]);
+    this.isDragging.set(false);
+  }
+
+  updateFileDescription(index: number, description: string): void {
+    const currentDescriptions = this.fileDescriptions();
+    currentDescriptions[index] = description;
+    this.fileDescriptions.set([...currentDescriptions]);
   }
 }
