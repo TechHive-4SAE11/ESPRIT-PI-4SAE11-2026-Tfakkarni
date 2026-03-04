@@ -1,9 +1,14 @@
+server:
+  port: 18086
+  servlet:
+    context-path: /
+
 spring:
   config:
-    import: optional:file:.env[.properties]
+    import: optional:file:.env[.properties],optional:file:.env.secret[.properties]
   application:
     name: medical-service
-,optional:file:.env.secret[.properties]
+
   datasource:
     url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require
     username: neondb_owner
@@ -24,7 +29,7 @@ spring:
         order_inserts: true
         order_updates: true
 
-  # Console H2 pour voir les données
+  # Console H2 pour voir les donnees
   h2:
     console:
       enabled: true
@@ -36,11 +41,6 @@ spring:
     openai:
       api-key: ${OPENAI_API_KEY:demo-key}
       model: gpt-3.5-turbo
-
-server:
-  port: 18086
-  servlet:
-    context-path: /
 
 eureka:
   client:
