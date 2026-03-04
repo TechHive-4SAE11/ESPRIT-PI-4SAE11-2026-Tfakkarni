@@ -284,7 +284,8 @@ export class PatientViewComponent implements OnInit {
       .pipe(
         tap(s => this.streak.set(s)),
         catchError(err => {
-          console.error('[PatientView] Failed to load streak', err);
+          this.streak.set(null);
+          this.showMedToast('Impossible de charger la série', 'error');
           return of(null);
         }),
         finalize(() => this.isLoadingStreak.set(false)),

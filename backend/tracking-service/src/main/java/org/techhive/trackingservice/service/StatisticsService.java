@@ -197,18 +197,28 @@ public class StatisticsService {
                 .map(DailyLog::getLogDate)
                 .orElse(today); // no logs at all → streak starts today
 
+        // ── 0b. Preload all health scores for the full window ───────────────
+        // Covers today back to firstLogDate (max 365 days) so that both the
+        // calendar build and the streak walk read from an in-memory map
+        // instead of calling healthScoreService.computeDailyScore per day.
+        LocalDate windowStart = firstLogDate.isAfter(today.minusDays(365))
+                ? firstLogDate
+                : today.minusDays(365);
+        Map<LocalDate, Integer> scoreCache = new HashMap<>();
+        for (LocalDate d = windowStart; !d.isAfter(today); d = d.plusDays(1)) {
+            var resp = healthScoreService.computeDailyScore(patientId, d);
+            int pct = resp.getAdjustedMaxScore() > 0
+                    ? (resp.getTotalScore() * 100) / resp.getAdjustedMaxScore()
+                    : 0;
+            scoreCache.put(d, pct);
+        }
+
         // ── 1. Build the 14-day calendar (for the UI) ───────────────────────
         List<StreakResponse.StreakDay> calendar = new ArrayList<>(CALENDAR_DAYS);
         for (int i = 0; i < CALENDAR_DAYS; i++) {
             LocalDate d = today.minusDays(i);
             boolean active = !d.isBefore(firstLogDate);
-            int pct = 0;
-            if (active) {
-                var resp = healthScoreService.computeDailyScore(patientId, d);
-                pct = resp.getAdjustedMaxScore() > 0
-                        ? (resp.getTotalScore() * 100) / resp.getAdjustedMaxScore()
-                        : 0;
-            }
+            int pct = active ? scoreCache.getOrDefault(d, 0) : 0;
             calendar.add(StreakResponse.StreakDay.builder()
                     .date(d.toString())
                     .score(pct)
@@ -228,7 +238,7 @@ public class StatisticsService {
         }
 
         // Walk from yesterday backwards — stop at firstLogDate (don't go further)
-        int[] streakResult = walkBackStreak(patientId, today, firstLogDate, calendar);
+        int[] streakResult = walkBackStreak(today, firstLogDate, scoreCache);
         streak += streakResult[0];
         int livesRemaining = Math.max(0, streakResult[1]);
 
@@ -242,36 +252,24 @@ public class StatisticsService {
 
     /**
      * Walk backwards from yesterday counting streak days, returning {streakCount,
-     * livesRemaining}.
+     * livesRemaining}. Reads scores from the preloaded cache.
      */
-    private int[] walkBackStreak(String patientId, LocalDate today, LocalDate firstLogDate,
-            List<StreakResponse.StreakDay> calendar) {
+    private int[] walkBackStreak(LocalDate today, LocalDate firstLogDate,
+            Map<LocalDate, Integer> scoreCache) {
         int streak = 0;
         int lives = MAX_LIVES;
         for (int i = 1; i <= 365; i++) {
             LocalDate d = today.minusDays(i);
             if (d.isBefore(firstLogDate))
                 return new int[] { streak, lives };
-            int pct = computeDayScore(patientId, d, i, calendar);
+            int pct = scoreCache.getOrDefault(d, 0);
             if (pct >= STREAK_THRESHOLD) {
                 streak++;
-            } else if (--lives < 0) {
+            } else if (--lives <= 0) {
                 return new int[] { streak, lives };
             }
         }
         return new int[] { streak, lives };
-    }
-
-    /** Get the percentage score for a day, reusing calendar data when available. */
-    private int computeDayScore(String patientId, LocalDate day, int daysAgo,
-            List<StreakResponse.StreakDay> calendar) {
-        if (daysAgo < CALENDAR_DAYS) {
-            return calendar.get(daysAgo).getScore();
-        }
-        var sc = healthScoreService.computeDailyScore(patientId, day);
-        return sc.getAdjustedMaxScore() > 0
-                ? (sc.getTotalScore() * 100) / sc.getAdjustedMaxScore()
-                : 0;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
