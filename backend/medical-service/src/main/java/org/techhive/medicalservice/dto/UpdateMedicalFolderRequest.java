@@ -12,4 +12,7 @@ import lombok.NoArgsConstructor;
 public class UpdateMedicalFolderRequest {
 	private String patientId;
 	private String doctorId;
+	private String bloodType;
+	private Double height;
+	private Double weight;
 }

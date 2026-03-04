@@ -4,6 +4,7 @@ import org.techhive.medicalservice.dto.CrossPatientDiseaseDto;
 import org.techhive.medicalservice.dto.DiseaseCountDto;
 import org.techhive.medicalservice.dto.DiagnosticsByMonthDto;
 import org.techhive.medicalservice.dto.MonthComparisonDto;
+import org.techhive.medicalservice.dto.ClinicalSafetyStatsDto;
 
 import java.util.List;
 
@@ -16,4 +17,8 @@ public interface DossierAnalyticsService {
     MonthComparisonDto getMonthComparison();
 
     List<CrossPatientDiseaseDto> getByDisease(String diseaseName, String stage);
+
+    ClinicalSafetyStatsDto getClinicalSafetyStats();
+
+    org.techhive.medicalservice.dto.FolderSpecificStatsDto getFolderStats(Long folderId);
 }

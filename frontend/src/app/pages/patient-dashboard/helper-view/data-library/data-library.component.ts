@@ -16,7 +16,7 @@ import { DataPointService, type DataPointSummary, type DataPointType, type Updat
 import { MemoryTagService, type TagResponse } from '@/core/services/memory-tag.service';
 import { MovieGameService, type TmdbMovie } from '@/core/services/movie-game.service';
 import { photoSchema, placeSchema, movieMemorySchema, questionMemorySchema, getFieldErrors } from '@/core/validation/game-schemas';
-import * as L from 'leaflet';
+// import * as L from 'leaflet'; <-- Removed to fix SSR window error
 
 type View = 'list' | 'add-photo' | 'add-place' | 'add-movie' | 'add-question' | 'edit';
 
@@ -540,8 +540,9 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
   placeLat: number | null = null;
   placeLng: number | null = null;
   placeHint = '';
-  private placeMap: L.Map | null = null;
-  private placeMarker: L.Marker | null = null;
+  private placeMap: any = null;
+  private placeMarker: any = null;
+  private L: any = null;
 
   // Movie form
   movieSearchQuery = '';
@@ -562,8 +563,8 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
   editQuestionText = '';
   editLat: number | null = null;
   editLng: number | null = null;
-  private editMap: L.Map | null = null;
-  private editMarker: L.Marker | null = null;
+  private editMap: any = null;
+  private editMarker: any = null;
 
   typeFilters = [
     { type: 'PHOTO' as DataPointType, emoji: '📷', label: 'Photos' },
@@ -689,12 +690,17 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
 
   // ── Place ──
 
-  initPlaceMap() {
-    // Defer to next tick so the DOM element is rendered
+  async initPlaceMap() {
+    // Defer to next tick so the DOM element is rendered and only in browser
+    if (typeof window === 'undefined') return;
+
+    // Dynamically import Leaflet
+    this.L = await import('leaflet');
+
     setTimeout(() => {
       if (this.placeMap || !this.placeMapContainer?.nativeElement) return;
 
-      const iconDefault = L.icon({
+      const iconDefault = this.L.icon({
         iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
         iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
@@ -703,16 +709,16 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
         popupAnchor: [1, -34],
         shadowSize: [41, 41],
       });
-      L.Marker.prototype.options.icon = iconDefault;
+      this.L.Marker.prototype.options.icon = iconDefault;
 
-      this.placeMap = L.map(this.placeMapContainer.nativeElement).setView([36.8, 10.18], 12);
+      this.placeMap = this.L.map(this.placeMapContainer.nativeElement).setView([36.8, 10.18], 12);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
-      }).addTo(this.placeMap);
+      }).addTo(this.placeMap!);
 
-      this.placeMap.on('click', (e: L.LeafletMouseEvent) => {
+      this.placeMap!.on('click', (e: any) => {
         const { lat, lng } = e.latlng;
         this.placeLat = lat;
         this.placeLng = lng;
@@ -720,7 +726,7 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
         if (this.placeMarker) {
           this.placeMarker.setLatLng(e.latlng);
         } else {
-          this.placeMarker = L.marker(e.latlng).addTo(this.placeMap!);
+          this.placeMarker = this.L.marker(e.latlng).addTo(this.placeMap!);
         }
       });
     }, 0);
@@ -734,11 +740,14 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
     }
   }
 
-  initEditPlaceMap() {
+  async initEditPlaceMap() {
+    if (typeof window === 'undefined') return;
+    if (!this.L) this.L = await import('leaflet');
+
     setTimeout(() => {
       if (this.editMap || !this.editMapContainer?.nativeElement) return;
 
-      const iconDefault = L.icon({
+      const iconDefault = this.L.icon({
         iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
         iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
@@ -747,23 +756,23 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
         popupAnchor: [1, -34],
         shadowSize: [41, 41],
       });
-      L.Marker.prototype.options.icon = iconDefault;
+      this.L.Marker.prototype.options.icon = iconDefault;
 
       const lat = this.editLat ?? 36.8;
       const lng = this.editLng ?? 10.18;
-      this.editMap = L.map(this.editMapContainer.nativeElement).setView([lat, lng], 14);
+      this.editMap = this.L.map(this.editMapContainer.nativeElement).setView([lat, lng], 14);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
-      }).addTo(this.editMap);
+      }).addTo(this.editMap!);
 
       // Place existing marker
       if (this.editLat != null && this.editLng != null) {
-        this.editMarker = L.marker([this.editLat, this.editLng]).addTo(this.editMap);
+        this.editMarker = this.L.marker([this.editLat, this.editLng]).addTo(this.editMap!);
       }
 
-      this.editMap.on('click', (e: L.LeafletMouseEvent) => {
+      this.editMap!.on('click', (e: any) => {
         const { lat, lng } = e.latlng;
         this.editLat = lat;
         this.editLng = lng;
@@ -771,7 +780,7 @@ export class DataLibraryComponent implements OnInit, OnDestroy {
         if (this.editMarker) {
           this.editMarker.setLatLng(e.latlng);
         } else {
-          this.editMarker = L.marker(e.latlng).addTo(this.editMap!);
+          this.editMarker = this.L.marker(e.latlng).addTo(this.editMap!);
         }
       });
     }, 0);

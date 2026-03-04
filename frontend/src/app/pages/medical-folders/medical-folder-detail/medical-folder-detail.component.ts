@@ -14,6 +14,9 @@ import { DiagnosticsService, type Diagnostics } from '@/core/services/diagnostic
 import { MedicalHistoryService, type MedicalHistory } from '@/core/services/medical-history.service';
 import { UserApiService } from '@/core/services/user-api.service';
 import { AIReportService, type AIReport, type AIReportPayload } from '@/core/services/ai-report.service';
+import { DossierAnalyticsService, type FolderInsights } from '@/core/services/dossier-analytics.service';
+import { NgApexchartsModule } from 'ng-apexcharts';
+import type { ApexOptions } from 'apexcharts';
 import { MedicalFolderFormComponent } from '../medical-folder-form/medical-folder-form.component';
 import { DiagnosticsFormComponent } from '@/pages/diagnostics/diagnostics-form/diagnostics-form.component';
 import { MedicalHistoryFormComponent } from '@/pages/medical-history/medical-history-form/medical-history-form.component';
@@ -34,7 +37,9 @@ const TABLE_PAGE_SIZE = 5;
     MedicalFolderFormComponent,
     DiagnosticsFormComponent,
     MedicalHistoryFormComponent,
+    MedicalHistoryFormComponent,
     DossierCompareComponent,
+    NgApexchartsModule,
   ],
   templateUrl: './medical-folder-detail.component.html',
 })
@@ -51,13 +56,18 @@ export class MedicalFolderDetailComponent implements OnInit {
   private readonly alertDialog = inject(ZardAlertDialogService);
   private readonly dialog = inject(ZardDialogService);
   private readonly aiReportService = inject(AIReportService);
+  private readonly analyticsService = inject(DossierAnalyticsService);
 
-  folder = signal<{ id: number; patientId: string; doctorId: string; createdAt: string; updatedAt: string } | null>(null);
+  folder = signal<{ id: number; patientId: string; doctorId: string; bloodType?: string; height?: number; weight?: number; createdAt: string; updatedAt: string } | null>(null);
   patientDisplayName = signal<string>('');
   doctorDisplayName = signal<string>('');
   latestAiReport = signal<AIReport | null>(null);
   loadingAiReport = signal(false);
   generatingReport = signal(false);
+
+  showInsights = signal(false);
+  folderInsights = signal<FolderInsights | null>(null);
+  loadingInsights = signal(false);
   diagnostics = signal<Diagnostics[]>([]);
   history = signal<MedicalHistory[]>([]);
   loading = signal(true);
@@ -95,7 +105,7 @@ export class MedicalFolderDetailComponent implements OnInit {
       });
     }
     for (const h of this.history()) {
-      const parts = [h.allergies, h.conditions, h.surgeries].filter(Boolean);
+      const parts = [h.allergies, h.conditions, h.surgeries, h.symptoms, h.recommendedTreatment, h.familyHistory].filter(Boolean);
       events.push({
         date: h.createdAt,
         label: parts.length ? parts.join(' · ') : 'Antécédent enregistré',
@@ -136,11 +146,57 @@ export class MedicalFolderDetailComponent implements OnInit {
     return result.filter((r) => r.entries.length >= 2);
   });
 
+  severityChartOptions = computed((): Partial<ApexOptions> | null => {
+    const data = this.folderInsights();
+    if (!data?.severityDistribution) return null;
+    const labels = Object.keys(data.severityDistribution);
+    const series = Object.values(data.severityDistribution);
+    if (!series.length) return null;
+
+    return {
+      series,
+      chart: { type: 'donut', height: 220, fontFamily: 'inherit' },
+      labels,
+      colors: ['#22c55e', '#f97316', '#ef4444', '#7c3aed'],
+      legend: { position: 'bottom' },
+      plotOptions: { pie: { donut: { size: '70%', labels: { show: true, total: { show: true, label: 'Severities' } } } } }
+    };
+  });
+
+  coverageChartOptions = computed((): Partial<ApexOptions> | null => {
+    const data = this.folderInsights();
+    if (!data) return null;
+    return {
+      series: [Math.round(data.treatmentCoverageRate)],
+      chart: { type: 'radialBar', height: 220 },
+      plotOptions: {
+        radialBar: {
+          hollow: { size: '70%' },
+          dataLabels: {
+            show: true,
+            name: { show: true, color: '#888', offsetY: -10 },
+            value: { show: true, fontSize: '22px', fontWeight: 'bold', formatter: v => v + '%' }
+          }
+        }
+      },
+      colors: [data.treatmentCoverageRate > 70 ? '#22c55e' : '#f97316'],
+      labels: ['Treatment Coverage']
+    };
+  });
+
   /** Extract numeric order from stage string (e.g. "Stage 2" -> 2). */
   parseStageOrder(stage: string | undefined): number | null {
     if (!stage?.trim()) return null;
     const m = stage.match(/\d+/);
     return m ? parseInt(m[0], 10) : null;
+  }
+
+  /** Calculate BMI from height (cm) and weight (kg) */
+  calculateBMI(height?: number, weight?: number): string {
+    if (!height || !weight) return '-';
+    const heightInMeters = height / 100;
+    const bmi = weight / (heightInMeters * heightInMeters);
+    return bmi.toFixed(1);
   }
 
   ngOnInit(): void {
@@ -349,12 +405,34 @@ export class MedicalFolderDetailComponent implements OnInit {
     }
   }
 
+  toggleInsights(): void {
+    if (this.showInsights()) {
+      this.showInsights.set(false);
+    } else {
+      this.showInsights.set(true);
+      if (!this.folderInsights()) {
+        this.loadInsights();
+      }
+    }
+  }
+
+  loadInsights(): void {
+    this.loadingInsights.set(true);
+    this.analyticsService.getFolderInsights(this.folderId()).subscribe({
+      next: (data) => {
+        this.folderInsights.set(data);
+        this.loadingInsights.set(false);
+      },
+      error: () => this.loadingInsights.set(false),
+    });
+  }
+
   openAddDiagnostics(): void {
     const id = this.folderId();
     const formRef = this.dialog.create<DiagnosticsFormComponent, { medicalFolderId: number }>({
       zTitle: 'Add Diagnostics',
       zContent: DiagnosticsFormComponent,
-      zWidth: '480px',
+      zWidth: '550px',
       zHideFooter: true,
       zDraggable: true,
       zData: { medicalFolderId: id },
@@ -388,7 +466,7 @@ export class MedicalFolderDetailComponent implements OnInit {
     const formRef = this.dialog.create<MedicalHistoryFormComponent, { medicalFolderId: number }>({
       zTitle: 'Add Medical History',
       zContent: MedicalHistoryFormComponent,
-      zWidth: '480px',
+      zWidth: '550px',
       zHideFooter: true,
       zDraggable: true,
       zData: { medicalFolderId: id },
@@ -421,7 +499,7 @@ export class MedicalFolderDetailComponent implements OnInit {
     const formRef = this.dialog.create<DiagnosticsFormComponent, unknown>({
       zTitle: 'Edit Diagnostics',
       zContent: DiagnosticsFormComponent,
-      zWidth: '480px',
+      zWidth: '550px',
       zHideFooter: true,
       zDraggable: true,
       zData: { diagnostics: d },
@@ -475,7 +553,7 @@ export class MedicalFolderDetailComponent implements OnInit {
     const formRef = this.dialog.create<MedicalHistoryFormComponent, { medicalFolderId: number }>({
       zTitle: 'Edit Medical History',
       zContent: MedicalHistoryFormComponent,
-      zWidth: '480px',
+      zWidth: '550px',
       zHideFooter: true,
       zDraggable: true,
       zData: { medicalFolderId: id },
@@ -489,16 +567,16 @@ export class MedicalFolderDetailComponent implements OnInit {
           if ('id' in payload) {
             this.medicalHistoryService.update(payload.id, payload.data).subscribe({
               next: () => { formRef.close(); this.load(); this.alertDialog.info({ zTitle: 'Success', zContent: 'Medical history updated.' }); },
-            error: (err) => this.alertDialog.warning({ zTitle: 'Error', zContent: err?.error?.message || 'Update failed.' }),
-          });
-        } else {
-          this.medicalHistoryService.create(payload).subscribe({
-            next: () => { formRef.close(); this.load(); this.alertDialog.info({ zTitle: 'Success', zContent: 'Medical history added.' }); },
-            error: (err) => this.alertDialog.warning({ zTitle: 'Error', zContent: err?.error?.message || 'Create failed.' }),
-          });
-        }
-      };
-      form.onCancelCallback = () => formRef.close();
+              error: (err) => this.alertDialog.warning({ zTitle: 'Error', zContent: err?.error?.message || 'Update failed.' }),
+            });
+          } else {
+            this.medicalHistoryService.create(payload).subscribe({
+              next: () => { formRef.close(); this.load(); this.alertDialog.info({ zTitle: 'Success', zContent: 'Medical history added.' }); },
+              error: (err) => this.alertDialog.warning({ zTitle: 'Error', zContent: err?.error?.message || 'Create failed.' }),
+            });
+          }
+        };
+        form.onCancelCallback = () => formRef.close();
       }
     };
     setCallbacks();

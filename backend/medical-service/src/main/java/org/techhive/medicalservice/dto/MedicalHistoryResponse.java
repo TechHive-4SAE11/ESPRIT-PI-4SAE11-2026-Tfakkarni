@@ -19,6 +19,9 @@ public class MedicalHistoryResponse {
 	private String allergies;
 	private String conditions;
 	private String surgeries;
+	private String symptoms;
+	private String recommendedTreatment;
+	private String familyHistory;
 
 	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime createdAt;

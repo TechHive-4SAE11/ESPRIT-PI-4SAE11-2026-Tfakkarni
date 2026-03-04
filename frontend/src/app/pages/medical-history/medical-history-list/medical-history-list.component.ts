@@ -104,7 +104,7 @@ export class MedicalHistoryListComponent implements OnInit {
     const formRef = this.dialog.create<MedicalHistoryFormComponent, unknown>({
       zTitle: 'Create Medical History',
       zContent: MedicalHistoryFormComponent,
-      zWidth: '480px',
+      zWidth: '1000px',
       zHideFooter: true,
     });
     const form = formRef.componentInstance;
@@ -128,7 +128,7 @@ export class MedicalHistoryListComponent implements OnInit {
     const formRef = this.dialog.create<MedicalHistoryFormComponent, unknown>({
       zTitle: 'Edit Medical History',
       zContent: MedicalHistoryFormComponent,
-      zWidth: '480px',
+      zWidth: '1000px',
       zHideFooter: true,
     });
     const form = formRef.componentInstance;

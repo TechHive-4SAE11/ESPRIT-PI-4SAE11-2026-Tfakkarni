@@ -21,4 +21,11 @@ public class CreateMedicalFolderRequest {
 
 	// doctorId is extracted from JWT token, not from request body
 	private String doctorId;
+
+	@Size(max = 10, message = "Blood type must not exceed 10 characters")
+	private String bloodType;
+
+	private Double height;
+
+	private Double weight;
 }

@@ -22,6 +22,7 @@ import type {
   MonthComparison,
   DiagnosticsByMonth,
   CrossPatientDisease,
+  ClinicalSafetyStats,
 } from '@/core/services/dossier-analytics.service';
 import { MedicalFolderPdfService } from '@/core/services/medical-folder-pdf.service';
 import { Chart, registerables } from 'chart.js';
@@ -127,6 +128,105 @@ const CHART_PALETTE = [
           </div>
         </z-card>
 
+        <z-card class="p-6 rounded-xl shadow-sm border border-border/50 bg-gradient-to-br from-background to-destructive/5">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h3 class="text-xl font-bold flex items-center gap-2">
+                <z-icon zType="shield" class="h-6 w-6 text-destructive" />
+                Clinical Compliance & Safety Audit
+              </h3>
+              <p class="text-muted-foreground text-sm">Cross-service risk analysis (Diagnostics vs Prescriptions)</p>
+            </div>
+            <div class="px-3 py-1 bg-destructive/10 text-destructive text-xs font-bold rounded-full animate-pulse">
+              LIVE RISK MONITOR
+            </div>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-3 mb-8">
+            <div class="p-4 rounded-xl border border-border/50 bg-background/50 backdrop-blur-sm">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+                  <z-icon zType="check-circle" class="h-5 w-5" />
+                </div>
+                <span class="text-sm font-medium text-muted-foreground">Treatment Coverage</span>
+              </div>
+              <div class="flex items-end gap-2">
+                <span class="text-3xl font-bold">{{ data()?.safety?.treatmentCoverageRate | number:'1.1-1' }}%</span>
+                <span class="text-xs text-muted-foreground mb-1">of diagnostics prescribed</span>
+              </div>
+              <div class="mt-3 h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                <div class="h-full bg-emerald-500 rounded-full" [style.width.%]="data()?.safety?.treatmentCoverageRate"></div>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-xl border border-border/50 bg-background/50 backdrop-blur-sm">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="p-2 rounded-lg bg-orange-500/10 text-orange-500">
+                  <z-icon zType="pill" class="h-5 w-5" />
+                </div>
+                <span class="text-sm font-medium text-muted-foreground">Polypharmacy Risk</span>
+              </div>
+              <div class="flex items-end gap-2">
+                <span class="text-3xl font-bold">{{ data()?.safety?.polypharmacyRiskCount }}</span>
+                <span class="text-xs text-muted-foreground mb-1">patients with >5 meds</span>
+              </div>
+              <p class="text-[10px] text-muted-foreground mt-2 italic">Increased drug interaction probability</p>
+            </div>
+
+            <div class="p-4 rounded-xl border border-border/50 bg-background/50 backdrop-blur-sm">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="p-2 rounded-lg bg-destructive/10 text-destructive">
+                  <z-icon zType="alert-triangle" class="h-5 w-5" />
+                </div>
+                <span class="text-sm font-medium text-muted-foreground">Chronic Alerts</span>
+              </div>
+              <div class="flex items-end gap-2">
+                <span class="text-3xl font-bold">{{ data()?.safety?.chronicMonitoringAlerts }}</span>
+                <span class="text-xs text-muted-foreground mb-1">untreated chronic cases</span>
+              </div>
+              <p class="text-[10px] text-destructive mt-2 font-medium">Immediate review required</p>
+            </div>
+          </div>
+
+          @if (data()?.safety?.potentialConflicts?.length) {
+            <h4 class="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">Medication-Condition Conflict Alerts</h4>
+            <div class="overflow-x-auto border border-border/50 rounded-lg">
+              <table z-table class="w-full">
+                <thead z-table-header class="bg-muted/30">
+                  <tr z-table-row>
+                    <th z-table-head class="text-xs">Patient</th>
+                    <th z-table-head class="text-xs">Prescribed Drug</th>
+                    <th z-table-head class="text-xs">Conflicting Condition</th>
+                    <th z-table-head class="text-xs">Severity</th>
+                  </tr>
+                </thead>
+                <tbody z-table-body>
+                  @for (c of data()?.safety?.potentialConflicts; track $index) {
+                    <tr z-table-row class="hover:bg-destructive/5 transition-colors">
+                      <td z-table-cell class="font-bold py-2">{{ c.patientId }}</td>
+                      <td z-table-cell class="py-2"><span class="px-2 py-0.5 rounded bg-muted text-xs font-mono">{{ c.medicationName }}</span></td>
+                      <td z-table-cell class="py-2 text-destructive font-medium">{{ c.conflictingCondition }}</td>
+                      <td z-table-cell class="py-2">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                          [style.backgroundColor]="c.severity === 'HIGH' ? '#dc2626' : 'rgba(249, 115, 22, 0.2)'"
+                          [style.color]="c.severity === 'HIGH' ? '#fff' : '#ea580c'">
+                          {{ c.severity }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <div class="py-12 text-center border-2 border-dashed border-border/50 rounded-xl bg-background/50">
+              <z-icon zType="check-circle" class="h-12 w-12 text-emerald-500/30 mx-auto mb-3" />
+              <p class="text-muted-foreground text-sm font-medium">No active medication conflicts detected across the patient pool.</p>
+              <p class="text-[10px] text-muted-foreground/60 uppercase tracking-widest mt-1">System status: Secure</p>
+            </div>
+          }
+        </z-card>
+
         <z-card class="p-6 rounded-xl shadow-sm border border-border/50">
           <h3 class="text-lg font-semibold mb-1 flex items-center gap-2">
             <z-icon zType="users" class="h-5 w-5 text-primary" />
@@ -208,12 +308,13 @@ export class DossierAnalyticsComponent implements OnInit, AfterViewChecked, OnDe
   private chartTop: Chart | null = null;
   private chartComparison: Chart | null = null;
   private chartByMonth: Chart | null = null;
-  private data = signal<{
+  private chartsDrawn = false;
+  data = signal<{
     diseases: DiseaseCount[];
     comparison: MonthComparison;
     byMonth: DiagnosticsByMonth[];
+    safety: ClinicalSafetyStats;
   } | null>(null);
-  private chartsDrawn = false;
 
   diseaseLegend = computed(() => {
     const d = this.data();
@@ -258,6 +359,7 @@ export class DossierAnalyticsComponent implements OnInit, AfterViewChecked, OnDe
       diseases: this.analytics.getTopDiseases(10),
       comparison: this.analytics.getMonthComparison(),
       byMonth: this.analytics.getDiagnosticsByMonth(year),
+      safety: this.analytics.getSafetyAudit(),
     }).subscribe({
       next: (data) => {
         this.data.set(data);

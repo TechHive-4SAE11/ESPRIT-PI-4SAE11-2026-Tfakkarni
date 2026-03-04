@@ -55,11 +55,13 @@ export class ZardDialogService {
       const overlayConfig = new OverlayConfig({
         hasBackdrop: true,
         // If draggable, don't use centering position strategy to let drag handle positioning
-        positionStrategy: config.zDraggable 
+        positionStrategy: config.zDraggable
           ? this.overlay.position().global()
           : this.overlay.position().global().centerHorizontally().centerVertically(),
-        maxWidth: '100vw',
-        maxHeight: '100vh',
+        width: config.zWidth,
+        minWidth: config.zWidth,
+        maxWidth: '95vw',
+        maxHeight: '95vh',
       });
 
       return this.overlay.create(overlayConfig);

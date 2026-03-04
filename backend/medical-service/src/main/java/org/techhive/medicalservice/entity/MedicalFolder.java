@@ -50,6 +50,16 @@ public class MedicalFolder implements Serializable {
 	@Column(name = "id_doctor", nullable = false)
 	private String doctorId;
 
+	@Size(max = 10, message = "Blood type must not exceed 10 characters")
+	@Column(name = "blood_type", length = 10)
+	private String bloodType;
+
+	@Column(name = "height")
+	private Double height;
+
+	@Column(name = "weight")
+	private Double weight;
+
 	@CreationTimestamp
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
@@ -62,4 +72,14 @@ public class MedicalFolder implements Serializable {
 	@OneToMany(mappedBy = "medicalFolder", cascade = CascadeType.ALL, orphanRemoval = true)
 	@ToString.Exclude
 	private List<AIReport> aiReports;
+
+	/** Inverse relationship with Diagnostics for cascade delete */
+	@OneToMany(mappedBy = "medicalFolder", cascade = CascadeType.ALL, orphanRemoval = true)
+	@ToString.Exclude
+	private List<Diagnostics> diagnostics;
+
+	/** Inverse relationship with MedicalHistory for cascade delete */
+	@OneToMany(mappedBy = "medicalFolder", cascade = CascadeType.ALL, orphanRemoval = true)
+	@ToString.Exclude
+	private List<MedicalHistory> medicalHistories;
 }

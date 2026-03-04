@@ -9,6 +9,9 @@ export interface MedicalHistory {
   allergies: string;
   conditions: string;
   surgeries: string;
+  symptoms?: string;
+  recommendedTreatment?: string;
+  familyHistory?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -18,12 +21,18 @@ export interface CreateMedicalHistoryRequest {
   allergies?: string;
   conditions?: string;
   surgeries?: string;
+  symptoms?: string;
+  recommendedTreatment?: string;
+  familyHistory?: string;
 }
 
 export interface UpdateMedicalHistoryRequest {
   allergies?: string;
   conditions?: string;
   surgeries?: string;
+  symptoms?: string;
+  recommendedTreatment?: string;
+  familyHistory?: string;
 }
 
 @Injectable({

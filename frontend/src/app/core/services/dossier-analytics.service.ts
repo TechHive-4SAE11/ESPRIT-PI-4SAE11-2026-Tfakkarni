@@ -34,9 +34,21 @@ export interface CrossPatientDisease {
   diagnosisDate: string;
 }
 
+export interface ClinicalSafetyStats {
+  treatmentCoverageRate: number;
+  polypharmacyRiskCount: number;
+  chronicMonitoringAlerts: number;
+  potentialConflicts: {
+    patientId: string;
+    medicationName: string;
+    conflictingCondition: string;
+    severity: string;
+  }[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class DossierAnalyticsService {
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) { }
 
   getByDisease(diseaseName: string, stage?: string | null): Observable<CrossPatientDisease[]> {
     const params: Record<string, string> = { diseaseName: diseaseName.trim() };
@@ -58,4 +70,21 @@ export class DossierAnalyticsService {
   getMonthComparison(): Observable<MonthComparison> {
     return this.http.get<MonthComparison>(`${BASE}/comparison`);
   }
+
+  getSafetyAudit(): Observable<ClinicalSafetyStats> {
+    return this.http.get<ClinicalSafetyStats>(`${BASE}/safety-audit`);
+  }
+
+  getFolderInsights(folderId: number): Observable<FolderInsights> {
+    return this.http.get<FolderInsights>(`${BASE}/folder/${folderId}`);
+  }
+}
+
+export interface FolderInsights {
+  totalDiagnostics: number;
+  totalMedicalHistory: number;
+  treatmentCoverageRate: number;
+  severityDistribution: Record<string, number>;
+  prescriptions: { medicationName: string; prescribedAt: string }[];
+  timeline: { date: string; diseaseName: string; stage: string }[];
 }

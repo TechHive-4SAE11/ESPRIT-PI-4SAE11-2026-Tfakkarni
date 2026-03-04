@@ -2,10 +2,12 @@ package org.techhive.medicalservice.entity;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,6 +15,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
@@ -68,4 +71,9 @@ public class Diagnostics implements Serializable {
 	@UpdateTimestamp
 	@Column(nullable = false)
 	private LocalDateTime updatedAt;
+
+	/** Inverse relationship with DiagnosticAttachment for cascade delete */
+	@OneToMany(mappedBy = "diagnostic", cascade = CascadeType.ALL, orphanRemoval = true)
+	@ToString.Exclude
+	private List<DiagnosticAttachment> attachments;
 }
