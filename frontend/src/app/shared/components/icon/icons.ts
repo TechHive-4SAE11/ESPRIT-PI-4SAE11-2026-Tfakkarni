@@ -10,6 +10,7 @@ import {
   BarChart3,
   Bell,
   Bold,
+  Bookmark,
   BookOpen,
   BookOpenText,
   Brain,
@@ -237,6 +238,7 @@ export const ZARD_ICONS = {
   lock: Lock,
   unlock: Unlock,
   'alert-triangle': TriangleAlert,
+  bookmark: Bookmark,
 } as const satisfies Record<string, LucideIconData>;
 
 export declare type ZardIcon = keyof typeof ZARD_ICONS | LucideIconData;

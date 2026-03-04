@@ -17,6 +17,20 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+  # Redis configuration
+  data:
+    redis:
+      host: live-bullfrog-45869.upstash.io
+      port: 6379
+      password: AbMtAAIncDJjOWExMjVkOTcwYjk0MGM2OWY0MzZhNmUwMWYwNGQ0OXAyNDU4Njk
+      ssl:
+        enabled: true
+      timeout: 60000
+      lettuce:
+        pool:
+          max-active: 10
+          max-idle: 5
+          min-idle: 1
 
 eureka:
   client:
@@ -24,3 +38,19 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
+
+# Firebase configuration
+firebase:
+  config-file: classpath:firebase-service-account.json
+
+# Tracking service URL (for fetching medications via Eureka)
+tracking-service:
+  url: http://localhost:18083
+
+# Notification scheduler
+notification:
+  scheduler:
+    enabled: true
+    # Check every hour for medication reminders
+    # Every minute (for testing) — change back to "0 0 8,12,18,21 * * *" for production
+    medication-reminder-cron: "0 */1 * * * *"

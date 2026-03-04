@@ -57,6 +57,10 @@ spring:
           uri: lb://tracking-service
           predicates:
             - Path=/api/prescriptions/**
+        - id: prescription-templates
+          uri: lb://tracking-service
+          predicates:
+            - Path=/api/prescription-templates/**
         - id: sessions
           uri: lb://tracking-service
           predicates:
@@ -81,6 +85,10 @@ spring:
           uri: lb://medical-service
           predicates:
             - Path=/api/medical/**
+        - id: medicament-validation-service
+          uri: lb://medicament-validation-service
+          predicates:
+            - Path=/api/medicament-validation/**
         - id: tracking-service-daily
           uri: lb://tracking-service
           predicates:

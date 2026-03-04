@@ -94,4 +94,24 @@ export class UserApiService {
   skipKyc(keycloakId: string): Observable<{ message: string; kycStatus: string }> {
     return this.http.put<{ message: string; kycStatus: string }>(`${this.baseUrl}/kyc/skip/${keycloakId}`, {});
   }
+
+  // ─── Signature Methods ──────────────────────────────────
+
+  uploadSignature(userId: number, file: File): Observable<{ message: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ message: string }>(`${this.baseUrl}/signature/${userId}`, formData);
+  }
+
+  getSignatureUrl(userId: number): string {
+    return `${this.baseUrl}/signature/${userId}`;
+  }
+
+  getSignatureBlob(userId: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/signature/${userId}`, { responseType: 'blob' });
+  }
+
+  deleteSignature(userId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.baseUrl}/signature/${userId}`);
+  }
 }
