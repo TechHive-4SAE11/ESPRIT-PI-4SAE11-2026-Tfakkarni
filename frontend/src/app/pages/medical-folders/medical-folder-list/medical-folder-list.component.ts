@@ -218,6 +218,7 @@ export class MedicalFolderListComponent implements OnInit {
       zContent: MedicalFolderFormComponent,
       zWidth: '420px',
       zHideFooter: true,
+      zDraggable: true,
       zData,
     });
 
@@ -252,6 +253,7 @@ export class MedicalFolderListComponent implements OnInit {
       zContent: MedicalFolderFormComponent,
       zWidth: '420px',
       zHideFooter: true,
+      zDraggable: true,
       zData,
     });
     zData.callbacks!.onSubmit = (data) => {

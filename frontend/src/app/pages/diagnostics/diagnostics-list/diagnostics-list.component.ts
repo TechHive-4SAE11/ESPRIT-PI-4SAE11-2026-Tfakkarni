@@ -107,6 +107,7 @@ export class DiagnosticsListComponent implements OnInit {
       zContent: DiagnosticsFormComponent,
       zWidth: '1000px',
       zHideFooter: true,
+      zDraggable: true,
     });
     const form = formRef.componentInstance;
     if (form) {
@@ -131,6 +132,7 @@ export class DiagnosticsListComponent implements OnInit {
       zContent: DiagnosticsFormComponent,
       zWidth: '1000px',
       zHideFooter: true,
+      zDraggable: true,
     });
     const form = formRef.componentInstance;
     if (form) {

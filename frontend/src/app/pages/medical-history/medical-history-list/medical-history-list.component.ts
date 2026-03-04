@@ -106,6 +106,7 @@ export class MedicalHistoryListComponent implements OnInit {
       zContent: MedicalHistoryFormComponent,
       zWidth: '1000px',
       zHideFooter: true,
+      zDraggable: true,
     });
     const form = formRef.componentInstance;
     if (form) {
@@ -130,6 +131,7 @@ export class MedicalHistoryListComponent implements OnInit {
       zContent: MedicalHistoryFormComponent,
       zWidth: '1000px',
       zHideFooter: true,
+      zDraggable: true,
     });
     const form = formRef.componentInstance;
     if (form) {

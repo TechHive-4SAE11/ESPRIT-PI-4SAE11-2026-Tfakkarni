@@ -343,8 +343,9 @@ export class MedicalFolderDetailComponent implements OnInit {
     const ref = this.dialog.create<DossierCompareComponent, unknown>({
       zTitle: 'Compare Diagnostics',
       zContent: DossierCompareComponent,
-      zWidth: '640px',
+      zWidth: '1000px',
       zHideFooter: true,
+      zDraggable: true,
     });
     const comp = ref.componentInstance;
     if (comp) {
@@ -362,8 +363,9 @@ export class MedicalFolderDetailComponent implements OnInit {
     const ref = this.dialog.create<DossierCompareComponent, unknown>({
       zTitle: 'Compare Medical History',
       zContent: DossierCompareComponent,
-      zWidth: '640px',
+      zWidth: '1000px',
       zHideFooter: true,
+      zDraggable: true,
     });
     const comp = ref.componentInstance;
     if (comp) {
@@ -384,6 +386,7 @@ export class MedicalFolderDetailComponent implements OnInit {
       zContent: MedicalFolderFormComponent,
       zWidth: '420px',
       zHideFooter: true,
+      zDraggable: true,
     });
     const form = formRef.componentInstance;
     if (form) {
