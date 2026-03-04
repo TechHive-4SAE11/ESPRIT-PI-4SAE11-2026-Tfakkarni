@@ -8,6 +8,7 @@ import { routes } from './app.routes';
 import { provideClientHydration } from '@angular/platform-browser';
 import { provideZard } from '@/shared/core/provider/providezard';
 import { environment } from '@/environments/environment';
+import { TokenHelper } from '@/core/utils/token-helper';
 
 /**
  * Initializes Keycloak with the configuration for the esprit-realm.
@@ -119,6 +120,22 @@ function initializeKeycloak(keycloak: KeycloakService, platformId: object) {
   };
 }
 
+/**
+ * Initialize TokenHelper for browser console token injection
+ * Enables easy testing without Keycloak login
+ * Available as: window.__tokenHelper
+ */
+function initializeTokenHelper(platformId: object) {
+  return () => {
+    if (isPlatformBrowser(platformId)) {
+      (window as any).__tokenHelper = TokenHelper;
+      console.log('%c🔐 TokenHelper initialized', 'color: purple; font-weight: bold;');
+      console.log('%cUsage: window.__tokenHelper.help()', 'color: green;');
+    }
+    return Promise.resolve();
+  };
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
@@ -132,6 +149,12 @@ export const appConfig: ApplicationConfig = {
       useFactory: initializeKeycloak,
       multi: true,
       deps: [KeycloakService, PLATFORM_ID],
+    },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeTokenHelper,
+      multi: true,
+      deps: [PLATFORM_ID],
     },
     {
       provide: HTTP_INTERCEPTORS,

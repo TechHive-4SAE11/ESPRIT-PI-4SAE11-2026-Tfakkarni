@@ -1,0 +1,89 @@
+<div class="space-y-4">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <h2 class="text-2xl font-bold">Diagnostics</h2>
+    <div class="flex gap-2 flex-wrap">
+      <select
+        class="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm min-w-[180px]"
+        [value]="folderFilterId() ?? ''"
+        (change)="folderFilterId.set($any($event.target).value ? +$any($event.target).value : null); currentPage.set(1)"
+      >
+        <option value="">All folders</option>
+        @for (f of folders(); track f.id) {
+          <option [value]="f.id">{{ f.patientId }} ({{ f.id }})</option>
+        }
+      </select>
+      <input
+        type="text"
+        placeholder="Search by disease name"
+        class="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm min-w-[180px]"
+        [value]="searchDisease()"
+        (input)="searchDisease.set($any($event.target).value); currentPage.set(1)"
+      />
+      <button z-button (click)="openCreate()">
+        <z-icon zType="plus" class="mr-2" />
+        Create New Diagnostics
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <z-card class="p-6">
+      <z-skeleton class="h-32 w-full" />
+    </z-card>
+  } @else if (error()) {
+    <z-card class="p-6">
+      <p class="text-destructive">{{ error() }}</p>
+      <button z-button zType="outline" class="mt-2" (click)="load()">Retry</button>
+    </z-card>
+  } @else if (filteredDiagnostics().length === 0) {
+    <z-card class="p-12 text-center">
+      <z-icon zType="activity" class="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+      <p class="text-lg font-medium">No diagnostics</p>
+      <p class="text-muted-foreground text-sm mt-1">Create diagnostics from a medical folder or here.</p>
+      <button z-button class="mt-4" (click)="openCreate()">Create New Diagnostics</button>
+    </z-card>
+  } @else {
+    <z-card>
+      <div class="overflow-x-auto">
+        <table z-table>
+          <thead z-table-header>
+            <tr z-table-row>
+              <th z-table-head>Disease</th>
+              <th z-table-head>Stage</th>
+              <th z-table-head>Comorbidities</th>
+              <th z-table-head>Diagnosis Date</th>
+              <th z-table-head>Folder ID</th>
+              <th z-table-head class="w-40">Actions</th>
+            </tr>
+          </thead>
+          <tbody z-table-body>
+            @for (d of paginated(); track d.id) {
+              <tr z-table-row>
+                <td z-table-cell class="font-medium">{{ d.diseaseName }}</td>
+                <td z-table-cell>{{ d.stage || '-' }}</td>
+                <td z-table-cell class="max-w-[200px] truncate">{{ d.comorbidities || '-' }}</td>
+                <td z-table-cell class="text-muted-foreground">{{ d.diagnosisDate | date:'short' }}</td>
+                <td z-table-cell>{{ d.medicalFolderId }}</td>
+                <td z-table-cell>
+                  <div class="flex gap-2">
+                    <button z-button zType="ghost" zSize="sm" (click)="openEdit(d)">Edit</button>
+                    <button z-button zType="destructive" zSize="sm" (click)="deleteDiagnostics(d)">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (totalPages() > 1) {
+        <div class="flex items-center justify-between p-4 border-t border-border">
+          <span class="text-sm text-muted-foreground">Page {{ currentPage() }} of {{ totalPages() }}</span>
+          <div class="flex gap-2">
+            <button z-button zType="outline" zSize="sm" [disabled]="currentPage() <= 1" (click)="setPage(currentPage() - 1)">Previous</button>
+            <button z-button zType="outline" zSize="sm" [disabled]="currentPage() >= totalPages()" (click)="setPage(currentPage() + 1)">Next</button>
+          </div>
+        </div>
+      }
+    </z-card>
+  }
+</div>

@@ -25,6 +25,8 @@ import { DataLibraryComponent } from './data-library/data-library.component';
 import { TagManagerComponent } from './tag-manager/tag-manager.component';
 import { GameBuilderComponent } from './game-builder/game-builder.component';
 import { ProfileComponent } from './profile/profile.component';
+import { MedicalFolderListComponent } from '@/pages/medical-folders/medical-folder-list/medical-folder-list.component';
+import { PatientDossierViewComponent } from '@/pages/patient-dashboard/patient-dossier-view/patient-dossier-view.component';
 
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
@@ -53,6 +55,8 @@ import { UserApiService, type UserInfo } from '@/core/services/user-api.service'
     TagManagerComponent,
     GameBuilderComponent,
     ProfileComponent,
+    MedicalFolderListComponent,
+    PatientDossierViewComponent,
   ],
 })
 export class HelperViewComponent implements OnInit {

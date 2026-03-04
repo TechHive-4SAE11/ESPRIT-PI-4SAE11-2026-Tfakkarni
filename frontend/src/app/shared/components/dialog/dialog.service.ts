@@ -31,7 +31,7 @@ export class ZardDialogService {
   }
 
   private open<T, U>(componentOrTemplateRef: ContentType<T>, config: ZardDialogOptions<T, U>) {
-    const overlayRef = this.createOverlay();
+    const overlayRef = this.createOverlay(config);
 
     if (!overlayRef) {
       return new ZardDialogRef(
@@ -50,11 +50,16 @@ export class ZardDialogService {
     return dialogRef;
   }
 
-  private createOverlay(): OverlayRef | undefined {
+  private createOverlay(config: ZardDialogOptions<any, any>): OverlayRef | undefined {
     if (isPlatformBrowser(this.platformId)) {
       const overlayConfig = new OverlayConfig({
         hasBackdrop: true,
-        positionStrategy: this.overlay.position().global(),
+        // If draggable, don't use centering position strategy to let drag handle positioning
+        positionStrategy: config.zDraggable 
+          ? this.overlay.position().global()
+          : this.overlay.position().global().centerHorizontally().centerVertically(),
+        maxWidth: '100vw',
+        maxHeight: '100vh',
       });
 
       return this.overlay.create(overlayConfig);

@@ -8,6 +8,8 @@ import type { OnClickCallback, ZardAlertDialogComponent, ZardAlertDialogOptions 
 
 export class ZardAlertDialogRef<T = unknown> {
   private readonly destroy$ = new Subject<void>();
+  private readonly _afterClosed$ = new Subject<boolean>();
+  readonly afterClosed$ = this._afterClosed$.asObservable();
   private isClosing = false;
 
   componentInstance?: T;
@@ -44,9 +46,11 @@ export class ZardAlertDialogRef<T = unknown> {
     if (typeof cancelFn === 'function') {
       const result = (cancelFn as OnClickCallback<T>)(this.componentInstance as T);
       if (result !== false) {
+        this._afterClosed$.next(false);
         this.close();
       }
     } else {
+      this._afterClosed$.next(false);
       this.close();
     }
   }
@@ -56,9 +60,11 @@ export class ZardAlertDialogRef<T = unknown> {
     if (typeof okFn === 'function') {
       const result = (okFn as OnClickCallback<T>)(this.componentInstance as T);
       if (result !== false) {
+        this._afterClosed$.next(true);
         this.close();
       }
     } else {
+      this._afterClosed$.next(true);
       this.close();
     }
   }

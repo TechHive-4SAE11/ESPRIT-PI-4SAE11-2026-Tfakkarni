@@ -1,0 +1,66 @@
+/* Medical Folders list — clean table and action buttons (reference-style) */
+
+.medical-folders-page :host {
+  display: block;
+}
+
+/* Search input: rounded, clean */
+.medical-folders-search:focus {
+  border-color: hsl(var(--ring));
+}
+
+/* Top action icons: circular, hover accent */
+.medical-folders-action-btn {
+  color: hsl(var(--muted-foreground));
+}
+.medical-folders-action-btn:hover {
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+}
+
+/* Table: alternating row background, clear borders */
+.medical-folders-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid hsl(var(--border));
+  white-space: nowrap;
+}
+.medical-folders-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid hsl(var(--border) / 0.6);
+  vertical-align: middle;
+}
+.medical-folders-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.medical-folders-row-alt {
+  background: hsl(var(--muted) / 0.3);
+}
+
+/* Row action buttons: icon-only, blue edit / orange delete */
+.medical-folders-row-btn {
+  border: none;
+  cursor: pointer;
+  background: transparent;
+}
+.medical-folders-row-btn:hover {
+  opacity: 0.9;
+}
+.medical-folders-row-btn-view {
+  color: hsl(var(--primary));
+}
+.medical-folders-row-btn-view:hover {
+  background: hsl(var(--primary) / 0.1);
+}
+.medical-folders-row-btn-edit {
+  color: hsl(217 91% 60%); /* blue */
+}
+.medical-folders-row-btn-edit:hover {
+  background: hsl(217 91% 60% / 0.1);
+}
+.medical-folders-row-btn-delete {
+  color: hsl(25 95% 53%); /* orange */
+}
+.medical-folders-row-btn-delete:hover {
+  background: hsl(25 95% 53% / 0.1);
+}

@@ -21,3 +21,6 @@
 *.class
 *.jar
 *.war
+
+# Cursor AI Instructions (local development reference)
+CURSOR_AI_INSTRUCTIONS.md

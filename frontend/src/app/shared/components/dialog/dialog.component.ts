@@ -1,4 +1,5 @@
 import { OverlayModule } from '@angular/cdk/overlay';
+import { DragDropModule, CdkDrag } from '@angular/cdk/drag-drop';
 import {
   BasePortalOutlet,
   CdkPortalOutlet,
@@ -43,6 +44,7 @@ export class ZardDialogOptions<T, U> {
   zCustomClasses?: string;
   zData?: U;
   zDescription?: string;
+  zDraggable?: boolean;
   zHideFooter?: boolean;
   zMaskClosable?: boolean;
   zOkDestructive?: boolean;
@@ -59,7 +61,7 @@ export class ZardDialogOptions<T, U> {
 @Component({
   selector: 'z-dialog',
   standalone: true,
-  imports: [OverlayModule, PortalModule, ZardButtonComponent, ZardIconComponent],
+  imports: [OverlayModule, PortalModule, ZardButtonComponent, ZardIconComponent, DragDropModule],
   template: `
     @if (config.zClosable || config.zClosable === undefined) {
       <button
@@ -76,7 +78,11 @@ export class ZardDialogOptions<T, U> {
     }
 
     @if (config.zTitle || config.zDescription) {
-      <header class="flex flex-col space-y-1.5 text-center sm:text-left">
+      <header 
+        cdkDragHandle
+        class="flex flex-col space-y-1.5 text-center sm:text-left"
+        [class.cursor-grab]="config.zDraggable"
+      >
         @if (config.zTitle) {
           <h4 data-testid="z-title" class="text-lg leading-none font-semibold tracking-tight">{{ config.zTitle }}</h4>
 
@@ -135,6 +141,10 @@ export class ZardDialogOptions<T, U> {
         transform 150ms ease-out;
     }
 
+    :host[data-dragging="true"] {
+      transition: none;
+    }
+
     @starting-style {
       :host {
         opacity: 0;
@@ -154,6 +164,12 @@ export class ZardDialogOptions<T, U> {
   host: {
     '[class]': 'classes()',
     '[style.width]': 'config.zWidth ? config.zWidth : null',
+    '[style.position]': 'config.zDraggable ? "fixed" : null',
+    '[style.top]': 'config.zDraggable ? "50%" : null',
+    '[style.left]': 'config.zDraggable ? "50%" : null',
+    '[style.transform]': 'config.zDraggable ? "translate(-50%, -50%)" : null',
+    '[cdkDrag]': 'config.zDraggable',
+    '[cdkDragDisabled]': '!config.zDraggable',
     'animate.enter': 'dialog-enter',
     'animate.leave': 'dialog-leave',
   },
@@ -206,7 +222,7 @@ export class ZardDialogComponent<T, U> extends BasePortalOutlet {
 }
 
 @NgModule({
-  imports: [ZardButtonComponent, ZardDialogComponent, OverlayModule, PortalModule],
+  imports: [ZardButtonComponent, ZardDialogComponent, OverlayModule, PortalModule, DragDropModule],
   providers: [ZardDialogService],
 })
 export class ZardDialogModule {}
