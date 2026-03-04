@@ -1,7 +1,5 @@
 package org.techhive.gameservice.entity;
 
-
-
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -28,8 +26,14 @@ public class Quiz {
     @Column(name = "caregiver_id")
     private Long caregiverId;
 
+    /**
+     * Highest difficulty level reached in this attempt (1 = Easy, 2 = Medium, 3 =
+     * Hard)
+     */
+    @Column(name = "level_reached")
+    private Integer levelReached;
+
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
     private List<Question> questions;
-
 
 }

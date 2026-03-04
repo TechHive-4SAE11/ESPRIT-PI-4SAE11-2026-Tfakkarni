@@ -1,0 +1,132 @@
+[33mÔØ»[39m Building...
+Failed to load users Jt {
+  headers: e {
+    normalizedNames: Map(0) {},
+    lazyUpdate: null,
+    lazyInit: [Function (anonymous)]
+  },
+  status: 401,
+  statusText: 'Unauthorized',
+  url: 'http://localhost:9090/api/users',
+  ok: false,
+  name: 'HttpErrorResponse',
+  message: 'Http failure response for http://localhost:9090/api/users: 401 Unauthorized',
+  error: null
+}
+Failed to load games Jt {
+  headers: e {
+    normalizedNames: Map(0) {},
+    lazyUpdate: null,
+    lazyInit: [Function (anonymous)]
+  },
+  status: 401,
+  statusText: 'Unauthorized',
+  url: 'http://localhost:9090/api/games/all',
+  ok: false,
+  name: 'HttpErrorResponse',
+  message: 'Http failure response for http://localhost:9090/api/games/all: 401 Unauthorized',
+  error: null
+}
+Failed to load stats Jt {
+  headers: e {
+    normalizedNames: Map(0) {},
+    lazyUpdate: null,
+    lazyInit: [Function (anonymous)]
+  },
+  status: 401,
+  statusText: 'Unauthorized',
+  url: 'http://localhost:9090/api/games/stats/overview',
+  ok: false,
+  name: 'HttpErrorResponse',
+  message: 'Http failure response for http://localhost:9090/api/games/stats/overview: 401 Unauthorized',
+  error: null
+}
+ERROR ReferenceError: window is not defined
+    at file:///C:/Users/Lenovo/OneDrive%20-%20ESPRIT/Documents/GitHub/ESPRIT-PI-4SAE11-2026-Tfakkarni/frontend/.angular/prerender-root/8c7c08a6-0afc-4123-a1d0-fa7ff664f0cb/chunk-VORF2C6A.mjs:2:3472
+    at file:///C:/Users/Lenovo/OneDrive%20-%20ESPRIT/Documents/GitHub/ESPRIT-PI-4SAE11-2026-Tfakkarni/frontend/.angular/prerender-root/8c7c08a6-0afc-4123-a1d0-fa7ff664f0cb/chunk-VORF2C6A.mjs:2:1408
+    at file:///C:/Users/Lenovo/OneDrive%20-%20ESPRIT/Documents/GitHub/ESPRIT-PI-4SAE11-2026-Tfakkarni/frontend/.angular/prerender-root/8c7c08a6-0afc-4123-a1d0-fa7ff664f0cb/chunk-VORF2C6A.mjs:2:1536
+    at file:///C:/Users/Lenovo/OneDrive%20-%20ESPRIT/Documents/GitHub/ESPRIT-PI-4SAE11-2026-Tfakkarni/frontend/.angular/prerender-root/8c7c08a6-0afc-4123-a1d0-fa7ff664f0cb/chunk-5XUXGTUW.mjs:2:1033
+    at file:///C:/Users/Lenovo/OneDrive%20-%20ESPRIT/Documents/GitHub/ESPRIT-PI-4SAE11-2026-Tfakkarni/frontend/.angular/prerender-root/8c7c08a6-0afc-4123-a1d0-fa7ff664f0cb/chunk-VORF2C6A.mjs:2:151321
+    at ModuleJob.run (node:internal/modules/esm/module_job:218:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:329:24)
+[32mÔ£ö[39m Building...
+[35mBrowser bundles[39m        
+[1mInitial chunk files[22m    [2m | [22m[1mNames[22m                      [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-547ESBA5.js[39m      [2m | [22m[2m-[22m                          [2m | [22m[36m286.11 kB[39m[2m | [22m               [36m78.58 kB[39m
+[32mstyles-FUFGSRNE.css[39m    [2m | [22m[2mstyles[22m                     [2m | [22m [36m81.99 kB[39m[2m | [22m               [36m11.89 kB[39m
+[32mchunk-ZBFA24C6.js[39m      [2m | [22m[2m-[22m                          [2m | [22m [36m48.08 kB[39m[2m | [22m                [36m9.23 kB[39m
+[32mpolyfills-FFHMD2TL.js[39m  [2m | [22m[2mpolyfills[22m                  [2m | [22m [36m34.52 kB[39m[2m | [22m               [36m11.28 kB[39m
+[32mchunk-TO42XGJ3.js[39m      [2m | [22m[2m-[22m                          [2m | [22m [36m32.56 kB[39m[2m | [22m                [36m8.60 kB[39m
+[32mchunk-FIKEBJEU.js[39m      [2m | [22m[2m-[22m                          [2m | [22m  [36m5.31 kB[39m[2m | [22m                [36m1.78 kB[39m
+[32mmain-GMRC62E5.js[39m       [2m | [22m[2mmain[22m                       [2m | [22m  [36m3.93 kB[39m[2m | [22m                [36m1.44 kB[39m
+[32mchunk-3SAV3XPA.js[39m      [2m | [22m[2m-[22m                          [2m | [22m  [36m2.42 kB[39m[2m | [22m              [36m861 bytes[39m
+[32mchunk-OBH5FKGB.js[39m      [2m | [22m[2m-[22m                          [2m | [22m  [36m1.37 kB[39m[2m | [22m              [36m614 bytes[39m
+[32mchunk-BUMR2AXA.js[39m      [2m | [22m[2m-[22m                          [2m | [22m[36m158 bytes[39m[2m | [22m              [36m158 bytes[39m
+
+[1m [22m                      [2m | [22m[1mInitial total[22m              [2m | [22m[1m496.44 kB[22m[2m | [22m              [1m124.44 kB[22m
+
+[1mLazy chunk files[22m       [2m | [22m[1mNames[22m                      [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-A324DXM5.js[39m      [2m | [22m[2mpatient-dashboard-component[22m[2m | [22m[36m349.27 kB[39m[2m | [22m               [36m72.46 kB[39m
+[32mchunk-Q4K6KEJ4.js[39m      [2m | [22m[2m-[22m                          [2m | [22m[36m112.94 kB[39m[2m | [22m               [36m25.30 kB[39m
+[32mchunk-X5JW2MCT.js[39m      [2m | [22m[2m-[22m                          [2m | [22m [36m63.36 kB[39m[2m | [22m               [36m18.23 kB[39m
+[32mchunk-GPDOXSIT.js[39m      [2m | [22m[2mdoctor-dashboard-component[22m [2m | [22m [36m28.25 kB[39m[2m | [22m                [36m6.97 kB[39m
+[32mchunk-YASUB7XJ.js[39m      [2m | [22m[2mlanding-component[22m          [2m | [22m [36m16.03 kB[39m[2m | [22m                [36m4.53 kB[39m
+[32mchunk-O7KSNXJ3.js[39m      [2m | [22m[2mplay-game-component[22m        [2m | [22m [36m10.35 kB[39m[2m | [22m                [36m3.24 kB[39m
+[32mchunk-YA3WP7OI.js[39m      [2m | [22m[2madmin-dashboard-component[22m  [2m | [22m  [36m8.81 kB[39m[2m | [22m                [36m2.54 kB[39m
+[32mchunk-FLZ6V6XC.js[39m      [2m | [22m[2mlogin-component[22m            [2m | [22m  [36m7.47 kB[39m[2m | [22m                [36m2.68 kB[39m
+[32mchunk-XKTL3YAI.js[39m      [2m | [22m[2msignup-component[22m           [2m | [22m  [36m7.34 kB[39m[2m | [22m                [36m2.38 kB[39m
+[32mchunk-CBGDZDSI.js[39m      [2m | [22m[2m-[22m                          [2m | [22m  [36m4.46 kB[39m[2m | [22m              [36m924 bytes[39m
+[32mchunk-ZTRBJIBK.js[39m      [2m | [22m[2m-[22m                          [2m | [22m  [36m3.87 kB[39m[2m | [22m              [36m821 bytes[39m
+[32mchunk-PCOKOUFR.js[39m      [2m | [22m[2m-[22m                          [2m | [22m  [36m3.00 kB[39m[2m | [22m                [36m1.09 kB[39m
+[32mchunk-ANZBVFBM.js[39m      [2m | [22m[2m-[22m                          [2m | [22m  [36m2.18 kB[39m[2m | [22m              [36m842 bytes[39m
+[32mchunk-OV43KNTB.js[39m      [2m | [22m[2m-[22m                          [2m | [22m  [36m1.69 kB[39m[2m | [22m              [36m701 bytes[39m
+[32mchunk-FSCWSVGO.js[39m      [2m | [22m[2m-[22m                          [2m | [22m  [36m1.19 kB[39m[2m | [22m              [36m428 bytes[39m
+[2m...and 4 more lazy chunks files. Use "--verbose" to show all the files.[22m
+
+
+[35mServer bundles[39m         
+[1mInitial chunk files[22m    [2m | [22m[1mNames[22m                      [2m | [22m [1mRaw size[22m
+[32mserver.mjs[39m             [2m | [22m[2mserver[22m                     [2m | [22m  [36m1.11 MB[39m[2m | [22m                       
+[32mchunk-PWVWOX6P.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m[36m307.27 kB[39m[2m | [22m                       
+[32mchunk-OMTBTEUH.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m[36m304.91 kB[39m[2m | [22m                       
+[32mpolyfills.server.mjs[39m   [2m | [22m[2mpolyfills.server[22m           [2m | [22m[36m268.60 kB[39m[2m | [22m                       
+[32mchunk-IGPZQDJH.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m [36m48.14 kB[39m[2m | [22m                       
+[32mchunk-LCDS7X4L.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m [36m32.63 kB[39m[2m | [22m                       
+[32mchunk-NUWESK6P.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m  [36m5.35 kB[39m[2m | [22m                       
+[32mchunk-J4AQRNSQ.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m  [36m4.04 kB[39m[2m | [22m                       
+[32mchunk-5XUXGTUW.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m  [36m2.55 kB[39m[2m | [22m                       
+[32mchunk-MH7QTTB4.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m  [36m2.49 kB[39m[2m | [22m                       
+[32mrender-utils.server.mjs[39m[2m | [22m[2mrender-utils.server[22m        [2m | [22m  [36m1.51 kB[39m[2m | [22m                       
+[32mchunk-LMFBO3LP.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m  [36m1.40 kB[39m[2m | [22m                       
+[32mmain.server.mjs[39m        [2m | [22m[2mmain.server[22m                [2m | [22m[36m352 bytes[39m[2m | [22m                       
+[32mchunk-HAEVELIH.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m[36m191 bytes[39m[2m | [22m                       
+
+[1mLazy chunk files[22m       [2m | [22m[1mNames[22m                      [2m | [22m [1mRaw size[22m
+[32mchunk-VORF2C6A.mjs[39m     [2m | [22m[2mpatient-dashboard-component[22m[2m | [22m[36m349.35 kB[39m[2m | [22m                       
+[32mchunk-35D6MB76.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m[36m113.00 kB[39m[2m | [22m                       
+[32mchunk-VT64PMRR.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m [36m63.43 kB[39m[2m | [22m                       
+[32mchunk-6NRU72JZ.mjs[39m     [2m | [22m[2mdoctor-dashboard-component[22m [2m | [22m [36m28.32 kB[39m[2m | [22m                       
+[32mchunk-YJFAE64P.mjs[39m     [2m | [22m[2mlanding-component[22m          [2m | [22m [36m16.10 kB[39m[2m | [22m                       
+[32mchunk-VCVCHJZV.mjs[39m     [2m | [22m[2mxhr2[22m                       [2m | [22m [36m12.07 kB[39m[2m | [22m                       
+[32mchunk-7ZUMEPJU.mjs[39m     [2m | [22m[2mplay-game-component[22m        [2m | [22m [36m10.41 kB[39m[2m | [22m                       
+[32mchunk-TXYGLU4O.mjs[39m     [2m | [22m[2madmin-dashboard-component[22m  [2m | [22m  [36m8.89 kB[39m[2m | [22m                       
+[32mchunk-6PSK47ZO.mjs[39m     [2m | [22m[2mlogin-component[22m            [2m | [22m  [36m7.54 kB[39m[2m | [22m                       
+[32mchunk-FJBJOGTO.mjs[39m     [2m | [22m[2msignup-component[22m           [2m | [22m  [36m7.40 kB[39m[2m | [22m                       
+[32mchunk-IHIOE73E.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m  [36m4.50 kB[39m[2m | [22m                       
+[32mchunk-GXA3DG2I.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m  [36m3.91 kB[39m[2m | [22m                       
+[32mchunk-GRYIEPLJ.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m  [36m3.04 kB[39m[2m | [22m                       
+[32mchunk-BHCDHXDI.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m  [36m2.22 kB[39m[2m | [22m                       
+[32mchunk-46XSIIDP.mjs[39m     [2m | [22m[2m-[22m                          [2m | [22m  [36m1.72 kB[39m[2m | [22m                       
+[2m...and 5 more lazy chunks files. Use "--verbose" to show all the files.[22m
+
+[35mPrerendered 7 static routes.[39m
+Application bundle generation complete. [22.924 seconds]
+
+Ôû▓ [WARNING] Module 'leaflet' used by 'src/app/pages/patient-dashboard/helper-view/add-place/add-place.component.ts' is not ESM
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: https://angular.dev/tools/cli/build#configuring-commonjs-dependencies
+
+
+Output location: C:\Users\Lenovo\OneDrive - ESPRIT\Documents\GitHub\ESPRIT-PI-4SAE11-2026-Tfakkarni\frontend\dist\frontend
+

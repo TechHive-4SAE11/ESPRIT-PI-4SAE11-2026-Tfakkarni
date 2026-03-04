@@ -1,0 +1,24 @@
+(node:12472) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"id":"5","quiz_id":"5","text":"What is today's complete date? (year, month, day of month, day of week)","difficulty_level":1}
+{"id":"6","quiz_id":"5","text":"Where are you right now? (place, city, country)","difficulty_level":1}
+{"id":"7","quiz_id":"5","text":"Repeat these 3 words: LEMON, KEY, BALLOON","difficulty_level":1}
+{"id":"8","quiz_id":"5","text":"Count backwards from 100 subtracting 7: 100, 93, 86, 79, 72, 65","difficulty_level":2}
+{"id":"9","quiz_id":"5","text":"What were the 3 words to remember? (LEMON, KEY, BALLOON)","difficulty_level":2}
+{"id":"10","quiz_id":"5","text":"What is this object called? (show a pencil or watch)","difficulty_level":1}
+{"id":"11","quiz_id":"5","text":"Repeat this phrase: \"No ifs, ands, or buts\"","difficulty_level":2}
+{"id":"12","quiz_id":"5","text":"Follow this 3-step command: \"Take this paper, fold it in half, put it on the table\"","difficulty_level":2}
+{"id":"13","quiz_id":"5","text":"Read and follow: \"CLOSE YOUR EYES\"","difficulty_level":1}
+{"id":"14","quiz_id":"5","text":"Write a complete sentence of your choice","difficulty_level":2}
+{"id":"15","quiz_id":"5","text":"Copy this drawing (two overlapping pentagons)","difficulty_level":2}
+{"id":"16","quiz_id":"5","text":"What is your date of birth?","difficulty_level":1}
+{"id":"17","quiz_id":"5","text":"Spell the word \"WORLD\" backwards","difficulty_level":2}
+{"id":"18","quiz_id":"5","text":"Count the number of letters in the word \"ALZHEIMER\"","difficulty_level":1}
+{"id":"19","quiz_id":"5","text":"How are an apple and a pear similar? (they are both fruits)","difficulty_level":2}

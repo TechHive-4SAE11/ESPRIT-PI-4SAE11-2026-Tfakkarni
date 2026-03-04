@@ -183,7 +183,7 @@ export class EquipmentManagementComponent implements OnInit {
         }),
         catchError(err => {
           console.error('[EquipmentMgmt] getAllEquipment failed', err);
-          this.notify('Erreur lors du chargement des équipements', 'error');
+          this.notify('Error loading equipment', 'error');
           return of([]);
         }),
         finalize(() => this.isLoading.set(false)),
@@ -198,11 +198,11 @@ export class EquipmentManagementComponent implements OnInit {
       .pipe(
         tap(list => {
           this.displayedEquipment.set(list);
-          this.notify(`${list.length} équipement(s) disponible(s)`, 'info');
+          this.notify(`${list.length} equipment(s) available`, 'info');
         }),
         catchError(err => {
           console.error('[EquipmentMgmt] getAvailableEquipment failed', err);
-          this.notify('Erreur lors du chargement', 'error');
+          this.notify('Error loading', 'error');
           return of([]);
         }),
         finalize(() => this.isLoading.set(false)),
@@ -217,11 +217,11 @@ export class EquipmentManagementComponent implements OnInit {
       .pipe(
         tap(list => {
           this.displayedEquipment.set(list);
-          this.notify(`${list.length} équipement(s) avec des prêts en retard`, 'info');
+          this.notify(`${list.length} equipment(s) with overdue loans`, 'info');
         }),
         catchError(err => {
           console.error('[EquipmentMgmt] getEquipmentWithOverdueLoans failed', err);
-          this.notify('Erreur lors du chargement', 'error');
+          this.notify('Error loading', 'error');
           return of([]);
         }),
         finalize(() => this.isLoading.set(false)),
@@ -270,7 +270,7 @@ export class EquipmentManagementComponent implements OnInit {
         }),
         catchError(err => {
           console.error('[EquipmentMgmt] getLoansByBorrowerId failed', err);
-          this.notify('Erreur lors du chargement des prêts', 'error');
+          this.notify('Error loading loans', 'error');
           return of([]);
         }),
         finalize(() => this.isLoadingLoans.set(false)),
@@ -302,11 +302,11 @@ export class EquipmentManagementComponent implements OnInit {
           this.dueSoonLoans.set(loans);
           this.displayedLoans.set(loans);
           this.activeTab.set('loans');
-          this.notify(`${loans.length} prêt(s) dûs dans les 3 prochains jours`, 'info');
+          this.notify(`${loans.length} loan(s) due in the next 3 days`, 'info');
         }),
         catchError(err => {
           console.error('[EquipmentMgmt] getLoansDueSoon failed', err);
-          this.notify('Erreur lors du chargement', 'error');
+          this.notify('Error loading', 'error');
           return of([]);
         }),
         finalize(() => this.isLoadingLoans.set(false)),
@@ -319,12 +319,12 @@ export class EquipmentManagementComponent implements OnInit {
     this.equipmentService.checkAndUpdateOverdueLoans()
       .pipe(
         tap(msg => {
-          this.notify(msg || 'Prêts en retard mis à jour', 'success');
+          this.notify(msg || 'Overdue loans updated', 'success');
           this.loadAllData();
         }),
         catchError(err => {
           console.error('[EquipmentMgmt] checkAndUpdateOverdueLoans failed', err);
-          this.notify('Erreur lors de la vérification', 'error');
+          this.notify('Error during verification', 'error');
           return of(null);
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -398,7 +398,7 @@ export class EquipmentManagementComponent implements OnInit {
 
   saveEquipment(): void {
     if (!this.eqForm.name.trim() || !this.eqForm.category.trim()) {
-      this.notify('Nom et catégorie sont requis', 'error');
+      this.notify('Name and category are required', 'error');
       return;
     }
     this.isSaving.set(true);
@@ -418,13 +418,13 @@ export class EquipmentManagementComponent implements OnInit {
 
     obs.pipe(
       tap(() => {
-        this.notify(editing ? 'Équipement mis à jour avec succès' : 'Équipement créé avec succès', 'success');
+        this.notify(editing ? 'Equipment updated successfully' : 'Equipment created successfully', 'success');
         this.closeEquipmentModal();
         this.loadAllEquipment();
       }),
       catchError(err => {
         console.error('[EquipmentMgmt] saveEquipment failed', err);
-        this.notify('Erreur lors de la sauvegarde', 'error');
+        this.notify('Error saving', 'error');
         return of(null);
       }),
       finalize(() => this.isSaving.set(false)),
@@ -433,20 +433,20 @@ export class EquipmentManagementComponent implements OnInit {
   }
 
   confirmDelete(eq: EquipmentDTO): void {
-    if (!confirm(`Supprimer "${eq.name}" ? Cette action est irréversible.`)) return;
+    if (!confirm(`Delete "${eq.name}" ? This action is irreversible.`)) return;
     if (!eq.id) return;
     this.equipmentService.deleteEquipment(eq.id)
       .pipe(
         tap(() => {
-          this.notify('Équipement supprimé avec succès', 'success');
+          this.notify('Equipment deleted successfully', 'success');
           this.loadAllEquipment();
         }),
         catchError(err => {
           console.error('[EquipmentMgmt] deleteEquipment failed', err);
           const status = err?.status;
-          let msg = 'Erreur lors de la suppression';
+          let msg = 'Error deleting';
           if (status === 500 || status === 409) {
-            msg = '⚠️ Impossible de supprimer: cet équipement est lié à des prêts existants. Annulez d\'abord ses prêts.';
+            msg = '⚠️ Cannot delete: this equipment has existing loans. Cancel or return them first.';
           } else if (err?.error?.message) {
             msg = err.error.message;
           }
@@ -471,7 +471,7 @@ export class EquipmentManagementComponent implements OnInit {
 
   registerDonation(): void {
     if (!this.donateForm.name.trim() || !this.donateForm.category.trim()) {
-      this.notify('Nom et catégorie sont requis', 'error');
+      this.notify('Name and category are required', 'error');
       return;
     }
     this.isSaving.set(true);
@@ -486,13 +486,13 @@ export class EquipmentManagementComponent implements OnInit {
     this.equipmentService.registerDonation(payload)
       .pipe(
         tap(() => {
-          this.notify('Don enregistré avec succès!', 'success');
+          this.notify('Donation recorded successfully!', 'success');
           this.closeDonateModal();
           this.loadAllEquipment();
         }),
         catchError(err => {
           console.error('[EquipmentMgmt] registerDonation failed', err);
-          this.notify('Erreur lors de l\'enregistrement du don', 'error');
+          this.notify('Error recording donation', 'error');
           return of(null);
         }),
         finalize(() => this.isSaving.set(false)),
@@ -521,13 +521,13 @@ export class EquipmentManagementComponent implements OnInit {
     this.equipmentService.updateEquipmentStatus(eq.id, this.newStatus)
       .pipe(
         tap(() => {
-          this.notify(`Statut mis à jour: ${this.newStatus}`, 'success');
+          this.notify(`Status updated to: ${this.newStatus}`, 'success');
           this.closeStatusModal();
           this.loadAllEquipment();
         }),
         catchError(err => {
           console.error('[EquipmentMgmt] updateEquipmentStatus failed', err);
-          this.notify('Erreur lors de la mise à jour du statut', 'error');
+          this.notify('Error updating status', 'error');
           return of(null);
         }),
         finalize(() => this.isSaving.set(false)),
@@ -571,11 +571,11 @@ export class EquipmentManagementComponent implements OnInit {
   // ─── Return ──────────────────────────────────────────────────
 
   returnEquipment(loanId: number): void {
-    if (!confirm('Confirmer le retour de cet équipement?')) return;
+    if (!confirm('Confirm equipment return?')) return;
     this.equipmentService.returnEquipment(loanId)
       .pipe(
         tap(() => {
-          this.notify('Équipement retourné avec succès!', 'success');
+          this.notify('Equipment returned successfully!', 'success');
           this.loadAllEquipment();
           this.loadAllMyLoans();
           this.loadMyActiveLoans();
@@ -583,7 +583,7 @@ export class EquipmentManagementComponent implements OnInit {
         }),
         catchError(err => {
           console.error('[EquipmentMgmt] returnEquipment failed', err);
-          this.notify('Erreur lors du retour', 'error');
+          this.notify('Error returning equipment', 'error');
           return of(null);
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -607,21 +607,21 @@ export class EquipmentManagementComponent implements OnInit {
   confirmExtend(): void {
     const loan = this.selectedLoan();
     if (!loan?.id || !this.extendDays || this.extendDays < 1) {
-      this.notify('Nombre de jours invalide', 'error');
+      this.notify('Invalid number of days', 'error');
       return;
     }
     this.isSaving.set(true);
     this.equipmentService.extendLoan(loan.id, this.extendDays)
       .pipe(
         tap(() => {
-          this.notify(`Prêt prolongé de ${this.extendDays} jour(s)`, 'success');
+          this.notify(`Loan extended by ${this.extendDays} day(s)`, 'success');
           this.closeExtendModal();
           this.loadAllMyLoans();
           this.loadMyActiveLoans();
         }),
         catchError(err => {
           console.error('[EquipmentMgmt] extendLoan failed', err);
-          this.notify('Erreur lors de la prolongation', 'error');
+          this.notify('Error extending loan', 'error');
           return of(null);
         }),
         finalize(() => this.isSaving.set(false)),
@@ -633,18 +633,18 @@ export class EquipmentManagementComponent implements OnInit {
   // ─── Cancel Loan ─────────────────────────────────────────────
 
   cancelLoan(loanId: number): void {
-    if (!confirm('Annuler ce prêt ?')) return;
+    if (!confirm('Cancel this loan?')) return;
     this.equipmentService.cancelLoan(loanId)
       .pipe(
         tap(() => {
-          this.notify('Prêt annulé', 'success');
+          this.notify('Loan cancelled', 'success');
           this.loadAllEquipment();
           this.loadAllMyLoans();
           this.loadMyActiveLoans();
         }),
         catchError(err => {
           console.error('[EquipmentMgmt] cancelLoan failed', err);
-          this.notify('Erreur lors de l\'annulation', 'error');
+          this.notify('Error cancelling loan', 'error');
           return of(null);
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -655,16 +655,16 @@ export class EquipmentManagementComponent implements OnInit {
   // ─── Delete Loan ─────────────────────────────────────────────
 
   deleteLoan(loanId: number): void {
-    if (!confirm('Supprimer ce prêt définitivement?')) return;
+    if (!confirm('Delete this loan permanently?')) return;
     this.equipmentService.deleteLoan(loanId)
       .pipe(
         tap(() => {
-          this.notify('Prêt supprimé', 'success');
+          this.notify('Loan deleted', 'success');
           this.loadAllMyLoans();
         }),
         catchError(err => {
           console.error('[EquipmentMgmt] deleteLoan failed', err);
-          this.notify('Erreur lors de la suppression', 'error');
+          this.notify('Error deleting', 'error');
           return of(null);
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -705,12 +705,12 @@ export class EquipmentManagementComponent implements OnInit {
 
   getStatusLabel(status?: EquipmentStatus | string): string {
     switch (status) {
-      case EquipmentStatus.AVAILABLE: return '✅ Disponible';
-      case EquipmentStatus.LOANED: return '📤 Emprunté';
+      case EquipmentStatus.AVAILABLE: return '✅ Available';
+      case EquipmentStatus.LOANED: return '📤 Loaned';
       case EquipmentStatus.MAINTENANCE: return '🔧 Maintenance';
-      case EquipmentStatus.DONATED: return '🎁 Donné';
-      case EquipmentStatus.REQUESTED: return '⏳ Demandé';
-      default: return '❓ Inconnu';
+      case EquipmentStatus.DONATED: return '🎁 Donated';
+      case EquipmentStatus.REQUESTED: return '⏳ Requested';
+      default: return '❓ Unknown';
     }
   }
 

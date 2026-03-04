@@ -12,8 +12,8 @@
     <!-- ── Header ── -->
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-            <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white">🏥 Équipements</h1>
-            <p class="text-slate-500 dark:text-slate-400 mt-1">Consultez et empruntez du matériel médical</p>
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white">🏥 Equipment</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">View and borrow medical equipment</p>
         </div>
         <!-- Stats rapides -->
         <div class="flex gap-3">
@@ -21,18 +21,18 @@
                 class="flex flex-col items-center px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800">
                 <span class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{{ availableEquipment().length
                     }}</span>
-                <span class="text-xs text-emerald-700 dark:text-emerald-300 font-medium">Disponibles</span>
+                <span class="text-xs text-emerald-700 dark:text-emerald-300 font-medium">Available</span>
             </div>
             <div
                 class="flex flex-col items-center px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800">
                 <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ activeLoanCount() }}</span>
-                <span class="text-xs text-blue-700 dark:text-blue-300 font-medium">Mes emprunts</span>
+                <span class="text-xs text-blue-700 dark:text-blue-300 font-medium">My Loans</span>
             </div>
             @if (overdueLoans().length > 0) {
             <div
                 class="flex flex-col items-center px-4 py-2 rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800">
                 <span class="text-2xl font-bold text-red-600 dark:text-red-400">{{ overdueLoans().length }}</span>
-                <span class="text-xs text-red-700 dark:text-red-300 font-medium">En retard</span>
+                <span class="text-xs text-red-700 dark:text-red-300 font-medium">Overdue</span>
             </div>
             }
         </div>
@@ -43,8 +43,8 @@
     <div
         class="flex items-center gap-3 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 font-medium">
         <span class="text-2xl">⚠️</span>
-        <span>Vous avez <strong>{{ overdueLoans().length }}</strong> emprunt(s) en retard ! Veuillez retourner
-            l'équipement dès que possible.</span>
+        <span>You have <strong>{{ overdueLoans().length }}</strong> overdue loan(s)! Please return
+            the equipment as soon as possible.</span>
     </div>
     }
 
@@ -53,12 +53,12 @@
         <button (click)="setTab('catalogue')"
             [class]="'px-5 py-3 text-sm font-semibold transition-all border-b-2 ' +
         (activeTab() === 'catalogue' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200')">
-            📦 Catalogue
+            📦 Catalog
         </button>
         <button (click)="setTab('mes-prets')"
             [class]="'px-5 py-3 text-sm font-semibold transition-all border-b-2 ' +
         (activeTab() === 'mes-prets' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200')">
-            🔄 Mes emprunts
+            🔄 My Loans
             @if (activeLoans().length > 0) {
             <span class="ml-2 px-2 py-0.5 text-xs bg-blue-500 text-white rounded-full">{{ activeLoans().length }}</span>
             }
@@ -66,12 +66,12 @@
         <button (click)="setTab('historique')"
             [class]="'px-5 py-3 text-sm font-semibold transition-all border-b-2 ' +
         (activeTab() === 'historique' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200')">
-            🕐 Historique
+            🕐 History
         </button>
     </div>
 
     <!-- ════════════════════════════════════════════════════════ -->
-    <!--                   TAB: CATALOGUE                        -->
+    <!--                   TAB: CATALOG                          -->
     <!-- ════════════════════════════════════════════════════════ -->
     @if (activeTab() === 'catalogue') {
 
@@ -81,20 +81,20 @@
         <div class="flex-1 min-w-[200px] relative">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
             <input type="text" [(ngModel)]="searchKeyword" (ngModelChange)="onSearch()"
-                placeholder="Rechercher un équipement..."
+                placeholder="Search equipment..."
                 class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all">
         </div>
         <!-- getEquipmentByCategory -->
         <select [(ngModel)]="categoryFilter" (ngModelChange)="filterByCategory($event)"
             class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-400 outline-none">
-            <option value="">Toutes les catégories</option>
+            <option value="">All categories</option>
             @for (cat of categories(); track cat) {
             <option [value]="cat">{{ cat }}</option>
             }
         </select>
         <button (click)="loadAllEquipment()"
             class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-medium">
-            🔄 Actualiser
+            🔄 Refresh
         </button>
     </div>
 
@@ -149,7 +149,8 @@
                 </div>
 
                 @if (eq.donationDate) {
-                <p class="text-xs text-slate-400 dark:text-slate-500">Donné le {{ eq.donationDate | date:'dd/MM/yyyy' }}
+                <p class="text-xs text-slate-400 dark:text-slate-500">Donated on {{ eq.donationDate | date:'dd/MM/yyyy'
+                    }}
                 </p>
                 }
 
@@ -158,7 +159,7 @@
             (eq.status === 'AVAILABLE' ?
               'bg-blue-500 hover:bg-blue-600 active:scale-[0.98] text-white shadow-md shadow-blue-200 dark:shadow-none' :
               'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed')">
-                    {{ eq.status === 'AVAILABLE' ? '🤝 Emprunter' : '🔒 Non disponible' }}
+                    {{ eq.status === 'AVAILABLE' ? '🤝 Borrow' : '🔒 Not available' }}
                 </button>
             </div>
         </div>
@@ -167,22 +168,22 @@
     } @else {
     <div class="text-center py-20">
         <p class="text-6xl mb-4">😊</p>
-        <h3 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">Aucun équipement trouvé</h3>
-        <p class="text-slate-500 dark:text-slate-400">Essayez un autre mot-clé ou revenez plus tard.</p>
+        <h3 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">No equipment found</h3>
+        <p class="text-slate-500 dark:text-slate-400">Try another keyword or come back later.</p>
     </div>
     }
     }
     }
 
     <!-- ════════════════════════════════════════════════════════ -->
-    <!--                  TAB: MES EMPRUNTS                      -->
+    <!--                  TAB: MY LOANS                          -->
     <!-- ════════════════════════════════════════════════════════ -->
     @if (activeTab() === 'mes-prets') {
 
     @if (isLoadingLoans()) {
     <div class="text-center py-16">
         <p class="text-5xl mb-4 animate-pulse">⏳</p>
-        <p class="text-slate-500 dark:text-slate-400">Chargement de vos emprunts...</p>
+        <p class="text-slate-500 dark:text-slate-400">Loading your loans...</p>
     </div>
     } @else if (activeLoans().length > 0) {
     <div class="space-y-4">
@@ -206,13 +207,13 @@
 
                     <div class="grid grid-cols-2 gap-2 text-sm">
                         <div>
-                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Emprunté le
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Borrowed on
                             </p>
                             <p class="font-medium text-slate-700 dark:text-slate-300">{{ loan.loanDate |
                                 date:'dd/MM/yyyy' }}</p>
                         </div>
                         <div>
-                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Retour prévu
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Due Return
                             </p>
                             <p
                                 [class]="'font-medium ' + (isOverdue(loan) ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300')">
@@ -232,12 +233,12 @@
                 <!-- returnEquipment -->
                 <button (click)="returnLoan(loan)"
                     class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold transition-all">
-                    ↩️ Retourner
+                    ↩️ Return
                 </button>
                 <!-- extendLoan -->
                 <button (click)="extendLoan(loan)"
                     class="flex-1 py-2.5 rounded-xl bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-sm font-bold transition-all">
-                    ⏰ Prolonger
+                    ⏰ Extend
                 </button>
                 <!-- cancelLoan -->
                 <button (click)="cancelLoan(loan)"
@@ -250,14 +251,14 @@
             @if (selectedLoan()?.id === loan.id) {
             <div
                 class="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 flex items-center gap-3">
-                <label class="text-sm font-semibold text-blue-700 dark:text-blue-300 shrink-0">Prolonger de:</label>
+                <label class="text-sm font-semibold text-blue-700 dark:text-blue-300 shrink-0">Extend by:</label>
                 <input type="number" [(ngModel)]="extendDays" min="1" max="30"
                     class="w-20 px-3 py-1.5 rounded-lg border border-blue-300 text-center font-bold bg-white dark:bg-slate-800">
-                <span class="text-sm text-blue-700 dark:text-blue-300">jours</span>
+                <span class="text-sm text-blue-700 dark:text-blue-300">days</span>
                 <button (click)="confirmExtend()"
                     class="px-4 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold">OK</button>
                 <button (click)="selectedLoan.set(null)"
-                    class="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm">Annuler</button>
+                    class="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm">Cancel</button>
             </div>
             }
         </div>
@@ -266,22 +267,22 @@
     } @else {
     <div class="text-center py-20">
         <p class="text-6xl mb-4">📭</p>
-        <h3 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">Aucun emprunt actif</h3>
-        <p class="text-slate-500 dark:text-slate-400 mb-5">Vous n'avez pas d'équipement emprunté en ce moment.</p>
+        <h3 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">No active loans</h3>
+        <p class="text-slate-500 dark:text-slate-400 mb-5">You have not borrowed any equipment at the moment.</p>
         <button (click)="setTab('catalogue')"
             class="px-6 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-bold transition-all">
-            📦 Voir le catalogue
+            📦 View Catalog
         </button>
     </div>
     }
     }
 
     <!-- ════════════════════════════════════════════════════════ -->
-    <!--                    TAB: HISTORIQUE                       -->
+    <!--                    TAB: HISTORY                          -->
     <!-- ════════════════════════════════════════════════════════ -->
     @if (activeTab() === 'historique') {
 
-    <h2 class="text-xl font-bold text-slate-800 dark:text-white">Historique de vos emprunts</h2>
+    <h2 class="text-xl font-bold text-slate-800 dark:text-white">Your Loan History</h2>
 
     @if (allLoans().length > 0) {
     <div class="space-y-3">
@@ -296,7 +297,7 @@
                 <h4 class="font-semibold text-slate-800 dark:text-white truncate">{{ loan.equipmentName }}</h4>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     {{ loan.loanDate | date:'dd/MM/yyyy' }} → {{ loan.dueDate | date:'dd/MM/yyyy' }}
-                    @if (loan.returnDate) { · Rendu le {{ loan.returnDate | date:'dd/MM/yyyy' }} }
+                    @if (loan.returnDate) { · Returned on {{ loan.returnDate | date:'dd/MM/yyyy' }} }
                 </p>
             </div>
             <span
@@ -309,13 +310,13 @@
     } @else {
     <div class="text-center py-16">
         <p class="text-5xl mb-4">📋</p>
-        <p class="text-slate-500 dark:text-slate-400">Aucun historique d'emprunt.</p>
+        <p class="text-slate-500 dark:text-slate-400">No loan history.</p>
     </div>
     }
     }
 
     <!-- ════════════════════════════════════════════════════════ -->
-    <!--              MODAL: EMPRUNTER                           -->
+    <!--              MODAL: BORROW                              -->
     <!-- ════════════════════════════════════════════════════════ -->
     @if (showBorrowModal()) {
     <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
@@ -327,7 +328,7 @@
             <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-5 text-white">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h2 class="text-xl font-bold">🤝 Emprunter</h2>
+                        <h2 class="text-xl font-bold">🤝 Borrow</h2>
                         <p class="text-blue-100 text-sm mt-0.5">{{ selectedEquipment()?.name }}</p>
                     </div>
                     <button (click)="showBorrowModal.set(false)"
@@ -338,7 +339,7 @@
             </div>
 
             <div class="p-5 space-y-4">
-                <!-- Infos équipement -->
+                <!-- Equipment info -->
                 @if (selectedEquipment()?.description) {
                 <p class="text-sm text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-700 rounded-xl p-3">
                     {{ selectedEquipment()?.description }}
@@ -348,7 +349,7 @@
                 <!-- Date de retour (obligatoire) -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                        Date de retour prévue <span class="text-red-500">*</span>
+                        Due return date <span class="text-red-500">*</span>
                     </label>
                     <input type="date" [(ngModel)]="borrowForm.dueDate" [min]="today"
                         class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-400 outline-none">
@@ -356,18 +357,17 @@
 
                 <!-- Motif -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Motif
-                        d'emprunt</label>
-                    <input type="text" [(ngModel)]="borrowForm.purpose"
-                        placeholder="Ex: Récupération post-opératoire..."
+                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Borrowing
+                        Output</label>
+                    <input type="text" [(ngModel)]="borrowForm.purpose" placeholder="Ex: Post-surgery recovery..."
                         class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-400 outline-none">
                 </div>
 
                 <!-- Notes -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Notes
-                        complémentaires</label>
-                    <textarea [(ngModel)]="borrowForm.notes" rows="2" placeholder="Informations supplémentaires..."
+                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Additional
+                        Notes</label>
+                    <textarea [(ngModel)]="borrowForm.notes" rows="2" placeholder="Extra information..."
                         class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-400 outline-none resize-none"></textarea>
                 </div>
 
@@ -375,11 +375,11 @@
                 <div class="flex gap-3 pt-2">
                     <button (click)="showBorrowModal.set(false)"
                         class="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
-                        Annuler
+                        Cancel
                     </button>
                     <button (click)="confirmBorrow()" [disabled]="!borrowForm.dueDate || isSubmitting()"
                         class="flex-1 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold transition-all">
-                        {{ isSubmitting() ? 'Traitement...' : '🤝 Confirmer l\'emprunt' }}
+                        {{ isSubmitting() ? 'Processing...' : '🤝 Confirm Borrow' }}
                     </button>
                 </div>
             </div>

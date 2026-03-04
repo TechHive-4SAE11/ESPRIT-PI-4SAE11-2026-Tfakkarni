@@ -123,7 +123,7 @@ public class IQuizServiceImp implements IQuizService {
     }
 
     @Override
-    public Quiz completeQuiz(Long quizId, Integer score) {
+    public Quiz completeQuiz(Long quizId, Integer score, Integer levelReached) {
         Quiz quiz = getQuizById(quizId);
         if (quiz == null) {
             log.error("Quiz not found with id: {}", quizId);
@@ -131,6 +131,9 @@ public class IQuizServiceImp implements IQuizService {
         }
 
         quiz.setTotalScore(score);
+        if (levelReached != null) {
+            quiz.setLevelReached(levelReached);
+        }
 
         return quizRepository.save(quiz);
     }

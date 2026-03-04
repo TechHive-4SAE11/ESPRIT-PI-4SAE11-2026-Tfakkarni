@@ -1,0 +1,9 @@
+
+> frontend@0.0.0 prebuild
+> node scripts/set-env.js
+
+Ô£ö environment.ts generated (API Base: http://localhost:9090, Keycloak: http://localhost:9090/auth)
+
+> frontend@0.0.0 build
+> ng build
+

@@ -188,9 +188,10 @@ public class QuizController {
     @Transactional
     public ResponseEntity<QuizDTO> completeQuiz(@PathVariable Long id, @RequestBody Map<String, Integer> request) {
         Integer score = request.get("score");
-        log.info("Completing quiz with ID: {} with score: {}", id, score);
+        Integer levelReached = request.get("levelReached");
+        log.info("Completing quiz with ID: {} with score: {} and levelReached: {}", id, score, levelReached);
 
-        Quiz quiz = quizService.completeQuiz(id, score);
+        Quiz quiz = quizService.completeQuiz(id, score, levelReached);
         if (quiz == null) {
             return ResponseEntity.notFound().build();
         }

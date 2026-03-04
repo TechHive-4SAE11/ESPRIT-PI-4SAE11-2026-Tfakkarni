@@ -1,0 +1,263 @@
+Found 57 repeated answers:
+
+Question ID: 5, Answer Text: "Today's exact date", Occurrences: 2
+Question ID: 5, Answer Text: "Incorrect date", Occurrences: 2
+Question ID: 5, Answer Text: "Doesn't know", Occurrences: 2
+Question ID: 5, Answer Text: "Refuses to answer", Occurrences: 2
+Question ID: 6, Answer Text: "Doesn't know", Occurrences: 3
+Question ID: 6, Answer Text: "Incorrect location", Occurrences: 2
+Question ID: 6, Answer Text: "Correct location (hospital, home, etc.)", Occurrences: 2
+Question ID: 6, Answer Text: "Vague answer", Occurrences: 2
+Question ID: 7, Answer Text: "LEMON, KEY", Occurrences: 2
+Question ID: 7, Answer Text: "LEMON", Occurrences: 2
+Question ID: 7, Answer Text: "LEMON, KEY, BALLOON", Occurrences: 2
+Question ID: 7, Answer Text: "No words", Occurrences: 2
+Question ID: 8, Answer Text: "100, 93, 86, 79", Occurrences: 2
+Question ID: 8, Answer Text: "100, 93, 86, 79, 72, 65", Occurrences: 2
+Question ID: 8, Answer Text: "100, 93, 86, 79, 72", Occurrences: 2
+Question ID: 8, Answer Text: "Less than 4 correct", Occurrences: 2
+Question ID: 9, Answer Text: "No words", Occurrences: 2
+Question ID: 9, Answer Text: "LEMON, KEY, BALLOON", Occurrences: 2
+Question ID: 9, Answer Text: "LEMON", Occurrences: 2
+Question ID: 9, Answer Text: "LEMON, KEY", Occurrences: 2
+Question ID: 10, Answer Text: "Description without naming", Occurrences: 2
+Question ID: 10, Answer Text: "Pencil / Watch", Occurrences: 2
+Question ID: 10, Answer Text: "Misnamed object", Occurrences: 2
+Question ID: 10, Answer Text: "Doesn't know", Occurrences: 2
+Question ID: 11, Answer Text: "Incorrect phrase", Occurrences: 2
+Question ID: 11, Answer Text: "Partial phrase", Occurrences: 2
+Question ID: 11, Answer Text: "Doesn't repeat", Occurrences: 2
+Question ID: 11, Answer Text: "No ifs, ands, or buts", Occurrences: 2
+Question ID: 12, Answer Text: "No steps", Occurrences: 2
+Question ID: 12, Answer Text: "2 out of 3 steps", Occurrences: 2
+Question ID: 12, Answer Text: "1 out of 3 steps", Occurrences: 2
+Question ID: 12, Answer Text: "Takes, folds, puts", Occurrences: 2
+Question ID: 13, Answer Text: "Does nothing", Occurrences: 2
+Question ID: 13, Answer Text: "Closes eyes", Occurrences: 2
+Question ID: 13, Answer Text: "Reads without executing", Occurrences: 2
+Question ID: 13, Answer Text: "Other action", Occurrences: 2
+Question ID: 14, Answer Text: "Complete sentence", Occurrences: 2
+Question ID: 14, Answer Text: "Writes nothing", Occurrences: 2
+Question ID: 14, Answer Text: "Incomplete sentence", Occurrences: 2
+Question ID: 14, Answer Text: "Words without structure", Occurrences: 2
+Question ID: 15, Answer Text: "Doesn't draw", Occurrences: 2
+Question ID: 15, Answer Text: "Correct drawing", Occurrences: 2
+Question ID: 15, Answer Text: "Approximate drawing", Occurrences: 2
+Question ID: 15, Answer Text: "Incorrect drawing", Occurrences: 2
+Question ID: 16, Answer Text: "Wrong date", Occurrences: 2
+Question ID: 16, Answer Text: "Exact date", Occurrences: 2
+Question ID: 16, Answer Text: "Doesn't remember", Occurrences: 2
+Question ID: 16, Answer Text: "Approximate date", Occurrences: 2
+Question ID: 17, Answer Text: "DLROW", Occurrences: 2
+Question ID: 17, Answer Text: "Less than 4 correct", Occurrences: 2
+Question ID: 17, Answer Text: "4 correct letters", Occurrences: 2
+Question ID: 17, Answer Text: "D L R O W", Occurrences: 2
+Question ID: 18, Answer Text: "7", Occurrences: 2
+Question ID: 18, Answer Text: "9", Occurrences: 2
+Question ID: 18, Answer Text: "Doesn't know", Occurrences: 2
+Question ID: 18, Answer Text: "8", Occurrences: 2
+Question ID: 19, Answer Text: "Doesn't know", Occurrences: 2
+
+--- Details of repeated answers ---
+
+--- Question 5 ---
+  [Answer ID: 3] Text: "Doesn't know", IsCorrect: false
+  [Answer ID: 123] Text: "Doesn't know", IsCorrect: false
+  [Answer ID: 2] Text: "Incorrect date", IsCorrect: false
+  [Answer ID: 122] Text: "Incorrect date", IsCorrect: false
+  [Answer ID: 4] Text: "Refuses to answer", IsCorrect: false
+  [Answer ID: 124] Text: "Refuses to answer", IsCorrect: false
+  [Answer ID: 1] Text: "Today's exact date", IsCorrect: true
+  [Answer ID: 121] Text: "Today's exact date", IsCorrect: true
+
+--- Question 6 ---
+  [Answer ID: 5] Text: "Correct location (hospital, home, etc.)", IsCorrect: true
+  [Answer ID: 125] Text: "Correct location (hospital, home, etc.)", IsCorrect: true
+  [Answer ID: 7] Text: "Doesn't know", IsCorrect: false
+  [Answer ID: 63] Text: "Doesn't know", IsCorrect: false
+  [Answer ID: 127] Text: "Doesn't know", IsCorrect: false
+  [Answer ID: 62] Text: "Incorrect date", IsCorrect: false
+  [Answer ID: 6] Text: "Incorrect location", IsCorrect: false
+  [Answer ID: 126] Text: "Incorrect location", IsCorrect: false
+  [Answer ID: 64] Text: "Refuses to answer", IsCorrect: false
+  [Answer ID: 61] Text: "Today's exact date", IsCorrect: true
+  [Answer ID: 8] Text: "Vague answer", IsCorrect: false
+  [Answer ID: 128] Text: "Vague answer", IsCorrect: false
+
+--- Question 7 ---
+  [Answer ID: 65] Text: "Correct location (hospital, home, etc.)", IsCorrect: true
+  [Answer ID: 67] Text: "Doesn't know", IsCorrect: false
+  [Answer ID: 66] Text: "Incorrect location", IsCorrect: false
+  [Answer ID: 11] Text: "LEMON", IsCorrect: false
+  [Answer ID: 131] Text: "LEMON", IsCorrect: false
+  [Answer ID: 10] Text: "LEMON, KEY", IsCorrect: false
+  [Answer ID: 130] Text: "LEMON, KEY", IsCorrect: false
+  [Answer ID: 9] Text: "LEMON, KEY, BALLOON", IsCorrect: true
+  [Answer ID: 129] Text: "LEMON, KEY, BALLOON", IsCorrect: true
+  [Answer ID: 12] Text: "No words", IsCorrect: false
+  [Answer ID: 132] Text: "No words", IsCorrect: false
+  [Answer ID: 68] Text: "Vague answer", IsCorrect: false
+
+--- Question 8 ---
+  [Answer ID: 15] Text: "100, 93, 86, 79", IsCorrect: false
+  [Answer ID: 135] Text: "100, 93, 86, 79", IsCorrect: false
+  [Answer ID: 14] Text: "100, 93, 86, 79, 72", IsCorrect: false
+  [Answer ID: 134] Text: "100, 93, 86, 79, 72", IsCorrect: false
+  [Answer ID: 13] Text: "100, 93, 86, 79, 72, 65", IsCorrect: true
+  [Answer ID: 133] Text: "100, 93, 86, 79, 72, 65", IsCorrect: true
+  [Answer ID: 71] Text: "LEMON", IsCorrect: false
+  [Answer ID: 70] Text: "LEMON, KEY", IsCorrect: false
+  [Answer ID: 69] Text: "LEMON, KEY, BALLOON", IsCorrect: true
+  [Answer ID: 16] Text: "Less than 4 correct", IsCorrect: false
+  [Answer ID: 136] Text: "Less than 4 correct", IsCorrect: false
+  [Answer ID: 72] Text: "No words", IsCorrect: false
+
+--- Question 9 ---
+  [Answer ID: 75] Text: "100, 93, 86, 79", IsCorrect: false
+  [Answer ID: 74] Text: "100, 93, 86, 79, 72", IsCorrect: false
+  [Answer ID: 73] Text: "100, 93, 86, 79, 72, 65", IsCorrect: true
+  [Answer ID: 19] Text: "LEMON", IsCorrect: false
+  [Answer ID: 139] Text: "LEMON", IsCorrect: false
+  [Answer ID: 18] Text: "LEMON, KEY", IsCorrect: false
+  [Answer ID: 138] Text: "LEMON, KEY", IsCorrect: false
+  [Answer ID: 17] Text: "LEMON, KEY, BALLOON", IsCorrect: true
+  [Answer ID: 137] Text: "LEMON, KEY, BALLOON", IsCorrect: true
+  [Answer ID: 76] Text: "Less than 4 correct", IsCorrect: false
+  [Answer ID: 20] Text: "No words", IsCorrect: false
+  [Answer ID: 140] Text: "No words", IsCorrect: false
+
+--- Question 10 ---
+  [Answer ID: 24] Text: "Description without naming", IsCorrect: false
+  [Answer ID: 144] Text: "Description without naming", IsCorrect: false
+  [Answer ID: 23] Text: "Doesn't know", IsCorrect: false
+  [Answer ID: 143] Text: "Doesn't know", IsCorrect: false
+  [Answer ID: 79] Text: "LEMON", IsCorrect: false
+  [Answer ID: 78] Text: "LEMON, KEY", IsCorrect: false
+  [Answer ID: 77] Text: "LEMON, KEY, BALLOON", IsCorrect: true
+  [Answer ID: 22] Text: "Misnamed object", IsCorrect: false
+  [Answer ID: 142] Text: "Misnamed object", IsCorrect: false
+  [Answer ID: 80] Text: "No words", IsCorrect: false
+  [Answer ID: 21] Text: "Pencil / Watch", IsCorrect: true
+  [Answer ID: 141] Text: "Pencil / Watch", IsCorrect: true
+
+--- Question 11 ---
+  [Answer ID: 84] Text: "Description without naming", IsCorrect: false
+  [Answer ID: 83] Text: "Doesn't know", IsCorrect: false
+  [Answer ID: 28] Text: "Doesn't repeat", IsCorrect: false
+  [Answer ID: 148] Text: "Doesn't repeat", IsCorrect: false
+  [Answer ID: 27] Text: "Incorrect phrase", IsCorrect: false
+  [Answer ID: 147] Text: "Incorrect phrase", IsCorrect: false
+  [Answer ID: 82] Text: "Misnamed object", IsCorrect: false
+  [Answer ID: 25] Text: "No ifs, ands, or buts", IsCorrect: true
+  [Answer ID: 145] Text: "No ifs, ands, or buts", IsCorrect: true
+  [Answer ID: 26] Text: "Partial phrase", IsCorrect: false
+  [Answer ID: 146] Text: "Partial phrase", IsCorrect: false
+  [Answer ID: 81] Text: "Pencil / Watch", IsCorrect: true
+
+--- Question 12 ---
+  [Answer ID: 31] Text: "1 out of 3 steps", IsCorrect: false
+  [Answer ID: 151] Text: "1 out of 3 steps", IsCorrect: false
+  [Answer ID: 30] Text: "2 out of 3 steps", IsCorrect: false
+  [Answer ID: 150] Text: "2 out of 3 steps", IsCorrect: false
+  [Answer ID: 88] Text: "Doesn't repeat", IsCorrect: false
+  [Answer ID: 87] Text: "Incorrect phrase", IsCorrect: false
+  [Answer ID: 85] Text: "No ifs, ands, or buts", IsCorrect: true
+  [Answer ID: 32] Text: "No steps", IsCorrect: false
+  [Answer ID: 152] Text: "No steps", IsCorrect: false
+  [Answer ID: 86] Text: "Partial phrase", IsCorrect: false
+  [Answer ID: 29] Text: "Takes, folds, puts", IsCorrect: true
+  [Answer ID: 149] Text: "Takes, folds, puts", IsCorrect: true
+
+--- Question 13 ---
+  [Answer ID: 91] Text: "1 out of 3 steps", IsCorrect: false
+  [Answer ID: 90] Text: "2 out of 3 steps", IsCorrect: false
+  [Answer ID: 33] Text: "Closes eyes", IsCorrect: true
+  [Answer ID: 153] Text: "Closes eyes", IsCorrect: true
+  [Answer ID: 35] Text: "Does nothing", IsCorrect: false
+  [Answer ID: 155] Text: "Does nothing", IsCorrect: false
+  [Answer ID: 92] Text: "No steps", IsCorrect: false
+  [Answer ID: 36] Text: "Other action", IsCorrect: false
+  [Answer ID: 156] Text: "Other action", IsCorrect: false
+  [Answer ID: 34] Text: "Reads without executing", IsCorrect: false
+  [Answer ID: 154] Text: "Reads without executing", IsCorrect: false
+  [Answer ID: 89] Text: "Takes, folds, puts", IsCorrect: true
+
+--- Question 14 ---
+  [Answer ID: 93] Text: "Closes eyes", IsCorrect: true
+  [Answer ID: 37] Text: "Complete sentence", IsCorrect: true
+  [Answer ID: 157] Text: "Complete sentence", IsCorrect: true
+  [Answer ID: 95] Text: "Does nothing", IsCorrect: false
+  [Answer ID: 39] Text: "Incomplete sentence", IsCorrect: false
+  [Answer ID: 159] Text: "Incomplete sentence", IsCorrect: false
+  [Answer ID: 96] Text: "Other action", IsCorrect: false
+  [Answer ID: 94] Text: "Reads without executing", IsCorrect: false
+  [Answer ID: 38] Text: "Words without structure", IsCorrect: false
+  [Answer ID: 158] Text: "Words without structure", IsCorrect: false
+  [Answer ID: 40] Text: "Writes nothing", IsCorrect: false
+  [Answer ID: 160] Text: "Writes nothing", IsCorrect: false
+
+--- Question 15 ---
+  [Answer ID: 42] Text: "Approximate drawing", IsCorrect: false
+  [Answer ID: 162] Text: "Approximate drawing", IsCorrect: false
+  [Answer ID: 97] Text: "Complete sentence", IsCorrect: true
+  [Answer ID: 41] Text: "Correct drawing", IsCorrect: true
+  [Answer ID: 161] Text: "Correct drawing", IsCorrect: true
+  [Answer ID: 44] Text: "Doesn't draw", IsCorrect: false
+  [Answer ID: 164] Text: "Doesn't draw", IsCorrect: false
+  [Answer ID: 99] Text: "Incomplete sentence", IsCorrect: false
+  [Answer ID: 43] Text: "Incorrect drawing", IsCorrect: false
+  [Answer ID: 163] Text: "Incorrect drawing", IsCorrect: false
+  [Answer ID: 98] Text: "Words without structure", IsCorrect: false
+  [Answer ID: 100] Text: "Writes nothing", IsCorrect: false
+
+--- Question 16 ---
+  [Answer ID: 46] Text: "Approximate date", IsCorrect: false
+  [Answer ID: 166] Text: "Approximate date", IsCorrect: false
+  [Answer ID: 102] Text: "Approximate drawing", IsCorrect: false
+  [Answer ID: 101] Text: "Correct drawing", IsCorrect: true
+  [Answer ID: 104] Text: "Doesn't draw", IsCorrect: false
+  [Answer ID: 48] Text: "Doesn't remember", IsCorrect: false
+  [Answer ID: 168] Text: "Doesn't remember", IsCorrect: false
+  [Answer ID: 45] Text: "Exact date", IsCorrect: true
+  [Answer ID: 165] Text: "Exact date", IsCorrect: true
+  [Answer ID: 103] Text: "Incorrect drawing", IsCorrect: false
+  [Answer ID: 47] Text: "Wrong date", IsCorrect: false
+  [Answer ID: 167] Text: "Wrong date", IsCorrect: false
+
+--- Question 17 ---
+  [Answer ID: 51] Text: "4 correct letters", IsCorrect: false
+  [Answer ID: 171] Text: "4 correct letters", IsCorrect: false
+  [Answer ID: 106] Text: "Approximate date", IsCorrect: false
+  [Answer ID: 49] Text: "D L R O W", IsCorrect: true
+  [Answer ID: 169] Text: "D L R O W", IsCorrect: true
+  [Answer ID: 50] Text: "DLROW", IsCorrect: true
+  [Answer ID: 170] Text: "DLROW", IsCorrect: true
+  [Answer ID: 108] Text: "Doesn't remember", IsCorrect: false
+  [Answer ID: 105] Text: "Exact date", IsCorrect: true
+  [Answer ID: 52] Text: "Less than 4 correct", IsCorrect: false
+  [Answer ID: 172] Text: "Less than 4 correct", IsCorrect: false
+  [Answer ID: 107] Text: "Wrong date", IsCorrect: false
+
+--- Question 18 ---
+  [Answer ID: 111] Text: "4 correct letters", IsCorrect: false
+  [Answer ID: 54] Text: "7", IsCorrect: false
+  [Answer ID: 174] Text: "7", IsCorrect: false
+  [Answer ID: 53] Text: "8", IsCorrect: true
+  [Answer ID: 173] Text: "8", IsCorrect: true
+  [Answer ID: 55] Text: "9", IsCorrect: false
+  [Answer ID: 175] Text: "9", IsCorrect: false
+  [Answer ID: 109] Text: "D L R O W", IsCorrect: true
+  [Answer ID: 110] Text: "DLROW", IsCorrect: true
+  [Answer ID: 56] Text: "Doesn't know", IsCorrect: false
+  [Answer ID: 176] Text: "Doesn't know", IsCorrect: false
+  [Answer ID: 112] Text: "Less than 4 correct", IsCorrect: false
+
+--- Question 19 ---
+  [Answer ID: 114] Text: "7", IsCorrect: false
+  [Answer ID: 113] Text: "8", IsCorrect: true
+  [Answer ID: 115] Text: "9", IsCorrect: false
+  [Answer ID: 116] Text: "Doesn't know", IsCorrect: false
+  [Answer ID: 180] Text: "Doesn't know", IsCorrect: false
+  [Answer ID: 178] Text: "They are food", IsCorrect: false
+  [Answer ID: 177] Text: "They are fruits", IsCorrect: true
+  [Answer ID: 179] Text: "They are round", IsCorrect: false

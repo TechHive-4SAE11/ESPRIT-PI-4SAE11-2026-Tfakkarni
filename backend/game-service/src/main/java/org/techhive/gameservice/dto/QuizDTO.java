@@ -33,6 +33,9 @@ public class QuizDTO {
     @NotNull(message = "Caregiver ID is required")
     private Long caregiverId;
 
+    /** Highest difficulty level the patient reached in this attempt (1, 2 or 3) */
+    private Integer levelReached;
+
     private List<QuestionDTO> questions; // Optionnel, pour les questions associées
 
     // Convert Entity to DTO
@@ -45,7 +48,8 @@ public class QuizDTO {
                 .topic(quiz.getTopic())
                 .totalScore(quiz.getTotalScore())
                 .dateTaken(quiz.getDateTaken())
-                .caregiverId(quiz.getCaregiverId());
+                .caregiverId(quiz.getCaregiverId())
+                .levelReached(quiz.getLevelReached());
 
         if (quiz.getQuestions() != null && !quiz.getQuestions().isEmpty()) {
             builder.questions(quiz.getQuestions().stream()
@@ -64,6 +68,7 @@ public class QuizDTO {
         quiz.setTotalScore(this.totalScore);
         quiz.setDateTaken(this.dateTaken);
         quiz.setCaregiverId(this.caregiverId);
+        quiz.setLevelReached(this.levelReached);
         return quiz;
     }
 }

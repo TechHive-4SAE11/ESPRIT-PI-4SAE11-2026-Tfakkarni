@@ -3,6 +3,8 @@ export interface QuizDTO {
   id?: number;
   topic: string;
   totalScore?: number;
+  /** Highest difficulty level the patient reached in this attempt (1=Easy, 2=Medium, 3=Hard) */
+  levelReached?: number;
   dateTaken?: string;
   caregiverId: number;
   questions?: QuestionDTO[];

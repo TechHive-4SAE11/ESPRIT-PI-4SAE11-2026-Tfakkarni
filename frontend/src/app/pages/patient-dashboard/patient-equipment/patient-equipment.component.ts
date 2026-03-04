@@ -187,7 +187,7 @@ export class PatientEquipmentComponent implements OnInit {
     const eq = this.selectedEquipment();
     const uid = this.userNeonDbId();
     if (!eq?.id || !uid || !this.borrowForm.dueDate) {
-      this.notify('Veuillez remplir tous les champs obligatoires.', 'error');
+      this.notify('Please fill all required fields.', 'error');
       return;
     }
     this.isSubmitting.set(true);
@@ -200,7 +200,7 @@ export class PatientEquipmentComponent implements OnInit {
     };
     this.equipService.borrowEquipment(loan).pipe(
       tap(() => {
-        this.notify(`✅ "${eq.name}" emprunté avec succès !`, 'success');
+        this.notify(`✅ "${eq.name}" borrowed successfully!`, 'success');
         this.showBorrowModal.set(false);
         this.loadAllEquipment();
         this.loadMyLoans(uid);
@@ -208,7 +208,7 @@ export class PatientEquipmentComponent implements OnInit {
       }),
       catchError((err) => {
         console.error('Erreur Borrow:', err);
-        this.notify('Erreur lors de l\'emprunt.', 'error');
+        this.notify('Error during borrowing.', 'error');
         return of(null);
       }),
       finalize(() => this.isSubmitting.set(false)),
@@ -218,15 +218,15 @@ export class PatientEquipmentComponent implements OnInit {
 
   // ─── RETURN — returnEquipment ─────────────────────────────────
   returnLoan(loan: EquipmentLoanDTO): void {
-    if (!loan.id || !confirm(`Retourner "${loan.equipmentName}" ?`)) return;
+    if (!loan.id || !confirm(`Return "${loan.equipmentName}" ?`)) return;
     this.equipService.returnEquipment(loan.id).pipe(
       tap(() => {
-        this.notify(`✅ "${loan.equipmentName}" retourné !`, 'success');
+        this.notify(`✅ "${loan.equipmentName}" returned!`, 'success');
         const uid = this.userNeonDbId();
         if (uid) { this.loadMyLoans(uid); this.loadActiveLoanCount(uid); }
         this.loadAllEquipment();
       }),
-      catchError(() => { this.notify('Erreur lors du retour.', 'error'); return of(null); }),
+      catchError(() => { this.notify('Error during return.', 'error'); return of(null); }),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe();
   }
@@ -241,27 +241,27 @@ export class PatientEquipmentComponent implements OnInit {
     if (!loan?.id) return;
     this.equipService.extendLoan(loan.id, this.extendDays).pipe(
       tap(() => {
-        this.notify(`Prêt prolongé de ${this.extendDays} jours !`, 'success');
+        this.notify(`Loan extended by ${this.extendDays} days!`, 'success');
         this.selectedLoan.set(null);
         const uid = this.userNeonDbId();
         if (uid) this.loadMyLoans(uid);
       }),
-      catchError(() => { this.notify('Erreur lors de la prolongation.', 'error'); return of(null); }),
+      catchError(() => { this.notify('Error during extension.', 'error'); return of(null); }),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe();
   }
 
   // ─── CANCEL — cancelLoan ──────────────────────────────────────
   cancelLoan(loan: EquipmentLoanDTO): void {
-    if (!loan.id || !confirm(`Annuler l'emprunt de "${loan.equipmentName}" ?`)) return;
+    if (!loan.id || !confirm(`Cancel loan for "${loan.equipmentName}" ?`)) return;
     this.equipService.cancelLoan(loan.id).pipe(
       tap(() => {
-        this.notify('Prêt annulé.', 'info');
+        this.notify('Loan cancelled.', 'info');
         const uid = this.userNeonDbId();
         if (uid) { this.loadMyLoans(uid); this.loadActiveLoanCount(uid); }
         this.loadAllEquipment();
       }),
-      catchError(() => { this.notify('Erreur lors de l\'annulation.', 'error'); return of(null); }),
+      catchError(() => { this.notify('Error during cancellation.', 'error'); return of(null); }),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe();
   }
@@ -273,21 +273,21 @@ export class PatientEquipmentComponent implements OnInit {
   }
 
   getLoanStatusBadge(loan: EquipmentLoanDTO): { label: string; cls: string } {
-    if (this.isOverdue(loan)) return { label: '⚠️ En retard', cls: 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300' };
+    if (this.isOverdue(loan)) return { label: '⚠️ Overdue', cls: 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300' };
     switch (loan.status) {
-      case LoanStatus.ACTIVE: return { label: '✅ Actif', cls: 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300' };
-      case LoanStatus.RETURNED: return { label: '↩️ Retourné', cls: 'bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-700 dark:text-slate-300' };
-      case LoanStatus.CANCELLED: return { label: '✕ Annulé', cls: 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-300' };
+      case LoanStatus.ACTIVE: return { label: '✅ Active', cls: 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300' };
+      case LoanStatus.RETURNED: return { label: '↩️ Returned', cls: 'bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-700 dark:text-slate-300' };
+      case LoanStatus.CANCELLED: return { label: '✕ Cancelled', cls: 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-300' };
       default: return { label: loan.status ?? '?', cls: 'bg-slate-100 text-slate-600' };
     }
   }
 
   getEquipmentStatusBadge(status?: EquipmentStatus): { label: string; cls: string } {
     switch (status) {
-      case EquipmentStatus.AVAILABLE: return { label: '✅ Disponible', cls: 'bg-emerald-100 text-emerald-700' };
-      case EquipmentStatus.LOANED: return { label: '🔄 Emprunté', cls: 'bg-blue-100 text-blue-700' };
+      case EquipmentStatus.AVAILABLE: return { label: '✅ Available', cls: 'bg-emerald-100 text-emerald-700' };
+      case EquipmentStatus.LOANED: return { label: '🔄 Loaned', cls: 'bg-blue-100 text-blue-700' };
       case EquipmentStatus.MAINTENANCE: return { label: '🔧 Maintenance', cls: 'bg-amber-100 text-amber-700' };
-      case EquipmentStatus.DONATED: return { label: '🎁 Donné', cls: 'bg-violet-100 text-violet-700' };
+      case EquipmentStatus.DONATED: return { label: '🎁 Donated', cls: 'bg-violet-100 text-violet-700' };
       default: return { label: status ?? '?', cls: 'bg-slate-100 text-slate-600' };
     }
   }

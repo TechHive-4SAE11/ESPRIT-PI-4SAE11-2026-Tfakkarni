@@ -184,13 +184,13 @@ export class QuizManagementComponent implements OnInit {
     this.quizService.getQuizzesWithMinScore(this.minScoreFilter).subscribe(res => {
       const filtered = res.filter(q => q.caregiverId === this.userNeonDbId());
       this.displayedQuizzes.set(filtered);
-      this.notify(`Quizz avec score >= ${this.minScoreFilter} trouvés`, 'info');
+      this.notify(`Quizzes with score >= ${this.minScoreFilter} found`, 'info');
     });
   }
 
   filterByDateRange(): void {
     if (!this.startDateFilter || !this.endDateFilter) {
-      this.notify('Veuillez sélectionner une date de début et de fin', 'error');
+      this.notify('Please select a start and end date', 'error');
       return;
     }
     const start = new Date(this.startDateFilter).toISOString();
@@ -198,7 +198,7 @@ export class QuizManagementComponent implements OnInit {
     this.quizService.getQuizzesByDateRange(start, end).subscribe(res => {
       const filtered = res.filter(q => q.caregiverId === this.userNeonDbId());
       this.displayedQuizzes.set(filtered);
-      this.notify(`Quizz filtrés par date`, 'info');
+      this.notify(`Quizzes filtered by date`, 'info');
     });
   }
 
@@ -228,12 +228,12 @@ export class QuizManagementComponent implements OnInit {
 
     obs.pipe(
       tap(() => {
-        this.notify(this.isEditing() ? 'Quiz modifié' : 'Quiz créé', 'success');
+        this.notify(this.isEditing() ? 'Quiz updated' : 'Quiz created', 'success');
         this.showCreateForm.set(false);
         this.loadQuizzes();
       }),
       catchError(() => {
-        this.notify('Erreur de sauvegarde', 'error');
+        this.notify('Save error', 'error');
         return of(null);
       }),
       finalize(() => this.creating.set(false)),
@@ -242,10 +242,10 @@ export class QuizManagementComponent implements OnInit {
   }
 
   deleteQuiz(id: number): void {
-    if (!confirm('Voulez-vous vraiment supprimer ce quiz ?')) return;
+    if (!confirm('Do you really want to delete this quiz?')) return;
     this.quizService.deleteQuiz(id).subscribe({
       next: () => {
-        this.notify('Quiz supprimé', 'success');
+        this.notify('Quiz deleted', 'success');
         this.loadQuizzes();
         if (this.selectedQuizId() === id) {
           this.selectedQuizId.set(null);
@@ -253,7 +253,7 @@ export class QuizManagementComponent implements OnInit {
           this.displayedQuestions.set([]);
         }
       },
-      error: () => this.notify('Erreur de suppression', 'error')
+      error: () => this.notify('Delete error', 'error')
     });
   }
 
@@ -300,7 +300,7 @@ export class QuizManagementComponent implements OnInit {
           this.displayedQuestions.set(questionsWithAnswers);
         }),
         catchError(() => {
-          this.notify('Erreur de chargement des questions', 'error');
+          this.notify('Failed to load questions', 'error');
           return of([]);
         }),
         finalize(() => this.isLoadingQuestions.set(false)),
@@ -335,9 +335,9 @@ export class QuizManagementComponent implements OnInit {
 
   deleteAllQuestionsInQuiz(): void {
     const quizId = this.selectedQuizId();
-    if (!quizId || !confirm('Supprimer TOUTES les questions ? Irréversible.')) return;
+    if (!quizId || !confirm('Delete ALL questions? This action is irreversible.')) return;
     this.quizService.deleteQuestionsByQuizId(quizId).subscribe(() => {
-      this.notify('Toutes les questions supprimées', 'success');
+      this.notify('All questions deleted', 'success');
       this.loadSelectedQuizData();
     });
   }
@@ -356,9 +356,9 @@ export class QuizManagementComponent implements OnInit {
   }
 
   deleteQuestion(id: number): void {
-    if (!confirm('Supprimer cette question ?')) return;
+    if (!confirm('Delete this question?')) return;
     this.quizService.deleteQuestion(id).subscribe(() => {
-      this.notify('Question supprimée', 'success');
+      this.notify('Question deleted', 'success');
       this.loadSelectedQuizData();
     });
   }
@@ -375,16 +375,16 @@ export class QuizManagementComponent implements OnInit {
   submitQuestion(): void {
     const quizId = this.selectedQuizId();
     if (!quizId) return;
-    if (!this.newQuestion.text?.trim()) { this.questionError.set('Le texte est requis'); return; }
+    if (!this.newQuestion.text?.trim()) { this.questionError.set('Text is required'); return; }
 
     const correctIndex = this.correctAnswerIndex();
-    if (correctIndex === -1 && !this.isEditingQuestion()) { this.questionError.set('Sélectionnez la bonne réponse'); return; }
+    if (correctIndex === -1 && !this.isEditingQuestion()) { this.questionError.set('Select the correct answer'); return; }
 
     this.isSubmittingQuestion.set(true);
 
     if (this.isEditingQuestion() && this.newQuestion.id) {
       this.quizService.updateQuestion(this.newQuestion.id, { ...this.newQuestion, quizId } as QuestionDTO).subscribe(() => {
-        this.notify('Question modifiée', 'success');
+        this.notify('Question updated', 'success');
         this.cancelQuestionForm();
         this.loadSelectedQuizData();
         this.isSubmittingQuestion.set(false);
@@ -397,7 +397,7 @@ export class QuizManagementComponent implements OnInit {
             .map((a, i) => ({
               text: a.text!.trim(),
               isCorrect: i === correctIndex,
-              explanation: i === correctIndex ? 'Correct ✅' : 'Mauvaise réponse ❌',
+              explanation: i === correctIndex ? 'Correct ✅' : 'Wrong answer ❌',
               questionId: createdQ.id!
             } as AnswerDTO));
 
@@ -411,13 +411,13 @@ export class QuizManagementComponent implements OnInit {
         })
       ).subscribe({
         next: () => {
-          this.notify('Question + Réponses créées avec succès !', 'success');
+          this.notify('Question + Answers created successfully!', 'success');
           this.cancelQuestionForm();
           this.loadSelectedQuizData();
           this.isSubmittingQuestion.set(false);
         },
         error: (err) => {
-          this.questionError.set('Erreur lors de la création. Vérifiez la console.');
+          this.questionError.set('Creation error. Check the console.');
           this.isSubmittingQuestion.set(false);
         }
       });
@@ -464,7 +464,7 @@ export class QuizManagementComponent implements OnInit {
       questionId: qId,
       explanation: ''
     }).subscribe(() => {
-      this.notify('Choix de réponse ajouté', 'success');
+      this.notify('Answer choice added', 'success');
       this.newSingleAnswerText = '';
       this.loadAnswersForSelectedQuestion(qId);
       this.loadSelectedQuizData();
@@ -475,7 +475,7 @@ export class QuizManagementComponent implements OnInit {
     const ans = this.answersForSelectedQuestion().find(a => a.id === answerId);
     if (!ans || ans.text === text.trim()) return;
     this.quizService.updateAnswer(answerId, { ...ans, text: text.trim() }).subscribe(() => {
-      this.notify('Texte mis à jour', 'info');
+      this.notify('Text updated', 'info');
       this.loadAnswersForSelectedQuestion(ans.questionId);
     });
   }
@@ -484,7 +484,7 @@ export class QuizManagementComponent implements OnInit {
     const ans = this.answersForSelectedQuestion().find(a => a.id === answerId);
     if (!ans || ans.explanation === explanation.trim()) return;
     this.quizService.updateAnswer(answerId, { ...ans, explanation: explanation.trim() }).subscribe(() => {
-      this.notify('Explication mise à jour', 'info');
+      this.notify('Explanation updated', 'info');
       this.loadAnswersForSelectedQuestion(ans.questionId);
     });
   }
@@ -501,16 +501,16 @@ export class QuizManagementComponent implements OnInit {
     );
 
     forkJoin(updates).subscribe(() => {
-      this.notify('Bonne réponse définie', 'success');
+      this.notify('Correct answer set', 'success');
       this.loadAnswersForSelectedQuestion(qId);
     });
   }
 
   deleteAnswer(answerId: number): void {
-    if (!confirm('Supprimer cette réponse ?')) return;
+    if (!confirm('Delete this answer?')) return;
     const qId = this.answersForSelectedQuestion()[0]?.questionId;
     this.quizService.deleteAnswer(answerId).subscribe(() => {
-      this.notify('Réponse supprimée', 'success');
+      this.notify('Answer deleted', 'success');
       if (qId) this.loadAnswersForSelectedQuestion(qId);
       this.loadSelectedQuizData();
     });
@@ -518,7 +518,7 @@ export class QuizManagementComponent implements OnInit {
 
   checkAnswerCorrectness(answerId: number): void {
     this.quizService.isAnswerCorrect(answerId).subscribe(res => {
-      this.notify(`Backend vérifie: ${res.message}`, res.value ? 'success' : 'info');
+      this.notify(`Backend verifies: ${res.message}`, res.value ? 'success' : 'info');
     });
   }
 }

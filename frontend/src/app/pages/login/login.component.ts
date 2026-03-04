@@ -10,7 +10,7 @@ import { AuthService } from '@/core/auth';
 import { ZardButtonComponent } from '@/shared/components/button/button.component';
 import { ZardCardComponent } from '@/shared/components/card/card.component';
 import { ZardInputDirective } from '@/shared/components/input/input.directive';
-import { RecaptchaModule, RecaptchaFormsModule } from 'ng-recaptcha';
+import { RecaptchaModule, RecaptchaFormsModule, RECAPTCHA_LANGUAGE } from 'ng-recaptcha';
 
 @Component({
   selector: 'app-login',
@@ -27,6 +27,12 @@ import { RecaptchaModule, RecaptchaFormsModule } from 'ng-recaptcha';
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css'],
+  providers: [
+    {
+      provide: RECAPTCHA_LANGUAGE,
+      useValue: 'en', // Force English locally
+    },
+  ],
 })
 export class LoginComponent implements OnInit {
   isLoggedIn = false;

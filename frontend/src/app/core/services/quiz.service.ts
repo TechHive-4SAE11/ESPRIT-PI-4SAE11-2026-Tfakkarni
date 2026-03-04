@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import {catchError, Observable, of, tap } from 'rxjs';
+import { catchError, Observable, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   QuizDTO,
@@ -74,8 +74,8 @@ export class QuizService {
     return this.http.post<QuizDTO>(`${this.baseUrl}/${id}/start`, {});
   }
 
-  completeQuiz(id: number, score: number): Observable<QuizDTO> {
-    return this.http.post<QuizDTO>(`${this.baseUrl}/${id}/complete`, { score });
+  completeQuiz(id: number, score: number, levelReached?: number): Observable<QuizDTO> {
+    return this.http.post<QuizDTO>(`${this.baseUrl}/${id}/complete`, { score, levelReached });
   }
 
   getAverageScoreByCaregiver(caregiverId: number): Observable<number> {
