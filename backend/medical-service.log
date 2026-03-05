@@ -15797,3 +15797,593 @@ Caused by: org.springframework.context.annotation.ConflictingBeanDefinitionExcep
 2026-03-05T01:59:07.297+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
 2026-03-05T01:59:07.313+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
 2026-03-05T01:59:07.313+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T01:59:37.200+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772670605591
+2026-03-05T01:59:37.200+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T01:59:37.217+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T01:59:37.324+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T01:59:37.325+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T01:59:37.340+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T01:59:37.340+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:00:00.076+01:00 DEBUG 5968 --- [medical-service] [scheduling-1] org.hibernate.SQL                        : 
+    select
+        el1_0.id,
+        el1_0.borrower_id,
+        el1_0.due_date,
+        el1_0.equipment_id,
+        el1_0.loan_date,
+        el1_0.notes,
+        el1_0.purpose,
+        el1_0.return_date,
+        el1_0.status 
+    from
+        equipment_loans el1_0 
+    where
+        el1_0.status='ACTIVE' 
+        and el1_0.due_date<localtimestamp
+2026-03-05T02:00:05.246+01:00  INFO 5968 --- [medical-service] [AsyncResolver-bootstrap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-03-05T02:00:07.224+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772670605591
+2026-03-05T02:00:07.225+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:00:07.240+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:00:07.350+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:00:07.351+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:00:07.367+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:00:07.367+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:00:37.247+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772670605591
+2026-03-05T02:00:37.248+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:00:37.264+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:00:37.372+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:00:37.372+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:00:37.389+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:00:37.390+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:00:45.942+01:00 DEBUG 5968 --- [medical-service] [http-nio-18086-exec-10] o.s.web.servlet.DispatcherServlet        : GET "/api/medical/equipment", parameters={}
+2026-03-05T02:00:45.942+01:00 DEBUG 5968 --- [medical-service] [http-nio-18086-exec-10] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentController#getAllEquipment()
+2026-03-05T02:00:45.998+01:00  INFO 5968 --- [medical-service] [http-nio-18086-exec-10] o.t.m.controller.EquipmentController     : Fetching all equipment
+2026-03-05T02:00:46.000+01:00 DEBUG 5968 --- [medical-service] [http-nio-18086-exec-10] org.hibernate.SQL                        : 
+    select
+        e1_0.id,
+        e1_0.category,
+        e1_0.condition,
+        e1_0.description,
+        e1_0.donation_date,
+        e1_0.donor_id,
+        e1_0.name,
+        e1_0.status 
+    from
+        equipments e1_0
+2026-03-05T02:00:46.066+01:00 DEBUG 5968 --- [medical-service] [http-nio-18086-exec-10] org.hibernate.SQL                        : 
+    select
+        l1_0.equipment_id,
+        l1_0.id,
+        l1_0.borrower_id,
+        l1_0.due_date,
+        l1_0.loan_date,
+        l1_0.notes,
+        l1_0.purpose,
+        l1_0.return_date,
+        l1_0.status 
+    from
+        equipment_loans l1_0 
+    where
+        l1_0.equipment_id=?
+2026-03-05T02:00:46.183+01:00 DEBUG 5968 --- [medical-service] [http-nio-18086-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-03-05T02:00:46.184+01:00 DEBUG 5968 --- [medical-service] [http-nio-18086-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [[EquipmentDTO(id=2, name=fauteill, description=hhhhhhh, category=CARDIAC, status=AVAILABLE, donation (truncated)...]
+2026-03-05T02:00:46.185+01:00 DEBUG 5968 --- [medical-service] [http-nio-18086-exec-10] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2026-03-05T02:01:07.266+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772670605591
+2026-03-05T02:01:07.266+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:01:07.282+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:01:07.406+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:01:07.406+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:01:07.422+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:01:07.422+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:01:37.288+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772670605591
+2026-03-05T02:01:37.288+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:01:37.305+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:01:37.431+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:01:37.432+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:01:37.448+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:01:37.448+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:02:07.317+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772670605591
+2026-03-05T02:02:07.317+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:02:07.334+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:02:07.458+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:02:07.458+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:02:07.474+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:02:07.475+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:02:37.338+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772670605591
+2026-03-05T02:02:37.338+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:02:37.355+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:02:37.478+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:02:37.479+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:02:37.494+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:02:37.494+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:03:07.369+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772670605591
+2026-03-05T02:03:07.369+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:03:07.385+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:03:07.510+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:03:07.510+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:03:07.525+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:03:07.525+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:03:37.396+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772670605591
+2026-03-05T02:03:37.397+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:03:37.413+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:03:37.536+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:03:37.536+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:03:37.553+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:03:37.553+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:04:07.422+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772670605591
+2026-03-05T02:04:07.422+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:04:07.439+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:04:07.563+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:04:07.563+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:04:07.580+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:04:07.580+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:04:37.446+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772670605591
+2026-03-05T02:04:37.447+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:04:37.464+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:04:37.587+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:04:37.588+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:04:37.604+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:04:37.604+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:05:05.251+01:00  INFO 5968 --- [medical-service] [AsyncResolver-bootstrap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-03-05T02:05:07.468+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772670605591
+2026-03-05T02:05:07.468+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:05:07.484+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:05:07.609+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:05:07.609+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:05:07.627+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:05:07.627+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:05:37.489+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772670605591
+2026-03-05T02:05:37.490+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:05:37.507+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:05:37.628+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:05:37.629+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:05:37.645+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:05:37.645+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:06:07.516+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772670605591
+2026-03-05T02:06:07.516+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:06:07.533+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:06:07.656+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:06:07.656+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:06:07.672+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:06:07.672+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:06:09.984+01:00  INFO 5968 --- [medical-service] [SpringApplicationShutdownHook] o.s.c.n.e.s.EurekaServiceRegistry        : Unregistering application MEDICAL-SERVICE with eureka with status DOWN
+2026-03-05T02:06:09.984+01:00  INFO 5968 --- [medical-service] [SpringApplicationShutdownHook] com.netflix.discovery.DiscoveryClient    : Saw local status change event StatusChangeEvent [timestamp=1772672769984, current=DOWN, previous=UP]
+2026-03-05T02:06:09.984+01:00  INFO 5968 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_MEDICAL-SERVICE/medical-service:18086: registering service...
+2026-03-05T02:06:09.985+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : HTTP POST http://localhost:8761/eureka/apps/MEDICAL-SERVICE
+2026-03-05T02:06:09.985+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:06:09.988+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Writing [InstanceInfo [instanceId = medical-service:18086, appName = MEDICAL-SERVICE, hostName = 192.168.3.1, status = DOWN, ipAddr = 192.168.3.1, port = 18086, securePort = 443, dataCenterInfo = com.netflix.appinfo.MyDataCenterInfo@1514c417] as "application/json"
+2026-03-05T02:06:10.009+01:00 DEBUG 5968 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Response 204 NO_CONTENT
+2026-03-05T02:06:10.009+01:00  INFO 5968 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_MEDICAL-SERVICE/medical-service:18086 - registration status: 204
+2026-03-05T02:06:10.017+01:00  INFO 5968 --- [medical-service] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-03-05T02:06:10.024+01:00  INFO 5968 --- [medical-service] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-03-05T02:06:10.641+01:00  INFO 5968 --- [medical-service] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-03-05T02:06:10.643+01:00  INFO 5968 --- [medical-service] [SpringApplicationShutdownHook] com.netflix.discovery.DiscoveryClient    : Shutting down DiscoveryClient ...
+2026-03-05T02:06:13.657+01:00  INFO 5968 --- [medical-service] [SpringApplicationShutdownHook] com.netflix.discovery.DiscoveryClient    : Unregistering ...
+2026-03-05T02:06:13.658+01:00 DEBUG 5968 --- [medical-service] [SpringApplicationShutdownHook] o.s.web.client.RestTemplate              : HTTP DELETE http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086
+2026-03-05T02:06:13.659+01:00 DEBUG 5968 --- [medical-service] [SpringApplicationShutdownHook] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:06:13.688+01:00 DEBUG 5968 --- [medical-service] [SpringApplicationShutdownHook] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:06:13.689+01:00  INFO 5968 --- [medical-service] [SpringApplicationShutdownHook] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_MEDICAL-SERVICE/medical-service:18086 - deregister  status: 200
+2026-03-05T02:06:13.689+01:00  INFO 5968 --- [medical-service] [SpringApplicationShutdownHook] com.netflix.discovery.DiscoveryClient    : Completed shut down of DiscoveryClient
+2026-03-05T02:06:22.504+01:00  INFO 1760 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Starting MedicalServiceApplication using Java 21.0.2 with PID 1760 (C:\Users\Lenovo\OneDrive - ESPRIT\Documents\GitHub\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\medical-service\target\classes started by Lenovo in C:\Users\Lenovo\OneDrive - ESPRIT\Documents\GitHub\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend)
+2026-03-05T02:06:22.506+01:00 DEBUG 1760 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Running with Spring Boot v3.3.6, Spring v6.1.15
+2026-03-05T02:06:22.507+01:00  INFO 1760 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : No active profile set, falling back to 1 default profile: "default"
+2026-03-05T02:06:24.606+01:00  INFO 1760 --- [medical-service] [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-03-05T02:06:24.821+01:00  INFO 1760 --- [medical-service] [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 205 ms. Found 9 JPA repository interfaces.
+2026-03-05T02:06:25.148+01:00  INFO 1760 --- [medical-service] [main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=8102bb5d-0a7b-355c-b93c-1f379b700e83
+2026-03-05T02:06:26.022+01:00  INFO 1760 --- [medical-service] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18086 (http)
+2026-03-05T02:06:26.039+01:00  INFO 1760 --- [medical-service] [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-05T02:06:26.040+01:00  INFO 1760 --- [medical-service] [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-03-05T02:06:26.138+01:00  INFO 1760 --- [medical-service] [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-03-05T02:06:26.138+01:00  INFO 1760 --- [medical-service] [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 3217 ms
+2026-03-05T02:06:26.433+01:00 DEBUG 1760 --- [medical-service] [main] o.s.w.f.ServerHttpObservationFilter      : Filter 'webMvcObservationFilter' configured for use
+2026-03-05T02:06:26.627+01:00  INFO 1760 --- [medical-service] [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-03-05T02:06:26.709+01:00  INFO 1760 --- [medical-service] [main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.3.Final
+2026-03-05T02:06:26.750+01:00  INFO 1760 --- [medical-service] [main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-03-05T02:06:27.136+01:00  INFO 1760 --- [medical-service] [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-03-05T02:06:27.198+01:00  INFO 1760 --- [medical-service] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-05T02:06:28.364+01:00  INFO 1760 --- [medical-service] [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@f09c282
+2026-03-05T02:06:28.365+01:00  INFO 1760 --- [medical-service] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-05T02:06:28.469+01:00  WARN 1760 --- [medical-service] [main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-03-05T02:06:29.956+01:00  INFO 1760 --- [medical-service] [main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-03-05T02:06:30.490+01:00 DEBUG 1760 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists ai_reports 
+       alter column report_json set data type TEXT
+2026-03-05T02:06:30.552+01:00 DEBUG 1760 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists diagnostics 
+       alter column comorbidities set data type TEXT
+2026-03-05T02:06:30.613+01:00 DEBUG 1760 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists medical_history 
+       alter column allergies set data type TEXT
+2026-03-05T02:06:30.678+01:00 DEBUG 1760 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists medical_history 
+       alter column conditions set data type TEXT
+2026-03-05T02:06:30.741+01:00 DEBUG 1760 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists medical_history 
+       alter column surgeries set data type TEXT
+2026-03-05T02:06:31.823+01:00  INFO 1760 --- [medical-service] [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-03-05T02:06:32.588+01:00  INFO 1760 --- [medical-service] [main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-03-05T02:06:34.308+01:00  WARN 1760 --- [medical-service] [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-03-05T02:06:34.532+01:00 DEBUG 1760 --- [medical-service] [main] s.w.s.m.m.a.RequestMappingHandlerMapping : 95 mappings in 'requestMappingHandlerMapping'
+2026-03-05T02:06:34.592+01:00 DEBUG 1760 --- [medical-service] [main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Patterns [/webjars/**, /**, /swagger-ui*/*swagger-initializer.js, /swagger-ui*/**] in 'resourceHandlerMapping'
+2026-03-05T02:06:34.662+01:00 DEBUG 1760 --- [medical-service] [main] s.w.s.m.m.a.RequestMappingHandlerAdapter : ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2026-03-05T02:06:34.718+01:00 DEBUG 1760 --- [medical-service] [main] .m.m.a.ExceptionHandlerExceptionResolver : ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2026-03-05T02:06:35.977+01:00  INFO 1760 --- [medical-service] [main] DiscoveryClientOptionalArgsConfiguration : Eureka HTTP Client uses RestTemplate.
+2026-03-05T02:06:36.084+01:00  WARN 1760 --- [medical-service] [main] iguration$LoadBalancerCaffeineWarnLogger : Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+2026-03-05T02:06:36.100+01:00  INFO 1760 --- [medical-service] [main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-03-05T02:06:36.291+01:00  INFO 1760 --- [medical-service] [main] o.s.c.n.eureka.InstanceInfoFactory       : Setting initial instance status as: STARTING
+2026-03-05T02:06:36.318+01:00  INFO 1760 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Initializing Eureka in region us-east-1
+2026-03-05T02:06:36.324+01:00  INFO 1760 --- [medical-service] [main] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-03-05T02:06:36.335+01:00  INFO 1760 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Disable delta property : false
+2026-03-05T02:06:36.335+01:00  INFO 1760 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Single vip registry refresh property : null
+2026-03-05T02:06:36.335+01:00  INFO 1760 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Force full registry fetch : false
+2026-03-05T02:06:36.335+01:00  INFO 1760 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Application is null : false
+2026-03-05T02:06:36.335+01:00  INFO 1760 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Registered Applications size is zero : true
+2026-03-05T02:06:36.335+01:00  INFO 1760 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Application version is -1: true
+2026-03-05T02:06:36.335+01:00  INFO 1760 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Getting all instance registry info from the eureka server
+2026-03-05T02:06:36.369+01:00 DEBUG 1760 --- [medical-service] [main] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/
+2026-03-05T02:06:36.521+01:00 DEBUG 1760 --- [medical-service] [main] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:06:36.585+01:00 DEBUG 1760 --- [medical-service] [main] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:06:36.589+01:00 DEBUG 1760 --- [medical-service] [main] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:06:36.636+01:00  INFO 1760 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : The response status is 200
+2026-03-05T02:06:36.638+01:00  INFO 1760 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Starting heartbeat executor: renew interval is: 30
+2026-03-05T02:06:36.640+01:00  INFO 1760 --- [medical-service] [main] c.n.discovery.InstanceInfoReplicator     : InstanceInfoReplicator onDemand update allowed rate per min is 4
+2026-03-05T02:06:36.642+01:00  INFO 1760 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Discovery Client initialized at timestamp 1772672796641 with initial instances count: 7
+2026-03-05T02:06:36.651+01:00  INFO 1760 --- [medical-service] [main] o.s.c.n.e.s.EurekaServiceRegistry        : Registering application MEDICAL-SERVICE with eureka with status UP
+2026-03-05T02:06:36.652+01:00  INFO 1760 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Saw local status change event StatusChangeEvent [timestamp=1772672796652, current=UP, previous=STARTING]
+2026-03-05T02:06:36.654+01:00  INFO 1760 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_MEDICAL-SERVICE/medical-service:18086: registering service...
+2026-03-05T02:06:36.659+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : HTTP POST http://localhost:8761/eureka/apps/MEDICAL-SERVICE
+2026-03-05T02:06:36.662+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:06:36.668+01:00  INFO 1760 --- [medical-service] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18086 (http) with context path '/'
+2026-03-05T02:06:36.669+01:00  INFO 1760 --- [medical-service] [main] .s.c.n.e.s.EurekaAutoServiceRegistration : Updating port to 18086
+2026-03-05T02:06:36.681+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Writing [InstanceInfo [instanceId = medical-service:18086, appName = MEDICAL-SERVICE, hostName = 192.168.3.1, status = UP, ipAddr = 192.168.3.1, port = 18086, securePort = 443, dataCenterInfo = com.netflix.appinfo.MyDataCenterInfo@5c3bb402] as "application/json"
+2026-03-05T02:06:36.712+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Response 204 NO_CONTENT
+2026-03-05T02:06:36.714+01:00  INFO 1760 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_MEDICAL-SERVICE/medical-service:18086 - registration status: 204
+2026-03-05T02:06:36.721+01:00  INFO 1760 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Started MedicalServiceApplication in 15.169 seconds (process running for 16.797)
+2026-03-05T02:06:37.160+01:00  INFO 1760 --- [medical-service] [RMI TCP Connection(3)-192.168.155.2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-05T02:06:37.160+01:00  INFO 1760 --- [medical-service] [RMI TCP Connection(3)-192.168.155.2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-03-05T02:06:37.160+01:00 DEBUG 1760 --- [medical-service] [RMI TCP Connection(3)-192.168.155.2] o.s.web.servlet.DispatcherServlet        : Detected StandardServletMultipartResolver
+2026-03-05T02:06:37.160+01:00 DEBUG 1760 --- [medical-service] [RMI TCP Connection(3)-192.168.155.2] o.s.web.servlet.DispatcherServlet        : Detected AcceptHeaderLocaleResolver
+2026-03-05T02:06:37.161+01:00 DEBUG 1760 --- [medical-service] [RMI TCP Connection(3)-192.168.155.2] o.s.web.servlet.DispatcherServlet        : Detected FixedThemeResolver
+2026-03-05T02:06:37.163+01:00 DEBUG 1760 --- [medical-service] [RMI TCP Connection(3)-192.168.155.2] o.s.web.servlet.DispatcherServlet        : Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@425de255
+2026-03-05T02:06:37.164+01:00 DEBUG 1760 --- [medical-service] [RMI TCP Connection(3)-192.168.155.2] o.s.web.servlet.DispatcherServlet        : Detected org.springframework.web.servlet.support.SessionFlashMapManager@37efd738
+2026-03-05T02:06:37.164+01:00 DEBUG 1760 --- [medical-service] [RMI TCP Connection(3)-192.168.155.2] o.s.web.servlet.DispatcherServlet        : enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2026-03-05T02:06:37.164+01:00  INFO 1760 --- [medical-service] [RMI TCP Connection(3)-192.168.155.2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 4 ms
+2026-03-05T02:07:06.648+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:07:06.648+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:07:06.649+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:07:06.652+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:07:06.663+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:07:06.663+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:07:06.664+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:07:36.668+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:07:36.668+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:07:36.669+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:07:36.669+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:07:36.685+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:07:36.685+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:07:36.685+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:08:06.695+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:08:06.695+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:08:06.696+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:08:06.696+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:08:06.712+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:08:06.712+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:08:06.712+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:08:36.719+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:08:36.719+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:08:36.719+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:08:36.719+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:08:36.737+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:08:36.737+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:08:36.737+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:09:06.749+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:09:06.749+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:09:06.749+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:09:06.749+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:09:06.765+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:09:06.765+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:09:06.766+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:09:36.773+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:09:36.773+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:09:36.773+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:09:36.773+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:09:36.791+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:09:36.791+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:09:36.791+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:10:06.795+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:10:06.795+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:10:06.795+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:10:06.795+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:10:06.811+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:10:06.811+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:10:06.813+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:10:36.817+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:10:36.817+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:10:36.817+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:10:36.817+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:10:36.835+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:10:36.835+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:10:36.835+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:11:01.878+01:00 DEBUG 1760 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : GET "/api/medical/equipment", parameters={}
+2026-03-05T02:11:01.888+01:00 DEBUG 1760 --- [medical-service] [http-nio-18086-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentController#getAllEquipment()
+2026-03-05T02:11:02.030+01:00  INFO 1760 --- [medical-service] [http-nio-18086-exec-1] o.t.m.controller.EquipmentController     : Fetching all equipment
+2026-03-05T02:11:02.129+01:00 DEBUG 1760 --- [medical-service] [http-nio-18086-exec-1] org.hibernate.SQL                        : 
+    select
+        e1_0.id,
+        e1_0.category,
+        e1_0.condition,
+        e1_0.description,
+        e1_0.donation_date,
+        e1_0.donor_id,
+        e1_0.name,
+        e1_0.status 
+    from
+        equipments e1_0
+2026-03-05T02:11:02.227+01:00 DEBUG 1760 --- [medical-service] [http-nio-18086-exec-1] org.hibernate.SQL                        : 
+    select
+        l1_0.equipment_id,
+        l1_0.id,
+        l1_0.borrower_id,
+        l1_0.due_date,
+        l1_0.loan_date,
+        l1_0.notes,
+        l1_0.purpose,
+        l1_0.return_date,
+        l1_0.status 
+    from
+        equipment_loans l1_0 
+    where
+        l1_0.equipment_id=?
+2026-03-05T02:11:02.366+01:00 DEBUG 1760 --- [medical-service] [http-nio-18086-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-03-05T02:11:02.367+01:00 DEBUG 1760 --- [medical-service] [http-nio-18086-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [[EquipmentDTO(id=2, name=fauteill, description=hhhhhhh, category=CARDIAC, status=AVAILABLE, donation (truncated)...]
+2026-03-05T02:11:02.380+01:00 DEBUG 1760 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2026-03-05T02:11:06.843+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:11:06.843+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:11:06.844+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:11:06.844+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:11:06.861+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:11:06.861+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:11:06.862+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:11:36.340+01:00  INFO 1760 --- [medical-service] [AsyncResolver-bootstrap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-03-05T02:11:36.867+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:11:36.867+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:11:36.867+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:11:36.867+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:11:36.883+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:11:36.883+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:11:36.884+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:12:06.888+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:12:06.888+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:12:06.889+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:12:06.889+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:12:06.905+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:12:06.905+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:12:06.905+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:12:36.908+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:12:36.908+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:12:36.908+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:12:36.908+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:12:36.923+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:12:36.923+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:12:36.923+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:13:06.931+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:13:06.931+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:13:06.931+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:13:06.931+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:13:06.949+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:13:06.949+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:13:06.950+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:13:36.959+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:13:36.959+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:13:36.960+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:13:36.960+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:13:36.977+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:13:36.977+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:13:36.978+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:14:06.984+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:14:06.984+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:14:06.985+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:14:06.985+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:14:07.002+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:14:07.002+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:14:07.002+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:14:37.009+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772672796652
+2026-03-05T02:14:37.010+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:14:37.011+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:14:37.012+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:14:37.026+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:14:37.026+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:14:37.026+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:15:03.330+01:00  INFO 1760 --- [medical-service] [SpringApplicationShutdownHook] o.s.c.n.e.s.EurekaServiceRegistry        : Unregistering application MEDICAL-SERVICE with eureka with status DOWN
+2026-03-05T02:15:03.331+01:00  INFO 1760 --- [medical-service] [SpringApplicationShutdownHook] com.netflix.discovery.DiscoveryClient    : Saw local status change event StatusChangeEvent [timestamp=1772673303331, current=DOWN, previous=UP]
+2026-03-05T02:15:03.332+01:00  INFO 1760 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_MEDICAL-SERVICE/medical-service:18086: registering service...
+2026-03-05T02:15:03.332+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : HTTP POST http://localhost:8761/eureka/apps/MEDICAL-SERVICE
+2026-03-05T02:15:03.334+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:15:03.335+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Writing [InstanceInfo [instanceId = medical-service:18086, appName = MEDICAL-SERVICE, hostName = 192.168.3.1, status = DOWN, ipAddr = 192.168.3.1, port = 18086, securePort = 443, dataCenterInfo = com.netflix.appinfo.MyDataCenterInfo@5c3bb402] as "application/json"
+2026-03-05T02:15:03.343+01:00 DEBUG 1760 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Response 204 NO_CONTENT
+2026-03-05T02:15:03.345+01:00  INFO 1760 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_MEDICAL-SERVICE/medical-service:18086 - registration status: 204
+2026-03-05T02:15:03.413+01:00  INFO 1760 --- [medical-service] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-03-05T02:15:03.419+01:00  INFO 1760 --- [medical-service] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-03-05T02:15:04.018+01:00  INFO 1760 --- [medical-service] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-03-05T02:15:04.019+01:00  INFO 1760 --- [medical-service] [SpringApplicationShutdownHook] com.netflix.discovery.DiscoveryClient    : Shutting down DiscoveryClient ...
+2026-03-05T02:15:07.020+01:00  INFO 1760 --- [medical-service] [SpringApplicationShutdownHook] com.netflix.discovery.DiscoveryClient    : Unregistering ...
+2026-03-05T02:15:07.022+01:00 DEBUG 1760 --- [medical-service] [SpringApplicationShutdownHook] o.s.web.client.RestTemplate              : HTTP DELETE http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086
+2026-03-05T02:15:07.023+01:00 DEBUG 1760 --- [medical-service] [SpringApplicationShutdownHook] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:15:07.039+01:00 DEBUG 1760 --- [medical-service] [SpringApplicationShutdownHook] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:15:07.040+01:00  INFO 1760 --- [medical-service] [SpringApplicationShutdownHook] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_MEDICAL-SERVICE/medical-service:18086 - deregister  status: 200
+2026-03-05T02:15:07.040+01:00  INFO 1760 --- [medical-service] [SpringApplicationShutdownHook] com.netflix.discovery.DiscoveryClient    : Completed shut down of DiscoveryClient
+2026-03-05T02:15:13.534+01:00  INFO 30628 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Starting MedicalServiceApplication using Java 21.0.2 with PID 30628 (C:\Users\Lenovo\OneDrive - ESPRIT\Documents\GitHub\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\medical-service\target\classes started by Lenovo in C:\Users\Lenovo\OneDrive - ESPRIT\Documents\GitHub\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend)
+2026-03-05T02:15:13.539+01:00 DEBUG 30628 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Running with Spring Boot v3.3.6, Spring v6.1.15
+2026-03-05T02:15:13.541+01:00  INFO 30628 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : No active profile set, falling back to 1 default profile: "default"
+2026-03-05T02:15:17.423+01:00  INFO 30628 --- [medical-service] [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-03-05T02:15:17.844+01:00  INFO 30628 --- [medical-service] [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 408 ms. Found 9 JPA repository interfaces.
+2026-03-05T02:15:18.560+01:00  INFO 30628 --- [medical-service] [main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=8102bb5d-0a7b-355c-b93c-1f379b700e83
+2026-03-05T02:15:20.098+01:00  INFO 30628 --- [medical-service] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18086 (http)
+2026-03-05T02:15:20.128+01:00  INFO 30628 --- [medical-service] [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-05T02:15:20.129+01:00  INFO 30628 --- [medical-service] [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-03-05T02:15:20.339+01:00  INFO 30628 --- [medical-service] [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-03-05T02:15:20.339+01:00  INFO 30628 --- [medical-service] [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 6043 ms
+2026-03-05T02:15:20.904+01:00 DEBUG 30628 --- [medical-service] [main] o.s.w.f.ServerHttpObservationFilter      : Filter 'webMvcObservationFilter' configured for use
+2026-03-05T02:15:21.224+01:00  INFO 30628 --- [medical-service] [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-03-05T02:15:21.360+01:00  INFO 30628 --- [medical-service] [main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.3.Final
+2026-03-05T02:15:21.444+01:00  INFO 30628 --- [medical-service] [main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-03-05T02:15:22.248+01:00  INFO 30628 --- [medical-service] [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-03-05T02:15:22.310+01:00  INFO 30628 --- [medical-service] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-05T02:15:23.745+01:00  INFO 30628 --- [medical-service] [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@574134ba
+2026-03-05T02:15:23.749+01:00  INFO 30628 --- [medical-service] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-05T02:15:23.928+01:00  WARN 30628 --- [medical-service] [main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-03-05T02:15:26.423+01:00  INFO 30628 --- [medical-service] [main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-03-05T02:15:27.047+01:00 DEBUG 30628 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists ai_reports 
+       alter column report_json set data type TEXT
+2026-03-05T02:15:27.115+01:00 DEBUG 30628 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists diagnostics 
+       alter column comorbidities set data type TEXT
+2026-03-05T02:15:27.173+01:00 DEBUG 30628 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists medical_history 
+       alter column allergies set data type TEXT
+2026-03-05T02:15:27.241+01:00 DEBUG 30628 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists medical_history 
+       alter column conditions set data type TEXT
+2026-03-05T02:15:27.307+01:00 DEBUG 30628 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists medical_history 
+       alter column surgeries set data type TEXT
+2026-03-05T02:15:28.385+01:00  INFO 30628 --- [medical-service] [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-03-05T02:15:29.538+01:00  INFO 30628 --- [medical-service] [main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-03-05T02:15:32.590+01:00  WARN 30628 --- [medical-service] [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-03-05T02:15:32.956+01:00 DEBUG 30628 --- [medical-service] [main] s.w.s.m.m.a.RequestMappingHandlerMapping : 95 mappings in 'requestMappingHandlerMapping'
+2026-03-05T02:15:33.081+01:00 DEBUG 30628 --- [medical-service] [main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Patterns [/webjars/**, /**, /swagger-ui*/*swagger-initializer.js, /swagger-ui*/**] in 'resourceHandlerMapping'
+2026-03-05T02:15:33.276+01:00 DEBUG 30628 --- [medical-service] [main] s.w.s.m.m.a.RequestMappingHandlerAdapter : ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2026-03-05T02:15:33.367+01:00 DEBUG 30628 --- [medical-service] [main] .m.m.a.ExceptionHandlerExceptionResolver : ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2026-03-05T02:15:35.303+01:00  INFO 30628 --- [medical-service] [main] DiscoveryClientOptionalArgsConfiguration : Eureka HTTP Client uses RestTemplate.
+2026-03-05T02:15:35.500+01:00  WARN 30628 --- [medical-service] [main] iguration$LoadBalancerCaffeineWarnLogger : Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+2026-03-05T02:15:35.551+01:00  INFO 30628 --- [medical-service] [main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-03-05T02:15:35.809+01:00  INFO 30628 --- [medical-service] [main] o.s.c.n.eureka.InstanceInfoFactory       : Setting initial instance status as: STARTING
+2026-03-05T02:15:35.846+01:00  INFO 30628 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Initializing Eureka in region us-east-1
+2026-03-05T02:15:35.854+01:00  INFO 30628 --- [medical-service] [main] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-03-05T02:15:35.876+01:00  INFO 30628 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Disable delta property : false
+2026-03-05T02:15:35.877+01:00  INFO 30628 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Single vip registry refresh property : null
+2026-03-05T02:15:35.877+01:00  INFO 30628 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Force full registry fetch : false
+2026-03-05T02:15:35.879+01:00  INFO 30628 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Application is null : false
+2026-03-05T02:15:35.879+01:00  INFO 30628 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Registered Applications size is zero : true
+2026-03-05T02:15:35.879+01:00  INFO 30628 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Application version is -1: true
+2026-03-05T02:15:35.879+01:00  INFO 30628 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Getting all instance registry info from the eureka server
+2026-03-05T02:15:35.933+01:00 DEBUG 30628 --- [medical-service] [main] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/
+2026-03-05T02:15:36.192+01:00 DEBUG 30628 --- [medical-service] [main] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:15:36.262+01:00 DEBUG 30628 --- [medical-service] [main] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:15:36.265+01:00 DEBUG 30628 --- [medical-service] [main] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:15:36.322+01:00  INFO 30628 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : The response status is 200
+2026-03-05T02:15:36.324+01:00  INFO 30628 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Starting heartbeat executor: renew interval is: 30
+2026-03-05T02:15:36.327+01:00  INFO 30628 --- [medical-service] [main] c.n.discovery.InstanceInfoReplicator     : InstanceInfoReplicator onDemand update allowed rate per min is 4
+2026-03-05T02:15:36.328+01:00  INFO 30628 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Discovery Client initialized at timestamp 1772673336328 with initial instances count: 7
+2026-03-05T02:15:36.342+01:00  INFO 30628 --- [medical-service] [main] o.s.c.n.e.s.EurekaServiceRegistry        : Registering application MEDICAL-SERVICE with eureka with status UP
+2026-03-05T02:15:36.343+01:00  INFO 30628 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Saw local status change event StatusChangeEvent [timestamp=1772673336343, current=UP, previous=STARTING]
+2026-03-05T02:15:36.346+01:00  INFO 30628 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_MEDICAL-SERVICE/medical-service:18086: registering service...
+2026-03-05T02:15:36.353+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : HTTP POST http://localhost:8761/eureka/apps/MEDICAL-SERVICE
+2026-03-05T02:15:36.356+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:15:36.363+01:00  INFO 30628 --- [medical-service] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18086 (http) with context path '/'
+2026-03-05T02:15:36.365+01:00  INFO 30628 --- [medical-service] [main] .s.c.n.e.s.EurekaAutoServiceRegistration : Updating port to 18086
+2026-03-05T02:15:36.379+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Writing [InstanceInfo [instanceId = medical-service:18086, appName = MEDICAL-SERVICE, hostName = localhost, status = UP, ipAddr = 192.168.3.1, port = 18086, securePort = 443, dataCenterInfo = com.netflix.appinfo.MyDataCenterInfo@5d493952] as "application/json"
+2026-03-05T02:15:36.414+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Response 204 NO_CONTENT
+2026-03-05T02:15:36.415+01:00  INFO 30628 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_MEDICAL-SERVICE/medical-service:18086 - registration status: 204
+2026-03-05T02:15:36.438+01:00  INFO 30628 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Started MedicalServiceApplication in 24.597 seconds (process running for 26.738)
+2026-03-05T02:16:06.331+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:16:06.331+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772673336343
+2026-03-05T02:16:06.332+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:16:06.344+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:16:06.346+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:16:06.347+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:16:06.361+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:16:36.361+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:16:36.362+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:16:36.377+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772673336343
+2026-03-05T02:16:36.378+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:16:36.379+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:16:36.380+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:16:36.395+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:17:06.384+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:17:06.385+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:17:06.400+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772673336343
+2026-03-05T02:17:06.401+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:17:06.402+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:17:06.404+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:17:06.418+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:17:36.413+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:17:36.413+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:17:36.428+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772673336343
+2026-03-05T02:17:36.429+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:17:36.431+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:17:36.432+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:17:36.446+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:17:51.715+01:00  INFO 30628 --- [medical-service] [http-nio-18086-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-05T02:17:51.716+01:00  INFO 30628 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-03-05T02:17:51.716+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Detected StandardServletMultipartResolver
+2026-03-05T02:17:51.716+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Detected AcceptHeaderLocaleResolver
+2026-03-05T02:17:51.717+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Detected FixedThemeResolver
+2026-03-05T02:17:51.720+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@61fb1f9d
+2026-03-05T02:17:51.722+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Detected org.springframework.web.servlet.support.SessionFlashMapManager@3833da6f
+2026-03-05T02:17:51.723+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2026-03-05T02:17:51.723+01:00  INFO 30628 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 7 ms
+2026-03-05T02:17:51.746+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : GET "/api/medical/loans/borrower/27", parameters={}
+2026-03-05T02:17:51.761+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentLoanController#getLoansByBorrowerId(Long)
+2026-03-05T02:17:51.886+01:00  INFO 30628 --- [medical-service] [http-nio-18086-exec-1] o.t.m.c.EquipmentLoanController          : Fetching loans for borrower ID: 27
+2026-03-05T02:17:52.084+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-1] org.hibernate.SQL                        : 
+    select
+        el1_0.id,
+        el1_0.borrower_id,
+        el1_0.due_date,
+        el1_0.equipment_id,
+        el1_0.loan_date,
+        el1_0.notes,
+        el1_0.purpose,
+        el1_0.return_date,
+        el1_0.status 
+    from
+        equipment_loans el1_0 
+    where
+        el1_0.borrower_id=?
+2026-03-05T02:17:52.226+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-03-05T02:17:52.228+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [[]]
+2026-03-05T02:17:52.241+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2026-03-05T02:18:06.446+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:18:06.447+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:18:06.461+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772673336343
+2026-03-05T02:18:06.461+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:18:06.463+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:18:06.464+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:18:06.479+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:18:25.315+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-3] o.s.web.servlet.DispatcherServlet        : GET "/api/medical/loans/borrower/27", parameters={}
+2026-03-05T02:18:25.316+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentLoanController#getLoansByBorrowerId(Long)
+2026-03-05T02:18:25.381+01:00  INFO 30628 --- [medical-service] [http-nio-18086-exec-3] o.t.m.c.EquipmentLoanController          : Fetching loans for borrower ID: 27
+2026-03-05T02:18:25.384+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-3] org.hibernate.SQL                        : 
+    select
+        el1_0.id,
+        el1_0.borrower_id,
+        el1_0.due_date,
+        el1_0.equipment_id,
+        el1_0.loan_date,
+        el1_0.notes,
+        el1_0.purpose,
+        el1_0.return_date,
+        el1_0.status 
+    from
+        equipment_loans el1_0 
+    where
+        el1_0.borrower_id=?
+2026-03-05T02:18:25.518+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-03-05T02:18:25.518+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [[]]
+2026-03-05T02:18:25.520+01:00 DEBUG 30628 --- [medical-service] [http-nio-18086-exec-3] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2026-03-05T02:18:36.481+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772673336343
+2026-03-05T02:18:36.481+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:18:36.481+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:18:36.481+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:18:36.497+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:18:36.497+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:18:36.498+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:19:06.500+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772673336343
+2026-03-05T02:19:06.501+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:19:06.515+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:19:06.516+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:19:06.517+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:19:06.532+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:19:06.533+01:00 DEBUG 30628 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]

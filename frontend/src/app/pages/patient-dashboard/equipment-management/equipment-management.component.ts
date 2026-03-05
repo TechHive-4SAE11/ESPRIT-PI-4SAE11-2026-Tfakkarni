@@ -71,6 +71,9 @@ export class EquipmentManagementComponent implements OnInit {
     EquipmentCategory.CARDIAC,
     EquipmentCategory.ORTHOPEDIC,
     EquipmentCategory.FURNITURE,
+    EquipmentCategory.MONITORING,
+    EquipmentCategory.THERAPEUTIC,
+    EquipmentCategory.SURGICAL,
     EquipmentCategory.OTHER
   ];
   equipmentConditions: EquipmentCondition[] = [

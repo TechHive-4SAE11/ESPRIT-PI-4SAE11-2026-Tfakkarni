@@ -52,7 +52,7 @@ public class EquipmentController {
 
     @PutMapping("/{id}")
     @Transactional
-    public ResponseEntity<EquipmentDTO> updateEquipment(@PathVariable Long id,
+    public ResponseEntity<EquipmentDTO> updateEquipment(@PathVariable("id") Long id,
             @Valid @RequestBody EquipmentDTO equipmentDTO) {
         log.info("Updating equipment with ID: {}", id);
 
@@ -66,7 +66,7 @@ public class EquipmentController {
 
     @DeleteMapping("/{id}")
     @Transactional
-    public ResponseEntity<Void> deleteEquipment(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteEquipment(@PathVariable("id") Long id) {
         log.info("Deleting equipment with ID: {}", id);
 
         equipmentService.deleteEquipment(id);
@@ -74,7 +74,7 @@ public class EquipmentController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EquipmentDTO> getEquipmentById(@PathVariable Long id) {
+    public ResponseEntity<EquipmentDTO> getEquipmentById(@PathVariable("id") Long id) {
         log.info("Fetching equipment with ID: {}", id);
 
         Equipment equipment = equipmentService.getEquipmentById(id);
@@ -96,7 +96,7 @@ public class EquipmentController {
     }
 
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<EquipmentDTO>> getEquipmentByStatus(@PathVariable EquipmentStatus status) {
+    public ResponseEntity<List<EquipmentDTO>> getEquipmentByStatus(@PathVariable("status") EquipmentStatus status) {
         log.info("Fetching equipment with status: {}", status);
 
         List<Equipment> equipmentList = equipmentService.getEquipmentByStatus(status);
@@ -107,7 +107,7 @@ public class EquipmentController {
     }
 
     @GetMapping("/category/{category}")
-    public ResponseEntity<List<EquipmentDTO>> getEquipmentByCategory(@PathVariable EquipmentCategory category) {
+    public ResponseEntity<List<EquipmentDTO>> getEquipmentByCategory(@PathVariable("category") EquipmentCategory category) {
         List<Equipment> equipment = equipmentService.getEquipmentByCategory(category);
         return ResponseEntity.ok(equipment.stream()
                 .map(EquipmentDTO::fromEntity)
@@ -115,7 +115,7 @@ public class EquipmentController {
     }
 
     @GetMapping("/donor/{donorId}")
-    public ResponseEntity<List<EquipmentDTO>> getEquipmentByDonorId(@PathVariable Long donorId) {
+    public ResponseEntity<List<EquipmentDTO>> getEquipmentByDonorId(@PathVariable("donorId") Long donorId) {
         log.info("Fetching equipment donated by user: {}", donorId);
 
         List<Equipment> equipmentList = equipmentService.getEquipmentByDonorId(donorId);
@@ -149,7 +149,7 @@ public class EquipmentController {
 
     @GetMapping("/filter/{category}/{status}")
     public ResponseEntity<List<EquipmentDTO>> getEquipmentByCategoryAndStatus(
-            @PathVariable EquipmentCategory category, @PathVariable EquipmentStatus status) {
+            @PathVariable("category") EquipmentCategory category, @PathVariable("status") EquipmentStatus status) {
         List<Equipment> equipment = equipmentService.getEquipmentByCategoryAndStatus(category, status);
         return ResponseEntity.ok(equipment.stream()
                 .map(EquipmentDTO::fromEntity)
@@ -169,7 +169,7 @@ public class EquipmentController {
     }
 
     @GetMapping("/status/{status}/count")
-    public ResponseEntity<Long> countEquipmentByStatus(@PathVariable EquipmentStatus status) {
+    public ResponseEntity<Long> countEquipmentByStatus(@PathVariable("status") EquipmentStatus status) {
         log.info("Counting equipment with status: {}", status);
 
         long count = equipmentService.countEquipmentByStatus(status);
@@ -188,7 +188,7 @@ public class EquipmentController {
     }
 
     @GetMapping("/{id}/available")
-    public ResponseEntity<Boolean> isEquipmentAvailable(@PathVariable Long id) {
+    public ResponseEntity<Boolean> isEquipmentAvailable(@PathVariable("id") Long id) {
         log.info("Checking if equipment {} is available", id);
 
         boolean available = equipmentService.isEquipmentAvailable(id);
@@ -198,7 +198,7 @@ public class EquipmentController {
     @PatchMapping("/{id}/status")
     @Transactional
     public ResponseEntity<EquipmentDTO> updateEquipmentStatus(
-            @PathVariable Long id, @RequestParam EquipmentStatus status) {
+            @PathVariable("id") Long id, @RequestParam EquipmentStatus status) {
         log.info("Updating equipment {} status to {}", id, status);
 
         Equipment equipment = equipmentService.updateEquipmentStatus(id, status);

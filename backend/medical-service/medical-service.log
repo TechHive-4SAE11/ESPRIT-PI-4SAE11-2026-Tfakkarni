@@ -1,0 +1,835 @@
+2026-03-05T02:49:16.097+01:00  INFO 24868 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Starting MedicalServiceApplication using Java 21.0.2 with PID 24868 (C:\Users\Lenovo\OneDrive - ESPRIT\Documents\GitHub\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\medical-service\target\classes started by Lenovo in C:\Users\Lenovo\OneDrive - ESPRIT\Documents\GitHub\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\medical-service)
+2026-03-05T02:49:16.101+01:00 DEBUG 24868 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Running with Spring Boot v3.3.6, Spring v6.1.15
+2026-03-05T02:49:16.102+01:00  INFO 24868 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : No active profile set, falling back to 1 default profile: "default"
+2026-03-05T02:49:19.292+01:00  INFO 24868 --- [medical-service] [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-03-05T02:49:19.780+01:00  INFO 24868 --- [medical-service] [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 476 ms. Found 9 JPA repository interfaces.
+2026-03-05T02:49:20.373+01:00  INFO 24868 --- [medical-service] [main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=cd11c341-17bf-3a7c-ac03-c80d2825e3af
+2026-03-05T02:49:23.061+01:00  INFO 24868 --- [medical-service] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18086 (http)
+2026-03-05T02:49:23.103+01:00  INFO 24868 --- [medical-service] [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-05T02:49:23.104+01:00  INFO 24868 --- [medical-service] [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-03-05T02:49:23.468+01:00  INFO 24868 --- [medical-service] [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-03-05T02:49:23.471+01:00  INFO 24868 --- [medical-service] [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 6863 ms
+2026-03-05T02:49:24.342+01:00 DEBUG 24868 --- [medical-service] [main] o.s.w.f.ServerHttpObservationFilter      : Filter 'webMvcObservationFilter' configured for use
+2026-03-05T02:49:25.361+01:00  INFO 24868 --- [medical-service] [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-03-05T02:49:25.602+01:00  INFO 24868 --- [medical-service] [main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.3.Final
+2026-03-05T02:49:25.744+01:00  INFO 24868 --- [medical-service] [main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-03-05T02:49:26.911+01:00  INFO 24868 --- [medical-service] [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-03-05T02:49:26.997+01:00  INFO 24868 --- [medical-service] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-05T02:49:28.573+01:00  INFO 24868 --- [medical-service] [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@141eb85b
+2026-03-05T02:49:28.578+01:00  INFO 24868 --- [medical-service] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-05T02:49:28.709+01:00  WARN 24868 --- [medical-service] [main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-03-05T02:49:31.135+01:00  INFO 24868 --- [medical-service] [main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-03-05T02:49:31.808+01:00 DEBUG 24868 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists ai_reports 
+       alter column report_json set data type TEXT
+2026-03-05T02:49:31.884+01:00 DEBUG 24868 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists diagnostics 
+       alter column comorbidities set data type TEXT
+2026-03-05T02:49:31.944+01:00 DEBUG 24868 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists medical_history 
+       alter column allergies set data type TEXT
+2026-03-05T02:49:32.013+01:00 DEBUG 24868 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists medical_history 
+       alter column conditions set data type TEXT
+2026-03-05T02:49:32.070+01:00 DEBUG 24868 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists medical_history 
+       alter column surgeries set data type TEXT
+2026-03-05T02:49:33.164+01:00  INFO 24868 --- [medical-service] [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-03-05T02:49:34.104+01:00  INFO 24868 --- [medical-service] [main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-03-05T02:49:37.089+01:00  WARN 24868 --- [medical-service] [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-03-05T02:49:37.542+01:00 DEBUG 24868 --- [medical-service] [main] s.w.s.m.m.a.RequestMappingHandlerMapping : 95 mappings in 'requestMappingHandlerMapping'
+2026-03-05T02:49:37.683+01:00 DEBUG 24868 --- [medical-service] [main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Patterns [/webjars/**, /**, /swagger-ui*/*swagger-initializer.js, /swagger-ui*/**] in 'resourceHandlerMapping'
+2026-03-05T02:49:37.814+01:00 DEBUG 24868 --- [medical-service] [main] s.w.s.m.m.a.RequestMappingHandlerAdapter : ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2026-03-05T02:49:37.910+01:00 DEBUG 24868 --- [medical-service] [main] .m.m.a.ExceptionHandlerExceptionResolver : ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2026-03-05T02:49:39.868+01:00  INFO 24868 --- [medical-service] [main] DiscoveryClientOptionalArgsConfiguration : Eureka HTTP Client uses RestTemplate.
+2026-03-05T02:49:40.260+01:00  WARN 24868 --- [medical-service] [main] iguration$LoadBalancerCaffeineWarnLogger : Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+2026-03-05T02:49:40.294+01:00  INFO 24868 --- [medical-service] [main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-03-05T02:49:40.501+01:00  INFO 24868 --- [medical-service] [main] o.s.c.n.eureka.InstanceInfoFactory       : Setting initial instance status as: STARTING
+2026-03-05T02:49:40.549+01:00  INFO 24868 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Initializing Eureka in region us-east-1
+2026-03-05T02:49:40.556+01:00  INFO 24868 --- [medical-service] [main] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-03-05T02:49:40.573+01:00  INFO 24868 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Disable delta property : false
+2026-03-05T02:49:40.574+01:00  INFO 24868 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Single vip registry refresh property : null
+2026-03-05T02:49:40.574+01:00  INFO 24868 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Force full registry fetch : false
+2026-03-05T02:49:40.574+01:00  INFO 24868 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Application is null : false
+2026-03-05T02:49:40.575+01:00  INFO 24868 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Registered Applications size is zero : true
+2026-03-05T02:49:40.575+01:00  INFO 24868 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Application version is -1: true
+2026-03-05T02:49:40.575+01:00  INFO 24868 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Getting all instance registry info from the eureka server
+2026-03-05T02:49:40.636+01:00 DEBUG 24868 --- [medical-service] [main] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/
+2026-03-05T02:49:40.866+01:00 DEBUG 24868 --- [medical-service] [main] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:49:40.963+01:00 DEBUG 24868 --- [medical-service] [main] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:49:40.968+01:00 DEBUG 24868 --- [medical-service] [main] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:49:41.038+01:00  INFO 24868 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : The response status is 200
+2026-03-05T02:49:41.044+01:00  INFO 24868 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Starting heartbeat executor: renew interval is: 30
+2026-03-05T02:49:41.049+01:00  INFO 24868 --- [medical-service] [main] c.n.discovery.InstanceInfoReplicator     : InstanceInfoReplicator onDemand update allowed rate per min is 4
+2026-03-05T02:49:41.051+01:00  INFO 24868 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Discovery Client initialized at timestamp 1772675381050 with initial instances count: 8
+2026-03-05T02:49:41.075+01:00  INFO 24868 --- [medical-service] [main] o.s.c.n.e.s.EurekaServiceRegistry        : Registering application MEDICAL-SERVICE with eureka with status UP
+2026-03-05T02:49:41.077+01:00  INFO 24868 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Saw local status change event StatusChangeEvent [timestamp=1772675381077, current=UP, previous=STARTING]
+2026-03-05T02:49:41.080+01:00  INFO 24868 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_MEDICAL-SERVICE/medical-service:18086: registering service...
+2026-03-05T02:49:41.092+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : HTTP POST http://localhost:8761/eureka/apps/MEDICAL-SERVICE
+2026-03-05T02:49:41.097+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:49:41.105+01:00  INFO 24868 --- [medical-service] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18086 (http) with context path '/'
+2026-03-05T02:49:41.108+01:00  INFO 24868 --- [medical-service] [main] .s.c.n.e.s.EurekaAutoServiceRegistration : Updating port to 18086
+2026-03-05T02:49:41.127+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Writing [InstanceInfo [instanceId = medical-service:18086, appName = MEDICAL-SERVICE, hostName = localhost, status = UP, ipAddr = 192.168.3.1, port = 18086, securePort = 443, dataCenterInfo = com.netflix.appinfo.MyDataCenterInfo@52c15901] as "application/json"
+2026-03-05T02:49:41.175+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Response 204 NO_CONTENT
+2026-03-05T02:49:41.177+01:00  INFO 24868 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_MEDICAL-SERVICE/medical-service:18086 - registration status: 204
+2026-03-05T02:49:41.200+01:00  INFO 24868 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Started MedicalServiceApplication in 26.135 seconds (process running for 27.243)
+2026-03-05T02:50:11.059+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:50:11.060+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:50:11.060+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:50:11.066+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:50:11.075+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:50:11.075+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:50:11.075+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:50:41.081+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:50:41.081+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:50:41.083+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:50:41.084+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:50:41.099+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:50:41.099+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:50:41.100+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:51:08.645+01:00  INFO 24868 --- [medical-service] [http-nio-18086-exec-2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-05T02:51:08.646+01:00  INFO 24868 --- [medical-service] [http-nio-18086-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-03-05T02:51:08.646+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-2] o.s.web.servlet.DispatcherServlet        : Detected StandardServletMultipartResolver
+2026-03-05T02:51:08.647+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-2] o.s.web.servlet.DispatcherServlet        : Detected AcceptHeaderLocaleResolver
+2026-03-05T02:51:08.647+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-2] o.s.web.servlet.DispatcherServlet        : Detected FixedThemeResolver
+2026-03-05T02:51:08.652+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-2] o.s.web.servlet.DispatcherServlet        : Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@657b41cf
+2026-03-05T02:51:08.654+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-2] o.s.web.servlet.DispatcherServlet        : Detected org.springframework.web.servlet.support.SessionFlashMapManager@1995883f
+2026-03-05T02:51:08.655+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-2] o.s.web.servlet.DispatcherServlet        : enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2026-03-05T02:51:08.655+01:00  INFO 24868 --- [medical-service] [http-nio-18086-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 9 ms
+2026-03-05T02:51:08.684+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-2] o.s.web.servlet.DispatcherServlet        : GET "/api/medical/loans", parameters={}
+2026-03-05T02:51:08.684+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : GET "/api/medical/equipment", parameters={}
+2026-03-05T02:51:08.704+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentController#getAllEquipment()
+2026-03-05T02:51:08.704+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-2] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentLoanController#getAllLoans()
+2026-03-05T02:51:08.833+01:00  INFO 24868 --- [medical-service] [http-nio-18086-exec-1] o.t.m.controller.EquipmentController     : Fetching all equipment
+2026-03-05T02:51:08.833+01:00  INFO 24868 --- [medical-service] [http-nio-18086-exec-2] o.t.m.c.EquipmentLoanController          : Fetching all loans
+2026-03-05T02:51:09.023+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-2] org.hibernate.SQL                        : 
+    select
+        el1_0.id,
+        el1_0.borrower_id,
+        el1_0.due_date,
+        el1_0.equipment_id,
+        el1_0.loan_date,
+        el1_0.notes,
+        el1_0.purpose,
+        el1_0.return_date,
+        el1_0.status 
+    from
+        equipment_loans el1_0
+2026-03-05T02:51:09.023+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-1] org.hibernate.SQL                        : 
+    select
+        e1_0.id,
+        e1_0.category,
+        e1_0.condition,
+        e1_0.description,
+        e1_0.donation_date,
+        e1_0.donor_id,
+        e1_0.name,
+        e1_0.status 
+    from
+        equipments e1_0
+2026-03-05T02:51:09.154+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-1] org.hibernate.SQL                        : 
+    select
+        l1_0.equipment_id,
+        l1_0.id,
+        l1_0.borrower_id,
+        l1_0.due_date,
+        l1_0.loan_date,
+        l1_0.notes,
+        l1_0.purpose,
+        l1_0.return_date,
+        l1_0.status 
+    from
+        equipment_loans l1_0 
+    where
+        l1_0.equipment_id=?
+2026-03-05T02:51:09.211+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2026-03-05T02:51:09.213+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [[]]
+2026-03-05T02:51:09.227+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-2] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2026-03-05T02:51:09.346+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2026-03-05T02:51:09.349+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [[EquipmentDTO(id=2, name=fauteill, description=hhhhhhh, category=CARDIAC, status=AVAILABLE, donation (truncated)...]
+2026-03-05T02:51:09.363+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2026-03-05T02:51:11.112+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:51:11.112+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:51:11.113+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:51:11.113+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:51:11.129+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:51:11.129+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:51:11.131+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:51:16.625+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-5] o.s.web.servlet.DispatcherServlet        : DELETE "/api/medical/equipment/2", parameters={}
+2026-03-05T02:51:16.626+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-5] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentController#deleteEquipment(Long)
+2026-03-05T02:51:16.630+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-5] o.s.web.method.HandlerMethod             : Could not resolve parameter [0] in public org.springframework.http.ResponseEntity<java.lang.Void> org.techhive.medicalservice.controller.EquipmentController.deleteEquipment(java.lang.Long): Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.
+2026-03-05T02:51:16.634+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-5] .m.m.a.ExceptionHandlerExceptionResolver : Using @ExceptionHandler org.techhive.medicalservice.exception.GlobalExceptionHandler#handleGlobalException(Exception, WebRequest)
+2026-03-05T02:51:16.635+01:00 ERROR 24868 --- [medical-service] [http-nio-18086-exec-5] o.t.m.exception.GlobalExceptionHandler   : Unexpected error occurred: 
+
+java.lang.IllegalArgumentException: Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.updateNamedValueInfo(AbstractNamedValueMethodArgumentResolver.java:186) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.getNamedValueInfo(AbstractNamedValueMethodArgumentResolver.java:161) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.resolveArgument(AbstractNamedValueMethodArgumentResolver.java:107) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.HandlerMethodArgumentResolverComposite.resolveArgument(HandlerMethodArgumentResolverComposite.java:122) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.InvocableHandlerMethod.getMethodArgumentValues(InvocableHandlerMethod.java:224) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:178) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.FrameworkServlet.doDelete(FrameworkServlet.java:936) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:596) ~[tomcat-embed-core-10.1.33.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.33.jar:6.0]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:113) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
+
+2026-03-05T02:51:16.656+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2026-03-05T02:51:16.659+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ErrorResponse(timestamp=2026-03-05T02:51:16.646405300, status=500, error=Internal Server Error, mess (truncated)...]
+2026-03-05T02:51:16.662+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-5] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [java.lang.IllegalArgumentException: Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.]
+2026-03-05T02:51:16.662+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-5] o.s.web.servlet.DispatcherServlet        : Completed 500 INTERNAL_SERVER_ERROR
+2026-03-05T02:51:26.465+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-6] o.s.web.servlet.DispatcherServlet        : GET "/api/medical/loans", parameters={}
+2026-03-05T02:51:26.466+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-6] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentLoanController#getAllLoans()
+2026-03-05T02:51:26.525+01:00  INFO 24868 --- [medical-service] [http-nio-18086-exec-6] o.t.m.c.EquipmentLoanController          : Fetching all loans
+2026-03-05T02:51:26.530+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-6] org.hibernate.SQL                        : 
+    select
+        el1_0.id,
+        el1_0.borrower_id,
+        el1_0.due_date,
+        el1_0.equipment_id,
+        el1_0.loan_date,
+        el1_0.notes,
+        el1_0.purpose,
+        el1_0.return_date,
+        el1_0.status 
+    from
+        equipment_loans el1_0
+2026-03-05T02:51:26.695+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2026-03-05T02:51:26.695+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [[]]
+2026-03-05T02:51:26.698+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-6] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2026-03-05T02:51:41.146+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:51:41.146+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:51:41.147+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:51:41.147+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:51:41.164+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:51:41.164+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:51:41.165+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:51:48.399+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-4] o.s.web.servlet.DispatcherServlet        : DELETE "/api/medical/equipment/2", parameters={}
+2026-03-05T02:51:48.402+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-4] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentController#deleteEquipment(Long)
+2026-03-05T02:51:48.402+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-4] o.s.web.method.HandlerMethod             : Could not resolve parameter [0] in public org.springframework.http.ResponseEntity<java.lang.Void> org.techhive.medicalservice.controller.EquipmentController.deleteEquipment(java.lang.Long): Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.
+2026-03-05T02:51:48.403+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-4] .m.m.a.ExceptionHandlerExceptionResolver : Using @ExceptionHandler org.techhive.medicalservice.exception.GlobalExceptionHandler#handleGlobalException(Exception, WebRequest)
+2026-03-05T02:51:48.403+01:00 ERROR 24868 --- [medical-service] [http-nio-18086-exec-4] o.t.m.exception.GlobalExceptionHandler   : Unexpected error occurred: 
+
+java.lang.IllegalArgumentException: Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.updateNamedValueInfo(AbstractNamedValueMethodArgumentResolver.java:186) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.getNamedValueInfo(AbstractNamedValueMethodArgumentResolver.java:161) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.resolveArgument(AbstractNamedValueMethodArgumentResolver.java:107) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.HandlerMethodArgumentResolverComposite.resolveArgument(HandlerMethodArgumentResolverComposite.java:122) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.InvocableHandlerMethod.getMethodArgumentValues(InvocableHandlerMethod.java:224) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:178) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.FrameworkServlet.doDelete(FrameworkServlet.java:936) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:596) ~[tomcat-embed-core-10.1.33.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.33.jar:6.0]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:113) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
+
+2026-03-05T02:51:48.406+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2026-03-05T02:51:48.408+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ErrorResponse(timestamp=2026-03-05T02:51:48.406568700, status=500, error=Internal Server Error, mess (truncated)...]
+2026-03-05T02:51:48.410+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-4] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [java.lang.IllegalArgumentException: Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.]
+2026-03-05T02:51:48.410+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-4] o.s.web.servlet.DispatcherServlet        : Completed 500 INTERNAL_SERVER_ERROR
+2026-03-05T02:52:03.334+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-3] o.s.web.servlet.DispatcherServlet        : PUT "/api/medical/equipment/2", parameters={}
+2026-03-05T02:52:03.335+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentController#updateEquipment(Long, EquipmentDTO)
+2026-03-05T02:52:03.336+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-3] o.s.web.method.HandlerMethod             : Could not resolve parameter [0] in public org.springframework.http.ResponseEntity<org.techhive.medicalservice.dto.EquipmentDTO> org.techhive.medicalservice.controller.EquipmentController.updateEquipment(java.lang.Long,org.techhive.medicalservice.dto.EquipmentDTO): Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.
+2026-03-05T02:52:03.337+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-3] .m.m.a.ExceptionHandlerExceptionResolver : Using @ExceptionHandler org.techhive.medicalservice.exception.GlobalExceptionHandler#handleGlobalException(Exception, WebRequest)
+2026-03-05T02:52:03.337+01:00 ERROR 24868 --- [medical-service] [http-nio-18086-exec-3] o.t.m.exception.GlobalExceptionHandler   : Unexpected error occurred: 
+
+java.lang.IllegalArgumentException: Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.updateNamedValueInfo(AbstractNamedValueMethodArgumentResolver.java:186) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.getNamedValueInfo(AbstractNamedValueMethodArgumentResolver.java:161) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.resolveArgument(AbstractNamedValueMethodArgumentResolver.java:107) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.HandlerMethodArgumentResolverComposite.resolveArgument(HandlerMethodArgumentResolverComposite.java:122) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.InvocableHandlerMethod.getMethodArgumentValues(InvocableHandlerMethod.java:224) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:178) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.FrameworkServlet.doPut(FrameworkServlet.java:925) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:593) ~[tomcat-embed-core-10.1.33.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.33.jar:6.0]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:113) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
+
+2026-03-05T02:52:03.339+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2026-03-05T02:52:03.340+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ErrorResponse(timestamp=2026-03-05T02:52:03.339291900, status=500, error=Internal Server Error, mess (truncated)...]
+2026-03-05T02:52:03.341+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-3] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [java.lang.IllegalArgumentException: Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.]
+2026-03-05T02:52:03.342+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-3] o.s.web.servlet.DispatcherServlet        : Completed 500 INTERNAL_SERVER_ERROR
+2026-03-05T02:52:11.167+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:52:11.167+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:52:11.183+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:52:11.183+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:52:11.185+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:52:11.200+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:52:11.201+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:52:41.198+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:52:41.199+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:52:41.214+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:52:41.214+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:52:41.217+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:52:41.232+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:52:41.233+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:53:11.225+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:53:11.226+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:53:11.241+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:53:11.242+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:53:11.244+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:53:11.260+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:53:11.260+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:53:41.246+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:53:41.247+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:53:41.264+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:53:41.266+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:53:41.266+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:53:41.278+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:53:41.279+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:54:11.278+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:54:11.279+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:54:11.294+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:54:11.294+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:54:11.296+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:54:11.311+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:54:11.312+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:54:40.590+01:00  INFO 24868 --- [medical-service] [AsyncResolver-bootstrap-executor-%d] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-03-05T02:54:41.304+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:54:41.304+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:54:41.319+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:54:41.320+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:54:41.321+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:54:41.336+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:54:41.336+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:54:58.931+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-7] o.s.web.servlet.DispatcherServlet        : GET "/api/medical/equipment", parameters={}
+2026-03-05T02:54:58.933+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-7] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentController#getAllEquipment()
+2026-03-05T02:54:58.934+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-8] o.s.web.servlet.DispatcherServlet        : GET "/api/medical/loans", parameters={}
+2026-03-05T02:54:58.935+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-8] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentLoanController#getAllLoans()
+2026-03-05T02:54:59.012+01:00  INFO 24868 --- [medical-service] [http-nio-18086-exec-7] o.t.m.controller.EquipmentController     : Fetching all equipment
+2026-03-05T02:54:59.013+01:00  INFO 24868 --- [medical-service] [http-nio-18086-exec-8] o.t.m.c.EquipmentLoanController          : Fetching all loans
+2026-03-05T02:54:59.041+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-8] org.hibernate.SQL                        : 
+    select
+        el1_0.id,
+        el1_0.borrower_id,
+        el1_0.due_date,
+        el1_0.equipment_id,
+        el1_0.loan_date,
+        el1_0.notes,
+        el1_0.purpose,
+        el1_0.return_date,
+        el1_0.status 
+    from
+        equipment_loans el1_0
+2026-03-05T02:54:59.042+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-7] org.hibernate.SQL                        : 
+    select
+        e1_0.id,
+        e1_0.category,
+        e1_0.condition,
+        e1_0.description,
+        e1_0.donation_date,
+        e1_0.donor_id,
+        e1_0.name,
+        e1_0.status 
+    from
+        equipments e1_0
+2026-03-05T02:54:59.114+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-7] org.hibernate.SQL                        : 
+    select
+        l1_0.equipment_id,
+        l1_0.id,
+        l1_0.borrower_id,
+        l1_0.due_date,
+        l1_0.loan_date,
+        l1_0.notes,
+        l1_0.purpose,
+        l1_0.return_date,
+        l1_0.status 
+    from
+        equipment_loans l1_0 
+    where
+        l1_0.equipment_id=?
+2026-03-05T02:54:59.171+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2026-03-05T02:54:59.171+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [[]]
+2026-03-05T02:54:59.173+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-8] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2026-03-05T02:54:59.236+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2026-03-05T02:54:59.236+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [[EquipmentDTO(id=2, name=fauteill, description=hhhhhhh, category=CARDIAC, status=AVAILABLE, donation (truncated)...]
+2026-03-05T02:54:59.239+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-7] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2026-03-05T02:55:04.755+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-9] o.s.web.servlet.DispatcherServlet        : DELETE "/api/medical/equipment/2", parameters={}
+2026-03-05T02:55:04.756+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-9] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentController#deleteEquipment(Long)
+2026-03-05T02:55:04.756+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-9] o.s.web.method.HandlerMethod             : Could not resolve parameter [0] in public org.springframework.http.ResponseEntity<java.lang.Void> org.techhive.medicalservice.controller.EquipmentController.deleteEquipment(java.lang.Long): Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.
+2026-03-05T02:55:04.758+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-9] .m.m.a.ExceptionHandlerExceptionResolver : Using @ExceptionHandler org.techhive.medicalservice.exception.GlobalExceptionHandler#handleGlobalException(Exception, WebRequest)
+2026-03-05T02:55:04.758+01:00 ERROR 24868 --- [medical-service] [http-nio-18086-exec-9] o.t.m.exception.GlobalExceptionHandler   : Unexpected error occurred: 
+
+java.lang.IllegalArgumentException: Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.updateNamedValueInfo(AbstractNamedValueMethodArgumentResolver.java:186) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.getNamedValueInfo(AbstractNamedValueMethodArgumentResolver.java:161) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.resolveArgument(AbstractNamedValueMethodArgumentResolver.java:107) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.HandlerMethodArgumentResolverComposite.resolveArgument(HandlerMethodArgumentResolverComposite.java:122) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.InvocableHandlerMethod.getMethodArgumentValues(InvocableHandlerMethod.java:224) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:178) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.FrameworkServlet.doDelete(FrameworkServlet.java:936) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:596) ~[tomcat-embed-core-10.1.33.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.33.jar:6.0]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:113) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
+
+2026-03-05T02:55:04.760+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2026-03-05T02:55:04.760+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ErrorResponse(timestamp=2026-03-05T02:55:04.759241, status=500, error=Internal Server Error, message (truncated)...]
+2026-03-05T02:55:04.761+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-9] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [java.lang.IllegalArgumentException: Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.]
+2026-03-05T02:55:04.761+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-9] o.s.web.servlet.DispatcherServlet        : Completed 500 INTERNAL_SERVER_ERROR
+2026-03-05T02:55:11.332+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:55:11.334+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:55:11.347+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:55:11.349+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:55:11.351+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:55:11.365+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:55:11.366+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:55:41.354+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:55:41.355+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:55:41.370+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:55:41.371+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:55:41.372+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:55:41.387+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:55:41.388+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:55:46.028+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-10] o.s.web.servlet.DispatcherServlet        : DELETE "/api/medical/equipment/2", parameters={}
+2026-03-05T02:55:46.029+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-10] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentController#deleteEquipment(Long)
+2026-03-05T02:55:46.029+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-10] o.s.web.method.HandlerMethod             : Could not resolve parameter [0] in public org.springframework.http.ResponseEntity<java.lang.Void> org.techhive.medicalservice.controller.EquipmentController.deleteEquipment(java.lang.Long): Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.
+2026-03-05T02:55:46.029+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-10] .m.m.a.ExceptionHandlerExceptionResolver : Using @ExceptionHandler org.techhive.medicalservice.exception.GlobalExceptionHandler#handleGlobalException(Exception, WebRequest)
+2026-03-05T02:55:46.029+01:00 ERROR 24868 --- [medical-service] [http-nio-18086-exec-10] o.t.m.exception.GlobalExceptionHandler   : Unexpected error occurred: 
+
+java.lang.IllegalArgumentException: Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.updateNamedValueInfo(AbstractNamedValueMethodArgumentResolver.java:186) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.getNamedValueInfo(AbstractNamedValueMethodArgumentResolver.java:161) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.resolveArgument(AbstractNamedValueMethodArgumentResolver.java:107) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.HandlerMethodArgumentResolverComposite.resolveArgument(HandlerMethodArgumentResolverComposite.java:122) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.InvocableHandlerMethod.getMethodArgumentValues(InvocableHandlerMethod.java:224) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:178) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.FrameworkServlet.doDelete(FrameworkServlet.java:936) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:596) ~[tomcat-embed-core-10.1.33.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.33.jar:6.0]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:113) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
+
+2026-03-05T02:55:46.030+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-03-05T02:55:46.031+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ErrorResponse(timestamp=2026-03-05T02:55:46.030907300, status=500, error=Internal Server Error, mess (truncated)...]
+2026-03-05T02:55:46.031+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-10] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [java.lang.IllegalArgumentException: Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.]
+2026-03-05T02:55:46.031+01:00 DEBUG 24868 --- [medical-service] [http-nio-18086-exec-10] o.s.web.servlet.DispatcherServlet        : Completed 500 INTERNAL_SERVER_ERROR
+2026-03-05T02:56:11.384+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:56:11.384+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:56:11.398+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:56:11.399+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:56:11.401+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:56:11.415+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:56:11.416+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:56:41.409+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:56:41.410+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:56:41.424+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:56:41.425+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:56:41.427+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:56:41.441+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:56:41.442+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:57:11.430+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:57:11.431+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:57:11.446+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:57:11.447+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:57:11.447+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:57:11.463+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:57:11.465+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:57:41.459+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:57:41.460+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:57:41.473+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:57:41.474+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:57:41.477+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:57:41.492+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:57:41.492+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:58:11.492+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772675381077
+2026-03-05T02:58:11.492+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:58:11.506+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T02:58:11.508+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T02:58:11.509+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:58:11.525+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T02:58:11.525+01:00 DEBUG 24868 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T02:59:39.760+01:00  INFO 15612 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Starting MedicalServiceApplication using Java 21.0.2 with PID 15612 (C:\Users\Lenovo\OneDrive - ESPRIT\Documents\GitHub\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\medical-service\target\classes started by Lenovo in C:\Users\Lenovo\OneDrive - ESPRIT\Documents\GitHub\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\medical-service)
+2026-03-05T02:59:39.765+01:00 DEBUG 15612 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Running with Spring Boot v3.3.6, Spring v6.1.15
+2026-03-05T02:59:39.766+01:00  INFO 15612 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : No active profile set, falling back to 1 default profile: "default"
+2026-03-05T02:59:44.146+01:00  INFO 15612 --- [medical-service] [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-03-05T02:59:44.698+01:00  INFO 15612 --- [medical-service] [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 531 ms. Found 9 JPA repository interfaces.
+2026-03-05T02:59:45.709+01:00  INFO 15612 --- [medical-service] [main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=cd11c341-17bf-3a7c-ac03-c80d2825e3af
+2026-03-05T02:59:48.399+01:00  INFO 15612 --- [medical-service] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18086 (http)
+2026-03-05T02:59:48.459+01:00  INFO 15612 --- [medical-service] [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-05T02:59:48.460+01:00  INFO 15612 --- [medical-service] [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-03-05T02:59:48.817+01:00  INFO 15612 --- [medical-service] [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-03-05T02:59:48.825+01:00  INFO 15612 --- [medical-service] [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 8152 ms
+2026-03-05T02:59:49.660+01:00 DEBUG 15612 --- [medical-service] [main] o.s.w.f.ServerHttpObservationFilter      : Filter 'webMvcObservationFilter' configured for use
+2026-03-05T02:59:50.275+01:00  INFO 15612 --- [medical-service] [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-03-05T02:59:50.483+01:00  INFO 15612 --- [medical-service] [main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.3.Final
+2026-03-05T02:59:50.591+01:00  INFO 15612 --- [medical-service] [main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-03-05T02:59:51.840+01:00  INFO 15612 --- [medical-service] [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-03-05T02:59:51.946+01:00  INFO 15612 --- [medical-service] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-05T02:59:54.412+01:00  INFO 15612 --- [medical-service] [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@43aa767
+2026-03-05T02:59:54.416+01:00  INFO 15612 --- [medical-service] [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-05T02:59:54.576+01:00  WARN 15612 --- [medical-service] [main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-03-05T03:00:03.078+01:00  INFO 15612 --- [medical-service] [main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-03-05T03:00:03.921+01:00 DEBUG 15612 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists ai_reports 
+       alter column report_json set data type TEXT
+2026-03-05T03:00:03.990+01:00 DEBUG 15612 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists diagnostics 
+       alter column comorbidities set data type TEXT
+2026-03-05T03:00:04.053+01:00 DEBUG 15612 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists medical_history 
+       alter column allergies set data type TEXT
+2026-03-05T03:00:04.111+01:00 DEBUG 15612 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists medical_history 
+       alter column conditions set data type TEXT
+2026-03-05T03:00:04.207+01:00 DEBUG 15612 --- [medical-service] [main] org.hibernate.SQL                        : 
+    alter table if exists medical_history 
+       alter column surgeries set data type TEXT
+2026-03-05T03:00:05.308+01:00  INFO 15612 --- [medical-service] [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-03-05T03:00:08.602+01:00  INFO 15612 --- [medical-service] [main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-03-05T03:00:18.407+01:00  WARN 15612 --- [medical-service] [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-03-05T03:00:19.480+01:00 DEBUG 15612 --- [medical-service] [main] s.w.s.m.m.a.RequestMappingHandlerMapping : 95 mappings in 'requestMappingHandlerMapping'
+2026-03-05T03:00:19.708+01:00 DEBUG 15612 --- [medical-service] [main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Patterns [/webjars/**, /**, /swagger-ui*/*swagger-initializer.js, /swagger-ui*/**] in 'resourceHandlerMapping'
+2026-03-05T03:00:19.955+01:00 DEBUG 15612 --- [medical-service] [main] s.w.s.m.m.a.RequestMappingHandlerAdapter : ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2026-03-05T03:00:20.395+01:00 DEBUG 15612 --- [medical-service] [main] .m.m.a.ExceptionHandlerExceptionResolver : ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2026-03-05T03:00:24.290+01:00  INFO 15612 --- [medical-service] [main] DiscoveryClientOptionalArgsConfiguration : Eureka HTTP Client uses RestTemplate.
+2026-03-05T03:00:24.724+01:00  WARN 15612 --- [medical-service] [main] iguration$LoadBalancerCaffeineWarnLogger : Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+2026-03-05T03:00:24.774+01:00  INFO 15612 --- [medical-service] [main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-03-05T03:00:25.037+01:00  INFO 15612 --- [medical-service] [main] o.s.c.n.eureka.InstanceInfoFactory       : Setting initial instance status as: STARTING
+2026-03-05T03:00:25.119+01:00  INFO 15612 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Initializing Eureka in region us-east-1
+2026-03-05T03:00:25.132+01:00  INFO 15612 --- [medical-service] [main] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2026-03-05T03:00:25.167+01:00  INFO 15612 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Disable delta property : false
+2026-03-05T03:00:25.169+01:00  INFO 15612 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Single vip registry refresh property : null
+2026-03-05T03:00:25.169+01:00  INFO 15612 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Force full registry fetch : false
+2026-03-05T03:00:25.169+01:00  INFO 15612 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Application is null : false
+2026-03-05T03:00:25.169+01:00  INFO 15612 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Registered Applications size is zero : true
+2026-03-05T03:00:25.169+01:00  INFO 15612 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Application version is -1: true
+2026-03-05T03:00:25.170+01:00  INFO 15612 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Getting all instance registry info from the eureka server
+2026-03-05T03:00:25.308+01:00 DEBUG 15612 --- [medical-service] [main] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/
+2026-03-05T03:00:25.883+01:00 DEBUG 15612 --- [medical-service] [main] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T03:00:26.078+01:00 DEBUG 15612 --- [medical-service] [main] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T03:00:26.085+01:00 DEBUG 15612 --- [medical-service] [main] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T03:00:26.236+01:00  INFO 15612 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : The response status is 200
+2026-03-05T03:00:26.242+01:00  INFO 15612 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Starting heartbeat executor: renew interval is: 30
+2026-03-05T03:00:26.250+01:00  INFO 15612 --- [medical-service] [main] c.n.discovery.InstanceInfoReplicator     : InstanceInfoReplicator onDemand update allowed rate per min is 4
+2026-03-05T03:00:26.255+01:00  INFO 15612 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Discovery Client initialized at timestamp 1772676026254 with initial instances count: 8
+2026-03-05T03:00:26.311+01:00  INFO 15612 --- [medical-service] [main] o.s.c.n.e.s.EurekaServiceRegistry        : Registering application MEDICAL-SERVICE with eureka with status UP
+2026-03-05T03:00:26.312+01:00  INFO 15612 --- [medical-service] [main] com.netflix.discovery.DiscoveryClient    : Saw local status change event StatusChangeEvent [timestamp=1772676026312, current=UP, previous=STARTING]
+2026-03-05T03:00:26.318+01:00  INFO 15612 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_MEDICAL-SERVICE/medical-service:18086: registering service...
+2026-03-05T03:00:26.332+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : HTTP POST http://localhost:8761/eureka/apps/MEDICAL-SERVICE
+2026-03-05T03:00:26.338+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T03:00:26.353+01:00  INFO 15612 --- [medical-service] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18086 (http) with context path '/'
+2026-03-05T03:00:26.356+01:00  INFO 15612 --- [medical-service] [main] .s.c.n.e.s.EurekaAutoServiceRegistration : Updating port to 18086
+2026-03-05T03:00:26.382+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Writing [InstanceInfo [instanceId = medical-service:18086, appName = MEDICAL-SERVICE, hostName = localhost, status = UP, ipAddr = 192.168.3.1, port = 18086, securePort = 443, dataCenterInfo = com.netflix.appinfo.MyDataCenterInfo@b53b6c8] as "application/json"
+2026-03-05T03:00:26.484+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] o.s.web.client.RestTemplate              : Response 204 NO_CONTENT
+2026-03-05T03:00:26.485+01:00  INFO 15612 --- [medical-service] [DiscoveryClient-InstanceInfoReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_MEDICAL-SERVICE/medical-service:18086 - registration status: 204
+2026-03-05T03:00:27.587+01:00  INFO 15612 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Started MedicalServiceApplication in 49.502 seconds (process running for 51.0)
+2026-03-05T03:00:56.250+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T03:00:56.251+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772676026312
+2026-03-05T03:00:56.252+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T03:00:56.258+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T03:00:56.265+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T03:00:56.265+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T03:00:56.265+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T03:01:17.004+01:00  INFO 15612 --- [medical-service] [http-nio-18086-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-05T03:01:17.005+01:00  INFO 15612 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-03-05T03:01:17.006+01:00 DEBUG 15612 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Detected StandardServletMultipartResolver
+2026-03-05T03:01:17.007+01:00 DEBUG 15612 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Detected AcceptHeaderLocaleResolver
+2026-03-05T03:01:17.007+01:00 DEBUG 15612 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Detected FixedThemeResolver
+2026-03-05T03:01:17.012+01:00 DEBUG 15612 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@2c57ad81
+2026-03-05T03:01:17.015+01:00 DEBUG 15612 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Detected org.springframework.web.servlet.support.SessionFlashMapManager@57b30c41
+2026-03-05T03:01:17.016+01:00 DEBUG 15612 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2026-03-05T03:01:17.017+01:00  INFO 15612 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 11 ms
+2026-03-05T03:01:17.046+01:00 DEBUG 15612 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : DELETE "/api/medical/equipment/2", parameters={}
+2026-03-05T03:01:17.067+01:00 DEBUG 15612 --- [medical-service] [http-nio-18086-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to org.techhive.medicalservice.controller.EquipmentController#deleteEquipment(Long)
+2026-03-05T03:01:17.110+01:00 DEBUG 15612 --- [medical-service] [http-nio-18086-exec-1] o.s.web.method.HandlerMethod             : Could not resolve parameter [0] in public org.springframework.http.ResponseEntity<java.lang.Void> org.techhive.medicalservice.controller.EquipmentController.deleteEquipment(java.lang.Long): Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.
+2026-03-05T03:01:17.113+01:00 DEBUG 15612 --- [medical-service] [http-nio-18086-exec-1] .m.m.a.ExceptionHandlerExceptionResolver : Using @ExceptionHandler org.techhive.medicalservice.exception.GlobalExceptionHandler#handleGlobalException(Exception, WebRequest)
+2026-03-05T03:01:17.115+01:00 ERROR 15612 --- [medical-service] [http-nio-18086-exec-1] o.t.m.exception.GlobalExceptionHandler   : Unexpected error occurred: 
+
+java.lang.IllegalArgumentException: Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.updateNamedValueInfo(AbstractNamedValueMethodArgumentResolver.java:186) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.getNamedValueInfo(AbstractNamedValueMethodArgumentResolver.java:161) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.resolveArgument(AbstractNamedValueMethodArgumentResolver.java:107) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.HandlerMethodArgumentResolverComposite.resolveArgument(HandlerMethodArgumentResolverComposite.java:122) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.InvocableHandlerMethod.getMethodArgumentValues(InvocableHandlerMethod.java:224) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:178) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at org.springframework.web.servlet.FrameworkServlet.doDelete(FrameworkServlet.java:936) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:596) ~[tomcat-embed-core-10.1.33.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.15.jar:6.1.15]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.33.jar:6.0]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:113) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.15.jar:6.1.15]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.33.jar:10.1.33]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
+
+2026-03-05T03:01:17.150+01:00 DEBUG 15612 --- [medical-service] [http-nio-18086-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-03-05T03:01:17.153+01:00 DEBUG 15612 --- [medical-service] [http-nio-18086-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ErrorResponse(timestamp=2026-03-05T03:01:17.127112600, status=500, error=Internal Server Error, mess (truncated)...]
+2026-03-05T03:01:17.167+01:00 DEBUG 15612 --- [medical-service] [http-nio-18086-exec-1] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [java.lang.IllegalArgumentException: Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.]
+2026-03-05T03:01:17.168+01:00 DEBUG 15612 --- [medical-service] [http-nio-18086-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 500 INTERNAL_SERVER_ERROR
+2026-03-05T03:01:26.277+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T03:01:26.277+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772676026312
+2026-03-05T03:01:26.277+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T03:01:26.277+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T03:01:26.294+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T03:01:26.294+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T03:01:26.294+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T03:01:56.306+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772676026312
+2026-03-05T03:01:56.306+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T03:01:56.306+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T03:01:56.307+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T03:01:56.323+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T03:01:56.323+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T03:01:56.323+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2026-03-05T03:02:26.326+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/MEDICAL-SERVICE/medical-service:18086?status=UP&lastDirtyTimestamp=1772676026312
+2026-03-05T03:02:26.327+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T03:02:26.342+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2026-03-05T03:02:26.343+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2026-03-05T03:02:26.346+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-HeartbeatExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T03:02:26.360+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Response 200 OK
+2026-03-05T03:02:26.361+01:00 DEBUG 15612 --- [medical-service] [DiscoveryClient-CacheRefreshExecutor-%d] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
