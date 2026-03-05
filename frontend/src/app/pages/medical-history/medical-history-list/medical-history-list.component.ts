@@ -11,6 +11,7 @@ import { ZardAlertDialogService } from '@/shared/components/alert-dialog';
 import { ZardDialogService } from '@/shared/components/dialog';
 import { MedicalHistoryService, type MedicalHistory } from '@/core/services/medical-history.service';
 import { MedicalFolderService, type MedicalFolder } from '@/core/services/medical-folder.service';
+// @ts-expect-error - used for dynamic component instantiation in dialog.create()
 import { MedicalHistoryFormComponent } from '../medical-history-form/medical-history-form.component';
 
 const PAGE_SIZE = 10;
@@ -25,6 +26,7 @@ const PAGE_SIZE = 10;
     ZardIconComponent,
     ZardTableImports,
     ZardSkeletonComponent,
+    // @ts-ignore - used for dynamic component instantiation in dialog.create()
     MedicalHistoryFormComponent,
   ],
   templateUrl: './medical-history-list.component.html',

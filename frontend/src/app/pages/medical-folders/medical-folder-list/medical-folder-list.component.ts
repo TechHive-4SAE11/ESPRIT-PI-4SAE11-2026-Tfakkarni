@@ -15,6 +15,7 @@ import { MedicalHistoryService } from '@/core/services/medical-history.service';
 import { MedicalFolderPdfService } from '@/core/services/medical-folder-pdf.service';
 import { UserApiService } from '@/core/services/user-api.service';
 import type { UserInfo } from '@/core/services/user-api.service';
+// @ts-ignore - used for dynamic component instantiation
 import { MedicalFolderFormComponent, type MedicalFolderDialogData } from '../medical-folder-form/medical-folder-form.component';
 import { MedicalFolderDetailComponent } from '../medical-folder-detail/medical-folder-detail.component';
 

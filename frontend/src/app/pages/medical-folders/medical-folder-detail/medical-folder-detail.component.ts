@@ -17,9 +17,13 @@ import { AIReportService, type AIReport, type AIReportPayload } from '@/core/ser
 import { DossierAnalyticsService, type FolderInsights } from '@/core/services/dossier-analytics.service';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import type { ApexOptions } from 'apexcharts';
+// @ts-ignore - used for dynamic component instantiation
 import { MedicalFolderFormComponent } from '../medical-folder-form/medical-folder-form.component';
+// @ts-ignore - used for dynamic component instantiation
 import { DiagnosticsFormComponent } from '@/pages/diagnostics/diagnostics-form/diagnostics-form.component';
+// @ts-ignore - used for dynamic component instantiation
 import { MedicalHistoryFormComponent } from '@/pages/medical-history/medical-history-form/medical-history-form.component';
+// @ts-ignore - used for dynamic component instantiation
 import { DossierCompareComponent } from '../dossier-compare/dossier-compare.component';
 
 const TABLE_PAGE_SIZE = 5;
