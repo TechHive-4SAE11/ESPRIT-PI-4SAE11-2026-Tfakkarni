@@ -25,7 +25,6 @@ public class EquipmentDTO {
     @NotBlank(message = "Equipment name is required")
     private String name;
 
-    @NotBlank(message = "Description is required")
     private String description;
 
     @NotNull(message = "Category is required")
