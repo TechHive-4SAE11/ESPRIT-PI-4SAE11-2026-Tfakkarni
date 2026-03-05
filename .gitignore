@@ -21,3 +21,6 @@
 *.class
 *.jar
 *.war
+
+.env
+.env.secret

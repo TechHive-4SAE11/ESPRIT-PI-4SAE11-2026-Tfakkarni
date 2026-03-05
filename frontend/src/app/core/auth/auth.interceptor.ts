@@ -24,7 +24,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const apiUrls = ['/api', environment.apiBaseUrl];
   const isApiRequest = apiUrls.some((url) => req.url.startsWith(url));
 
-  if (!isApiRequest || !keycloakService.isLoggedIn()) {
+  // Routes publiques — pas besoin de token
+  const publicPaths = ['/api/password-reset', '/api/users/register'];
+  const isPublicRoute = publicPaths.some((p) => req.url.includes(p));
+
+  if (!isApiRequest || isPublicRoute || !keycloakService.isLoggedIn()) {
     return next(req);
   }
 

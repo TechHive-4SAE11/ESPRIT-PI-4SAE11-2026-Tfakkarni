@@ -34,6 +34,9 @@ public class User {
   @Column(nullable = false, columnDefinition = "boolean default true")
   private boolean enabled = true;
 
+  @Column
+  private String phone;
+
   @Column(name = "kyc_status", nullable = false, columnDefinition = "varchar(255) default 'none'")
   private String kycStatus = "none";
 
@@ -135,6 +138,14 @@ public class User {
 
   public void setGender(String gender) {
     this.gender = gender;
+  }
+
+  public String getPhone() {
+    return phone;
+  }
+
+  public void setPhone(String phone) {
+    this.phone = phone;
   }
 
   public String getKycStatus() {

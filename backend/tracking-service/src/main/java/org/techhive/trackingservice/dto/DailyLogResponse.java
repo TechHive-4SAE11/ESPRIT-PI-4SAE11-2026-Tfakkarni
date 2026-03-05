@@ -16,6 +16,7 @@ public class DailyLogResponse {
     private String patientKeycloakId;
     private LocalDate logDate;
     private String globalNotes;
+    private String voiceNoteText;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<NutritionEntryResponse> nutritionEntries;

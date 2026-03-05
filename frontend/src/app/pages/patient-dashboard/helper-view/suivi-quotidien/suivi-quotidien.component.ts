@@ -408,6 +408,109 @@ function isNumericOrEmpty(v: string): boolean {
           </div>
         }
       </div>
+      <div class="border-t border-dashed"></div>
+
+      <!-- Note Vocale -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-base flex items-center gap-2">
+            <span class="p-1.5 rounded-lg bg-purple-100 text-purple-600"><z-icon zType="activity" class="h-4 w-4" /></span>
+            {{ voiceLanguage() === 'ar' ? 'ملاحظة صوتية' : 'Note vocale' }}
+          </h3>
+          @if (!readOnly) {
+            <!-- Language Toggle FR / AR -->
+            <button
+              (click)="toggleVoiceLanguage()"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 text-xs font-medium"
+              [class]="voiceLanguage() === 'ar'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'
+                : 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'"
+            >
+              <span class="text-sm">{{ voiceLanguage() === 'fr' ? '🇫🇷' : '🇸🇦' }}</span>
+              <span>{{ voiceLanguage() === 'fr' ? 'FR' : 'AR' }}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+              </svg>
+              <span class="text-sm">{{ voiceLanguage() === 'fr' ? '🇸🇦' : '🇫🇷' }}</span>
+            </button>
+          }
+        </div>
+        @if (log()?.voiceNoteText) {
+          <z-card class="p-4 bg-purple-50/50 border-purple-200">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex-1">
+                <p class="text-sm text-muted-foreground whitespace-pre-wrap" [dir]="voiceNoteDir()">{{ log()!.voiceNoteText }}</p>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                <!-- TTS Play/Stop button -->
+                <button z-button zType="ghost" zSize="sm"
+                  [class]="isSpeaking() ? 'text-purple-600 animate-pulse' : 'text-purple-500 hover:text-purple-700'"
+                  (click)="speakVoiceNote()"
+                  [title]="isSpeaking() ? 'Arrêter la lecture' : 'Écouter la note'">
+                  @if (isSpeaking()) {
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/>
+                      <rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/>
+                    </svg>
+                  } @else {
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M11.383 3.07C11.009 2.89 10.579 2.905 10.22 3.11L4.934 6H2c-1.103 0-2 .897-2 2v8c0 1.103.897 2 2 2h2.934l5.286 2.89c.176.096.369.144.563.144.187 0 .375-.048.546-.144.353-.195.571-.567.571-.976V4.046c0-.409-.218-.781-.571-.976h.054zM18.657 3.343a1 1 0 00-1.414 1.414c3.124 3.124 3.124 8.202 0 11.326a1 1 0 001.414 1.414c3.905-3.905 3.905-10.249 0-14.154zM15.828 6.172a1 1 0 00-1.414 1.414 4.017 4.017 0 010 5.656 1 1 0 001.414 1.414 6.017 6.017 0 000-8.484z"/>
+                    </svg>
+                  }
+                </button>
+                @if (!readOnly) {
+                  <button z-button zType="ghost" zSize="sm" class="text-destructive shrink-0" (click)="deleteVoiceNote()">
+                    <z-icon zType="trash-2" class="h-3.5 w-3.5" />
+                  </button>
+                }
+              </div>
+            </div>
+          </z-card>
+        } @else if (!readOnly) {
+          <div class="flex flex-col items-center gap-3 p-6 border-2 border-dashed rounded-xl">
+            @if (isRecording()) {
+              <div class="flex flex-col items-center gap-2">
+                <div class="h-16 w-16 rounded-full bg-red-500 animate-pulse flex items-center justify-center">
+                  <z-icon zType="activity" class="h-8 w-8 text-white" />
+                </div>
+                <p class="text-sm font-medium">
+                  {{ voiceLanguage() === 'ar' ? '...جاري التسجيل' : 'Enregistrement en cours...' }}
+                </p>
+                <button z-button zType="destructive" (click)="stopRecording()">
+                  <z-icon zType="square" class="h-4 w-4 mr-2" /> {{ voiceLanguage() === 'ar' ? 'إيقاف' : 'Arr\u00eater' }}
+                </button>
+              </div>
+            } @else if (isTranscribing()) {
+              <div class="flex flex-col items-center gap-2">
+                <z-icon zType="loader-2" class="h-8 w-8 text-primary animate-spin" />
+                <p class="text-sm text-muted-foreground">
+                  {{ voiceLanguage() === 'ar' ? '...جاري التحويل إلى نص' : 'Transcription en cours...' }}
+                </p>
+              </div>
+            } @else {
+              <div class="flex flex-col items-center gap-2">
+                <div class="flex items-center gap-2 mb-1 text-xs font-medium"
+                     [class]="voiceLanguage() === 'ar' ? 'text-emerald-600' : 'text-blue-600'">
+                  <span>{{ voiceLanguage() === 'fr' ? '🇫🇷 Français' : '🇸🇦 العربية' }}</span>
+                </div>
+                <button z-button (click)="startRecording()">
+                  <z-icon zType="activity" class="h-4 w-4 mr-2" />
+                  {{ voiceLanguage() === 'ar' ? 'تسجيل ملاحظة صوتية' : 'Enregistrer une note vocale' }}
+                </button>
+                <p class="text-xs text-muted-foreground text-center">
+                  {{ voiceLanguage() === 'ar'
+                    ? 'انقر للتسجيل — سيتم تحويل الصوت تلقائيًا إلى نص بالعربية'
+                    : 'Cliquez pour enregistrer une note qui sera automatiquement convertie en texte' }}
+                </p>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="text-center py-4 text-sm text-muted-foreground border border-dashed rounded-xl">
+            {{ voiceLanguage() === 'ar' ? 'لا توجد ملاحظة صوتية' : 'Aucune note vocale' }}
+          </p>
+        }
+      </div>
     </div>
   </z-tab>
 
@@ -1119,6 +1222,74 @@ export class SuiviQuotidienComponent implements OnInit {
     this.selectedDate() === this.today ? this.logState.loading() : this._loadingLocal()
   );
 
+  // ── Voice Note recording ────────────────────────────────────────────
+  isRecording      = signal(false);
+  isTranscribing   = signal(false);
+  audioBlob        = signal<Blob | null>(null);
+  private mediaRecorder: MediaRecorder | null = null;
+  private audioChunks: Blob[] = [];
+
+  // ── Voice language toggle (FR / AR) ────────────────────────────────
+  voiceLanguage = signal<'fr' | 'ar'>(
+    (localStorage.getItem('tfk_voice_language') as 'fr' | 'ar') || 'fr'
+  );
+  voiceLangLabel = computed(() => this.voiceLanguage() === 'fr' ? 'Français' : 'العربية');
+
+  /** Detects if the transcribed voice note contains Arabic characters → RTL */
+  voiceNoteDir = computed<'rtl' | 'ltr'>(() => {
+    const text = this.log()?.voiceNoteText;
+    if (!text) return 'ltr';
+    const arabicRegex = /[\u0600-\u06FF]/;
+    return arabicRegex.test(text) ? 'rtl' : 'ltr';
+  });
+
+  toggleVoiceLanguage(): void {
+    const next = this.voiceLanguage() === 'fr' ? 'ar' : 'fr';
+    this.voiceLanguage.set(next);
+    localStorage.setItem('tfk_voice_language', next);
+  }
+
+  // ── TTS playback ──────────────────────────────────────────────────────
+  isSpeaking     = signal(false);
+  private ttsAudio: HTMLAudioElement | null = null;
+
+  speakVoiceNote(): void {
+    // If already playing, stop it
+    if (this.ttsAudio && !this.ttsAudio.paused) {
+      this.ttsAudio.pause();
+      this.ttsAudio.currentTime = 0;
+      this.isSpeaking.set(false);
+      return;
+    }
+
+    const logId = this.log()?.id;
+    if (!logId) return;
+
+    this.isSpeaking.set(true);
+    const lang = this.voiceNoteDir() === 'rtl' ? 'ar' : 'fr';
+
+    this.svc.speakVoiceNote(logId, lang).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        this.ttsAudio = new Audio(url);
+        this.ttsAudio.onended = () => {
+          this.isSpeaking.set(false);
+          URL.revokeObjectURL(url);
+        };
+        this.ttsAudio.onerror = () => {
+          this.isSpeaking.set(false);
+          this.errorMsg.set(lang === 'ar' ? 'خطأ في تشغيل الصوت' : 'Erreur de lecture audio');
+          URL.revokeObjectURL(url);
+        };
+        this.ttsAudio.play();
+      },
+      error: () => {
+        this.isSpeaking.set(false);
+        this.errorMsg.set(lang === 'ar' ? 'خطأ في توليد الصوت' : 'Erreur lors de la synthèse vocale');
+      }
+    });
+  }
+
   // ── Toggle rapide médicament (sans ouvrir le modal) ───────────────────
   _togglingMedId = signal<number | null>(null);
   healthScore   = signal<HealthScoreResponse | null>(null);
@@ -1776,6 +1947,74 @@ export class SuiviQuotidienComponent implements OnInit {
   deleteIncident(id:number){
     const logId=this.log()?.id; if(!logId) return;
     this.svc.deleteIncident(logId,id).subscribe({ next:()=>this.loadLog(), error:()=>this.errorMsg.set('Erreur suppression.') });
+  }
+
+  // ── Voice Note methods ────────────────────────────────────────────────
+  async startRecording(): Promise<void> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+      this.mediaRecorder = new MediaRecorder(stream, { mimeType });
+      this.audioChunks = [];
+
+      this.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) this.audioChunks.push(event.data);
+      };
+
+      this.mediaRecorder.onstop = () => {
+        const blob = new Blob(this.audioChunks, { type: mimeType });
+        this.audioBlob.set(blob);
+        this.uploadVoiceNote(blob, mimeType);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      this.mediaRecorder.start();
+      this.isRecording.set(true);
+    } catch (err) {
+      console.error('Microphone access error:', err);
+      this.errorMsg.set('Impossible d\'accéder au microphone. Vérifiez les permissions.');
+    }
+  }
+
+  stopRecording(): void {
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.stop();
+      this.isRecording.set(false);
+    }
+  }
+
+  uploadVoiceNote(blob: Blob, mimeType: string = 'audio/webm'): void {
+    const logId = this.log()?.id;
+    if (!logId) return;
+
+    this.isTranscribing.set(true);
+    const formData = new FormData();
+    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+    formData.append('audio', blob, `voice-note.${ext}`);
+
+    this.svc.uploadVoiceNote(logId, formData, this.voiceLanguage()).subscribe({
+      next: () => {
+        this.isTranscribing.set(false);
+        this.loadLog();
+      },
+      error: (err) => {
+        this.isTranscribing.set(false);
+        const defaultErr = this.voiceLanguage() === 'ar'
+          ? 'خطأ أثناء تحويل الصوت إلى نص'
+          : 'Erreur lors de la transcription';
+        this.errorMsg.set(err?.error?.error || defaultErr);
+      }
+    });
+  }
+
+  deleteVoiceNote(): void {
+    const logId = this.log()?.id;
+    if (!logId) return;
+
+    this.svc.deleteVoiceNote(logId).subscribe({
+      next: () => this.loadLog(),
+      error: () => this.errorMsg.set('Erreur lors de la suppression de la note vocale')
+    });
   }
 
   // ── Empty form factories ───────────────────────────────────────────────

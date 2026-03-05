@@ -37,6 +37,10 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/api/users/**
+        - id: password-reset
+          uri: lb://user-service
+          predicates:
+            - Path=/api/password-reset/**
         - id: game-service
           uri: lb://game-service
           predicates:
@@ -101,6 +105,10 @@ spring:
           uri: lb://tracking-service
           predicates:
             - Path=/api/statistics/**
+        - id: notifications
+          uri: lb://tracking-service
+          predicates:
+            - Path=/api/notifications/**
   security:
     oauth2:
       resourceserver:
