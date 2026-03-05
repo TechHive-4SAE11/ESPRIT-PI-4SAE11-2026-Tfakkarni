@@ -17,12 +17,17 @@ export function createZodValidator(schema: ZodSchema): ValidatorFn {
         const issues = error.errors || error.issues || [];
 
         if (Array.isArray(issues)) {
-          issues.forEach((err: any) => {
+          issues.forEach((err: any, index: number) => {
             // Use path as key if present, otherwise generic 'zodError' or 'required'
             const path = err.path && Array.isArray(err.path) ? err.path.join('.') : null;
             const key = path || 'required';
             errors[key] = err.message;
             errors['invalid'] = true;
+
+            // Provide a top-level message for easy access in templates
+            if (index === 0) {
+              errors['message'] = err.message;
+            }
           });
         } else {
           // Fallback if issues structure is unexpected

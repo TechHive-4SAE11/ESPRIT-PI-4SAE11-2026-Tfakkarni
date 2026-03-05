@@ -410,7 +410,6 @@ export class DoctorDashboardComponent implements OnInit {
     private readonly userApiService: UserApiService,
     private readonly gameService: GameService,
     private readonly keycloakService: KeycloakService,
-    private readonly router: Router,
   ) {
   }
 

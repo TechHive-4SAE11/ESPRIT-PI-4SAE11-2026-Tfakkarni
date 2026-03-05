@@ -11,6 +11,7 @@ import { ZardAlertDialogService } from '@/shared/components/alert-dialog';
 import { ZardDialogService } from '@/shared/components/dialog';
 import { DiagnosticsService, type Diagnostics } from '@/core/services/diagnostics.service';
 import { MedicalFolderService, type MedicalFolder } from '@/core/services/medical-folder.service';
+// @ts-expect-error - used for dynamic component instantiation in dialog.create()
 import { DiagnosticsFormComponent } from '../diagnostics-form/diagnostics-form.component';
 
 const PAGE_SIZE = 10;
@@ -25,6 +26,7 @@ const PAGE_SIZE = 10;
     ZardIconComponent,
     ZardTableImports,
     ZardSkeletonComponent,
+    // @ts-ignore - used for dynamic component instantiation in dialog.create()
     DiagnosticsFormComponent,
   ],
   templateUrl: './diagnostics-list.component.html',
@@ -105,8 +107,9 @@ export class DiagnosticsListComponent implements OnInit {
     const formRef = this.dialog.create<DiagnosticsFormComponent, unknown>({
       zTitle: 'Create Diagnostics',
       zContent: DiagnosticsFormComponent,
-      zWidth: '480px',
+      zWidth: '1000px',
       zHideFooter: true,
+      zDraggable: true,
     });
     const form = formRef.componentInstance;
     if (form) {
@@ -129,8 +132,9 @@ export class DiagnosticsListComponent implements OnInit {
     const formRef = this.dialog.create<DiagnosticsFormComponent, unknown>({
       zTitle: 'Edit Diagnostics',
       zContent: DiagnosticsFormComponent,
-      zWidth: '480px',
+      zWidth: '1000px',
       zHideFooter: true,
+      zDraggable: true,
     });
     const form = formRef.componentInstance;
     if (form) {

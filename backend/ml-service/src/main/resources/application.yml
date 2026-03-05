@@ -25,7 +25,20 @@ eureka:
     fetch-registry: true
     register-with-eureka: true
 
-# Override with GEMINI_API_KEY env in production; do not commit real keys to git
+# AI Models Configuration
 gemini:
-  api-key: ${GEMINI_API_KEY:XXXXXXXXXXXXXXXXXXXXXXXXXXX}
+  api-key: ${GEMINI_API_KEY:XXXXXXXXXXXXXXXXXX}
   model: gemini-2.5-flash
+
+huggingface:
+  api-key: ${HUGGINGFACE_API_KEY:xxxxxxxxxxxxxxxxxxxxxxxx}
+  model: facebook/bart-large-mnli
+
+# AI Guardian - Your Private Twilio Config
+ml:
+  twilio:
+    account-sid: ${ML_TWILIO_SID:XXXXXXXXXXXXXXXXXXXXX}
+    auth-token: ${ML_TWILIO_TOKEN:XXXXXXXXXXXXXXXXXXXXXXXX}
+    phone-number: ${ML_TWILIO_PHONE:+18382592660}
+    whatsapp-number: ${ML_TWILIO_WHATSAPP:+14155238886}
+    doctor-phone: ${ML_DOCTOR_PHONE:+21627193466} # Verified Twilio Caller ID

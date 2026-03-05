@@ -1,316 +1,540 @@
 <div class="space-y-6">
   @if (!readOnly()) {
-    <div class="flex items-center gap-2">
-      <button z-button zType="ghost" zSize="sm" (click)="goBack()">
-        <z-icon zType="arrow-left" class="mr-1" />
-        Back to list
-      </button>
-    </div>
+  <div class="flex items-center gap-2">
+    <button z-button zType="ghost" zSize="sm" (click)="goBack()">
+      <z-icon zType="arrow-left" class="mr-1" />
+      Back to list
+    </button>
+  </div>
   }
 
   @if (loading() && !folder()) {
-    <z-skeleton class="h-32 w-full" />
+  <z-skeleton class="h-32 w-full" />
   } @else if (error()) {
-    <z-card class="p-6">
-      <p class="text-destructive">{{ error() }}</p>
-    </z-card>
+  <z-card class="p-6">
+    <p class="text-destructive">{{ error() }}</p>
+  </z-card>
   } @else if (folder()) {
-    @let f = folder()!;
-    
-    <!-- Patient View Header -->
-    @if (readOnly()) {
-      <z-card class="p-6 border-primary/20">
-        <div class="flex items-start justify-between gap-4">
-          <div>
-            <h2 class="text-2xl font-bold">Medical Folder #{{ f!.id }}</h2>
-            <p class="text-muted-foreground text-sm mt-2">Patient: {{ patientDisplayName() || f.patientId }} · Doctor: {{ doctorDisplayName() || f.doctorId }}</p>
-            <p class="text-muted-foreground text-xs mt-1">Created {{ f!.createdAt | date:'medium' }} · Updated {{ f!.updatedAt | date:'medium' }}</p>
-          </div>
-          @if (readOnly()) {
-            <button z-button zType="ghost" zSize="sm" (click)="goBack()" class="shrink-0">
-              <z-icon zType="arrow-left" class="mr-1" />
-              Back
-            </button>
+  @let f = folder()!;
+
+  <!-- Patient View Header -->
+  @if (readOnly()) {
+  <z-card class="p-6 border-primary/20">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-bold">Medical Folder #{{ f!.id }}</h2>
+        <p class="text-muted-foreground text-sm mt-2">Patient: {{ patientDisplayName() || f.patientId }} · Doctor: {{
+          doctorDisplayName() || f.doctorId }}</p>
+
+        <!-- Medical Vitals / Information -->
+        <div class="flex items-center gap-3 mt-3 mb-1">
+          @if (f!.bloodType) {
+          <span
+            class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+            🩸 Blood: {{ f!.bloodType }}
+          </span>
+          }
+          @if (f!.height && f!.weight) {
+          <span
+            class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+            📏 {{ f!.height }} cm
+          </span>
+          <span
+            class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+            ⚖️ {{ f!.weight }} kg
+          </span>
+          <span
+            class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
+            BMI: {{ calculateBMI(f!.height, f!.weight) }}
+          </span>
           }
         </div>
-      </z-card>
-    } @else {
-      <!-- Doctor View Header -->
-      <z-card class="p-6">
-        <div class="flex items-center justify-between flex-wrap gap-4">
-          <div class="flex items-center gap-3">
-            <div>
-              <h2 class="text-xl font-bold">Medical Folder #{{ f!.id }}</h2>
-              <p class="text-muted-foreground text-sm mt-1">Patient: {{ patientDisplayName() || f.patientId }} · Doctor: {{ doctorDisplayName() || f.doctorId }}</p>
-              <p class="text-muted-foreground text-xs mt-1">Created {{ f!.createdAt | date:'short' }} · Updated {{ f!.updatedAt | date:'short' }}</p>
-            </div>
-            @if (loadingAiReport()) {
-              <span class="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                <span class="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
-                Loading…
-              </span>
-            } @else if (latestAiReport()) {
-              @if (latestAiReport()?.status === 'READY') {
-                <button type="button" (click)="openAiReportModal()"
-                  class="inline-flex items-center gap-1.5 rounded-md bg-primary/15 text-primary px-2.5 py-1 text-xs font-medium hover:bg-primary/25 cursor-pointer">
-                  🤖 Report Ready
-                </button>
-              } @else if (latestAiReport()?.status === 'PENDING' || generatingReport()) {
-                <span class="inline-flex items-center gap-1.5 rounded-md bg-amber-500/15 text-amber-700 px-2.5 py-1 text-xs font-medium">
-                  <span class="h-3 w-3 animate-spin rounded-full border-2 border-amber-600 border-t-transparent"></span>
-                  Generating…
-                </span>
-              } @else if (latestAiReport()?.status === 'ERROR') {
-                <span class="inline-flex items-center rounded-md bg-destructive/15 text-destructive px-2.5 py-1 text-xs font-medium" [title]="latestAiReport()?.errorMessage || 'Error'">
-                  🤖 Error
-                </span>
-              }
+
+        <p class="text-muted-foreground text-xs mt-1">Created {{ f!.createdAt | date:'medium' }} · Updated {{
+          f!.updatedAt | date:'medium' }}</p>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button z-button zType="outline" zSize="sm" (click)="toggleInsights()"
+          class="border-primary/30 text-primary hover:bg-primary/5">
+          <z-icon [zType]="showInsights() ? 'layout-dashboard' : 'bar-chart-3'" class="mr-1" />
+          {{ showInsights() ? 'View Dossier' : 'Dossier Insights' }}
+        </button>
+        <button z-button zType="ghost" zSize="sm" (click)="goBack()">
+          <z-icon zType="arrow-left" class="mr-1" />
+          Back
+        </button>
+      </div>
+    </div>
+  </z-card>
+  } @else {
+  <!-- Doctor View Header -->
+  <z-card class="p-6">
+    <div class="flex items-center justify-between flex-wrap gap-4">
+      <div class="flex items-center gap-3">
+        <div>
+          <h2 class="text-xl font-bold">Medical Folder #{{ f!.id }}</h2>
+          <p class="text-muted-foreground text-sm mt-1">Patient: {{ patientDisplayName() || f.patientId }} · Doctor: {{
+            doctorDisplayName() || f.doctorId }}</p>
+
+          <!-- Medical Vitals / Information -->
+          <div class="flex items-center gap-3 mt-3 mb-1">
+            @if (f!.bloodType) {
+            <span
+              class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+              🩸 Blood: {{ f!.bloodType }}
+            </span>
+            }
+            @if (f!.height && f!.weight) {
+            <span
+              class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+              📏 {{ f!.height }} cm
+            </span>
+            <span
+              class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+              ⚖️ {{ f!.weight }} kg
+            </span>
+            <span
+              class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
+              BMI: {{ calculateBMI(f!.height, f!.weight) }}
+            </span>
             }
           </div>
-          <div class="flex items-center gap-2">
-            <button z-button zType="outline" zSize="sm" (click)="generateAiReport()" [disabled]="generatingReport()">
-              {{ generatingReport() ? 'Generating…' : 'Generate AI Report' }}
-            </button>
-            <button z-button zType="outline" zSize="sm" (click)="openEditFolder()">Edit Folder</button>
-          </div>
-        </div>
-      </z-card>
-    }
 
-    <!-- AI Clinical Report (Gemini) - Doctor view only -->
-    @if (!readOnly()) {
-    <z-card class="p-6 border-primary/30 bg-primary/5">
-      <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
-        <span>🤖</span>
-        AI Clinical Report
-      </h3>
-      <p class="text-muted-foreground text-sm mb-4">Gemini-powered analysis: differentials, anomalies, risk level, and advice based on this dossier.</p>
-      <div class="flex flex-wrap items-center gap-3">
+          <p class="text-muted-foreground text-xs mt-1">Created {{ f!.createdAt | date:'short' }} · Updated {{
+            f!.updatedAt | date:'short' }}</p>
+        </div>
         @if (loadingAiReport()) {
-          <span class="inline-flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-sm font-medium text-muted-foreground">
-            <span class="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
-            Loading…
-          </span>
+        <span
+          class="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+          <span class="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+          Loading…
+        </span>
         } @else if (latestAiReport()) {
-          @if (latestAiReport()?.status === 'READY') {
-            <button type="button" (click)="openAiReportModal()"
-              class="inline-flex items-center gap-2 rounded-md bg-primary/15 text-primary px-3 py-1.5 text-sm font-medium hover:bg-primary/25 cursor-pointer border border-primary/30">
-              🤖 Report Ready — click to view
-            </button>
-          } @else if (latestAiReport()?.status === 'PENDING' || generatingReport()) {
-            <span class="inline-flex items-center gap-1.5 rounded-md bg-amber-500/15 text-amber-700 px-3 py-1.5 text-sm font-medium">
-              <span class="h-3 w-3 animate-spin rounded-full border-2 border-amber-600 border-t-transparent"></span>
-              {{ generatingReport() ? 'Generating…' : 'Generating report…' }}
-            </span>
-          } @else if (latestAiReport()?.status === 'ERROR') {
-            <span class="text-sm text-destructive">Report unavailable.</span>
-          }
-        } @else {
-          <span class="text-sm text-muted-foreground">No report available for this dossier.</span>
+        @if (latestAiReport()?.status === 'READY') {
+        <button type="button" (click)="openAiReportModal()"
+          class="inline-flex items-center gap-1.5 rounded-md bg-primary/15 text-primary px-2.5 py-1 text-xs font-medium hover:bg-primary/25 cursor-pointer">
+          🤖 Report Ready
+        </button>
+        } @else if (latestAiReport()?.status === 'PENDING' || generatingReport()) {
+        <span
+          class="inline-flex items-center gap-1.5 rounded-md bg-amber-500/15 text-amber-700 px-2.5 py-1 text-xs font-medium">
+          <span class="h-3 w-3 animate-spin rounded-full border-2 border-amber-600 border-t-transparent"></span>
+          Generating…
+        </span>
+        } @else if (latestAiReport()?.status === 'ERROR') {
+        <span
+          class="inline-flex items-center rounded-md bg-destructive/15 text-destructive px-2.5 py-1 text-xs font-medium"
+          [title]="latestAiReport()?.errorMessage || 'Error'">
+          🤖 Error
+        </span>
         }
+        }
+      </div>
+      <div class="flex items-center gap-2">
+        <button z-button zType="outline" zSize="sm" (click)="toggleInsights()"
+          class="border-primary/30 text-primary hover:bg-primary/5">
+          <z-icon [zType]="showInsights() ? 'layout-dashboard' : 'bar-chart-3'" class="mr-1" />
+          {{ showInsights() ? 'View Dossier' : 'Dossier Insights' }}
+        </button>
         <button z-button zType="outline" zSize="sm" (click)="generateAiReport()" [disabled]="generatingReport()">
           {{ generatingReport() ? 'Generating…' : 'Generate AI Report' }}
         </button>
+        <button z-button zType="outline" zSize="sm" (click)="openEditFolder()">Edit Folder</button>
       </div>
+    </div>
+  </z-card>
+  }
+
+  <!-- ── Dossier Insights Section ── -->
+  @if (showInsights()) {
+  <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+    <!-- Loading State -->
+    @if (loadingInsights()) {
+    <z-card class="p-12 text-center">
+      <z-icon zType="loader-2" class="h-10 w-10 text-primary animate-spin mx-auto mb-4" />
+      <p class="text-muted-foreground">Analyzing dossier data...</p>
     </z-card>
+    } @else {
+    @if (folderInsights(); as insights) {
+    <!-- Stats Grid -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <!-- Severity Distribution -->
+      <z-card class="p-6 overflow-hidden">
+        <h4 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Severity Landscape</h4>
+        @if (severityChartOptions(); as opt) {
+        <apx-chart [series]="$any(opt).series" [chart]="$any(opt).chart" [labels]="$any(opt).labels"
+          [colors]="$any(opt).colors" [legend]="$any(opt).legend" [plotOptions]="$any(opt).plotOptions" />
+        } @else {
+        <div class="flex items-center justify-center h-[220px] text-muted-foreground text-sm">
+          No severity data available
+        </div>
+        }
+      </z-card>
+
+      <!-- Treatment Coverage -->
+      <z-card class="p-6">
+        <h4 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Clinical Compliance</h4>
+        @if (coverageChartOptions(); as opt) {
+        <apx-chart [series]="$any(opt).series" [chart]="$any(opt).chart" [plotOptions]="$any(opt).plotOptions"
+          [colors]="$any(opt).colors" [labels]="$any(opt).labels" />
+        <p class="text-center text-xs text-muted-foreground mt-2">
+          {{ insights.treatmentCoverageRate }}% of diagnostics have matched prescriptions
+        </p>
+        }
+      </z-card>
+
+      <!-- Quick Audit -->
+      <z-card class="p-6 bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
+        <h4 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Audit Summary</h4>
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Total Diagnostics</span>
+            <span class="text-lg font-bold">{{ insights.totalDiagnostics }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Medical History Entries</span>
+            <span class="text-lg font-bold">{{ insights.totalMedicalHistory }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm">Active Prescriptions</span>
+            <span class="text-lg font-bold">{{ insights.prescriptions.length }}</span>
+          </div>
+          <div class="mt-4 pt-4 border-t border-border">
+            <div class="flex items-center gap-2 text-sm" [class.text-success]="insights.treatmentCoverageRate > 80"
+              [class.text-warning]="insights.treatmentCoverageRate <= 80">
+              <z-icon [zType]="insights.treatmentCoverageRate > 80 ? 'circle-check' : 'circle-alert'" class="h-4 w-4" />
+              <span>{{ insights.treatmentCoverageRate > 80 ? 'Optimal Compliance' : 'Attention Required' }}</span>
+            </div>
+          </div>
+        </div>
+      </z-card>
+
+    </div>
+
+    <!-- Timeline & Prescriptions -->
+    <div class="grid lg:grid-cols-2 gap-6">
+
+      <!-- Detailed Timeline -->
+      <z-card class="p-6">
+        <h4 class="text-lg font-semibold mb-4">Medical Evolution Timeline</h4>
+        <div class="space-y-4">
+          @for (entry of insights.timeline; track entry.date + entry.diseaseName) {
+          <div
+            class="flex gap-4 p-3 rounded-lg hover:bg-muted/30 transition-colors border border-transparent hover:border-border">
+            <div class="text-xs text-muted-foreground pt-1 w-24">
+              {{ entry.date | date:'shortDate' }}
+            </div>
+            <div>
+              <div class="font-medium">{{ entry.diseaseName }}</div>
+              <div class="text-xs text-muted-foreground font-mono">{{ entry.stage || 'Initial State' }}</div>
+            </div>
+          </div>
+          }
+        </div>
+      </z-card>
+
+      <!-- Linked Prescriptions -->
+      <z-card class="p-6">
+        <h4 class="text-lg font-semibold mb-4">Recent Prescriptions (Audit)</h4>
+        @if (insights.prescriptions.length > 0) {
+        <div class="space-y-3">
+          @for (med of insights.prescriptions; track med.medicationName + med.prescribedAt) {
+          <div class="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-full bg-blue-50 text-blue-600">
+                <z-icon zType="pill" class="h-4 w-4" />
+              </div>
+              <div>
+                <div class="text-sm font-medium">{{ med.medicationName }}</div>
+                <div class="text-[10px] text-muted-foreground uppercase tracking-tight">Prescribed: {{ med.prescribedAt
+                  | date:'medium' }}</div>
+              </div>
+            </div>
+            <span
+              class="px-2 py-0.5 rounded-full bg-green-50 text-green-700 text-[10px] font-bold uppercase">Linked</span>
+          </div>
+          }
+        </div>
+        } @else {
+        <div class="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm gap-2">
+          <z-icon zType="pill" class="h-8 w-8 opacity-20" />
+          No medications linked to this dossier
+        </div>
+        }
+      </z-card>
+
+    </div>
+
+    }
+    }
+  </div>
+  } @else {
+  <!-- Original Table View -->
+
+  <!-- AI Clinical Report (Gemini) - Doctor view only -->
+  @if (!readOnly()) {
+  <z-card class="p-6 border-primary/30 bg-primary/5">
+    <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
+      <span>🤖</span>
+      AI Clinical Report
+    </h3>
+    <p class="text-muted-foreground text-sm mb-4">Gemini-powered analysis: differentials, anomalies, risk level, and
+      advice based on this dossier.</p>
+    <div class="flex flex-wrap items-center gap-3">
+      @if (loadingAiReport()) {
+      <span
+        class="inline-flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-sm font-medium text-muted-foreground">
+        <span class="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+        Loading…
+      </span>
+      } @else if (latestAiReport()) {
+      @if (latestAiReport()?.status === 'READY') {
+      <button type="button" (click)="openAiReportModal()"
+        class="inline-flex items-center gap-2 rounded-md bg-primary/15 text-primary px-3 py-1.5 text-sm font-medium hover:bg-primary/25 cursor-pointer border border-primary/30">
+        🤖 Report Ready — click to view
+      </button>
+      } @else if (latestAiReport()?.status === 'PENDING' || generatingReport()) {
+      <span
+        class="inline-flex items-center gap-1.5 rounded-md bg-amber-500/15 text-amber-700 px-3 py-1.5 text-sm font-medium">
+        <span class="h-3 w-3 animate-spin rounded-full border-2 border-amber-600 border-t-transparent"></span>
+        {{ generatingReport() ? 'Generating…' : 'Generating report…' }}
+      </span>
+      } @else if (latestAiReport()?.status === 'ERROR') {
+      <span class="text-sm text-destructive">Report unavailable.</span>
+      }
+      } @else {
+      <span class="text-sm text-muted-foreground">No report available for this dossier.</span>
+      }
+      <button z-button zType="outline" zSize="sm" (click)="generateAiReport()" [disabled]="generatingReport()">
+        {{ generatingReport() ? 'Generating…' : 'Generate AI Report' }}
+      </button>
+    </div>
+  </z-card>
+  }
+
+  <!-- Analytics: Health Timeline -->
+  <z-card class="p-6 border-primary/20">
+    <h3 class="text-lg font-semibold mb-1 flex items-center gap-2">
+      <z-icon zType="activity" class="h-5 w-5 text-primary" />
+      Health Timeline
+    </h3>
+    <p class="text-muted-foreground text-sm mb-4">Chronological view of diagnostics and medical history.</p>
+    @if (timelineEvents().length > 0) {
+    <div class="relative pl-6 border-l-2 border-primary/30 space-y-4">
+      @for (ev of timelineEvents(); track ev.date + ev.label) {
+      <div class="relative flex gap-3">
+        <span class="absolute -left-6 top-0.5 w-3 h-3 rounded-full bg-primary shrink-0"
+          [class.bg-destructive]="ev.category === 'history'"></span>
+        <div class="flex-1 min-w-0 pb-4">
+          <span class="text-xs font-medium text-muted-foreground">{{ ev.date | date:'medium' }}</span>
+          <p class="mt-0.5 font-medium text-sm">{{ ev.label }}</p>
+          <span class="text-xs text-muted-foreground">{{ ev.category === 'diagnostic' ? 'Diagnostic' : 'Antécédent'
+            }}</span>
+        </div>
+      </div>
+      }
+    </div>
+    } @else {
+    <p class="text-muted-foreground text-sm py-4">No events yet. Add diagnostics or medical history above to see them
+      here in order.</p>
     }
 
-    <!-- Analytics: Health Timeline (always visible so the section is easy to find) -->
-    <z-card class="p-6 border-primary/20">
-      <h3 class="text-lg font-semibold mb-1 flex items-center gap-2">
-        <z-icon zType="activity" class="h-5 w-5 text-primary" />
-        Health Timeline
-      </h3>
-      <p class="text-muted-foreground text-sm mb-4">Chronological view of diagnostics and medical history.</p>
-      @if (timelineEvents().length > 0) {
-      <div class="relative pl-6 border-l-2 border-primary/30 space-y-4">
-        @for (ev of timelineEvents(); track ev.date + ev.label) {
-        <div class="relative flex gap-3">
-          <span class="absolute -left-6 top-0.5 w-3 h-3 rounded-full bg-primary shrink-0" [class.bg-destructive]="ev.category === 'history'"></span>
-          <div class="flex-1 min-w-0 pb-4">
-            <span class="text-xs font-medium text-muted-foreground">{{ ev.date | date:'medium' }}</span>
-            <p class="mt-0.5 font-medium text-sm">{{ ev.label }}</p>
-            <span class="text-xs text-muted-foreground">{{ ev.category === 'diagnostic' ? 'Diagnostic' : 'Antécédent' }}</span>
+    @if (diseaseProgression().length > 0 && !readOnly()) {
+    <div class="mt-8 pt-6 border-t border-border">
+      <h4 class="text-base font-semibold mb-3 flex items-center gap-2">
+        <z-icon zType="trending-up" class="h-4 w-4 text-primary" />
+        Disease progression
+      </h4>
+      <p class="text-muted-foreground text-sm mb-4">Diseases with multiple entries. Alert if stage has worsened.</p>
+      <div class="space-y-4">
+        @for (prog of diseaseProgression(); track prog.diseaseName) {
+        <div class="rounded-lg border border-border p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="font-semibold">{{ prog.diseaseName }}</span>
+            @if (prog.stageWorsened) {
+            <span
+              class="inline-flex items-center rounded-md bg-destructive/15 px-2 py-0.5 text-xs font-medium text-destructive">Stage
+              worsened</span>
+            }
+          </div>
+          <div class="flex flex-wrap gap-2">
+            @for (e of prog.entries; track e.id) {
+            <span class="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs">
+              {{ e.diagnosisDate | date:'short' }} — {{ e.stage || '—' }}
+            </span>
+            }
           </div>
         </div>
         }
       </div>
-      } @else {
-      <p class="text-muted-foreground text-sm py-4">No events yet. Add diagnostics or medical history above to see them here in order.</p>
-      }
+    </div>
+    }
+  </z-card>
 
-      @if (diseaseProgression().length > 0 && !readOnly()) {
-      <div class="mt-8 pt-6 border-t border-border">
-        <h4 class="text-base font-semibold mb-3 flex items-center gap-2">
-          <z-icon zType="trending-up" class="h-4 w-4 text-primary" />
-          Disease progression
-        </h4>
-        <p class="text-muted-foreground text-sm mb-4">Diseases with multiple entries. Alert if stage has worsened.</p>
-        <div class="space-y-4">
-          @for (prog of diseaseProgression(); track prog.diseaseName) {
-          <div class="rounded-lg border border-border p-4">
-            <div class="flex items-center gap-2 mb-2">
-              <span class="font-semibold">{{ prog.diseaseName }}</span>
-              @if (prog.stageWorsened) {
-                <span class="inline-flex items-center rounded-md bg-destructive/15 px-2 py-0.5 text-xs font-medium text-destructive">Stage worsened</span>
-              }
-            </div>
-            <div class="flex flex-wrap gap-2">
-              @for (e of prog.entries; track e.id) {
-                <span class="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs">
-                  {{ e.diagnosisDate | date:'short' }} — {{ e.stage || '—' }}
-                </span>
-              }
-            </div>
-          </div>
-          }
-        </div>
+  <z-card class="p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold">Diagnostics</h3>
+      @if (!readOnly()) {
+      <div class="flex items-center gap-2">
+        <button z-button zType="outline" zSize="sm" (click)="openCompareDiagnostics()"
+          [disabled]="diagnostics().length < 2" title="Compare two entries (visual diff)">
+          <z-icon zType="layers-2" class="mr-1" />
+          Compare
+        </button>
+        <button z-button zSize="sm" (click)="openAddDiagnostics()">
+          <z-icon zType="plus" class="mr-1" />
+          Add Diagnostics
+        </button>
       </div>
       }
-    </z-card>
-
-    <z-card class="p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold">Diagnostics</h3>
-        @if (!readOnly()) {
-          <div class="flex items-center gap-2">
-            <button z-button zType="outline" zSize="sm" (click)="openCompareDiagnostics()" [disabled]="diagnostics().length < 2" title="Compare two entries (visual diff)">
-              <z-icon zType="layers-2" class="mr-1" />
-              Compare
-            </button>
-            <button z-button zSize="sm" (click)="openAddDiagnostics()">
-              <z-icon zType="plus" class="mr-1" />
-              Add Diagnostics
-            </button>
-          </div>
-        }
-      </div>
-      @if (diagnostics().length === 0) {
-        <p class="text-muted-foreground text-sm">No diagnostics.</p>
-      } @else {
-        <div class="overflow-x-auto">
-          <table z-table>
-            <thead z-table-header>
-              <tr z-table-row>
-                <th z-table-head>Disease</th>
-                <th z-table-head>Stage</th>
-                <th z-table-head>Diagnosis Date</th>
-                @if (!readOnly()) {
-                  <th z-table-head>Actions</th>
-                }
-              </tr>
-            </thead>
-            <tbody z-table-body>
-              @for (d of paginatedDiagnostics(); track d.id) {
-                <tr z-table-row>
-                  <td z-table-cell class="font-medium">{{ d.diseaseName }}</td>
-                  <td z-table-cell>{{ d.stage || '-' }}</td>
-                  <td z-table-cell class="text-muted-foreground">{{ d.diagnosisDate | date:'short' }}</td>
-                  @if (!readOnly()) {
-                    <td z-table-cell>
-                      <div class="flex items-center gap-1">
-                        <button type="button" z-button zType="ghost" zSize="sm" class="!p-2" (click)="editDiagnostics(d)" title="Edit">
-                          <z-icon zType="edit" class="h-4 w-4" />
-                        </button>
-                        <button type="button" z-button zType="ghost" zSize="sm" class="!p-2 text-destructive hover:bg-destructive/10" (click)="deleteDiagnostics(d)" title="Delete">
-                          <z-icon zType="trash-2" class="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  }
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 mt-2 border-t border-border bg-muted/30 rounded-b-lg">
-          <div class="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Items per page</span>
-            <span class="font-medium text-foreground">{{ tablePageSize }}</span>
-            <span class="hidden sm:inline">·</span>
-            <span class="hidden sm:inline">{{ diagnostics().length }} diagnostic(s)</span>
-          </div>
-          @if (totalPagesDiagnostics() > 1) {
-            <div class="flex items-center gap-2">
-              <span class="text-sm text-muted-foreground">Page {{ currentPageDiagnostics() }} of {{ totalPagesDiagnostics() }}</span>
-              <button z-button zType="outline" zSize="sm" [disabled]="currentPageDiagnostics() <= 1" (click)="setPageDiagnostics(currentPageDiagnostics() - 1)">Previous</button>
-              <button z-button zType="outline" zSize="sm" [disabled]="currentPageDiagnostics() >= totalPagesDiagnostics()" (click)="setPageDiagnostics(currentPageDiagnostics() + 1)">Next</button>
-            </div>
+    </div>
+    @if (diagnostics().length === 0) {
+    <p class="text-muted-foreground text-sm">No diagnostics.</p>
+    } @else {
+    <div class="overflow-x-auto">
+      <table z-table>
+        <thead z-table-header>
+          <tr z-table-row>
+            <th z-table-head>Disease</th>
+            <th z-table-head>Stage</th>
+            <th z-table-head>Diagnosis Date</th>
+            @if (!readOnly()) {
+            <th z-table-head>Actions</th>
+            }
+          </tr>
+        </thead>
+        <tbody z-table-body>
+          @for (d of paginatedDiagnostics(); track d.id) {
+          <tr z-table-row>
+            <td z-table-cell class="font-medium">{{ d.diseaseName }}</td>
+            <td z-table-cell>{{ d.stage || '-' }}</td>
+            <td z-table-cell class="text-muted-foreground">{{ d.diagnosisDate | date:'short' }}</td>
+            @if (!readOnly()) {
+            <td z-table-cell>
+              <div class="flex items-center gap-1">
+                <button type="button" z-button zType="ghost" zSize="sm" class="!p-2" (click)="editDiagnostics(d)"
+                  title="Edit">
+                  <z-icon zType="edit" class="h-4 w-4" />
+                </button>
+                <button type="button" z-button zType="ghost" zSize="sm"
+                  class="!p-2 text-destructive hover:bg-destructive/10" (click)="deleteDiagnostics(d)" title="Delete">
+                  <z-icon zType="trash-2" class="h-4 w-4" />
+                </button>
+              </div>
+            </td>
+            }
+          </tr>
           }
-        </div>
-      }
-    </z-card>
-
-    <z-card class="p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold">Medical History</h3>
-        @if (!readOnly()) {
-          <div class="flex items-center gap-2">
-            <button z-button zType="outline" zSize="sm" (click)="openCompareHistory()" [disabled]="history().length < 2" title="Compare two entries (visual diff)">
-              <z-icon zType="layers-2" class="mr-1" />
-              Compare
-            </button>
-            <button z-button zSize="sm" (click)="openAddHistory()">
-              <z-icon zType="plus" class="mr-1" />
-              Add Medical History
-            </button>
-          </div>
-        }
+        </tbody>
+      </table>
+    </div>
+    <div
+      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 mt-2 border-t border-border bg-muted/30 rounded-b-lg">
+      <div class="flex items-center gap-2 text-sm text-muted-foreground">
+        <span>Items per page</span>
+        <span class="font-medium text-foreground">{{ tablePageSize }}</span>
+        <span class="hidden sm:inline">·</span>
+        <span class="hidden sm:inline">{{ diagnostics().length }} diagnostic(s)</span>
       </div>
-      @if (history().length === 0) {
-        <p class="text-muted-foreground text-sm">No medical history.</p>
-      } @else {
-        <div class="overflow-x-auto">
-          <table z-table>
-            <thead z-table-header>
-              <tr z-table-row>
-                <th z-table-head>Allergies</th>
-                <th z-table-head>Conditions</th>
-                <th z-table-head>Surgeries</th>
-                @if (!readOnly()) {
-                  <th z-table-head>Actions</th>
-                }
-              </tr>
-            </thead>
-            <tbody z-table-body>
-              @for (h of paginatedHistory(); track h.id) {
-                <tr z-table-row>
-                  <td z-table-cell class="max-w-[200px] truncate">{{ h.allergies || '-' }}</td>
-                  <td z-table-cell class="max-w-[200px] truncate">{{ h.conditions || '-' }}</td>
-                  <td z-table-cell class="max-w-[200px] truncate">{{ h.surgeries || '-' }}</td>
-                  @if (!readOnly()) {
-                    <td z-table-cell>
-                      <div class="flex items-center gap-1">
-                        <button type="button" z-button zType="ghost" zSize="sm" class="!p-2" (click)="editHistory(h)" title="Edit">
-                          <z-icon zType="edit" class="h-4 w-4" />
-                        </button>
-                        <button type="button" z-button zType="ghost" zSize="sm" class="!p-2 text-destructive hover:bg-destructive/10" (click)="deleteHistory(h)" title="Delete">
-                          <z-icon zType="trash-2" class="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  }
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 mt-2 border-t border-border bg-muted/30 rounded-b-lg">
-          <div class="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Items per page</span>
-            <span class="font-medium text-foreground">{{ tablePageSize }}</span>
-            <span class="hidden sm:inline">·</span>
-            <span class="hidden sm:inline">{{ history().length }} entry(ies)</span>
-          </div>
-          @if (totalPagesHistory() > 1) {
-            <div class="flex items-center gap-2">
-              <span class="text-sm text-muted-foreground">Page {{ currentPageHistory() }} of {{ totalPagesHistory() }}</span>
-              <button z-button zType="outline" zSize="sm" [disabled]="currentPageHistory() <= 1" (click)="setPageHistory(currentPageHistory() - 1)">Previous</button>
-              <button z-button zType="outline" zSize="sm" [disabled]="currentPageHistory() >= totalPagesHistory()" (click)="setPageHistory(currentPageHistory() + 1)">Next</button>
-            </div>
-          }
-        </div>
+      @if (totalPagesDiagnostics() > 1) {
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-muted-foreground">Page {{ currentPageDiagnostics() }} of {{ totalPagesDiagnostics()
+          }}</span>
+        <button z-button zType="outline" zSize="sm" [disabled]="currentPageDiagnostics() <= 1"
+          (click)="setPageDiagnostics(currentPageDiagnostics() - 1)">Previous</button>
+        <button z-button zType="outline" zSize="sm" [disabled]="currentPageDiagnostics() >= totalPagesDiagnostics()"
+          (click)="setPageDiagnostics(currentPageDiagnostics() + 1)">Next</button>
+      </div>
       }
-    </z-card>
+    </div>
+    }
+  </z-card>
+
+  <z-card class="p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold">Medical History</h3>
+      @if (!readOnly()) {
+      <div class="flex items-center gap-2">
+        <button z-button zType="outline" zSize="sm" (click)="openCompareHistory()" [disabled]="history().length < 2"
+          title="Compare two entries (visual diff)">
+          <z-icon zType="layers-2" class="mr-1" />
+          Compare
+        </button>
+        <button z-button zSize="sm" (click)="openAddHistory()">
+          <z-icon zType="plus" class="mr-1" />
+          Add Medical History
+        </button>
+      </div>
+      }
+    </div>
+    @if (history().length === 0) {
+    <p class="text-muted-foreground text-sm">No medical history.</p>
+    } @else {
+    <div class="overflow-x-auto">
+      <table z-table>
+        <thead z-table-header>
+          <tr z-table-row>
+            <th z-table-head>Allergies</th>
+            <th z-table-head>Conditions</th>
+            <th z-table-head>Surgeries</th>
+            <th z-table-head>Symptoms</th>
+            <th z-table-head>Recommended Treatment</th>
+            <th z-table-head>Family History</th>
+            @if (!readOnly()) {
+            <th z-table-head>Actions</th>
+            }
+          </tr>
+        </thead>
+        <tbody z-table-body>
+          @for (h of paginatedHistory(); track h.id) {
+          <tr z-table-row>
+            <td z-table-cell class="max-w-[150px] truncate">{{ h.allergies || '-' }}</td>
+            <td z-table-cell class="max-w-[150px] truncate">{{ h.conditions || '-' }}</td>
+            <td z-table-cell class="max-w-[150px] truncate">{{ h.surgeries || '-' }}</td>
+            <td z-table-cell class="max-w-[150px] truncate">{{ h.symptoms || '-' }}</td>
+            <td z-table-cell class="max-w-[150px] truncate">{{ h.recommendedTreatment || '-' }}</td>
+            <td z-table-cell class="max-w-[150px] truncate">{{ h.familyHistory || '-' }}</td>
+            @if (!readOnly()) {
+            <td z-table-cell>
+              <div class="flex items-center gap-1">
+                <button type="button" z-button zType="ghost" zSize="sm" class="!p-2" (click)="editHistory(h)"
+                  title="Edit">
+                  <z-icon zType="edit" class="h-4 w-4" />
+                </button>
+                <button type="button" z-button zType="ghost" zSize="sm"
+                  class="!p-2 text-destructive hover:bg-destructive/10" (click)="deleteHistory(h)" title="Delete">
+                  <z-icon zType="trash-2" class="h-4 w-4" />
+                </button>
+              </div>
+            </td>
+            }
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div
+      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 mt-2 border-t border-border bg-muted/30 rounded-b-lg">
+      <div class="flex items-center gap-2 text-sm text-muted-foreground">
+        <span>Items per page</span>
+        <span class="font-medium text-foreground">{{ tablePageSize }}</span>
+        <span class="hidden sm:inline">·</span>
+        <span class="hidden sm:inline">{{ history().length }} entry(ies)</span>
+      </div>
+      @if (totalPagesHistory() > 1) {
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-muted-foreground">Page {{ currentPageHistory() }} of {{ totalPagesHistory() }}</span>
+        <button z-button zType="outline" zSize="sm" [disabled]="currentPageHistory() <= 1"
+          (click)="setPageHistory(currentPageHistory() - 1)">Previous</button>
+        <button z-button zType="outline" zSize="sm" [disabled]="currentPageHistory() >= totalPagesHistory()"
+          (click)="setPageHistory(currentPageHistory() + 1)">Next</button>
+      </div>
+      }
+    </div>
+    }
+  </z-card>
+  }
   }
 </div>

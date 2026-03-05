@@ -1,6 +1,7 @@
 package org.techhive.medicalservice.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -28,4 +29,6 @@ public class DiagnosticsResponse {
 
 	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime updatedAt;
+
+	private List<DiagnosticAttachmentResponse> attachments;
 }

@@ -54,6 +54,18 @@ public class MedicalHistory implements Serializable {
 	@Column(name = "surgeries", columnDefinition = "TEXT")
 	private String surgeries;
 
+	@Size(max = 2000, message = "Symptoms must not exceed 2000 characters")
+	@Column(name = "symptoms", columnDefinition = "TEXT")
+	private String symptoms;
+
+	@Size(max = 2000, message = "Recommended treatment must not exceed 2000 characters")
+	@Column(name = "recommended_treatment", columnDefinition = "TEXT")
+	private String recommendedTreatment;
+
+	@Size(max = 2000, message = "Family history must not exceed 2000 characters")
+	@Column(name = "family_history", columnDefinition = "TEXT")
+	private String familyHistory;
+
 	@CreationTimestamp
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;

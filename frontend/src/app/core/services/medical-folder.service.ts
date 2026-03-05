@@ -7,6 +7,9 @@ export interface MedicalFolder {
   id: number;
   patientId: string;
   doctorId: string;
+  bloodType?: string;
+  height?: number;
+  weight?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -32,11 +35,17 @@ export interface MedicalFolderStats {
 export interface CreateMedicalFolderRequest {
   patientId: string;
   doctorId?: string;
+  bloodType?: string;
+  height?: number;
+  weight?: number;
 }
 
 export interface UpdateMedicalFolderRequest {
   patientId?: string;
   doctorId?: string;
+  bloodType?: string;
+  height?: number;
+  weight?: number;
 }
 
 /** @deprecated Use MedicalFolder */

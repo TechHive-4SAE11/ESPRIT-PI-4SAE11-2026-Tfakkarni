@@ -163,13 +163,13 @@ export class ZardDialogOptions<T, U> {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class]': 'classes()',
-    '[style.width]': 'config.zWidth ? config.zWidth : null',
+    '[style.width]': 'config.zWidth ? (config.zWidth + " !important") : null',
+    '[style.min-width]': 'config.zWidth ? (config.zWidth + " !important") : null',
     '[style.position]': 'config.zDraggable ? "fixed" : null',
     '[style.top]': 'config.zDraggable ? "50%" : null',
     '[style.left]': 'config.zDraggable ? "50%" : null',
     '[style.transform]': 'config.zDraggable ? "translate(-50%, -50%)" : null',
-    '[cdkDrag]': 'config.zDraggable',
-    '[cdkDragDisabled]': '!config.zDraggable',
+    '[draggable]': 'config.zDraggable',
     'animate.enter': 'dialog-enter',
     'animate.leave': 'dialog-leave',
   },
@@ -225,4 +225,4 @@ export class ZardDialogComponent<T, U> extends BasePortalOutlet {
   imports: [ZardButtonComponent, ZardDialogComponent, OverlayModule, PortalModule, DragDropModule],
   providers: [ZardDialogService],
 })
-export class ZardDialogModule {}
+export class ZardDialogModule { }

@@ -9,7 +9,10 @@ import org.techhive.medicalservice.dto.CrossPatientDiseaseDto;
 import org.techhive.medicalservice.dto.DiseaseCountDto;
 import org.techhive.medicalservice.dto.DiagnosticsByMonthDto;
 import org.techhive.medicalservice.dto.MonthComparisonDto;
+import org.techhive.medicalservice.dto.ClinicalSafetyStatsDto;
+import org.techhive.medicalservice.dto.FolderSpecificStatsDto;
 import org.techhive.medicalservice.service.DossierAnalyticsService;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 import java.time.Year;
@@ -52,5 +55,17 @@ public class DossierAnalyticsController {
             @RequestParam(required = false) String stage) {
         log.info("GET /api/medical-folders/analytics/by-disease diseaseName={} stage={}", diseaseName, stage);
         return ResponseEntity.ok(dossierAnalyticsService.getByDisease(diseaseName, stage));
+    }
+
+    @GetMapping("/safety-audit")
+    public ResponseEntity<ClinicalSafetyStatsDto> getSafetyAudit() {
+        log.info("GET /api/medical-folders/analytics/safety-audit");
+        return ResponseEntity.ok(dossierAnalyticsService.getClinicalSafetyStats());
+    }
+
+    @GetMapping("/folder/{folderId}")
+    public ResponseEntity<FolderSpecificStatsDto> getFolderStats(@PathVariable Long folderId) {
+        log.info("GET /api/medical-folders/analytics/folder/{}", folderId);
+        return ResponseEntity.ok(dossierAnalyticsService.getFolderStats(folderId));
     }
 }

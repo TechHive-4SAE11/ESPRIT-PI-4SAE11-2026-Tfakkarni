@@ -13,6 +13,9 @@ public class MedicalHistoryMapper {
 			.allergies(request.getAllergies())
 			.conditions(request.getConditions())
 			.surgeries(request.getSurgeries())
+			.symptoms(request.getSymptoms())
+			.recommendedTreatment(request.getRecommendedTreatment())
+			.familyHistory(request.getFamilyHistory())
 			.build();
 	}
 
@@ -26,6 +29,15 @@ public class MedicalHistoryMapper {
 		if (request.getSurgeries() != null) {
 			existing.setSurgeries(request.getSurgeries());
 		}
+		if (request.getSymptoms() != null) {
+			existing.setSymptoms(request.getSymptoms());
+		}
+		if (request.getRecommendedTreatment() != null) {
+			existing.setRecommendedTreatment(request.getRecommendedTreatment());
+		}
+		if (request.getFamilyHistory() != null) {
+			existing.setFamilyHistory(request.getFamilyHistory());
+		}
 		return existing;
 	}
 
@@ -36,6 +48,9 @@ public class MedicalHistoryMapper {
 			.allergies(entity.getAllergies())
 			.conditions(entity.getConditions())
 			.surgeries(entity.getSurgeries())
+			.symptoms(entity.getSymptoms())
+			.recommendedTreatment(entity.getRecommendedTreatment())
+			.familyHistory(entity.getFamilyHistory())
 			.createdAt(entity.getCreatedAt())
 			.updatedAt(entity.getUpdatedAt())
 			.build();

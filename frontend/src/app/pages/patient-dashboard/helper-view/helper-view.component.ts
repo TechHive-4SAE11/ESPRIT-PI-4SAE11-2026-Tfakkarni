@@ -26,6 +26,7 @@ import { DataLibraryComponent } from './data-library/data-library.component';
 import { TagManagerComponent } from './tag-manager/tag-manager.component';
 import { GameBuilderComponent } from './game-builder/game-builder.component';
 import { ProfileComponent } from './profile/profile.component';
+// @ts-ignore - used for dynamic component instantiation
 import { MedicalFolderListComponent } from '@/pages/medical-folders/medical-folder-list/medical-folder-list.component';
 import { PatientDossierViewComponent } from '@/pages/patient-dashboard/patient-dossier-view/patient-dossier-view.component';
 

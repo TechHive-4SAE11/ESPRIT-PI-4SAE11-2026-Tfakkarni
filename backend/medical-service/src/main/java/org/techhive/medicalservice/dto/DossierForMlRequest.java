@@ -20,6 +20,9 @@ public class DossierForMlRequest {
 	private Long folderId;
 	private String patientId;
 	private String doctorId;
+	private String bloodType;
+	private Double height;
+	private Double weight;
 
 	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime folderCreatedAt;
@@ -50,6 +53,9 @@ public class DossierForMlRequest {
 		private String allergies;
 		private String conditions;
 		private String surgeries;
+		private String symptoms;
+		private String recommendedTreatment;
+		private String familyHistory;
 
 		@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
 		private LocalDateTime createdAt;
