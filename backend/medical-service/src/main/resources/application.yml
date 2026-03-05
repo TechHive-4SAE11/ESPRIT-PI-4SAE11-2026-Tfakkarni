@@ -2,6 +2,10 @@ server:
   port: 18086
   servlet:
     context-path: /
+  error:
+    include-message: always
+    include-exception: true
+    include-stacktrace: always
 
 spring:
   config:
@@ -62,11 +66,16 @@ management:
       show-details: always
 
 logging:
+  file:
+    name: medical-service.log
   level:
+    root: INFO
     org.techhive.medicalservice: DEBUG
     org.springframework.web: DEBUG
     org.springframework.security: DEBUG
     org.springframework.boot.actuate.health: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 # Alert service (for appointment reminders)
 alert-service:

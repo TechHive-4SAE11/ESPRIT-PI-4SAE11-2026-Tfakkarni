@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+import java.util.List;
+
 @Entity
 @Table(name = "users")
 @JsonIgnoreProperties(ignoreUnknown = true)

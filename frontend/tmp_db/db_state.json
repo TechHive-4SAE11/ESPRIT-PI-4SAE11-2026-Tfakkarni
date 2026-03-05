@@ -1,0 +1,123 @@
+(node:16244) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"id":"1","question_id":"5","text":"Today's exact date","is_correct":true}
+{"id":"2","question_id":"5","text":"Incorrect date","is_correct":false}
+{"id":"3","question_id":"5","text":"Doesn't know","is_correct":false}
+{"id":"4","question_id":"5","text":"Refuses to answer","is_correct":false}
+{"id":"5","question_id":"6","text":"Correct location (hospital, home, etc.)","is_correct":true}
+{"id":"6","question_id":"6","text":"Incorrect location","is_correct":false}
+{"id":"7","question_id":"6","text":"Doesn't know","is_correct":false}
+{"id":"8","question_id":"6","text":"Vague answer","is_correct":false}
+{"id":"61","question_id":"6","text":"Today's exact date","is_correct":true}
+{"id":"62","question_id":"6","text":"Incorrect date","is_correct":false}
+{"id":"64","question_id":"6","text":"Refuses to answer","is_correct":false}
+{"id":"9","question_id":"7","text":"LEMON, KEY, BALLOON","is_correct":true}
+{"id":"10","question_id":"7","text":"LEMON, KEY","is_correct":false}
+{"id":"11","question_id":"7","text":"LEMON","is_correct":false}
+{"id":"12","question_id":"7","text":"No words","is_correct":false}
+{"id":"65","question_id":"7","text":"Correct location (hospital, home, etc.)","is_correct":true}
+{"id":"66","question_id":"7","text":"Incorrect location","is_correct":false}
+{"id":"67","question_id":"7","text":"Doesn't know","is_correct":false}
+{"id":"68","question_id":"7","text":"Vague answer","is_correct":false}
+{"id":"13","question_id":"8","text":"100, 93, 86, 79, 72, 65","is_correct":true}
+{"id":"14","question_id":"8","text":"100, 93, 86, 79, 72","is_correct":false}
+{"id":"15","question_id":"8","text":"100, 93, 86, 79","is_correct":false}
+{"id":"16","question_id":"8","text":"Less than 4 correct","is_correct":false}
+{"id":"69","question_id":"8","text":"LEMON, KEY, BALLOON","is_correct":true}
+{"id":"70","question_id":"8","text":"LEMON, KEY","is_correct":false}
+{"id":"71","question_id":"8","text":"LEMON","is_correct":false}
+{"id":"72","question_id":"8","text":"No words","is_correct":false}
+{"id":"17","question_id":"9","text":"LEMON, KEY, BALLOON","is_correct":true}
+{"id":"18","question_id":"9","text":"LEMON, KEY","is_correct":false}
+{"id":"19","question_id":"9","text":"LEMON","is_correct":false}
+{"id":"20","question_id":"9","text":"No words","is_correct":false}
+{"id":"73","question_id":"9","text":"100, 93, 86, 79, 72, 65","is_correct":true}
+{"id":"74","question_id":"9","text":"100, 93, 86, 79, 72","is_correct":false}
+{"id":"75","question_id":"9","text":"100, 93, 86, 79","is_correct":false}
+{"id":"76","question_id":"9","text":"Less than 4 correct","is_correct":false}
+{"id":"21","question_id":"10","text":"Pencil / Watch","is_correct":true}
+{"id":"22","question_id":"10","text":"Misnamed object","is_correct":false}
+{"id":"23","question_id":"10","text":"Doesn't know","is_correct":false}
+{"id":"24","question_id":"10","text":"Description without naming","is_correct":false}
+{"id":"77","question_id":"10","text":"LEMON, KEY, BALLOON","is_correct":true}
+{"id":"78","question_id":"10","text":"LEMON, KEY","is_correct":false}
+{"id":"79","question_id":"10","text":"LEMON","is_correct":false}
+{"id":"80","question_id":"10","text":"No words","is_correct":false}
+{"id":"25","question_id":"11","text":"No ifs, ands, or buts","is_correct":true}
+{"id":"26","question_id":"11","text":"Partial phrase","is_correct":false}
+{"id":"27","question_id":"11","text":"Incorrect phrase","is_correct":false}
+{"id":"28","question_id":"11","text":"Doesn't repeat","is_correct":false}
+{"id":"81","question_id":"11","text":"Pencil / Watch","is_correct":true}
+{"id":"82","question_id":"11","text":"Misnamed object","is_correct":false}
+{"id":"83","question_id":"11","text":"Doesn't know","is_correct":false}
+{"id":"84","question_id":"11","text":"Description without naming","is_correct":false}
+{"id":"29","question_id":"12","text":"Takes, folds, puts","is_correct":true}
+{"id":"30","question_id":"12","text":"2 out of 3 steps","is_correct":false}
+{"id":"31","question_id":"12","text":"1 out of 3 steps","is_correct":false}
+{"id":"32","question_id":"12","text":"No steps","is_correct":false}
+{"id":"85","question_id":"12","text":"No ifs, ands, or buts","is_correct":true}
+{"id":"86","question_id":"12","text":"Partial phrase","is_correct":false}
+{"id":"87","question_id":"12","text":"Incorrect phrase","is_correct":false}
+{"id":"88","question_id":"12","text":"Doesn't repeat","is_correct":false}
+{"id":"33","question_id":"13","text":"Closes eyes","is_correct":true}
+{"id":"34","question_id":"13","text":"Reads without executing","is_correct":false}
+{"id":"35","question_id":"13","text":"Does nothing","is_correct":false}
+{"id":"36","question_id":"13","text":"Other action","is_correct":false}
+{"id":"89","question_id":"13","text":"Takes, folds, puts","is_correct":true}
+{"id":"90","question_id":"13","text":"2 out of 3 steps","is_correct":false}
+{"id":"91","question_id":"13","text":"1 out of 3 steps","is_correct":false}
+{"id":"92","question_id":"13","text":"No steps","is_correct":false}
+{"id":"37","question_id":"14","text":"Complete sentence","is_correct":true}
+{"id":"38","question_id":"14","text":"Words without structure","is_correct":false}
+{"id":"39","question_id":"14","text":"Incomplete sentence","is_correct":false}
+{"id":"40","question_id":"14","text":"Writes nothing","is_correct":false}
+{"id":"93","question_id":"14","text":"Closes eyes","is_correct":true}
+{"id":"94","question_id":"14","text":"Reads without executing","is_correct":false}
+{"id":"95","question_id":"14","text":"Does nothing","is_correct":false}
+{"id":"96","question_id":"14","text":"Other action","is_correct":false}
+{"id":"41","question_id":"15","text":"Correct drawing","is_correct":true}
+{"id":"42","question_id":"15","text":"Approximate drawing","is_correct":false}
+{"id":"43","question_id":"15","text":"Incorrect drawing","is_correct":false}
+{"id":"44","question_id":"15","text":"Doesn't draw","is_correct":false}
+{"id":"97","question_id":"15","text":"Complete sentence","is_correct":true}
+{"id":"98","question_id":"15","text":"Words without structure","is_correct":false}
+{"id":"99","question_id":"15","text":"Incomplete sentence","is_correct":false}
+{"id":"100","question_id":"15","text":"Writes nothing","is_correct":false}
+{"id":"45","question_id":"16","text":"Exact date","is_correct":true}
+{"id":"46","question_id":"16","text":"Approximate date","is_correct":false}
+{"id":"47","question_id":"16","text":"Wrong date","is_correct":false}
+{"id":"48","question_id":"16","text":"Doesn't remember","is_correct":false}
+{"id":"101","question_id":"16","text":"Correct drawing","is_correct":true}
+{"id":"102","question_id":"16","text":"Approximate drawing","is_correct":false}
+{"id":"103","question_id":"16","text":"Incorrect drawing","is_correct":false}
+{"id":"104","question_id":"16","text":"Doesn't draw","is_correct":false}
+{"id":"49","question_id":"17","text":"D L R O W","is_correct":true}
+{"id":"50","question_id":"17","text":"DLROW","is_correct":true}
+{"id":"51","question_id":"17","text":"4 correct letters","is_correct":false}
+{"id":"52","question_id":"17","text":"Less than 4 correct","is_correct":false}
+{"id":"105","question_id":"17","text":"Exact date","is_correct":true}
+{"id":"106","question_id":"17","text":"Approximate date","is_correct":false}
+{"id":"107","question_id":"17","text":"Wrong date","is_correct":false}
+{"id":"108","question_id":"17","text":"Doesn't remember","is_correct":false}
+{"id":"53","question_id":"18","text":"8","is_correct":true}
+{"id":"54","question_id":"18","text":"7","is_correct":false}
+{"id":"55","question_id":"18","text":"9","is_correct":false}
+{"id":"56","question_id":"18","text":"Doesn't know","is_correct":false}
+{"id":"109","question_id":"18","text":"D L R O W","is_correct":true}
+{"id":"110","question_id":"18","text":"DLROW","is_correct":true}
+{"id":"111","question_id":"18","text":"4 correct letters","is_correct":false}
+{"id":"112","question_id":"18","text":"Less than 4 correct","is_correct":false}
+{"id":"113","question_id":"19","text":"8","is_correct":true}
+{"id":"114","question_id":"19","text":"7","is_correct":false}
+{"id":"115","question_id":"19","text":"9","is_correct":false}
+{"id":"116","question_id":"19","text":"Doesn't know","is_correct":false}
+{"id":"177","question_id":"19","text":"They are fruits","is_correct":true}
+{"id":"178","question_id":"19","text":"They are food","is_correct":false}
+{"id":"179","question_id":"19","text":"They are round","is_correct":false}

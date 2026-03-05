@@ -90,7 +90,7 @@ export class PatientDashboardComponent implements OnInit {
           this.viewMode.set(saved);
           this.buildMenuGroups();
         }
-      } catch {}
+      } catch { }
     });
   }
 
@@ -105,7 +105,7 @@ export class PatientDashboardComponent implements OnInit {
     if (isPlatformBrowser(this.platformId)) {
       try {
         localStorage.setItem(VIEW_MODE_KEY, mode);
-      } catch {}
+      } catch { }
     }
     this.buildMenuGroups();
   }
@@ -134,9 +134,9 @@ export class PatientDashboardComponent implements OnInit {
           { icon: 'gamepad-2', label: 'Manage Games', action: () => this.helperView?.setPage('My Games') },
           { icon: 'bar-chart-3', label: 'Progress', action: () => this.helperView?.setPage('Progress') },
           { icon: 'pill', label: 'My Prescriptions', action: () => this.helperView?.setPage('Prescriptions') },
-          { icon: 'pill', label: 'Prescriptions', action: () => this.helperView?.setPage('Prescriptions') },
-
           { icon: 'calendar', label: 'Appointments', action: () => this.router.navigate(['/appointments']) },
+          { icon: 'brain', label: 'Quiz Management', action: () => this.helperView?.setPage('Quizzes') },
+          { icon: 'shield', label: 'Equipment', action: () => this.helperView?.setPage('Equipment') },
         ],
       },
       {

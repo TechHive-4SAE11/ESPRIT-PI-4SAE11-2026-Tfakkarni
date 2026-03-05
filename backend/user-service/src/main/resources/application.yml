@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: user-service
+  profiles:
+    active: prod  # Change to 'local' for H2 database
   datasource:
     # Replace with YOUR Neon connection string from https://console.neon.tech (Dashboard → Connection string)
     url: ${NEON_DATABASE_URL:jdbc:postgresql://ep-purple-sun-aga3c9f6-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require}
@@ -37,3 +39,22 @@ keycloak:
 didit:
   api-key: ${DIDIT_API_KEY:}
   workflow-id: ${DIDIT_WORKFLOW_ID:}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true

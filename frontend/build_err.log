@@ -1,0 +1,27 @@
+
+> frontend@0.0.0 prebuild
+> node scripts/set-env.js
+
+Ô£ö environment.ts generated (API Base: http://localhost:9090, Keycloak: http://localhost:9090/auth)
+
+> frontend@0.0.0 build
+> ng build
+
+[33mÔØ»[39m Building...
+[32mÔ£ö[39m Building...
+[35mPrerendered 0 static routes.[39m
+Application bundle generation failed. [20.987 seconds]
+
+X [ERROR] NG5002: Unexpected closing tag "div". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags [plugin angular-compiler]
+
+    src/app/pages/patient-dashboard/patient-equipment/patient-equipment.component.html:390:0:
+      390 Ôöé </div>
+          ÔòÁ ~~~~~~
+
+  Error occurs in the template of component PatientEquipmentComponent.
+
+    src/app/pages/patient-dashboard/patient-equipment/patient-equipment.component.ts:17:15:
+      17 Ôöé   templateUrl: './patient-equipment.component.html'
+         ÔòÁ                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+

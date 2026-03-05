@@ -24,6 +24,8 @@ import { PrescriptionListComponent } from '@/shared/components/prescription-list
 import { CarePlanListComponent } from '@/shared/components/care-plan-list/care-plan-list.component';
 import { MedicationManagementComponent } from '@/pages/medications/medications.component';
 import { PatientDossierViewComponent } from '../patient-dossier-view/patient-dossier-view.component';
+import { PatientQuizComponent } from '../patient-quiz/patient-quiz.component';
+import { PatientEquipmentComponent } from '../patient-equipment/patient-equipment.component';
 
 function nowTime(): string {
   const d = new Date();
@@ -34,21 +36,21 @@ function nowTime(): string {
   selector: 'app-patient-view',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, GuessPlaceComponent, PrescriptionListComponent, CarePlanListComponent, MedicationManagementComponent, PatientDossierViewComponent],
+  imports: [CommonModule, GuessPlaceComponent, PrescriptionListComponent, CarePlanListComponent, MedicationManagementComponent, PatientDossierViewComponent, PatientQuizComponent, PatientEquipmentComponent],
   templateUrl: './patient-view.component.html',
 })
 export class PatientViewComponent implements OnInit {
-  private readonly destroyRef            = inject(DestroyRef);
-  private readonly gameService           = inject(GameService);
-  private readonly movieGameService      = inject(MovieGameService);
-  private readonly userApiService        = inject(UserApiService);
-  private readonly customGameService     = inject(CustomGameService);
-  private readonly router                = inject(Router);
-  private readonly authService           = inject(AuthService);
-  private readonly audioGameService      = inject(AudioGameService);
-  private readonly statisticsService     = inject(StatisticsService);
-  readonly themeService                  = inject(ThemeService);
-  private readonly notificationService   = inject(NotificationService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly gameService = inject(GameService);
+  private readonly movieGameService = inject(MovieGameService);
+  private readonly userApiService = inject(UserApiService);
+  private readonly customGameService = inject(CustomGameService);
+  private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly audioGameService = inject(AudioGameService);
+  private readonly statisticsService = inject(StatisticsService);
+  readonly themeService = inject(ThemeService);
+  private readonly notificationService = inject(NotificationService);
 
   // ── Service partagé (source unique de vérité pour les médicaments) ─────────
   readonly logState = inject(DailyLogStateService);
@@ -69,11 +71,11 @@ export class PatientViewComponent implements OnInit {
   customGames = signal<CustomGameResponse[]>([]);
 
   // ── Loading flags ──────────────────────────────────────────────────────────
-  isLoadingGames        = signal(false);
-  isLoadingMovieGames   = signal(false);
-  isLoadingStats        = signal(false);
-  isLoadingCustomGames  = signal<boolean>(false);
-  isLoadingStreak       = signal(false);
+  isLoadingGames = signal(false);
+  isLoadingMovieGames = signal(false);
+  isLoadingStats = signal(false);
+  isLoadingCustomGames = signal<boolean>(false);
+  isLoadingStreak = signal(false);
 
   // ── Win Streak (Duolingo-style) ────────────────────────────────────────────
   streak = signal<StreakResponse | null>(null);

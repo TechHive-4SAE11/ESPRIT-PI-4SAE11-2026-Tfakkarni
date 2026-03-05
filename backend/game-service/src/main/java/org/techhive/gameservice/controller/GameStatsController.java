@@ -1,7 +1,6 @@
 package org.techhive.gameservice.controller;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.techhive.gameservice.dto.GameStatsResponse;
@@ -9,7 +8,6 @@ import org.techhive.gameservice.dto.OverviewStatsResponse;
 import org.techhive.gameservice.dto.ScoreAnalyticsResponse;
 import org.techhive.gameservice.service.GameStatsService;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/games/stats")
 @RequiredArgsConstructor

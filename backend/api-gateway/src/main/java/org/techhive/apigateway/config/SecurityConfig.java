@@ -29,11 +29,12 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(List.of(
+    config.setAllowedOriginPatterns(List.of(
         "http://localhost:4200",
         "http://127.0.0.1:4200",
         "http://localhost:5173",
-        "http://127.0.0.1:5173"
+        "http://127.0.0.1:5173",
+        "*"
     ));
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
     config.setAllowedHeaders(
@@ -50,10 +51,12 @@ public class SecurityConfig {
     http
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .csrf(ServerHttpSecurity.CsrfSpec::disable)
+        .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
         .authorizeExchange(exchanges -> exchanges
             // Allow all CORS preflight requests
             .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             // Public endpoints - no authentication required
+            .pathMatchers("/auth/**").permitAll()
             .pathMatchers("/public/**").permitAll()
             .pathMatchers("/actuator/**").permitAll()
             .pathMatchers("/api/users/register").permitAll()
@@ -62,6 +65,10 @@ public class SecurityConfig {
             .pathMatchers("/api/games/movies/play/**").permitAll()
             // Admin health check endpoint (for monitoring/testing)
             .pathMatchers("/api/admin/medication-status/health").permitAll()
+            .pathMatchers(HttpMethod.GET, "/api/games/quiz/1").permitAll() // Public quiz endpoint
+            .pathMatchers(HttpMethod.GET, "/api/games/quiz/**").permitAll() // Public quiz read endpoints
+            .pathMatchers(HttpMethod.GET, "/api/games/quiz/questions/**").permitAll() // Public quiz questions
+            .pathMatchers(HttpMethod.GET, "/api/games/quiz/answer/**").permitAll() // Public quiz answers
             // All other endpoints require authentication
             .anyExchange().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2

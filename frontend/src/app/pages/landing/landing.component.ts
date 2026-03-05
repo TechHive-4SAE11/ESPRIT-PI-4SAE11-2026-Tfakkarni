@@ -4,11 +4,12 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '@/core/auth';
 import { ZardButtonComponent } from '@/shared/components/button/button.component';
 import { ZardIconComponent } from '@/shared/components/icon';
+import { PublicQuizComponent } from './public-quiz/public-quiz.component';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, RouterLink, ZardButtonComponent, ZardIconComponent],
+  imports: [CommonModule, RouterLink, ZardButtonComponent, ZardIconComponent, PublicQuizComponent],
   template: `
     <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
 
@@ -68,62 +69,16 @@ import { ZardIconComponent } from '@/shared/components/icon';
           </div>
         </section>
 
-        <!-- ─── Quiz / Self-Test Section ─── -->
-        <section id="quiz" class="bg-white dark:bg-gray-900 py-20">
-          <div class="container mx-auto px-6 max-w-5xl">
-            <div class="grid md:grid-cols-2 gap-12 items-center">
-              <div>
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-sm font-medium mb-6">
-                  <span>📋</span>
-                  <span>Free Self-Assessment</span>
-                </div>
-                <h2 class="text-3xl md:text-4xl font-bold mb-5">
-                  Do You Have Doubts About Alzheimer's?
-                </h2>
-                <p class="text-muted-foreground text-lg mb-6">
-                  Answer our cognitive self-assessment quiz and receive an instant score.
-                  If your result exceeds <strong>60%</strong>, our team will guide you through
-                  creating your personal care account and connecting with a doctor.
-                </p>
-                <ul class="space-y-3 mb-8">
-                  <li class="flex items-start gap-3">
-                    <span class="mt-0.5 w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                      <z-icon zType="check" class="h-3 w-3 text-green-600" />
-                    </span>
-                    <span class="text-muted-foreground">Quick, science-based questionnaire</span>
-                  </li>
-                  <li class="flex items-start gap-3">
-                    <span class="mt-0.5 w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                      <z-icon zType="check" class="h-3 w-3 text-green-600" />
-                    </span>
-                    <span class="text-muted-foreground">Immediate score with personalised guidance</span>
-                  </li>
-                  <li class="flex items-start gap-3">
-                    <span class="mt-0.5 w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                      <z-icon zType="check" class="h-3 w-3 text-green-600" />
-                    </span>
-                    <span class="text-muted-foreground">Free, no account needed to get started</span>
-                  </li>
-                </ul>
-                <a routerLink="/quiz">
-                  <button z-button zSize="lg">
-                    Start the Quiz
-                    <z-icon zType="arrow-right" class="ml-2" />
-                  </button>
-                </a>
-              </div>
-              <!-- Score visual -->
-              <div class="flex justify-center">
-                <div class="relative w-64 h-64">
-                  <div class="absolute inset-0 rounded-full bg-gradient-to-br from-amber-100 to-orange-200 dark:from-amber-900/30 dark:to-orange-800/30 flex flex-col items-center justify-center shadow-lg border-4 border-amber-200 dark:border-amber-700">
-                    <span class="text-6xl font-extrabold text-amber-600 dark:text-amber-400">60%</span>
-                    <span class="text-sm text-muted-foreground mt-2 font-medium">Recommended threshold</span>
-                    <span class="text-xs text-muted-foreground">to open your care account</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <!-- Public Quiz Section -->
+        <section id="quiz" class="py-16 md:py-24 bg-white dark:bg-gray-900">
+          <div class="text-center mb-12 px-6">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">Take Our Free Assessment</h2>
+            <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Evaluate potential signs of Alzheimer's disease with our quick assessment quiz.
+              No account required - get instant results.
+            </p>
           </div>
+          <app-public-quiz />
         </section>
 
         <!-- ─── How It Works ─── -->
