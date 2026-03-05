@@ -192,7 +192,7 @@ import { KeycloakService } from 'keycloak-angular';
                         <td z-table-cell class="font-medium">
                           <div class="flex items-center gap-2">
                             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold">
-                              {{ (patient.firstName?.[0] ?? '') + (patient.lastName?.[0] ?? '') }}
+                              {{ (patient.firstName.charAt(0) || '') + (patient.lastName.charAt(0) || '') }}
                             </div>
                             {{ patient.firstName }} {{ patient.lastName }}
                           </div>
@@ -558,7 +558,7 @@ import { KeycloakService } from 'keycloak-angular';
                       <td z-table-cell class="font-medium">
                         <div class="flex items-center gap-2">
                           <div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-white text-xs font-bold">
-                            {{ (patient.firstName?.[0] ?? '') + (patient.lastName?.[0] ?? '') }}
+                            {{ (patient.firstName.charAt(0) || '') + (patient.lastName.charAt(0) || '') }}
                           </div>
                           {{ patient.firstName }} {{ patient.lastName }}
                         </div>
