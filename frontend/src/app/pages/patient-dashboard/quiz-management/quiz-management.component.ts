@@ -86,7 +86,7 @@ export class QuizManagementComponent implements OnInit {
   difficultyFilter: number | null = null;
 
   // ─── FORMS ──────────────────────────────────────────────────
-  newQuiz: Partial<QuizDTO> = { topic: '', caregiverId: 0 };
+  newQuiz: Partial<QuizDTO> = { topic: '', caregiverId: 0, totalScore: 0 };
   newQuestion: Partial<QuestionDTO> = { text: '', difficultyLevel: 1, mediaAttachment: '' };
   newQuestionAnswers: Partial<AnswerDTO>[] = [
     { text: '', isCorrect: false },
@@ -204,12 +204,12 @@ export class QuizManagementComponent implements OnInit {
 
   openCreateQuizModal(): void {
     this.isEditing.set(false);
-    this.newQuiz = { topic: '', caregiverId: this.userNeonDbId() ?? 0 };
+    this.newQuiz = { topic: '', caregiverId: this.userNeonDbId() ?? 0, totalScore: 0 };
     this.showCreateForm.set(true);
   }
 
   editQuiz(quiz: QuizDTO): void {
-    this.newQuiz = { id: quiz.id, topic: quiz.topic, caregiverId: quiz.caregiverId };
+    this.newQuiz = { id: quiz.id, topic: quiz.topic, caregiverId: quiz.caregiverId, totalScore: quiz.totalScore ?? 0 };
     this.isEditing.set(true);
     this.showCreateForm.set(true);
   }
