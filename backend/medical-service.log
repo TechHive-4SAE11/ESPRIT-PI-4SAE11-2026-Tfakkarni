@@ -14696,3 +14696,65 @@ com.netflix.discovery.shared.transport.TransportException: Cannot execute reques
 	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
 
 2026-03-04T23:55:57.606+01:00  INFO 21940 --- [medical-service] [SpringApplicationShutdownHook] com.netflix.discovery.DiscoveryClient    : Completed shut down of DiscoveryClient
+2026-03-05T01:17:23.228+01:00  INFO 22096 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Starting MedicalServiceApplication using Java 21.0.2 with PID 22096 (C:\Users\Lenovo\OneDrive - ESPRIT\Documents\GitHub\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\medical-service\target\classes started by Lenovo in C:\Users\Lenovo\OneDrive - ESPRIT\Documents\GitHub\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend)
+2026-03-05T01:17:23.234+01:00 DEBUG 22096 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Running with Spring Boot v3.3.6, Spring v6.1.15
+2026-03-05T01:17:23.236+01:00  INFO 22096 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : No active profile set, falling back to 1 default profile: "default"
+2026-03-05T01:17:24.256+01:00  WARN 22096 --- [medical-service] [main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanDefinitionStoreException: Failed to parse configuration class [org.techhive.medicalservice.MedicalServiceApplication]
+2026-03-05T01:17:24.320+01:00 ERROR 22096 --- [medical-service] [main] o.s.boot.SpringApplication               : Application run failed
+
+org.springframework.beans.factory.BeanDefinitionStoreException: Failed to parse configuration class [org.techhive.medicalservice.MedicalServiceApplication]
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:179) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:417) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:290) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:349) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:118) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:789) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:607) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146) ~[spring-boot-3.3.6.jar:3.3.6]
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:754) ~[spring-boot-3.3.6.jar:3.3.6]
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:456) ~[spring-boot-3.3.6.jar:3.3.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:335) ~[spring-boot-3.3.6.jar:3.3.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1363) ~[spring-boot-3.3.6.jar:3.3.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1352) ~[spring-boot-3.3.6.jar:3.3.6]
+	at org.techhive.medicalservice.MedicalServiceApplication.main(MedicalServiceApplication.java:15) ~[classes/:na]
+Caused by: org.springframework.context.annotation.ConflictingBeanDefinitionException: Annotation-specified bean name 'globalExceptionHandler' for bean class [org.techhive.medicalservice.exception.GlobalExceptionHandler] conflicts with existing, non-compatible bean definition of same name and class [org.techhive.medicalservice.controller.GlobalExceptionHandler]
+	at org.springframework.context.annotation.ClassPathBeanDefinitionScanner.checkCandidate(ClassPathBeanDefinitionScanner.java:361) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ClassPathBeanDefinitionScanner.doScan(ClassPathBeanDefinitionScanner.java:288) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ComponentScanAnnotationParser.parse(ComponentScanAnnotationParser.java:128) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ConfigurationClassParser.doProcessConfigurationClass(ConfigurationClassParser.java:306) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ConfigurationClassParser.processConfigurationClass(ConfigurationClassParser.java:246) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:197) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:165) ~[spring-context-6.1.15.jar:6.1.15]
+	... 13 common frames omitted
+
+2026-03-05T01:18:50.464+01:00  INFO 11248 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Starting MedicalServiceApplication using Java 21.0.2 with PID 11248 (C:\Users\Lenovo\OneDrive - ESPRIT\Documents\GitHub\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\medical-service\target\classes started by Lenovo in C:\Users\Lenovo\OneDrive - ESPRIT\Documents\GitHub\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend)
+2026-03-05T01:18:50.467+01:00 DEBUG 11248 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : Running with Spring Boot v3.3.6, Spring v6.1.15
+2026-03-05T01:18:50.469+01:00  INFO 11248 --- [medical-service] [main] o.t.m.MedicalServiceApplication          : No active profile set, falling back to 1 default profile: "default"
+2026-03-05T01:18:51.363+01:00  WARN 11248 --- [medical-service] [main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanDefinitionStoreException: Failed to parse configuration class [org.techhive.medicalservice.MedicalServiceApplication]
+2026-03-05T01:18:51.407+01:00 ERROR 11248 --- [medical-service] [main] o.s.boot.SpringApplication               : Application run failed
+
+org.springframework.beans.factory.BeanDefinitionStoreException: Failed to parse configuration class [org.techhive.medicalservice.MedicalServiceApplication]
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:179) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:417) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:290) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:349) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:118) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:789) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:607) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146) ~[spring-boot-3.3.6.jar:3.3.6]
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:754) ~[spring-boot-3.3.6.jar:3.3.6]
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:456) ~[spring-boot-3.3.6.jar:3.3.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:335) ~[spring-boot-3.3.6.jar:3.3.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1363) ~[spring-boot-3.3.6.jar:3.3.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1352) ~[spring-boot-3.3.6.jar:3.3.6]
+	at org.techhive.medicalservice.MedicalServiceApplication.main(MedicalServiceApplication.java:15) ~[classes/:na]
+Caused by: org.springframework.context.annotation.ConflictingBeanDefinitionException: Annotation-specified bean name 'globalExceptionHandler' for bean class [org.techhive.medicalservice.exception.GlobalExceptionHandler] conflicts with existing, non-compatible bean definition of same name and class [org.techhive.medicalservice.controller.GlobalExceptionHandler]
+	at org.springframework.context.annotation.ClassPathBeanDefinitionScanner.checkCandidate(ClassPathBeanDefinitionScanner.java:361) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ClassPathBeanDefinitionScanner.doScan(ClassPathBeanDefinitionScanner.java:288) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ComponentScanAnnotationParser.parse(ComponentScanAnnotationParser.java:128) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ConfigurationClassParser.doProcessConfigurationClass(ConfigurationClassParser.java:306) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ConfigurationClassParser.processConfigurationClass(ConfigurationClassParser.java:246) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:197) ~[spring-context-6.1.15.jar:6.1.15]
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:165) ~[spring-context-6.1.15.jar:6.1.15]
+	... 13 common frames omitted
+
