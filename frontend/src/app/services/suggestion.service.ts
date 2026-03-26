@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { SlotSuggestion } from '@/models/suggestion.model';
+import { environment } from '@/environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SuggestionService {
-  private apiUrl = 'http://localhost:18086/api/medical/appointments';
+  private apiUrl = `${environment.apiBaseUrl}/api/medical/appointments`;
 
   constructor(private http: HttpClient) {}
 

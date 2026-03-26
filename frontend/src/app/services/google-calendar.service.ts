@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '@/environments/environment';
 
 export interface CalendarStatus {
     connected: boolean;
@@ -12,7 +13,7 @@ export interface CalendarStatus {
 @Injectable({ providedIn: 'root' })
 export class GoogleCalendarService {
 
-    private readonly apiUrl = 'http://localhost:18086/api/medical/calendar';
+    private readonly apiUrl = `${environment.apiBaseUrl}/api/medical/calendar`;
 
     constructor(private http: HttpClient) { }
 

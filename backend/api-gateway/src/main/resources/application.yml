@@ -71,6 +71,10 @@ spring:
           uri: lb://medical-service
           predicates:
             - Path=/api/diagnostics/**
+        - id: diagnostic-attachments
+          uri: lb://medical-service
+          predicates:
+            - Path=/api/diagnostic-attachments/**
         - id: medical-history
           uri: lb://medical-service
           predicates:
