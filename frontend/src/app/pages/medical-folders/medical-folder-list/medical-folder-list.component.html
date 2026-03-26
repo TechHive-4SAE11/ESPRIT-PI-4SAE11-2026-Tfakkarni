@@ -1,0 +1,220 @@
+<div class="medical-folders-page space-y-4">
+  <!-- Top bar: title + action icons only -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <span class="inline-flex items-center px-4 py-2 rounded-lg bg-primary/10 text-primary font-medium text-sm shrink-0">
+      Medical Folders
+    </span>
+    <div class="flex items-center gap-1 shrink-0">
+      <button type="button" z-button
+        class="medical-folders-action-btn w-9 h-9 rounded-full flex items-center justify-center p-0"
+        (click)="openCreate()" title="Create folder">
+        <z-icon zType="circle-plus" class="h-5 w-5" />
+      </button>
+      <button type="button"
+        class="medical-folders-action-btn w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+        title="Refresh" (click)="loadFolders()">
+        <z-icon zType="rotate-ccw" class="h-4 w-4" />
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+  <z-card class="p-6 rounded-xl overflow-hidden">
+    <z-skeleton class="h-32 w-full" />
+    <z-skeleton class="h-32 w-full mt-4" />
+  </z-card>
+  } @else if (showDetail() && folderToView()) {
+  <!-- Detail view only: no stat cards, no search/filters – just Diagnostics / Medical History etc. -->
+  <div class="mt-4"><app-medical-folder-detail [folderId]="folderToView()!.id" (back)="closeDetail()"
+      (updated)="loadFolders()" /></div>
+  } @else {
+  <!-- List view: stat cards + search/filters + table or empty -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <z-card class="p-4 rounded-xl">
+      <div class="flex flex-row items-center justify-between gap-2 w-full">
+        <div class="min-w-0">
+          <p class="text-sm text-muted-foreground">Total folders</p>
+          <p class="text-2xl font-bold mt-0.5">{{ statTotal() }}</p>
+        </div>
+        <z-icon zType="folder" class="h-8 w-8 text-primary shrink-0 opacity-80" />
+      </div>
+    </z-card>
+    <z-card class="p-4 rounded-xl">
+      <div class="flex flex-row items-center justify-between gap-2 w-full">
+        <div class="min-w-0">
+          <p class="text-sm text-muted-foreground">This month</p>
+          <p class="text-2xl font-bold mt-0.5">{{ statThisMonth() }}</p>
+        </div>
+        <z-icon zType="calendar" class="h-8 w-8 text-primary shrink-0 opacity-80" />
+      </div>
+    </z-card>
+    <z-card class="p-4 rounded-xl">
+      <div class="flex flex-row items-center justify-between gap-2 w-full">
+        <div class="min-w-0">
+          <p class="text-sm text-muted-foreground">Updated this week</p>
+          <p class="text-2xl font-bold mt-0.5">{{ statThisWeek() }}</p>
+        </div>
+        <z-icon zType="activity" class="h-8 w-8 text-primary shrink-0 opacity-80" />
+      </div>
+    </z-card>
+    <z-card class="p-4 rounded-xl">
+      <div class="flex flex-row items-center justify-between gap-2 w-full">
+        <div class="min-w-0">
+          <p class="text-sm text-muted-foreground">Patients</p>
+          <p class="text-2xl font-bold mt-0.5">{{ statPatients() }}</p>
+        </div>
+        <z-icon zType="users" class="h-8 w-8 text-primary shrink-0 opacity-80" />
+      </div>
+    </z-card>
+  </div>
+  <div class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap mt-8">
+    <div class="relative flex-1 min-w-[200px] max-w-md">
+      <z-icon zType="search"
+        class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+      <input type="text" placeholder="Search by Patient ID or Patient Name"
+        class="medical-folders-search w-full h-10 pl-10 pr-4 rounded-lg border border-input bg-background text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        [value]="searchTerm()" (input)="onSearch($any($event.target).value)" />
+    </div>
+    <div class="flex items-center gap-1 flex-wrap">
+      <button type="button" class="medical-folders-filter-btn"
+        [class.medical-folders-filter-btn-active]="sortOrder() === 'name-asc'" (click)="setSortOrder('name-asc')"
+        title="Name A–Z">A–Z</button>
+      <button type="button" class="medical-folders-filter-btn"
+        [class.medical-folders-filter-btn-active]="sortOrder() === 'name-desc'" (click)="setSortOrder('name-desc')"
+        title="Name Z–A">Z–A</button>
+      <button type="button" class="medical-folders-filter-btn"
+        [class.medical-folders-filter-btn-active]="sortOrder() === 'date-desc'" (click)="setSortOrder('date-desc')"
+        title="Newest first">Newest</button>
+      <button type="button" class="medical-folders-filter-btn"
+        [class.medical-folders-filter-btn-active]="sortOrder() === 'date-asc'" (click)="setSortOrder('date-asc')"
+        title="Oldest first">Oldest</button>
+    </div>
+  </div>
+  @if (error() && folders().length === 0) {
+  <div class="flex items-center justify-between gap-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm mt-8">
+    <span>{{ error() }}</span>
+    <button z-button zType="outline" zSize="sm" (click)="loadFolders()">Retry</button>
+  </div>
+  }
+  @if (folders().length === 0 && dataLoaded()) {
+  <z-card class="rounded-xl border border-border flex flex-col items-center justify-center py-16 text-center mt-8">
+    <z-icon zType="folder" class="w-12 h-12 text-muted-foreground opacity-50 mb-4" />
+    <p class="font-medium text-foreground">No medical folders</p>
+    <p class="text-sm text-muted-foreground mt-1">Create a folder to get started.</p>
+    <button z-button class="mt-4" (click)="openCreate()">Create New Folder</button>
+  </z-card>
+  } @else {
+  <z-card class="rounded-xl overflow-hidden border border-border mt-8">
+    <div class="overflow-x-auto">
+      <table z-table class="medical-folders-table w-full">
+        <thead z-table-header class="bg-muted/50">
+          <tr z-table-row>
+            <th z-table-head class="font-semibold text-foreground">Patient</th>
+            <th z-table-head class="font-semibold text-foreground">Vitals</th>
+            <th z-table-head class="font-semibold text-foreground">Created</th>
+            <th z-table-head class="font-semibold text-foreground">Updated</th>
+            <th z-table-head class="font-semibold text-foreground text-right w-40">Actions</th>
+          </tr>
+        </thead>
+        <tbody z-table-body>
+          @for (f of paginatedFolders(); track f.id; let i = $index) {
+          <tr z-table-row [class.medical-folders-row-alt]="i % 2 === 1">
+            <td z-table-cell class="font-medium">
+              <div class="flex flex-col gap-0.5">
+                <span class="inline-flex items-center gap-2">
+                  <z-icon zType="user" class="h-4 w-4 text-muted-foreground shrink-0" />
+                  {{ getPatientName(f.patientId) || f.patientId }}
+                </span>
+                <span class="text-xs text-muted-foreground">{{ f.patientId }}</span>
+              </div>
+            </td>
+            <td z-table-cell>
+              <div class="flex flex-wrap gap-1">
+                @if (f.bloodType) {
+                <span
+                  class="inline-flex items-center rounded bg-red-50 px-1.5 py-0.5 text-xs font-medium text-red-700">🩸
+                  {{ f.bloodType }}</span>
+                }
+                @if (f.height) {
+                <span
+                  class="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">📏
+                  {{ f.height }}cm</span>
+                }
+                @if (f.weight) {
+                <span
+                  class="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">⚖️
+                  {{ f.weight }}kg</span>
+                }
+                @if (!f.bloodType && !f.height && !f.weight) {
+                <span class="text-xs text-muted-foreground">—</span>
+                }
+              </div>
+            </td>
+            <td z-table-cell class="text-muted-foreground">
+              <span class="inline-flex items-center gap-1.5">
+                <z-icon zType="calendar" class="h-3.5 w-3.5 shrink-0" />
+                {{ f.createdAt | date:'short' }}
+              </span>
+            </td>
+            <td z-table-cell class="text-muted-foreground">
+              <span class="inline-flex items-center gap-1.5">
+                <z-icon zType="calendar" class="h-3.5 w-3.5 shrink-0" />
+                {{ f.updatedAt | date:'short' }}
+              </span>
+            </td>
+            <td z-table-cell class="text-right">
+              <div class="flex items-center justify-end gap-1">
+                <button type="button"
+                  class="medical-folders-row-btn medical-folders-row-btn-pdf w-8 h-8 rounded flex items-center justify-center transition-colors"
+                  (click)="exportFolderPdf(f)" title="Export PDF">
+                  <z-icon zType="file-text" class="h-4 w-4" />
+                </button>
+                <button type="button"
+                  class="medical-folders-row-btn medical-folders-row-btn-view w-8 h-8 rounded flex items-center justify-center transition-colors"
+                  (click)="viewDetail(f)" title="View">
+                  <z-icon zType="eye" class="h-4 w-4" />
+                </button>
+                <button type="button"
+                  class="medical-folders-row-btn medical-folders-row-btn-edit w-8 h-8 rounded flex items-center justify-center transition-colors"
+                  (click)="openEdit(f)" title="Edit">
+                  <z-icon zType="edit" class="h-4 w-4" />
+                </button>
+                <button type="button"
+                  class="medical-folders-row-btn medical-folders-row-btn-delete w-8 h-8 rounded flex items-center justify-center transition-colors"
+                  (click)="deleteFolder(f)" title="Delete">
+                  <z-icon zType="trash-2" class="h-4 w-4" />
+                </button>
+              </div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div
+      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t border-border bg-muted/30">
+      <div class="flex items-center gap-2 text-sm text-muted-foreground">
+        <span>Items per page</span>
+        <span class="font-medium text-foreground">{{ pageSize }}</span>
+        <span class="hidden sm:inline">·</span>
+        <span class="hidden sm:inline">{{ totalElementsFromServer() }} folder(s)</span>
+      </div>
+      @if (totalPages() > 1) {
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-muted-foreground">Page {{ currentPage() }} of {{ totalPages() }}</span>
+        <button z-button zType="outline" zSize="sm" [disabled]="currentPage() <= 1"
+          (click)="setPage(currentPage() - 1)">
+          Previous
+        </button>
+        <button z-button zType="outline" zSize="sm" [disabled]="currentPage() >= totalPages()"
+          (click)="setPage(currentPage() + 1)">
+          Next
+        </button>
+      </div>
+      }
+    </div>
+  </z-card>
+  }
+
+  }
+</div>

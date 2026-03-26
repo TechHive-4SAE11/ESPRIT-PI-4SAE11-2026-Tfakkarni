@@ -1,0 +1,8 @@
+{
+  "medicalFolderId": 1,
+  "sessionDate": "2026-02-18T10:00:00",
+  "duration": 60,
+  "notes": "Initial consultation",
+  "sessionType": "CONSULTATION",
+  "prescriptions": ["Aspirin", "Lisinopril"]
+}

@@ -1,0 +1,38 @@
+.calendar-container {
+    min-height: calc(100vh - 120px);
+}
+
+::ng-deep .fc {
+    font-family: inherit;
+    --fc-button-bg-color: hsl(var(--primary));
+    --fc-button-border-color: hsl(var(--primary));
+    --fc-button-hover-bg-color: hsl(var(--primary) / 0.9);
+    --fc-button-hover-border-color: hsl(var(--primary) / 0.9);
+    --fc-button-active-bg-color: hsl(var(--primary) / 0.8);
+    --fc-button-active-border-color: hsl(var(--primary) / 0.8);
+    --fc-today-bg-color: hsl(var(--accent) / 0.2);
+}
+
+::ng-deep .fc-event {
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 2px 4px;
+    font-size: 0.85em;
+    transition: opacity 0.2s;
+}
+
+::ng-deep .fc-event:hover {
+    opacity: 0.9;
+}
+
+::ng-deep .fc-toolbar-title {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+}
+
+::ng-deep .fc-button {
+    text-transform: capitalize !important;
+    border-radius: 6px !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 500 !important;
+}

@@ -98,8 +98,8 @@ export class CarePlanManagementComponent implements OnInit, OnDestroy {
     sessionId: z.union([
       z.number(),
       z.string().min(1)
-    ]).refine(val => val !== null && val !== '', { message: 'Please select a consultation session' }),
-    activities: z.array(z.any()).min(1, { message: 'At least one care activity is required' })
+    ]).refine((val: number | string) => val !== null && val !== '', { message: 'Session is required' }),
+    activities: z.array(z.any()).min(1, { message: 'At least one activity is required' })
   });
 
   ngOnInit(): void {
@@ -225,7 +225,7 @@ export class CarePlanManagementComponent implements OnInit, OnDestroy {
     this.medicalFolderService.getMedicalFoldersByPatient(patientDbId)
       .pipe(
         tap(folders => {
-          const matchingFolder = folders.find(f => f.idDoctor === currentDoctorDbId);
+          const matchingFolder = folders.find(f => f.doctorId === currentDoctorDbId);
           if (matchingFolder) {
             this.loadSessionsForFolder(matchingFolder.id);
           } else {

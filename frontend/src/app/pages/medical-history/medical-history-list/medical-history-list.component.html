@@ -1,0 +1,101 @@
+<div class="space-y-4">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <h2 class="text-2xl font-bold">Medical History</h2>
+    <div class="flex gap-2 flex-wrap">
+      <select class="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm min-w-[180px]"
+        [value]="folderFilterId() ?? ''"
+        (change)="folderFilterId.set($any($event.target).value ? +$any($event.target).value : null); currentPage.set(1)">
+        <option value="">All folders</option>
+        @for (f of folders(); track f.id) {
+        <option [value]="f.id">{{ f.patientId }} ({{ f.id }})</option>
+        }
+      </select>
+      <input type="text" placeholder="Search allergies/conditions"
+        class="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm min-w-[180px]"
+        [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value); currentPage.set(1)" />
+      <button z-button (click)="openCreate()">
+        <z-icon zType="plus" class="mr-2" />
+        Create New History
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+  <z-card class="p-6">
+    <z-skeleton class="h-32 w-full" />
+  </z-card>
+  } @else if (error()) {
+  <z-card class="p-6">
+    <p class="text-destructive">{{ error() }}</p>
+    <button z-button zType="outline" class="mt-2" (click)="load()">Retry</button>
+  </z-card>
+  } @else if (filteredHistory().length === 0) {
+  <z-card class="p-12 text-center">
+    <z-icon zType="file-text" class="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+    <p class="text-lg font-medium">No medical history</p>
+    <p class="text-muted-foreground text-sm mt-1">Create history from a medical folder or here.</p>
+    <button z-button class="mt-4" (click)="openCreate()">Create New History</button>
+  </z-card>
+  } @else {
+  <z-card>
+    <div class="overflow-x-auto">
+      <table z-table>
+        <thead z-table-header>
+          <tr z-table-row>
+            <th z-table-head>Allergies</th>
+            <th z-table-head>Conditions</th>
+            <th z-table-head>Surgeries</th>
+            <th z-table-head>Symptoms</th>
+            <th z-table-head>Treatment</th>
+            <th z-table-head>Family History</th>
+            <th z-table-head>Folder ID</th>
+            <th z-table-head class="w-40">Actions</th>
+          </tr>
+        </thead>
+        <tbody z-table-body>
+          @for (h of paginated(); track h.id) {
+          <tr z-table-row>
+            <td z-table-cell class="max-w-[150px] truncate" [title]="h.allergies || ''">{{ h.allergies || '-' }}</td>
+            <td z-table-cell class="max-w-[150px] truncate" [title]="h.conditions || ''">{{ h.conditions || '-' }}</td>
+            <td z-table-cell class="max-w-[150px] truncate" [title]="h.surgeries || ''">{{ h.surgeries || '-' }}</td>
+            <td z-table-cell class="max-w-[150px] truncate" [title]="h.symptoms || ''">
+              @if (h.symptoms) {
+              <span class="inline-block max-w-[140px] truncate text-amber-700">{{ h.symptoms }}</span>
+              } @else { - }
+            </td>
+            <td z-table-cell class="max-w-[150px] truncate" [title]="h.recommendedTreatment || ''">
+              @if (h.recommendedTreatment) {
+              <span class="inline-block max-w-[140px] truncate text-green-700">{{ h.recommendedTreatment }}</span>
+              } @else { - }
+            </td>
+            <td z-table-cell class="max-w-[150px] truncate" [title]="h.familyHistory || ''">
+              @if (h.familyHistory) {
+              <span class="inline-block max-w-[140px] truncate text-purple-700">{{ h.familyHistory }}</span>
+              } @else { - }
+            </td>
+            <td z-table-cell>{{ h.medicalFolderId }}</td>
+            <td z-table-cell>
+              <div class="flex gap-2">
+                <button z-button zType="ghost" zSize="sm" (click)="openEdit(h)">Edit</button>
+                <button z-button zType="destructive" zSize="sm" (click)="deleteHistory(h)">Delete</button>
+              </div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (totalPages() > 1) {
+    <div class="flex items-center justify-between p-4 border-t border-border">
+      <span class="text-sm text-muted-foreground">Page {{ currentPage() }} of {{ totalPages() }}</span>
+      <div class="flex gap-2">
+        <button z-button zType="outline" zSize="sm" [disabled]="currentPage() <= 1"
+          (click)="setPage(currentPage() - 1)">Previous</button>
+        <button z-button zType="outline" zSize="sm" [disabled]="currentPage() >= totalPages()"
+          (click)="setPage(currentPage() + 1)">Next</button>
+      </div>
+    </div>
+    }
+  </z-card>
+  }
+</div>

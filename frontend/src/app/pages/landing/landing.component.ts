@@ -469,9 +469,12 @@ export class LandingComponent implements OnInit {
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    // If already logged in, redirect to role-based dashboard
+    // If already logged in and has a recognized role, redirect to dashboard
     if (this.authService.isLoggedIn()) {
-      this.authService.routeByRole();
+      const role = this.authService.getPrimaryRole();
+      if (role) {
+        this.authService.routeByRole();
+      }
     }
   }
 }

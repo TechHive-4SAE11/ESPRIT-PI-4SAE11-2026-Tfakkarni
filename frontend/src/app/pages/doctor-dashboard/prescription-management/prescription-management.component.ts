@@ -384,7 +384,7 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
         tap(folders => {
           console.log('[PrescriptionManagement] Medical folders:', folders);
 
-          const matchingFolder = folders.find(f => f.idDoctor === currentDoctorDbId);
+          const matchingFolder = folders.find(f => f.doctorId === currentDoctorDbId);
 
           if (matchingFolder) {
             console.log('[PrescriptionManagement] Found matching folder:', matchingFolder);

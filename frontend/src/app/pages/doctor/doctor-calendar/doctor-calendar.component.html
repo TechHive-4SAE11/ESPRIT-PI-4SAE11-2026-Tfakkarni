@@ -1,0 +1,27 @@
+<div class="calendar-container p-6 w-full h-full bg-background rounded-lg shadow-sm border">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">Mon Calendrier</h2>
+        <div class="flex items-center gap-4 text-sm text-muted-foreground">
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                <span>Consultation</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                <span>Follow Up</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-orange-500"></span>
+                <span>Autre</span>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading()) {
+    <div class="flex justify-center items-center h-[600px]">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+    </div>
+    } @else {
+    <full-calendar [options]="calendarOptions()"></full-calendar>
+    }
+</div>

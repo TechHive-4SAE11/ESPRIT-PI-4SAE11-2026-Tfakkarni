@@ -5,9 +5,9 @@ spring:
   application:
     name: ml-service
   datasource:
-    url: jdbc:postgresql://ep-damp-bar-agi72bgl-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
+    url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
     username: neondb_owner
-    password: npg_8ZUiCsXMu0jd
+    password: npg_3uElGswIc7gk
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -24,3 +24,21 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
+
+# AI Models Configuration
+gemini:
+  api-key: ${GEMINI_API_KEY:XXXXXXXXXXXXXXXXXX}
+  model: gemini-2.5-flash
+
+huggingface:
+  api-key: ${HUGGINGFACE_API_KEY:xxxxxxxxxxxxxxxxxxxxxxxx}
+  model: facebook/bart-large-mnli
+
+# AI Guardian - Your Private Twilio Config
+ml:
+  twilio:
+    account-sid: ${ML_TWILIO_SID:XXXXXXXXXXXXXXXXXXXXX}
+    auth-token: ${ML_TWILIO_TOKEN:XXXXXXXXXXXXXXXXXXXXXXXX}
+    phone-number: ${ML_TWILIO_PHONE:+18382592660}
+    whatsapp-number: ${ML_TWILIO_WHATSAPP:+14155238886}
+    doctor-phone: ${ML_DOCTOR_PHONE:+21627193466} # Verified Twilio Caller ID

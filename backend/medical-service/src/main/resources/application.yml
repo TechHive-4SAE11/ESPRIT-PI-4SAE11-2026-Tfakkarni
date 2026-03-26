@@ -1,14 +1,20 @@
 server:
   port: 18086
+  servlet:
+    context-path: /
 
 spring:
+  config:
+    import: optional:file:.env[.properties],optional:file:.env.secret[.properties]
   application:
     name: medical-service
+
   datasource:
-    url: jdbc:postgresql://ep-damp-bar-agi72bgl-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
+    url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require
     username: neondb_owner
-    password: npg_8ZUiCsXMu0jd
+    password: npg_3uElGswIc7gk
     driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,10 +23,60 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        jdbc:
+          batch_size: 20
+          fetch_size: 50
+        order_inserts: true
+        order_updates: true
+
+  # Console H2 pour voir les donnees
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:demo-key}
+      model: gpt-3.5-turbo
 
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
     register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.techhive.medicalservice: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.boot.actuate.health: DEBUG
+
+# Alert service (for appointment reminders)
+alert-service:
+  url: http://localhost:18084
+
+# Google Calendar Configuration
+google:
+  calendar:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+    redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:18086/api/medical/calendar/callback}
+    application-name: Tfakkarni Medical
+    credentials-path: classpath:/credentials.json

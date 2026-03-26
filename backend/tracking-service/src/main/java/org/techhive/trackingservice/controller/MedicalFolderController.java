@@ -25,7 +25,7 @@ public class MedicalFolderController {
         MedicalFolder medicalFolder = new MedicalFolder();
         medicalFolder.setIdPatient(requestDTO.getIdPatient());
         medicalFolder.setIdDoctor(requestDTO.getIdDoctor());
-        
+
         MedicalFolder saved = medicalFolderService.createMedicalFolder(medicalFolder);
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponseDTO(saved));
     }
@@ -82,7 +82,7 @@ public class MedicalFolderController {
         MedicalFolder medicalFolder = new MedicalFolder();
         medicalFolder.setIdPatient(requestDTO.getIdPatient());
         medicalFolder.setIdDoctor(requestDTO.getIdDoctor());
-        
+
         try {
             MedicalFolder updated = medicalFolderService.updateMedicalFolder(id, medicalFolder);
             return ResponseEntity.ok(toResponseDTO(updated));
