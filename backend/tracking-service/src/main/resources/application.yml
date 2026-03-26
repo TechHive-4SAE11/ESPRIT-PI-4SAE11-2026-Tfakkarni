@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: tracking-service
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 30MB
   datasource:
     url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
     username: neondb_owner
@@ -35,3 +39,19 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
+
+# Mailtrap Sandbox (incident alerts)
+mailtrap:
+  token: f4ed6c5f383c7fe7e305eba8d1bcaef9
+  inbox-id: 4413425
+  from: noreply@tfakkarni.com
+
+# Telegram Bot — alerts on GRAVE incidents
+telegram:
+  bot-token: "8761174713:AAEG23SiwUmSEDTFTlMm-7GLzUZQpqDJzzg"
+  default-chat-id: "5674590232"
+
+# ElevenLabs Speech-to-Text API
+elevenlabs:
+  api:
+    key: 73c14898e29696c0436967f175924d3902aa45ab609a206221c5275a0d4db84c

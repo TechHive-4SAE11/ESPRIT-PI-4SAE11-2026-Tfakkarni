@@ -22,6 +22,9 @@ public class DailyLog {
     @Column(name = "global_notes", columnDefinition = "TEXT")
     private String globalNotes;
 
+    @Column(name = "voice_note_text", columnDefinition = "TEXT")
+    private String voiceNoteText;
+
     /** Humeur du jour : BONNE, MOYENNE, MAUVAISE (nullable si non renseigné) */
     @Column(name = "mood_level")
     private String moodLevel;

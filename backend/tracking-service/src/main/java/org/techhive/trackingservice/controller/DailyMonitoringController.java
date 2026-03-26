@@ -3,9 +3,11 @@ package org.techhive.trackingservice.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.techhive.trackingservice.dto.*;
 import org.techhive.trackingservice.entity.*;
 import org.techhive.trackingservice.service.DailyMonitoringService;
+import org.techhive.trackingservice.service.ElevenLabsService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 public class DailyMonitoringController {
 
     private final DailyMonitoringService svc;
+    private final ElevenLabsService elevenLabsService;
 
     // ── Daily Log ──────────────────────────────────────────────────────────
 
@@ -126,6 +129,75 @@ public class DailyMonitoringController {
     public ResponseEntity<Void> deleteIncident(@PathVariable Long logId, @PathVariable Long id) {
         svc.deleteIncident(logId, id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ── Voice Note ──────────────────────────────────────────────────────
+
+    /**
+     * Receives an audio recording, transcribes it via ElevenLabs STT,
+     * and persists the resulting text on the daily log.
+     */
+    @PostMapping(value = "/{logId}/voice-note", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadVoiceNote(
+            @PathVariable Long logId,
+            @RequestParam("audio") MultipartFile audioFile,
+            @RequestParam(value = "language", required = false) String language) {
+        try {
+            if (audioFile.isEmpty()) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("error", "Le fichier audio est vide"));
+            }
+            // Map frontend language codes to ElevenLabs ISO 639-3 codes
+            String languageCode = null;
+            if ("ar".equals(language)) {
+                languageCode = "ara"; // Arabic (ISO 639-3)
+            } else if ("fr".equals(language)) {
+                languageCode = "fra"; // French
+            }
+            String transcribedText = elevenLabsService.transcribeAudio(audioFile, languageCode);
+            svc.updateVoiceNote(logId, transcribedText);
+            return ResponseEntity.ok(java.util.Map.of("text", transcribedText));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(java.util.Map.of("error", "Erreur interne lors de la transcription"));
+        }
+    }
+
+    /**
+     * Deletes the voice note text from a daily log.
+     */
+    @DeleteMapping("/{logId}/voice-note")
+    public ResponseEntity<Void> deleteVoiceNote(@PathVariable Long logId) {
+        svc.updateVoiceNote(logId, null);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Text-to-Speech: reads the voice note text aloud via ElevenLabs TTS.
+     * Returns MP3 audio bytes.
+     */
+    @PostMapping("/{logId}/voice-note/tts")
+    public ResponseEntity<?> textToSpeech(
+            @PathVariable Long logId,
+            @RequestParam(value = "language", defaultValue = "fr") String language) {
+        try {
+            var log = svc.getLogById(logId);
+            if (log == null) {
+                return ResponseEntity.notFound().build();
+            }
+            String text = log.getVoiceNoteText();
+            if (text == null || text.isBlank()) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("error", "Aucune note vocale à lire"));
+            }
+            byte[] audio = elevenLabsService.textToSpeech(text, language);
+            return ResponseEntity.ok()
+                    .contentType(org.springframework.http.MediaType.parseMediaType("audio/mpeg"))
+                    .body(audio);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(java.util.Map.of("error", "Erreur interne TTS"));
+        }
     }
 
     // ── Mini-mappers ───────────────────────────────────────────────────────

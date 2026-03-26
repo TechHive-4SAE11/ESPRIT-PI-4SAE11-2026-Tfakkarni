@@ -10,6 +10,7 @@ export interface UserInfo {
   lastName: string;
   email: string;
   role: string;
+  phone?: string;
   gender?: string;
   enabled: boolean;
   createdAt: string;
@@ -53,7 +54,7 @@ export class UserApiService {
     return this.http.get<UserInfo>(`${this.baseUrl}/${id}`);
   }
 
-  updateProfile(keycloakId: string, data: { firstName: string; lastName: string; email: string }): Observable<UserInfo> {
+  updateProfile(keycloakId: string, data: { firstName: string; lastName: string; email: string; phone?: string }): Observable<UserInfo> {
     return this.http.put<UserInfo>(`${this.baseUrl}/profile/${keycloakId}`, data);
   }
 
@@ -79,6 +80,16 @@ export class UserApiService {
 
   toggleEnabled(keycloakId: string, enabled: boolean): Observable<UserInfo> {
     return this.http.put<UserInfo>(`${this.baseUrl}/toggle-enabled/${keycloakId}`, { enabled });
+  }
+
+  // ─── Password Reset Methods ──────────────────────────────
+
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl.replace('/api/users', '/api/password-reset')}/forgot`, { email });
+  }
+
+  verifyAndResetPassword(email: string, code: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl.replace('/api/users', '/api/password-reset')}/verify`, { email, code, newPassword });
   }
 
   // ─── KYC Methods ──────────────────────────────────────────

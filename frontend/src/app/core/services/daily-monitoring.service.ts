@@ -66,6 +66,25 @@ export class DailyMonitoringService {
     return this.http.delete<void>(`${this.base}/${logId}/activities/${id}`);
   }
 
+  // ── Voice note ────────────────────────────────────────────────────────────
+  uploadVoiceNote(logId: number, formData: FormData, language?: 'fr' | 'ar'): Observable<{ text: string }> {
+    let url = `${this.base}/${logId}/voice-note`;
+    if (language) {
+      url += `?language=${language}`;
+    }
+    return this.http.post<{ text: string }>(url, formData);
+  }
+  deleteVoiceNote(logId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${logId}/voice-note`);
+  }
+
+  /** Text-to-Speech: returns MP3 audio blob from the voice note text */
+  speakVoiceNote(logId: number, language: 'fr' | 'ar' = 'fr'): Observable<Blob> {
+    return this.http.post(`${this.base}/${logId}/voice-note/tts?language=${language}`, null, {
+      responseType: 'blob'
+    });
+  }
+
   // ── Incidents ──────────────────────────────────────────────────────────
   addIncident(logId: number, dto: IncidentEntryRequest): Observable<IncidentEntryResponse> {
     return this.http.post<IncidentEntryResponse>(`${this.base}/${logId}/incidents`, dto);

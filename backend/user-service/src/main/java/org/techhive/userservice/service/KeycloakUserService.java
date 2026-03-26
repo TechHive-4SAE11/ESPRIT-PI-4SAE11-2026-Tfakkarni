@@ -34,6 +34,10 @@ public class KeycloakUserService {
   @Value("${keycloak.client-secret:}")
   private String clientSecret;
 
+  // Client frontend pour vérification du mot de passe actuel (direct access grants activés)
+  @Value("${keycloak.frontend-client-id:tfakkarni-frontend}")
+  private String frontendClientId;
+
   /**
    * Register a new user in Keycloak under the configured realm.
    */
@@ -278,35 +282,32 @@ public class KeycloakUserService {
 
     MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
     body.add("grant_type", "password");
-    body.add("client_id", clientId);
+    // Utiliser le client frontend qui a les direct access grants activés
+    body.add("client_id", frontendClientId);
     body.add("username", email);
     body.add("password", password);
 
-    // Add client_secret if configured (for confidential clients)
-    if (clientSecret != null && !clientSecret.isBlank()) {
-      body.add("client_secret", clientSecret);
-    }
-
     try {
       restTemplate.exchange(tokenUrl, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+      // Success → password is correct, proceed
     } catch (HttpClientErrorException.Unauthorized e) {
+      // 401 = wrong password
       throw new RuntimeException("Mot de passe actuel incorrect");
     } catch (HttpClientErrorException e) {
-      log.warn("Password verification failed with status {}: {}", e.getStatusCode(), e.getResponseBodyAsString());
-      // If it's a client configuration issue (not 401), the password might still be correct
-      // but the client doesn't support direct access grants
+      log.warn("Password verification attempt status {}: {}", e.getStatusCode(), e.getResponseBodyAsString());
       if (e.getStatusCode().value() == 400) {
         String responseBody = e.getResponseBodyAsString();
         if (responseBody.contains("invalid_grant")) {
+          // Keycloak explicitly says credentials are wrong
           throw new RuntimeException("Mot de passe actuel incorrect");
         }
-        if (responseBody.contains("unauthorized_client") || responseBody.contains("invalid_client")) {
-          log.warn("Client '{}' not configured for direct access grants. Skipping password verification.", clientId);
-          // Cannot verify password - skip verification (admin API will handle reset)
-          return;
-        }
+        // Any other 400 (unauthorized_client, invalid_client, account_disabled, etc.)
+        // means the client is not configured for direct-access grants → skip verification.
+        log.warn("Client '{}' not configured for direct access grants — skipping password verification.", clientId);
+        return;
       }
-      throw new RuntimeException("Mot de passe actuel incorrect");
+      // For unexpected status codes, skip verification rather than blocking the user
+      log.warn("Unexpected error during password verification (status {}), skipping.", e.getStatusCode());
     }
   }
 }

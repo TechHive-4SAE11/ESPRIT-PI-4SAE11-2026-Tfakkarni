@@ -46,7 +46,14 @@ function initializeKeycloak(keycloak: KeycloakService, platformId: object) {
         bearerPrefix: 'Bearer',
         // Exclude Keycloak server URLs from the bearer interceptor
         // so login/signup requests aren't intercepted
-        bearerExcludedUrls: ['/assets', '/public', environment.keycloakUrl],
+        bearerExcludedUrls: [
+            '/assets',
+            '/public',
+            environment.keycloakUrl,
+            // Routes publiques — pas de token nécessaire
+            `${environment.apiBaseUrl}/api/password-reset`,
+            `${environment.apiBaseUrl}/api/users/register`,
+          ],
       })
       .then((authenticated) => {
         console.log('[KC-INIT] Keycloak initialized successfully. Authenticated:', authenticated);

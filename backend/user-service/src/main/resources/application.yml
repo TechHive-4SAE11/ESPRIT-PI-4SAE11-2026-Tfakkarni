@@ -33,6 +33,13 @@ keycloak:
   admin:
     username: admin
     password: admin
+  # Client frontend utilisé pour vérifier le mot de passe actuel
+  frontend-client-id: tfakkarni-frontend
+
+mailtrap:
+  token: f4ed6c5f383c7fe7e305eba8d1bcaef9
+  inbox-id: 4413425
+  from: noreply@tfakkarni.com
 
 didit:
   api-key: ${DIDIT_API_KEY:}

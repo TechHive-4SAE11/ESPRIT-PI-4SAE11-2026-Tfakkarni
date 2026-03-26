@@ -21,6 +21,7 @@ public class DailyMonitoringService {
     private final MedicationRepository           medicationRepo;
     private final ActivityEntryRepository        activityRepo;
     private final IncidentEntryRepository        incidentRepo;
+    private final IncidentAlertService           incidentAlertService;
 
     // ── Daily log ──────────────────────────────────────────────────────────
 
@@ -189,7 +190,16 @@ public class DailyMonitoringService {
         IncidentEntry e = new IncidentEntry();
         e.setDailyLog(log);
         copyIncident(dto, e);
-        return incidentRepo.save(e);
+        IncidentEntry saved = incidentRepo.save(e);
+
+        // Trigger alert email + notification for MODERE or GRAVE incidents
+        String severity = saved.getSeverity();
+        if ("MODERE".equalsIgnoreCase(severity) || "GRAVE".equalsIgnoreCase(severity)) {
+            String logDate = log.getLogDate() != null ? log.getLogDate().toString() : "";
+            incidentAlertService.handleIncidentAlert(saved, log.getPatientKeycloakId(), logDate);
+        }
+
+        return saved;
     }
 
     @Transactional
@@ -212,6 +222,16 @@ public class DailyMonitoringService {
         e.setOccurredAt(dto.getOccurredAt());
     }
 
+    // ── Voice note ─────────────────────────────────────────────────────────
+
+    @Transactional
+    public String updateVoiceNote(Long logId, String voiceNoteText) {
+        DailyLog log = getLogById(logId);
+        log.setVoiceNoteText(voiceNoteText);
+        logRepo.save(log);
+        return voiceNoteText;
+    }
+
     // ── Mapper ────────────────────────────────────────────────────────────
 
     public DailyLogResponse toResponse(DailyLog log) {
@@ -220,6 +240,7 @@ public class DailyMonitoringService {
         r.setPatientKeycloakId(log.getPatientKeycloakId());
         r.setLogDate(log.getLogDate());
         r.setGlobalNotes(log.getGlobalNotes());
+        r.setVoiceNoteText(log.getVoiceNoteText());
         r.setCreatedAt(log.getCreatedAt());
         r.setUpdatedAt(log.getUpdatedAt());
 
