@@ -24,14 +24,14 @@ function initializeKeycloak(keycloak: KeycloakService, platformId: object) {
     }
 
     console.log('[KC-INIT] Starting Keycloak initialization...');
-    console.log('[KC-INIT] Config:', { url: environment.keycloakUrl, realm: 'techhive', clientId: 'tfakkarni-frontend' });
+    console.log('[KC-INIT] Config:', { url: environment.keycloakUrl, realm: 'tfakkarni', clientId: 'tfakkarni-frontend' });
     console.log('[KC-INIT] silentCheckSsoRedirectUri:', globalThis.location.origin + '/assets/silent-check-sso.html');
 
     return keycloak
       .init({
         config: {
           url: environment.keycloakUrl,
-          realm: 'techhive',
+          realm: 'tfakkarni',
           clientId: 'tfakkarni-frontend',
         },
         initOptions: {

@@ -31,7 +31,7 @@ if (fs.existsSync(envPath)) {
 
 const googleKey = env.GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_MAPS_API_KEY";
 const apiBaseUrl = env.API_BASE_URL || "http://localhost:9090";
-const keycloakUrl = env.KEYCLOAK_URL || "http://localhost:8280";
+const keycloakUrl = env.KEYCLOAK_URL || "https://lemur-12.cloud-iam.com/auth";
 const tmdbApiKey = env.TMDB_API_KEY || "YOUR_TMDB_API_KEY";
 const tmdbReadAccessToken =
   env.TMDB_READ_ACCESS_TOKEN || "YOUR_TMDB_READ_ACCESS_TOKEN";

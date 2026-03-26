@@ -28,11 +28,11 @@ eureka:
     register-with-eureka: true
 
 keycloak:
-  server-url: http://localhost:8280
-  realm: techhive
+  server-url: https://lemur-12.cloud-iam.com/auth
+  realm: tfakkarni
   admin:
     username: admin
-    password: admin
+    password: "${KEYCLOAK_ADMIN_PASSWORD:3ejcJta;Mz7UE//OjV0M}"
   # Client frontend utilisé pour vérifier le mot de passe actuel
   frontend-client-id: tfakkarni-frontend
 
