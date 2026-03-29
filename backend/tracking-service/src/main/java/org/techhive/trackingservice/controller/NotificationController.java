@@ -41,4 +41,15 @@ public class NotificationController {
         alertService.markAllAsRead(doctorId);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * TEST ENDPOINT — vérifie que email + Telegram fonctionnent.
+     * Appeler avec: GET /api/notifications/test?email=doctor@gmail.com
+     */
+    @GetMapping("/test")
+    public ResponseEntity<Map<String, String>> testAlerts(
+            @RequestParam(defaultValue = "doctor@gmail.com") String email) {
+        Map<String, String> results = alertService.testAlertDirect(email);
+        return ResponseEntity.ok(results);
+    }
 }

@@ -46,7 +46,8 @@ mailtrap:
   inbox-id: 4413425
   from: noreply@tfakkarni.com
 
-# Telegram Bot — alerts on GRAVE incidents
+# Telegram Bot — @tfakkarni_alert_bot (alerts on GRAVE incidents)
+# chat_id obtained from: https://api.telegram.org/bot{TOKEN}/getUpdates
 telegram:
   bot-token: "8761174713:AAEG23SiwUmSEDTFTlMm-7GLzUZQpqDJzzg"
   default-chat-id: "5674590232"
