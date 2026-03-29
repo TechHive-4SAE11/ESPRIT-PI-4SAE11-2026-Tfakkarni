@@ -631,6 +631,12 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
             if (status === 'pending') {
               this.refreshKycStatus();
             }
+
+            // Recharger les notifications avec l'ID correct de la DB
+            // (en cas de changement Keycloak, l'ID token peut différer de l'ID DB)
+            if (doctor.keycloakId) {
+              this.notifService.loadNotifications(doctor.keycloakId).subscribe();
+            }
           },
           error: err => {
             console.error('Failed to load doctor info', err);
@@ -642,12 +648,13 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
       }
       this.loadPatients();
 
-      // Load notifications and poll every 30s
+      // Load notifications — use Keycloak ID from token
+      // Will also reload after currentDoctor() is set (see loadNotificationsForDoctor)
       if (this.doctorKeycloakId) {
-        this.notifService.loadNotifications(this.doctorKeycloakId).subscribe();
+        this.loadNotificationsForDoctor(this.doctorKeycloakId);
         this.notifInterval = setInterval(() => {
-          this.notifService.loadNotifications(this.doctorKeycloakId).subscribe();
-        }, 30_000);
+          this.loadNotificationsForDoctor(this.doctorKeycloakId);
+        }, 10_000); // Poll toutes les 10s pour réactivité maximale
       }
     }
   }
@@ -802,6 +809,32 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
 
   // ── Notification methods ─────────────────────────────────────────────────
 
+  /**
+   * Charge les notifications en essayant d'abord l'ID Keycloak du token,
+   * puis l'ID stocké dans currentDoctor() si disponible.
+   * Après les changements Keycloak, ces deux IDs peuvent différer.
+   */
+  /**
+   * Charge les notifications en essayant intelligemment tous les IDs disponibles.
+   * Résoudre le mismatch d'ID Keycloak après reconfiguration.
+   */
+  loadNotificationsForDoctor(keycloakIdFromToken: string): void {
+    const doctorFromDb = this.currentDoctor();
+    const fallbackIds: string[] = [];
+    if (doctorFromDb?.keycloakId && doctorFromDb.keycloakId !== keycloakIdFromToken) {
+      fallbackIds.push(doctorFromDb.keycloakId);
+    }
+    this.notifService.loadNotificationsSmartly(keycloakIdFromToken, fallbackIds).subscribe();
+  }
+
+  /** Appelé depuis suivi-quotidien après ajout d'un incident — recharge immédiatement */
+  refreshNotifications(): void {
+    // Attendre 2s que le backend async sauvegarde la notification
+    setTimeout(() => {
+      this.loadNotificationsForDoctor(this.doctorKeycloakId);
+    }, 2000);
+  }
+
   toggleNotificationPanel(): void {
     this.showNotifications.update(v => !v);
     if (this.showNotifications()) {
@@ -818,8 +851,10 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   }
 
   markAllRead(): void {
-    if (this.doctorKeycloakId) {
-      this.notifService.markAllAsRead(this.doctorKeycloakId).subscribe();
+    // Utiliser l'ID de la DB en priorité (plus fiable après changement Keycloak)
+    const id = this.currentDoctor()?.keycloakId || this.doctorKeycloakId;
+    if (id) {
+      this.notifService.markAllAsRead(id).subscribe();
     }
   }
 
