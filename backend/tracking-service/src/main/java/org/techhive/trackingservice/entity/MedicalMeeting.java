@@ -31,6 +31,9 @@ public class MedicalMeeting {
     @Column(nullable = false)
     private String patientKeycloakId;
 
+    // The helper/caregiver who actually joins on behalf of the patient
+    private String helperKeycloakId;
+
     private String patientName;
 
     private String doctorName;
@@ -39,10 +42,10 @@ public class MedicalMeeting {
     @Column(nullable = false)
     private MeetingStatus status;
 
-    @Column(length = 5000)
+    @Column(columnDefinition = "TEXT")
     private String notes;
 
-    @Column(length = 3000)
+    @Column(columnDefinition = "TEXT")
     private String aiSummary;
 
     private LocalDateTime scheduledAt;

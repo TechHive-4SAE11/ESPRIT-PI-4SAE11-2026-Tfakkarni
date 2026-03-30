@@ -80,7 +80,7 @@ public class MeetingSummaryService {
 
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("model", claudeModel);
-            body.put("max_tokens", 1000);
+            body.put("max_tokens", 800);
             body.put("messages", List.of(message));
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);

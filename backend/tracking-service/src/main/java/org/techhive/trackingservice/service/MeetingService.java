@@ -62,6 +62,7 @@ public class MeetingService {
 
     /**
      * Get a meeting token for a participant and activate the meeting if needed.
+     * Accepts doctor, patient, OR helper keycloakId.
      */
     @Transactional
     public Map<String, String> getMeetingToken(Long meetingId, String keycloakId, String userName) {
@@ -69,7 +70,16 @@ public class MeetingService {
             MedicalMeeting meeting = meetingRepository.findById(meetingId)
                     .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + meetingId));
 
-            boolean isOwner = keycloakId.equals(meeting.getDoctorKeycloakId());
+            // Save helperKeycloakId if this is not the doctor or patient
+            boolean isDoctor = keycloakId.equals(meeting.getDoctorKeycloakId());
+            boolean isPatient = keycloakId.equals(meeting.getPatientKeycloakId());
+            if (!isDoctor && !isPatient && meeting.getHelperKeycloakId() == null) {
+                meeting.setHelperKeycloakId(keycloakId);
+                meetingRepository.save(meeting);
+                log.info("Meeting {} - helper registered: {}", meetingId, keycloakId);
+            }
+
+            boolean isOwner = isDoctor;
 
             String token = dailyRoomService.createMeetingToken(
                     meeting.getRoomName(), keycloakId, userName, isOwner
@@ -139,18 +149,25 @@ public class MeetingService {
             }
             meeting.setDurationMinutes(duration);
 
-            // Generate AI summary
-            String summary = meetingSummaryService.generateSummary(
-                    meeting.getNotes(),
-                    meeting.getPatientName(),
-                    meeting.getDoctorName(),
-                    duration
-            );
-            meeting.setAiSummary(summary);
-
-            // End the meeting
+            // End the meeting first (so it's always marked as ended even if AI fails)
             meeting.setStatus(MeetingStatus.ENDED);
             meeting.setEndedAt(LocalDateTime.now());
+            meetingRepository.save(meeting);
+
+            // Generate AI summary (non-blocking for meeting end)
+            String summary;
+            try {
+                summary = meetingSummaryService.generateSummary(
+                        meeting.getNotes(),
+                        meeting.getPatientName(),
+                        meeting.getDoctorName(),
+                        duration
+                );
+            } catch (Exception aiEx) {
+                log.error("AI summary generation failed for meeting {}: {}", meetingId, aiEx.getMessage());
+                summary = "Résumé non disponible — erreur lors de la génération AI.";
+            }
+            meeting.setAiSummary(summary);
             meetingRepository.save(meeting);
 
             log.info("Meeting {} ended. Duration: {} min", meetingId, duration);
@@ -196,8 +213,10 @@ public class MeetingService {
     /**
      * Get all meetings for a patient.
      */
-    public List<MeetingResponse> getMeetingsForPatient(String patientKeycloakId) {
-        return meetingRepository.findByPatientKeycloakIdOrderByCreatedAtDesc(patientKeycloakId)
+    public List<MeetingResponse> getMeetingsForPatient(String keycloakId) {
+        // Search by patientKeycloakId OR helperKeycloakId
+        // so the helper (connected person) sees meetings created for their patient
+        return meetingRepository.findByPatientOrHelperKeycloakId(keycloakId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
