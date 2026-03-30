@@ -5,109 +5,228 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+/**
+ * AI Summary Service using Groq API (free tier, Llama 3.3 70B).
+ *
+ * Groq uses the OpenAI-compatible /chat/completions format.
+ * Free tier: 14,400 requests/day, 6,000 tokens/minute.
+ * Sign up at: https://console.groq.com
+ */
 @Service
 @Slf4j
 public class MeetingSummaryService {
 
-    private final String claudeApiKey;
-    private final String claudeApiUrl;
-    private final String claudeModel;
+    private final String apiKey;
+    private final String apiUrl;
+    private final String model;
     private final RestTemplate restTemplate;
 
     public MeetingSummaryService(
-            @Value("${claude.api-key}") String claudeApiKey,
-            @Value("${claude.api-url}") String claudeApiUrl,
-            @Value("${claude.model}") String claudeModel,
+            @Value("${claude.api-key}") String apiKey,
+            @Value("${claude.api-url}") String apiUrl,
+            @Value("${claude.model}") String model,
             @Qualifier("plainRestTemplate") RestTemplate restTemplate) {
-        this.claudeApiKey = claudeApiKey;
-        this.claudeApiUrl = claudeApiUrl;
-        this.claudeModel = claudeModel;
+        this.apiKey      = apiKey;
+        this.apiUrl      = apiUrl;
+        this.model       = model;
         this.restTemplate = restTemplate;
     }
 
-    /**
-     * Generate an AI summary of the meeting notes using Claude API.
-     */
+    // ─────────────────────────────────────────────────────────────────────────
+    // TEST — GET /api/meetings/test-claude
+    // ─────────────────────────────────────────────────────────────────────────
+
     @SuppressWarnings("unchecked")
-    public String generateSummary(String notes, String patientName, String doctorName, int durationMinutes) {
+    public Map<String, Object> testClaudeConnection() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("provider",  apiUrl.contains("groq") ? "Groq (free)" : "Anthropic Claude");
+        result.put("model",     model);
+        result.put("url",       apiUrl);
+        result.put("keyPrefix", apiKey != null && apiKey.length() > 12
+                ? apiKey.substring(0, 12) + "***" : "MISSING");
+
+        try {
+            HttpHeaders headers = buildHeaders();
+
+            Map<String, Object> body = buildRequestBody("Reply with exactly: OK", 5);
+
+            ResponseEntity<Map> resp = restTemplate.exchange(
+                    apiUrl, HttpMethod.POST,
+                    new HttpEntity<>(body, headers), Map.class);
+
+            result.put("httpStatus", resp.getStatusCode().toString());
+            result.put("status",     "✅ AI API works! Response: " + extractText(resp.getBody()));
+
+        } catch (HttpClientErrorException e) {
+            result.put("status", "❌ HTTP " + e.getStatusCode());
+            result.put("error",  e.getResponseBodyAsString());
+        } catch (HttpServerErrorException e) {
+            result.put("status", "❌ Server error " + e.getStatusCode());
+            result.put("error",  e.getResponseBodyAsString());
+        } catch (Exception e) {
+            result.put("status", "❌ " + e.getClass().getSimpleName());
+            result.put("error",  e.getMessage());
+        }
+        return result;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // MAIN — Generate meeting summary
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @SuppressWarnings("unchecked")
+    public String generateSummary(String notes, String patientName,
+                                  String doctorName, int durationMinutes) {
+
         if (notes == null || notes.trim().isEmpty()) {
             return "Aucune note prise pendant cette réunion.";
         }
 
+        log.info("━━━ AI Summary API call ━━━ provider={} model={}",
+                apiUrl.contains("groq") ? "Groq" : "Anthropic", model);
+
         try {
-            String prompt = String.format("""
-                    Tu es un assistant médical spécialisé dans le suivi des patients Alzheimer.
-                    
-                    Génère un résumé structuré et professionnel de cette réunion médicale en français.
-                    
-                    Participants :
-                    - Médecin : Dr. %s
-                    - Concernant le patient : %s
-                    - Durée : %d minutes
-                    
-                    Notes de la réunion :
-                    %s
-                    
-                    Génère un résumé avec exactement ces 4 sections :
-                    
-                    ## Résumé de la réunion
-                    [2-3 phrases résumant les points principaux]
-                    
-                    ## Points médicaux discutés
-                    [Liste des sujets médicaux abordés]
-                    
-                    ## Décisions et actions
-                    [Ce qui a été décidé, prescriptions modifiées, examens demandés]
-                    
-                    ## Suivi recommandé
-                    [Prochains rendez-vous, points de surveillance, recommandations]
-                    
-                    Sois concis, professionnel et cliniquement pertinent.
-                    """, doctorName, patientName, durationMinutes, notes);
+            String prompt = buildPrompt(notes, patientName, doctorName, durationMinutes);
+            HttpHeaders headers = buildHeaders();
+            Map<String, Object> body = buildRequestBody(prompt, 1024);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("x-api-key", claudeApiKey);
-            headers.set("anthropic-version", "2023-06-01");
+            ResponseEntity<Map> resp = restTemplate.exchange(
+                    apiUrl, HttpMethod.POST,
+                    new HttpEntity<>(body, headers), Map.class);
 
-            Map<String, Object> message = new LinkedHashMap<>();
-            message.put("role", "user");
-            message.put("content", prompt);
+            log.info("AI API response: HTTP {}", resp.getStatusCode());
 
-            Map<String, Object> body = new LinkedHashMap<>();
-            body.put("model", claudeModel);
-            body.put("max_tokens", 800);
-            body.put("messages", List.of(message));
-
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    claudeApiUrl,
-                    HttpMethod.POST,
-                    request,
-                    Map.class
-            );
-
-            Map<String, Object> responseBody = response.getBody();
-            if (responseBody != null && responseBody.containsKey("content")) {
-                List<Map<String, Object>> content = (List<Map<String, Object>>) responseBody.get("content");
-                if (!content.isEmpty()) {
-                    String summary = content.get(0).get("text").toString();
-                    log.info("AI summary generated successfully for meeting with patient '{}'", patientName);
-                    return summary;
-                }
+            String summary = extractText(resp.getBody());
+            if (summary != null && !summary.isBlank()) {
+                log.info("✅ AI summary generated ({} chars) for patient '{}'",
+                        summary.length(), patientName);
+                return summary.trim();
             }
 
-            log.warn("Empty response from Claude API");
-            return "Résumé non disponible — réponse vide de l'API.";
+            log.warn("AI API returned empty content. Full response: {}", resp.getBody());
+            return generateLocalFallback(notes, patientName, doctorName, durationMinutes);
 
+        } catch (HttpClientErrorException e) {
+            log.error("❌ AI API 4xx: HTTP {} → {}", e.getStatusCode(), e.getResponseBodyAsString());
+            return generateLocalFallback(notes, patientName, doctorName, durationMinutes);
+        } catch (HttpServerErrorException e) {
+            log.error("❌ AI API 5xx: HTTP {} → {}", e.getStatusCode(), e.getResponseBodyAsString());
+            return generateLocalFallback(notes, patientName, doctorName, durationMinutes);
+        } catch (ResourceAccessException e) {
+            log.error("❌ AI API network/timeout: {}", e.getMessage());
+            return generateLocalFallback(notes, patientName, doctorName, durationMinutes);
         } catch (Exception e) {
-            log.error("Failed to generate AI summary: {}", e.getMessage());
-            return "Résumé non disponible — erreur lors de la génération.";
+            log.error("❌ AI API unexpected: {} — {}", e.getClass().getSimpleName(), e.getMessage(), e);
+            return generateLocalFallback(notes, patientName, doctorName, durationMinutes);
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // HTTP helpers — OpenAI-compatible format (works with Groq + OpenAI)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private HttpHeaders buildHeaders() {
+        HttpHeaders h = new HttpHeaders();
+        h.setContentType(MediaType.APPLICATION_JSON);
+        h.setBearerAuth(apiKey);  // "Authorization: Bearer <key>"
+        return h;
+    }
+
+    private Map<String, Object> buildRequestBody(String userMessage, int maxTokens) {
+        // OpenAI /chat/completions format (used by Groq, OpenAI, and many others)
+        Map<String, Object> systemMsg = new LinkedHashMap<>();
+        systemMsg.put("role",    "system");
+        systemMsg.put("content", "Tu es un assistant médical spécialisé dans le suivi des patients Alzheimer. "
+                               + "Génère des résumés médicaux structurés, concis et professionnels en français.");
+
+        Map<String, Object> userMsg = new LinkedHashMap<>();
+        userMsg.put("role",    "user");
+        userMsg.put("content", userMessage);
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("model",       model);
+        body.put("messages",    List.of(systemMsg, userMsg));
+        body.put("max_tokens",  maxTokens);
+        body.put("temperature", 0.3);
+        return body;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractText(Map<String, Object> responseBody) {
+        if (responseBody == null) return null;
+
+        // OpenAI format: choices[0].message.content
+        List<Map<String, Object>> choices =
+                (List<Map<String, Object>>) responseBody.get("choices");
+        if (choices != null && !choices.isEmpty()) {
+            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+            if (message != null) {
+                Object content = message.get("content");
+                return content != null ? content.toString() : null;
+            }
+        }
+        return null;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Prompt
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private String buildPrompt(String notes, String patientName,
+                               String doctorName, int durationMinutes) {
+        return "Génère un résumé structuré et professionnel en français de cette réunion médicale.\n\n"
+             + "Participants :\n"
+             + "- Médecin : Dr. " + doctorName + "\n"
+             + "- Patient : " + patientName + "\n"
+             + "- Durée : " + durationMinutes + " minutes\n\n"
+             + "Notes de la réunion :\n"
+             + notes + "\n\n"
+             + "Génère un résumé avec EXACTEMENT ces 4 sections (utilise ## pour les titres) :\n\n"
+             + "## Résumé de la réunion\n"
+             + "[2-3 phrases résumant les points principaux]\n\n"
+             + "## Points médicaux discutés\n"
+             + "[Liste des sujets médicaux abordés]\n\n"
+             + "## Décisions et actions\n"
+             + "[Ce qui a été décidé, prescriptions, examens]\n\n"
+             + "## Suivi recommandé\n"
+             + "[Prochains rendez-vous, recommandations]\n\n"
+             + "Sois concis et professionnel. Ne commence pas par des formules de politesse.";
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Local fallback (when AI API is unavailable)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private String generateLocalFallback(String notes, String patientName,
+                                         String doctorName, int durationMinutes) {
+        log.warn("⚠️  Using LOCAL fallback summary (AI API unavailable)");
+
+        String[] lines = notes.split("\\n");
+        List<String> keyPoints = new ArrayList<>();
+        for (String line : lines) {
+            String t = line.trim();
+            if (!t.isEmpty() && t.length() > 5) {
+                keyPoints.add("- " + t);
+                if (keyPoints.size() >= 6) break;
+            }
+        }
+        String pointsList = keyPoints.isEmpty()
+                ? "- Voir les notes de la réunion"
+                : String.join("\n", keyPoints);
+
+        return "## Résumé de la réunion\n"
+             + "Réunion médicale entre Dr. " + doctorName + " et le patient "
+             + patientName + ", d'une durée de " + durationMinutes + " minutes.\n\n"
+             + "## Points abordés\n" + pointsList + "\n\n"
+             + "## Note\n"
+             + "⚠️ Ce résumé a été généré sans IA (API indisponible). "
+             + "Consultez les notes complètes pour tous les détails.";
     }
 }

@@ -192,6 +192,39 @@ public class MeetingService {
     }
 
     /**
+     * Delegate Claude API connection test to MeetingSummaryService.
+     */
+    public Map<String, Object> testClaudeApi() {
+        return meetingSummaryService.testClaudeConnection();
+    }
+
+    /**
+     * Regenerate AI summary for an already-ended meeting.
+     * Useful when Claude API was unavailable during the original end call.
+     */
+    @Transactional
+    public MeetingSummaryResponse regenerateSummary(Long meetingId) {
+        MedicalMeeting meeting = meetingRepository.findById(meetingId)
+                .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + meetingId));
+
+        String summary = meetingSummaryService.generateSummary(
+                meeting.getNotes(),
+                meeting.getPatientName(),
+                meeting.getDoctorName(),
+                meeting.getDurationMinutes() != null ? meeting.getDurationMinutes() : 1
+        );
+        meeting.setAiSummary(summary);
+        meetingRepository.save(meeting);
+        log.info("Summary regenerated for meeting {}", meetingId);
+
+        return MeetingSummaryResponse.builder()
+                .meetingId(meeting.getId())
+                .summary(summary)
+                .durationMinutes(meeting.getDurationMinutes() != null ? meeting.getDurationMinutes() : 0)
+                .build();
+    }
+
+    /**
      * Get a meeting by ID.
      */
     public MeetingResponse getById(Long id) {

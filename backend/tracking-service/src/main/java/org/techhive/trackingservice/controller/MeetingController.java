@@ -108,6 +108,30 @@ public class MeetingController {
     }
 
     /**
+     * GET /api/meetings/test-claude — Test Claude API connection and show exact error
+     * Visit: http://localhost:18083/api/meetings/test-claude
+     */
+    @GetMapping("/test-claude")
+    public ResponseEntity<Map<String, Object>> testClaude() {
+        Map<String, Object> result = meetingService.testClaudeApi();
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * POST /api/meetings/{id}/regenerate-summary — Regenerate AI summary for an ended meeting
+     */
+    @PostMapping("/{id}/regenerate-summary")
+    public ResponseEntity<MeetingSummaryResponse> regenerateSummary(@PathVariable Long id) {
+        try {
+            MeetingSummaryResponse result = meetingService.regenerateSummary(id);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error regenerating summary for meeting {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
      * GET /api/meetings/doctor/{doctorKeycloakId} — Get all meetings for a doctor
      */
     @GetMapping("/doctor/{doctorKeycloakId}")

@@ -65,11 +65,12 @@ daily:
   api-key: "296f35c5b0a3624ccbc58966d8840752b08291e3a0b378964eb661b31caacb8c"
   api-url: "https://api.daily.co/v1"
 
-# Claude AI API (meeting summaries)
+# Claude AI API (meeting summaries) — CREDITS DEPLETED
+# Switched to Groq API (free, 14400 req/day, Llama 3.3)
 claude:
-  api-key: "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"
-  api-url: "https://api.anthropic.com/v1/messages"
-  model: "claude-sonnet-4-6"
+  api-key: "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"
+  api-url: "https://api.groq.com/openai/v1/chat/completions"
+  model: "llama-3.3-70b-versatile"
 
 # Meeting room settings
 meeting:

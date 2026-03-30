@@ -116,6 +116,15 @@ import { Meeting, MeetingService } from '@/core/services/meeting.service';
                       📋 Voir tout
                     </button>
                   }
+                  @if (aiSummary && meetingStatus === 'ENDED') {
+                    <button
+                      (click)="showFullSummary = true"
+                      class="bg-purple-700 hover:bg-purple-600 text-white text-xs px-2.5 py-1 rounded transition"
+                      title="Voir le résumé AI"
+                    >
+                      🤖 Voir résumé
+                    </button>
+                  }
                   <span class="text-xs" [ngClass]="saveIndicatorClass">{{ saveIndicator }}</span>
                 </div>
               </div>
@@ -132,8 +141,17 @@ import { Meeting, MeetingService } from '@/core/services/meeting.service';
             <div class="flex flex-col p-3 overflow-hidden" style="flex: 1;">
               <div class="flex items-center justify-between mb-2">
                 <h3 class="text-white text-sm font-semibold">🤖 Résumé AI</h3>
-                @if (aiSummary) {
-                  <div class="flex gap-1">
+                <div class="flex gap-1">
+                  @if (notesValue && meetingStatus === 'ENDED') {
+                    <button
+                      (click)="showFullNotes = true"
+                      class="bg-blue-700 hover:bg-blue-600 text-white text-xs px-2.5 py-1 rounded transition"
+                      title="Voir les notes complètes"
+                    >
+                      📝 Voir notes
+                    </button>
+                  }
+                  @if (aiSummary) {
                     <button
                       (click)="showFullSummary = true"
                       class="bg-purple-700 hover:bg-purple-600 text-white text-xs px-2.5 py-1 rounded transition"
@@ -147,8 +165,8 @@ import { Meeting, MeetingService } from '@/core/services/meeting.service';
                     >
                       {{ copyButtonText }}
                     </button>
-                  </div>
-                }
+                  }
+                </div>
               </div>
 
               @if (showSummaryLoading) {
@@ -425,25 +443,16 @@ export class MeetingRoomComponent implements OnInit, OnDestroy {
     this.summaryError = '';
     this.showSummaryLoading = true;
 
-    // Retry by updating notes which triggers re-generation on the next end call
-    // Instead, just call endMeeting again with a small workaround
-    this.meetingService.updateNotes(this.meeting.id, this.lastNotes || this.notesValue).subscribe({
-      next: () => {
-        this.meetingService.endMeeting(this.meeting.id, this.lastNotes || this.notesValue).subscribe({
-          next: (result) => {
-            this.aiSummary = result.summary || '';
-            this.showSummaryLoading = false;
-            if (this.aiSummary) this.parseSummary(this.aiSummary);
-          },
-          error: () => {
-            this.showSummaryLoading = false;
-            this.summaryError = 'Réessai échoué. Vérifiez la connexion et la clé API Claude.';
-          },
-        });
+    // Use the dedicated regenerate endpoint
+    this.meetingService.regenerateSummary(this.meeting.id).subscribe({
+      next: (result) => {
+        this.aiSummary = result.summary || '';
+        this.showSummaryLoading = false;
+        if (this.aiSummary) this.parseSummary(this.aiSummary);
       },
       error: () => {
         this.showSummaryLoading = false;
-        this.summaryError = 'Impossible de récupérer les notes.';
+        this.summaryError = 'Régénération échouée. Vérifiez la clé API Claude dans application.yml.';
       },
     });
   }

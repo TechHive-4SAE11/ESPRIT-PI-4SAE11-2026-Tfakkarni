@@ -76,7 +76,7 @@ import { Meeting, MeetingService } from '@/core/services/meeting.service';
                     </button>
                   }
                   @if (m.status === 'ENDED') {
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 flex-wrap justify-end">
                       <!-- Résumé AI -->
                       <button
                         (click)="toggleSummary(m.id)"
@@ -94,7 +94,21 @@ import { Meeting, MeetingService } from '@/core/services/meeting.service';
                           (click)="openNotesModal(m)"
                           class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition"
                         >
-                          📋 Voir les notes
+                          📋 Notes
+                        </button>
+                      }
+                      <!-- Régénérer le résumé (si résumé absent ou en erreur) -->
+                      @if (!m.aiSummary || m.aiSummary.includes('non disponible') || m.aiSummary.includes('erreur')) {
+                        <button
+                          (click)="regenerateSummary(m)"
+                          [disabled]="regeneratingIds.has(m.id)"
+                          class="bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white text-xs font-medium px-3 py-2 rounded-lg transition"
+                        >
+                          @if (regeneratingIds.has(m.id)) {
+                            ⏳ Génération...
+                          } @else {
+                            ✨ Générer résumé AI
+                          }
                         </button>
                       }
                     </div>
@@ -192,10 +206,14 @@ export class HelperMeetingListComponent implements OnInit {
   // Summary panel
   expandedSummaryId: number | null = null;
   copyTexts: Record<number, string> = {};
+  regeneratingIds = new Set<number>();
 
   // Notes modal
   selectedNotesMeeting: Meeting | null = null;
   copyModalNotesText = '📋 Copier';
+
+  @Input() currentUserKeycloakId = ''; // helper's keycloakId for token pre-fetch
+  @Input() currentUserName = 'Aidant';
 
   ngOnInit(): void {
     this.loadMeetings();
@@ -207,6 +225,19 @@ export class HelperMeetingListComponent implements OnInit {
       next: (meetings) => {
         this.meetings.set(meetings);
         this.loading.set(false);
+        // Pre-fetch tokens for ACTIVE meetings in background
+        // so join is near-instant when user clicks
+        if (this.currentUserKeycloakId) {
+          meetings
+            .filter(m => m.status === 'ACTIVE' || m.status === 'SCHEDULED')
+            .forEach(m => {
+              this.meetingService.prefetchToken(
+                m.id,
+                this.currentUserKeycloakId,
+                this.currentUserName
+              );
+            });
+        }
       },
       error: () => this.loading.set(false),
     });
@@ -233,6 +264,25 @@ export class HelperMeetingListComponent implements OnInit {
     navigator.clipboard.writeText(summary).then(() => {
       this.copyTexts[meetingId] = '✅ Copié !';
       setTimeout(() => delete this.copyTexts[meetingId], 2000);
+    });
+  }
+
+  regenerateSummary(meeting: Meeting): void {
+    if (this.regeneratingIds.has(meeting.id)) return;
+    this.regeneratingIds.add(meeting.id);
+
+    this.meetingService.regenerateSummary(meeting.id).subscribe({
+      next: (result) => {
+        this.regeneratingIds.delete(meeting.id);
+        // Update the meeting in the list
+        this.meetings.update(list =>
+          list.map(m => m.id === meeting.id ? { ...m, aiSummary: result.summary } : m)
+        );
+      },
+      error: () => {
+        this.regeneratingIds.delete(meeting.id);
+        alert('Impossible de régénérer le résumé. Vérifiez la clé API Claude.');
+      },
     });
   }
 
