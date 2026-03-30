@@ -122,6 +122,12 @@ export class MeetingService {
   /**
    * Regenerate AI summary for a meeting that has a bad/missing summary.
    */
+  deleteMeeting(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}`).pipe(
+      catchError(err => { console.error('Error deleting meeting:', err); throw err; })
+    );
+  }
+
   regenerateSummary(id: number): Observable<MeetingSummaryResult> {
     return this.http.post<MeetingSummaryResult>(
       `${this.base}/${id}/regenerate-summary`, {}

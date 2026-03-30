@@ -23,64 +23,50 @@ import { ZardIconComponent } from '@/shared/components/icon';
   imports: [CommonModule, FormsModule, DatePipe, ZardButtonComponent, ZardIconComponent],
   template: `
     <div class="space-y-6">
-      <!-- HEADER -->
+
+      <!-- ═══ HEADER ═══ -->
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-2xl font-bold">Reunions video</h2>
+          <h2 class="text-2xl font-bold">📹 Réunions vidéo</h2>
           <p class="text-muted-foreground text-sm mt-1">
-            Visioconferences avec les aidants de vos patients
+            Visioconférences avec les aidants de vos patients
           </p>
         </div>
         <button z-button (click)="showCreateForm = !showCreateForm">
           <z-icon zType="plus" class="mr-1 h-4 w-4" />
-          Nouvelle reunion
+          Nouvelle réunion
         </button>
       </div>
 
-      <!-- CREATE FORM -->
+      <!-- ═══ FORMULAIRE CRÉATION ═══ -->
       @if (showCreateForm) {
         <div class="bg-card border border-border rounded-xl p-5 space-y-4">
-          <h3 class="font-semibold text-sm">Planifier une reunion</h3>
-
+          <h3 class="font-semibold text-sm">Planifier une réunion</h3>
           <div>
-            <label class="block text-muted-foreground text-xs mb-1.5">Patient concerne</label>
+            <label class="block text-muted-foreground text-xs mb-1.5">Patient concerné</label>
             <select
               [(ngModel)]="selectedPatientId"
               class="w-full bg-muted text-foreground text-sm rounded-lg px-3 py-2.5 border border-border focus:border-primary focus:outline-none"
             >
-              <option value="">-- Selectionner un patient --</option>
+              <option value="">-- Sélectionner un patient --</option>
               @for (p of patients; track p.keycloakId) {
                 <option [value]="p.keycloakId">{{ p.firstName }} {{ p.lastName }}</option>
               }
             </select>
           </div>
-
           <div>
-            <label class="block text-muted-foreground text-xs mb-1.5">
-              Date et heure (optionnel)
-            </label>
+            <label class="block text-muted-foreground text-xs mb-1.5">Date et heure (optionnel)</label>
             <input
               type="datetime-local"
               [(ngModel)]="scheduledAt"
               class="w-full bg-muted text-foreground text-sm rounded-lg px-3 py-2.5 border border-border focus:border-primary focus:outline-none"
             />
           </div>
-
           <div class="flex items-center gap-3 pt-1">
-            <button
-              z-button
-              [disabled]="!selectedPatientId || creating"
-              (click)="createMeeting()"
-            >
-              @if (creating) {
-                Creation...
-              } @else {
-                Creer la reunion
-              }
+            <button z-button [disabled]="!selectedPatientId || creating" (click)="createMeeting()">
+              {{ creating ? 'Création...' : 'Créer la réunion' }}
             </button>
-            <button z-button zType="outline" (click)="showCreateForm = false">
-              Annuler
-            </button>
+            <button z-button zType="outline" (click)="showCreateForm = false">Annuler</button>
             @if (createError) {
               <span class="text-destructive text-xs">{{ createError }}</span>
             }
@@ -88,7 +74,7 @@ import { ZardIconComponent } from '@/shared/components/icon';
         </div>
       }
 
-      <!-- LIST -->
+      <!-- ═══ LISTE ═══ -->
       @if (loading) {
         <div class="flex justify-center py-12">
           <div class="w-8 h-8 border-2 border-muted border-t-primary rounded-full animate-spin"></div>
@@ -96,68 +82,140 @@ import { ZardIconComponent } from '@/shared/components/icon';
       } @else if (meetings.length === 0) {
         <div class="bg-card border border-border rounded-xl p-10 text-center">
           <z-icon zType="video" class="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <p class="text-muted-foreground text-sm font-medium">
-            Aucune reunion pour le moment.
-          </p>
-          <p class="text-muted-foreground/60 text-xs mt-1.5">
-            Creez une reunion video pour commencer.
-          </p>
+          <p class="text-muted-foreground text-sm font-medium">Aucune réunion pour le moment.</p>
+          <p class="text-muted-foreground/60 text-xs mt-1.5">Créez une réunion vidéo pour commencer.</p>
         </div>
       } @else {
         <div class="space-y-3">
           @for (m of meetings; track m.id) {
             <div class="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition">
-              <div class="flex items-center justify-between">
+              <div class="flex items-start justify-between gap-3">
+
+                <!-- Info -->
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class="font-medium text-sm truncate">
-                      {{ m.patientName }}
-                    </span>
-                    <span
-                      class="text-xs font-medium px-2 py-0.5 rounded-full"
-                      [ngClass]="getStatusBadgeClass(m.status)"
-                    >
+                  <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <span class="font-medium text-sm">👤 {{ m.patientName }}</span>
+                    <span class="text-xs font-medium px-2 py-0.5 rounded-full" [ngClass]="getStatusBadgeClass(m.status)">
                       {{ getStatusLabel(m.status) }}
                     </span>
-                  </div>
-                  <div class="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span>{{ m.createdAt | date : 'dd/MM/yyyy HH:mm' }}</span>
                     @if (m.durationMinutes) {
-                      <span>{{ m.durationMinutes }} min</span>
+                      <span class="text-xs text-muted-foreground">⏱ {{ m.durationMinutes }} min</span>
                     }
-                    <span class="opacity-40 font-mono">{{ m.roomName }}</span>
+                  </div>
+                  <div class="text-xs text-muted-foreground">
+                    📅 {{ m.createdAt | date : 'dd/MM/yyyy HH:mm' }}
+                    <span class="opacity-40 font-mono ml-2">{{ m.roomName }}</span>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-2 ml-3">
+                <!-- Actions -->
+                <div class="flex items-center gap-1.5 flex-wrap justify-end shrink-0">
+
+                  <!-- Rejoindre -->
                   @if (m.status === 'SCHEDULED' || m.status === 'ACTIVE') {
-                    <button z-button zSize="sm" (click)="openMeeting.emit(m)">
-                      Rejoindre
+                    <button
+                      z-button zSize="sm"
+                      class="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      (click)="openMeeting.emit(m)"
+                    >
+                      🎥 Rejoindre
                     </button>
                   }
+
+                  <!-- Voir résumé AI -->
                   @if (m.status === 'ENDED') {
-                    <button z-button zType="outline" zSize="sm" (click)="toggleSummary(m.id)">
-                      @if (expandedSummaryId === m.id) {
-                        Masquer resume
-                      } @else {
-                        Voir resume AI
-                      }
+                    <button
+                      z-button zType="outline" zSize="sm"
+                      (click)="toggleSummary(m.id)"
+                    >
+                      @if (expandedSummaryId === m.id) { ▲ Masquer } @else { 🤖 Résumé AI }
+                    </button>
+
+                    <!-- Voir notes -->
+                    @if (m.notes) {
+                      <button
+                        z-button zType="outline" zSize="sm"
+                        (click)="openNotesModal(m)"
+                        title="Voir les notes complètes"
+                      >
+                        📋 Notes
+                      </button>
+                    }
+
+                    <!-- Télécharger PDF -->
+                    <button
+                      z-button zType="outline" zSize="sm"
+                      (click)="downloadPdf(m)"
+                      title="Télécharger rapport PDF"
+                    >
+                      ⬇️ PDF
+                    </button>
+                  }
+
+                  <!-- Supprimer -->
+                  @if (confirmDeleteId === m.id) {
+                    <span class="text-xs text-red-500 font-medium">Confirmer ?</span>
+                    <button
+                      z-button zSize="sm"
+                      class="bg-red-600 hover:bg-red-700 text-white"
+                      (click)="deleteMeeting(m.id)"
+                    >
+                      ✓ Oui
+                    </button>
+                    <button
+                      z-button zType="outline" zSize="sm"
+                      (click)="confirmDeleteId = null"
+                    >
+                      ✕
+                    </button>
+                  } @else {
+                    <button
+                      z-button zType="outline" zSize="sm"
+                      class="text-red-500 border-red-200 hover:bg-red-50 dark:hover:bg-red-950"
+                      (click)="confirmDeleteId = m.id"
+                      [disabled]="deletingIds.has(m.id)"
+                      title="Supprimer la réunion"
+                    >
+                      @if (deletingIds.has(m.id)) { ⏳ } @else { 🗑️ }
                     </button>
                   }
                 </div>
               </div>
 
-              @if (expandedSummaryId === m.id && m.aiSummary) {
-                <div
-                  class="mt-3 pt-3 border-t border-border text-sm leading-relaxed bg-muted/30 rounded-lg p-4"
-                  style="white-space: pre-wrap"
-                >
-                  {{ m.aiSummary }}
-                </div>
-              }
-              @if (expandedSummaryId === m.id && !m.aiSummary) {
-                <div class="mt-3 pt-3 border-t border-border text-xs text-muted-foreground italic">
-                  Aucun resume AI disponible pour cette reunion.
+              <!-- Résumé AI expandé -->
+              @if (expandedSummaryId === m.id) {
+                <div class="mt-3 pt-3 border-t border-border">
+                  @if (m.aiSummary) {
+                    @for (section of parseSummary(m.aiSummary); track section.title) {
+                      @if (section.title) {
+                        <h4 class="text-emerald-600 dark:text-emerald-400 font-semibold text-xs mt-3 mb-1 first:mt-0">{{ section.title }}</h4>
+                      }
+                      <p class="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">{{ section.content }}</p>
+                    }
+                    <div class="flex gap-2 mt-3">
+                      <button
+                        z-button zType="outline" zSize="sm"
+                        (click)="copySummary(m.aiSummary, m.id)"
+                      >
+                        {{ copyTexts[m.id] || '📋 Copier' }}
+                      </button>
+                      <button z-button zType="outline" zSize="sm" (click)="downloadPdf(m)">
+                        ⬇️ PDF
+                      </button>
+                    </div>
+                  } @else {
+                    <p class="text-xs text-muted-foreground italic">Aucun résumé AI disponible.</p>
+                    @if (m.notes) {
+                      <button
+                        z-button zType="outline" zSize="sm"
+                        class="mt-2 text-orange-600"
+                        (click)="regenerateSummary(m)"
+                        [disabled]="regeneratingIds.has(m.id)"
+                      >
+                        @if (regeneratingIds.has(m.id)) { ⏳ Génération... } @else { ✨ Générer résumé AI }
+                      </button>
+                    }
+                  }
                 </div>
               }
             </div>
@@ -165,6 +223,37 @@ import { ZardIconComponent } from '@/shared/components/icon';
         </div>
       }
     </div>
+
+    <!-- ═══ MODAL NOTES ═══ -->
+    @if (selectedNotesMeeting) {
+      <div class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+           (click)="selectedNotesMeeting = null">
+        <div class="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+             (click)="$event.stopPropagation()">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-border">
+            <div>
+              <h2 class="font-bold text-base">📋 Notes de la réunion</h2>
+              <p class="text-muted-foreground text-xs mt-0.5">
+                {{ selectedNotesMeeting.patientName }} — {{ selectedNotesMeeting.createdAt | date:'dd/MM/yyyy' }}
+                @if (selectedNotesMeeting.durationMinutes) { — {{ selectedNotesMeeting.durationMinutes }} min }
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <button z-button zType="outline" zSize="sm" (click)="copyNotes(selectedNotesMeeting.notes)">
+                {{ copyNotesText }}
+              </button>
+              <button z-button zType="outline" zSize="sm" (click)="downloadPdf(selectedNotesMeeting)">
+                ⬇️ PDF
+              </button>
+              <button z-button zType="ghost" zSize="sm" (click)="selectedNotesMeeting = null">✕</button>
+            </div>
+          </div>
+          <div class="flex-1 overflow-y-auto p-5">
+            <pre class="text-sm leading-relaxed whitespace-pre-wrap font-sans">{{ selectedNotesMeeting.notes }}</pre>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class MeetingListComponent implements OnInit {
@@ -184,7 +273,18 @@ export class MeetingListComponent implements OnInit {
   creating = false;
   createError = '';
 
+  // Summary
   expandedSummaryId: number | null = null;
+  copyTexts: Record<number, string> = {};
+  regeneratingIds = new Set<number>();
+
+  // Delete
+  confirmDeleteId: number | null = null;
+  deletingIds = new Set<number>();
+
+  // Notes modal
+  selectedNotesMeeting: Meeting | null = null;
+  copyNotesText = '📋 Copier';
 
   ngOnInit(): void {
     this.loadMeetings();
@@ -194,40 +294,27 @@ export class MeetingListComponent implements OnInit {
   loadMeetings(): void {
     this.loading = true;
     this.meetingService.getMeetingsForDoctor(this.doctorKeycloakId).subscribe({
-      next: (meetings) => {
-        this.meetings = meetings;
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-      },
+      next: (meetings) => { this.meetings = meetings; this.loading = false; },
+      error: () => { this.loading = false; },
     });
   }
 
   loadPatients(): void {
     this.userApiService.getUsersByRole('patient').subscribe({
-      next: (patients) => {
-        this.patients = patients;
-      },
-      error: (err) => {
-        console.warn('Could not load patients:', err);
-        this.patients = [];
-      },
+      next: (patients) => { this.patients = patients; },
+      error: (err) => { console.warn('Could not load patients:', err); this.patients = []; },
     });
   }
 
   createMeeting(): void {
     if (!this.selectedPatientId || this.creating) return;
-
     this.creating = true;
     this.createError = '';
-
     const request: CreateMeetingRequest = {
       patientKeycloakId: this.selectedPatientId,
       doctorKeycloakId: this.doctorKeycloakId,
       scheduledAt: this.scheduledAt || undefined,
     };
-
     this.meetingService.createMeeting(request).subscribe({
       next: (meeting) => {
         this.creating = false;
@@ -239,21 +326,180 @@ export class MeetingListComponent implements OnInit {
       },
       error: (err) => {
         this.creating = false;
-        this.createError = 'Erreur lors de la creation de la reunion.';
-        console.error('Create meeting error:', err);
+        this.createError = 'Erreur lors de la création de la réunion.';
+        console.error(err);
       },
     });
   }
+
+  // ── Delete ─────────────────────────────────────────────────────────────────
+
+  deleteMeeting(id: number): void {
+    this.confirmDeleteId = null;
+    this.deletingIds.add(id);
+    this.meetingService.deleteMeeting(id).subscribe({
+      next: () => {
+        this.deletingIds.delete(id);
+        this.meetings = this.meetings.filter(m => m.id !== id);
+      },
+      error: () => {
+        this.deletingIds.delete(id);
+        alert('Erreur lors de la suppression.');
+      },
+    });
+  }
+
+  // ── Notes modal ────────────────────────────────────────────────────────────
+
+  openNotesModal(m: Meeting): void {
+    this.selectedNotesMeeting = m;
+    this.copyNotesText = '📋 Copier';
+  }
+
+  copyNotes(notes: string): void {
+    navigator.clipboard.writeText(notes || '').then(() => {
+      this.copyNotesText = '✅ Copié !';
+      setTimeout(() => (this.copyNotesText = '📋 Copier'), 2000);
+    });
+  }
+
+  // ── Summary ────────────────────────────────────────────────────────────────
 
   toggleSummary(id: number): void {
     this.expandedSummaryId = this.expandedSummaryId === id ? null : id;
   }
 
+  copySummary(summary: string, id: number): void {
+    navigator.clipboard.writeText(summary).then(() => {
+      this.copyTexts[id] = '✅ Copié !';
+      setTimeout(() => delete this.copyTexts[id], 2000);
+    });
+  }
+
+  regenerateSummary(m: Meeting): void {
+    if (this.regeneratingIds.has(m.id)) return;
+    this.regeneratingIds.add(m.id);
+    this.meetingService.regenerateSummary(m.id).subscribe({
+      next: (result) => {
+        this.regeneratingIds.delete(m.id);
+        this.meetings = this.meetings.map(x =>
+          x.id === m.id ? { ...x, aiSummary: result.summary } : x
+        );
+      },
+      error: () => {
+        this.regeneratingIds.delete(m.id);
+        alert('Impossible de générer le résumé AI.');
+      },
+    });
+  }
+
+  parseSummary(text: string): { title: string; content: string }[] {
+    const sections: { title: string; content: string }[] = [];
+    let currentTitle = '';
+    let currentContent: string[] = [];
+    for (const line of text.split('\n')) {
+      const match = line.match(/^##\s+(.+)/);
+      if (match) {
+        if (currentContent.length || currentTitle)
+          sections.push({ title: currentTitle, content: currentContent.join('\n').trim() });
+        currentTitle = match[1].trim();
+        currentContent = [];
+      } else {
+        currentContent.push(line);
+      }
+    }
+    if (currentContent.length || currentTitle)
+      sections.push({ title: currentTitle, content: currentContent.join('\n').trim() });
+    return sections.length ? sections : [{ title: '', content: text }];
+  }
+
+  // ── PDF Download ───────────────────────────────────────────────────────────
+
+  downloadPdf(m: Meeting): void {
+    const date = m.createdAt
+      ? new Date(m.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+      : '';
+    const duration = m.durationMinutes ? `${m.durationMinutes} minutes` : 'N/A';
+
+    const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Rapport de réunion — ${m.patientName}</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: #1f2937; margin: 0; padding: 40px; background: #fff; }
+    .header { background: linear-gradient(135deg, #059669, #047857); color: #fff; padding: 28px 32px; border-radius: 12px; margin-bottom: 28px; }
+    .header h1 { margin: 0 0 6px; font-size: 22px; font-weight: 700; }
+    .header p { margin: 0; opacity: 0.85; font-size: 13px; }
+    .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+    .meta-item { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; }
+    .meta-item .label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .meta-item .value { font-size: 14px; font-weight: 600; color: #111827; }
+    .section { margin-bottom: 24px; }
+    .section h2 { font-size: 15px; font-weight: 700; color: #059669; border-bottom: 2px solid #d1fae5; padding-bottom: 8px; margin-bottom: 14px; }
+    .notes-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; white-space: pre-wrap; font-size: 13px; line-height: 1.7; color: #374151; }
+    .summary-section h3 { font-size: 13px; font-weight: 600; color: #065f46; margin: 14px 0 6px; }
+    .summary-section p { font-size: 13px; line-height: 1.7; color: #374151; white-space: pre-wrap; margin: 0; }
+    .footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 11px; }
+    @media print { body { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>📋 Rapport de réunion médicale</h1>
+    <p>Plateforme Tfakkarni – Suivi des patients Alzheimer</p>
+  </div>
+
+  <div class="meta">
+    <div class="meta-item"><div class="label">Patient</div><div class="value">${this.esc(m.patientName)}</div></div>
+    <div class="meta-item"><div class="label">Médecin</div><div class="value">Dr. ${this.esc(m.doctorName)}</div></div>
+    <div class="meta-item"><div class="label">Date</div><div class="value">${date}</div></div>
+    <div class="meta-item"><div class="label">Durée</div><div class="value">${duration}</div></div>
+  </div>
+
+  ${m.notes ? `
+  <div class="section">
+    <h2>📝 Notes de la réunion</h2>
+    <div class="notes-box">${this.esc(m.notes)}</div>
+  </div>` : ''}
+
+  ${m.aiSummary ? `
+  <div class="section">
+    <h2>🤖 Résumé AI (généré automatiquement)</h2>
+    <div class="summary-section">
+      ${this.parseSummary(m.aiSummary).map(s => `
+        ${s.title ? `<h3>${this.esc(s.title)}</h3>` : ''}
+        <p>${this.esc(s.content)}</p>
+      `).join('')}
+    </div>
+  </div>` : ''}
+
+  <div class="footer">
+    Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')} — Tfakkarni © 2026
+  </div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank', 'width=900,height=700');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      setTimeout(() => { win.focus(); win.print(); }, 500);
+    }
+  }
+
+  private esc(s: string | null | undefined): string {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Utils ──────────────────────────────────────────────────────────────────
+
   getStatusLabel(status: string): string {
     switch (status) {
-      case 'SCHEDULED': return 'Planifiee';
+      case 'SCHEDULED': return 'Planifiée';
       case 'ACTIVE': return 'En cours';
-      case 'ENDED': return 'Terminee';
+      case 'ENDED': return 'Terminée';
       default: return status;
     }
   }

@@ -49,6 +49,7 @@ public class DailyRoomService {
             properties.put("start_video_off", false);
             properties.put("start_audio_off", false);
             properties.put("lang", "fr");
+            properties.put("enable_recording", "local"); // Free local recording in browser
 
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("name", roomName);

@@ -192,6 +192,25 @@ public class MeetingService {
     }
 
     /**
+     * Delete a meeting by ID (also tries to cleanup the Daily.co room).
+     */
+    @Transactional
+    public void deleteMeeting(Long meetingId) {
+        MedicalMeeting meeting = meetingRepository.findById(meetingId)
+                .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + meetingId));
+        // Try to cleanup Daily.co room
+        try {
+            if (meeting.getRoomName() != null && meeting.getStatus() != MeetingStatus.ENDED) {
+                dailyRoomService.deleteRoom(meeting.getRoomName());
+            }
+        } catch (Exception e) {
+            log.warn("Could not delete Daily.co room '{}': {}", meeting.getRoomName(), e.getMessage());
+        }
+        meetingRepository.deleteById(meetingId);
+        log.info("Meeting {} deleted", meetingId);
+    }
+
+    /**
      * Delegate Claude API connection test to MeetingSummaryService.
      */
     public Map<String, Object> testClaudeApi() {

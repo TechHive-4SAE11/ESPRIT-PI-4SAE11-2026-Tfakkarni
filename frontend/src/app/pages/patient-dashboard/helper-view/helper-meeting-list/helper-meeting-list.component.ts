@@ -75,6 +75,31 @@ import { Meeting, MeetingService } from '@/core/services/meeting.service';
                       🎥 Rejoindre
                     </button>
                   }
+                  <!-- Supprimer -->
+                  @if (confirmDeleteId === m.id) {
+                    <span class="text-xs text-red-500 font-medium">Confirmer ?</span>
+                    <button
+                      (click)="deleteMeeting(m.id)"
+                      class="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition"
+                    >
+                      ✓ Oui
+                    </button>
+                    <button
+                      (click)="confirmDeleteId = null"
+                      class="bg-muted hover:bg-muted/80 text-foreground text-xs font-medium px-3 py-2 rounded-lg transition border border-border"
+                    >
+                      ✕
+                    </button>
+                  } @else {
+                    <button
+                      (click)="confirmDeleteId = m.id"
+                      [disabled]="deletingIds.has(m.id)"
+                      class="bg-muted hover:bg-red-50 dark:hover:bg-red-950 text-red-500 text-xs font-medium px-3 py-2 rounded-lg transition border border-red-200 dark:border-red-800"
+                      title="Supprimer"
+                    >
+                      @if (deletingIds.has(m.id)) { ⏳ } @else { 🗑️ }
+                    </button>
+                  }
                   @if (m.status === 'ENDED') {
                     <div class="flex gap-2 flex-wrap justify-end">
                       <!-- Résumé AI -->
@@ -111,6 +136,14 @@ import { Meeting, MeetingService } from '@/core/services/meeting.service';
                           }
                         </button>
                       }
+                      <!-- Télécharger PDF -->
+                      <button
+                        (click)="downloadPdf(m)"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition"
+                        title="Télécharger PDF"
+                      >
+                        ⬇️ PDF
+                      </button>
                     </div>
                   }
                 </div>
@@ -208,6 +241,10 @@ export class HelperMeetingListComponent implements OnInit {
   copyTexts: Record<number, string> = {};
   regeneratingIds = new Set<number>();
 
+  // Delete
+  confirmDeleteId: number | null = null;
+  deletingIds = new Set<number>();
+
   // Notes modal
   selectedNotesMeeting: Meeting | null = null;
   copyModalNotesText = '📋 Copier';
@@ -258,6 +295,80 @@ export class HelperMeetingListComponent implements OnInit {
       this.copyModalNotesText = '✅ Copié !';
       setTimeout(() => (this.copyModalNotesText = '📋 Copier'), 2000);
     });
+  }
+
+  deleteMeeting(id: number): void {
+    this.confirmDeleteId = null;
+    this.deletingIds.add(id);
+    this.meetingService.deleteMeeting(id).subscribe({
+      next: () => {
+        this.deletingIds.delete(id);
+        this.meetings.update(list => list.filter(m => m.id !== id));
+      },
+      error: () => {
+        this.deletingIds.delete(id);
+        alert('Erreur lors de la suppression.');
+      },
+    });
+  }
+
+  downloadPdf(m: Meeting): void {
+    const date = m.scheduledAt
+      ? new Date(m.scheduledAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+      : '';
+    const duration = m.durationMinutes ? `${m.durationMinutes} minutes` : 'N/A';
+
+    const summaryHtml = m.aiSummary
+      ? this.parseSummary(m.aiSummary).map(s =>
+          `${s.title ? `<h3 style="color:#059669;font-size:13px;margin:14px 0 6px">${this.esc(s.title)}</h3>` : ''}
+           <p style="font-size:13px;line-height:1.7;color:#374151;white-space:pre-wrap;margin:0">${this.esc(s.content)}</p>`
+        ).join('')
+      : '<p style="color:#6b7280;font-style:italic">Aucun résumé disponible.</p>';
+
+    const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Réunion médicale — ${this.esc(m.patientName)}</title>
+  <style>
+    body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2937;margin:0;padding:40px;background:#fff}
+    .header{background:linear-gradient(135deg,#059669,#047857);color:#fff;padding:28px 32px;border-radius:12px;margin-bottom:28px}
+    .header h1{margin:0 0 6px;font-size:22px;font-weight:700}
+    .header p{margin:0;opacity:.85;font-size:13px}
+    .meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px}
+    .meta-item{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px}
+    .meta-item .label{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+    .meta-item .value{font-size:14px;font-weight:600;color:#111827}
+    .section{margin-bottom:24px}
+    .section h2{font-size:15px;font-weight:700;color:#059669;border-bottom:2px solid #d1fae5;padding-bottom:8px;margin-bottom:14px}
+    .notes-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;white-space:pre-wrap;font-size:13px;line-height:1.7;color:#374151}
+    .footer{margin-top:36px;padding-top:16px;border-top:1px solid #e5e7eb;text-align:center;color:#9ca3af;font-size:11px}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>📋 Rapport de réunion médicale</h1>
+    <p>Plateforme Tfakkarni – Suivi des patients Alzheimer</p>
+  </div>
+  <div class="meta">
+    <div class="meta-item"><div class="label">Patient</div><div class="value">${this.esc(m.patientName)}</div></div>
+    <div class="meta-item"><div class="label">Médecin</div><div class="value">Dr. ${this.esc(m.doctorName)}</div></div>
+    <div class="meta-item"><div class="label">Date</div><div class="value">${date}</div></div>
+    <div class="meta-item"><div class="label">Durée</div><div class="value">${duration}</div></div>
+  </div>
+  ${m.notes ? `<div class="section"><h2>📝 Notes de la réunion</h2><div class="notes-box">${this.esc(m.notes)}</div></div>` : ''}
+  <div class="section"><h2>🤖 Résumé AI</h2>${summaryHtml}</div>
+  <div class="footer">Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')} — Tfakkarni © 2026</div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank', 'width=900,height=700');
+    if (win) { win.document.write(html); win.document.close(); setTimeout(() => { win.focus(); win.print(); }, 500); }
+  }
+
+  private esc(s: string | null | undefined): string {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   copySummary(summary: string, meetingId: number): void {

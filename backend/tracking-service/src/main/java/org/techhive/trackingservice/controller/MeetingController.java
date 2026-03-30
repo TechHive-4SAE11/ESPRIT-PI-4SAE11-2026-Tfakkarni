@@ -108,6 +108,20 @@ public class MeetingController {
     }
 
     /**
+     * DELETE /api/meetings/{id} — Delete a meeting
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMeeting(@PathVariable Long id) {
+        try {
+            meetingService.deleteMeeting(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            log.error("Error deleting meeting {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
      * GET /api/meetings/test-claude — Test Claude API connection and show exact error
      * Visit: http://localhost:18083/api/meetings/test-claude
      */
