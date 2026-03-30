@@ -139,6 +139,10 @@ spring:
           uri: lb://tracking-service
           predicates:
             - Path=/api/notifications/**
+        - id: meetings
+          uri: lb://tracking-service
+          predicates:
+            - Path=/api/meetings/**
   security:
     oauth2:
       resourceserver:

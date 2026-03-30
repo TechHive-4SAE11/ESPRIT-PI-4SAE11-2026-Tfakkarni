@@ -110,6 +110,7 @@ import {
   Users,
   UserPlus,
   Unlock,
+  Video,
 } from 'lucide-angular';
 
 const DarkMode: LucideIconData = [
@@ -239,6 +240,7 @@ export const ZARD_ICONS = {
   unlock: Unlock,
   'alert-triangle': TriangleAlert,
   bookmark: Bookmark,
+  video: Video,
 } as const satisfies Record<string, LucideIconData>;
 
 export declare type ZardIcon = keyof typeof ZARD_ICONS | LucideIconData;

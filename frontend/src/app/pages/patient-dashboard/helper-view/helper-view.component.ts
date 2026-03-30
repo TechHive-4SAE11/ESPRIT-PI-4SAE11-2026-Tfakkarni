@@ -37,6 +37,9 @@ import { CarePlanResponseDTO } from '@/core/models/care-plan.model';
 import { SuiviQuotidienComponent } from './suivi-quotidien/suivi-quotidien.component';
 import { StatisticsDashboardComponent } from './statistics-dashboard/statistics-dashboard.component';
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
+import { MeetingRoomComponent } from '@/pages/doctor-dashboard/meeting-room/meeting-room.component';
+import { HelperMeetingListComponent } from './helper-meeting-list/helper-meeting-list.component';
+import { Meeting } from '@/core/services/meeting.service';
 
 @Component({
   selector: 'app-helper-view',
@@ -59,6 +62,8 @@ import { UserApiService, type UserInfo } from '@/core/services/user-api.service'
     ProfileComponent,
     MedicalFolderListComponent,
     PatientDossierViewComponent,
+    MeetingRoomComponent,
+    HelperMeetingListComponent,
   ],
 })
 export class HelperViewComponent implements OnInit {
@@ -82,6 +87,10 @@ export class HelperViewComponent implements OnInit {
   isNotifPanelOpen = signal(false);
   isLoadingNotifs = signal(false);
 
+  // ── Meeting state ──
+  meetingRoomOpen = signal(false);
+  activeMeeting = signal<Meeting | null>(null);
+
   ngOnInit(): void {
     if (this.keycloakId) {
       this.loadUserNeonDbId();
@@ -96,6 +105,31 @@ export class HelperViewComponent implements OnInit {
 
   goToAppointments(): void {
     this.router.navigate(['/appointments']);
+  }
+
+  // ── Meeting methods ─────────────────────────────────────────────────────
+
+  openMeetingRoom(meeting: Meeting): void {
+    this.activeMeeting.set(meeting);
+    this.meetingRoomOpen.set(true);
+  }
+
+  onMeetingEnded(result: { summary: string; durationMinutes: number }): void {
+    console.log('Meeting ended:', result);
+  }
+
+  closeMeetingRoom(): void {
+    this.meetingRoomOpen.set(false);
+    this.activeMeeting.set(null);
+  }
+
+  currentUserForMeeting(): { keycloakId: string; name: string; role: string } {
+    const user = this.currentUser();
+    return {
+      keycloakId: this.keycloakId,
+      name: user ? `${user.firstName} ${user.lastName}` : 'Aidant',
+      role: 'helper'
+    };
   }
 
   private loadUserNeonDbId(): void {

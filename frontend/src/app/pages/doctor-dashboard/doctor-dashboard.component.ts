@@ -27,6 +27,9 @@ import { DossierAnalyticsComponent } from '@/pages/medical-folders/dossier-analy
 import { MedicationManagementComponent } from '../medications/medications.component';
 import { PatientAnalyticsComponent } from './patient-analytics/patient-analytics.component';
 import { ProfileComponent } from '@/pages/patient-dashboard/helper-view/profile/profile.component';
+import { MeetingRoomComponent } from './meeting-room/meeting-room.component';
+import { MeetingListComponent } from './meeting-list/meeting-list.component';
+import { Meeting } from '@/core/services/meeting.service';
 import { KeycloakService } from 'keycloak-angular';
 
 @Component({
@@ -49,6 +52,8 @@ import { KeycloakService } from 'keycloak-angular';
     MedicationManagementComponent,
     PatientAnalyticsComponent,
     ProfileComponent,
+    MeetingRoomComponent,
+    MeetingListComponent,
   ],
   template: `
     @if (kycChecking()) {
@@ -496,6 +501,20 @@ import { KeycloakService } from 'keycloak-angular';
              </div>
           }
       }
+
+      @case ('Meetings') {
+        @if (meetingRoomOpen()) {
+          <app-meeting-room
+            [meeting]="activeMeeting()!"
+            [currentUser]="currentUserForMeeting()"
+            (meetingEnded)="onMeetingEnded($event)"
+            (close)="closeMeetingRoom()" />
+        } @else {
+          <app-meeting-list
+            [doctorKeycloakId]="doctorKeycloakId"
+            (openMeeting)="openMeetingRoom($event)" />
+        }
+      }
       }
       </div>
     </app-dashboard-layout>
@@ -556,6 +575,7 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
         { icon: 'pill', label: 'Prescriptions', action: () => this.setPage('Prescriptions') },
         { icon: 'activity', label: 'Care Plans', action: () => this.setPage('CarePlans') },
         { icon: 'heart', label: 'Medications', action: () => this.setPage('Medications') },
+        { icon: 'play-circle', label: 'Réunions', action: () => this.setPage('Meetings') },
       ],
     },
     {
@@ -569,6 +589,10 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   ];
 
   doctorKeycloakId = '';
+
+  // ── Meeting state ──
+  meetingRoomOpen = signal(false);
+  activeMeeting = signal<Meeting | null>(null);
 
   constructor(
     private readonly authService: AuthService,
@@ -722,6 +746,7 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
       'CarePlans',
       'Medical Folders',
       'Dossier Analytics',
+      'Meetings',
     ]);
 
     if (validPages.has(savedPage)) {
@@ -749,6 +774,8 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
         return 'prescriptions';
       case 'CarePlans':
         return 'careplans';
+      case 'Meetings':
+        return 'meetings';
       case 'Home':
       default:
         return null;
@@ -767,6 +794,8 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
         return 'Prescriptions';
       case 'careplans':
         return 'CarePlans';
+      case 'meetings':
+        return 'Meetings';
       case 'home':
         return 'Home';
       default:
@@ -801,6 +830,31 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   viewDailyLog(patient: UserInfo): void {
     this.selectedPatient.set(patient);
     this.setPage('Daily Log');
+  }
+
+  // ── Meeting methods ─────────────────────────────────────────────────────
+
+  openMeetingRoom(meeting: Meeting): void {
+    this.activeMeeting.set(meeting);
+    this.meetingRoomOpen.set(true);
+  }
+
+  onMeetingEnded(result: { summary: string; durationMinutes: number }): void {
+    console.log('Meeting ended:', result);
+  }
+
+  closeMeetingRoom(): void {
+    this.meetingRoomOpen.set(false);
+    this.activeMeeting.set(null);
+  }
+
+  currentUserForMeeting(): { keycloakId: string; name: string; role: string } {
+    const doctor = this.currentDoctor();
+    return {
+      keycloakId: this.doctorKeycloakId,
+      name: doctor ? `${doctor.firstName} ${doctor.lastName}` : 'Médecin',
+      role: 'doctor'
+    };
   }
 
   retryLoadPatients(): void {
