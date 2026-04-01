@@ -22,12 +22,14 @@ import { type DoctorNotification } from '@/core/models/notification.model';
 import { PrescriptionManagementComponent } from './prescription-management/prescription-management.component';
 import { SuiviQuotidienComponent } from '@/pages/patient-dashboard/helper-view/suivi-quotidien/suivi-quotidien.component';
 import { CarePlanManagementComponent } from './care-plan-management/care-plan-management.component';
+import { SessionManagementComponent } from './session-management/session-management.component';
 import { MedicalFolderListComponent } from '@/pages/medical-folders/medical-folder-list/medical-folder-list.component';
 import { DossierAnalyticsComponent } from '@/pages/medical-folders/dossier-analytics/dossier-analytics.component';
 import { MedicationManagementComponent } from '../medications/medications.component';
 import { PatientAnalyticsComponent } from './patient-analytics/patient-analytics.component';
 import { ProfileComponent } from '@/pages/patient-dashboard/helper-view/profile/profile.component';
 import { KeycloakService } from 'keycloak-angular';
+import type { SessionResponseDTO } from '@/core/services/session.service';
 
 @Component({
   selector: 'app-doctor-dashboard',
@@ -44,6 +46,7 @@ import { KeycloakService } from 'keycloak-angular';
     PrescriptionManagementComponent,
     SuiviQuotidienComponent,
     CarePlanManagementComponent,
+    SessionManagementComponent,
     MedicalFolderListComponent,
     DossierAnalyticsComponent,
     MedicationManagementComponent,
@@ -350,7 +353,11 @@ import { KeycloakService } from 'keycloak-angular';
                           }
                         </td>
                         <td z-table-cell>
-                          <div class="flex gap-2">
+                          <div class="flex gap-2 flex-wrap">
+                             <button z-button zType="ghost" zSize="sm" (click)="manageSessions(patient)">
+                               <z-icon zType="calendar" class="mr-1" />
+                               Sessions
+                             </button>
                              <button z-button zType="ghost" zSize="sm" (click)="viewPatientProgress(patient)">
                                <z-icon zType="bar-chart-3" class="mr-1" />
                                Progress
@@ -463,6 +470,66 @@ import { KeycloakService } from 'keycloak-angular';
           }
         }
 
+        @case ('Sessions') {
+          @if (selectedPatient(); as patient) {
+            <div class="flex items-center gap-2 mb-6">
+              <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
+                <z-icon zType="arrow-left" class="mr-1" />
+                Back to List
+              </button>
+            </div>
+
+            <app-session-management
+              [patient]="patient"
+              [doctor]="currentDoctor()"
+              (goToMedicalFolders)="setPage('Medical Folders')"
+              (createPrescriptionFrom)="onCreatePrescriptionFromSession($event)"
+              (createCarePlanFrom)="onCreateCarePlanFromSession($event)"
+              (sessionsChanged)="onSessionsChanged()"
+            />
+          } @else {
+            <div class="space-y-6">
+              <div>
+                <h2 class="text-2xl font-bold">Consultation Sessions</h2>
+                <p class="text-sm text-muted-foreground mt-1">Select a patient to view or create consultation sessions.</p>
+              </div>
+
+              @if (isLoading()) {
+                <div class="space-y-3">
+                  <z-skeleton class="h-20 w-full rounded-xl" />
+                  <z-skeleton class="h-20 w-full rounded-xl" />
+                  <z-skeleton class="h-20 w-full rounded-xl" />
+                </div>
+              } @else if (patients().length > 0) {
+                <div class="grid gap-3">
+                  @for (patient of patients(); track patient.keycloakId) {
+                    <div class="flex items-center gap-4 p-4 border rounded-xl bg-card hover:shadow-md transition-shadow cursor-pointer group"
+                         (click)="manageSessions(patient)">
+                      <div class="shrink-0 w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                        {{ patient.firstName?.charAt(0) || '?' }}{{ patient.lastName?.charAt(0) || '?' }}
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-sm truncate">{{ patient.firstName }} {{ patient.lastName }}</p>
+                        <p class="text-xs text-muted-foreground truncate">{{ patient.email }}</p>
+                      </div>
+                      <button z-button zSize="sm" class="shrink-0 opacity-80 group-hover:opacity-100 transition-opacity"
+                              (click)="$event.stopPropagation(); manageSessions(patient)">
+                        <z-icon zType="calendar" class="mr-1.5 h-3.5 w-3.5" />
+                        Manage Sessions
+                      </button>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="p-12 text-center border-2 border-dashed rounded-xl bg-muted/10">
+                  <z-icon zType="users" class="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-40" />
+                  <p class="text-lg font-medium text-muted-foreground">No patients found</p>
+                  <p class="text-sm text-muted-foreground mt-1">Patients assigned to you will appear here.</p>
+                </div>
+              }
+            </div>
+          }
+        }
         @case ('Medical Folders') {
           <app-medical-folder-list
             [initialFolderId]="searchSelectedFolderId()"
@@ -552,6 +619,7 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
         { icon: 'users', label: 'Patients', action: () => this.setPage('Home') },
         { icon: 'folder', label: 'Medical Folders', action: () => this.setPage('Medical Folders') },
         { icon: 'activity', label: 'Dossier Analytics', action: () => this.setPage('Dossier Analytics') },
+        { icon: 'calendar', label: 'Sessions', action: () => this.setPage('Sessions') },
         { icon: 'bar-chart-3', label: 'Patient Progress', action: () => this.setPage('Patient Progress') },
         { icon: 'pill', label: 'Prescriptions', action: () => this.setPage('Prescriptions') },
         { icon: 'activity', label: 'Care Plans', action: () => this.setPage('CarePlans') },
@@ -713,8 +781,12 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
       'Patient Progress',
       'Prescriptions',
       'CarePlans',
+      'Sessions',
       'Medical Folders',
       'Dossier Analytics',
+      'Medications',
+      'Daily Log',
+      'Mon Profil',
     ]);
 
     if (validPages.has(savedPage)) {
@@ -742,6 +814,14 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
         return 'prescriptions';
       case 'CarePlans':
         return 'careplans';
+      case 'Sessions':
+        return 'sessions';
+      case 'Medications':
+        return 'medications';
+      case 'Daily Log':
+        return 'daily-log';
+      case 'Mon Profil':
+        return 'profile';
       case 'Home':
       default:
         return null;
@@ -760,6 +840,14 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
         return 'Prescriptions';
       case 'careplans':
         return 'CarePlans';
+      case 'sessions':
+        return 'Sessions';
+      case 'medications':
+        return 'Medications';
+      case 'daily-log':
+        return 'Daily Log';
+      case 'profile':
+        return 'Mon Profil';
       case 'home':
         return 'Home';
       default:
@@ -794,6 +882,25 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   viewDailyLog(patient: UserInfo): void {
     this.selectedPatient.set(patient);
     this.setPage('Daily Log');
+  }
+
+  manageSessions(patient: UserInfo): void {
+    this.selectedPatient.set(patient);
+    this.setPage('Sessions');
+  }
+
+  onCreatePrescriptionFromSession(session: SessionResponseDTO): void {
+    // Navigate to prescriptions page — the session is already created
+    this.setPage('Prescriptions');
+  }
+
+  onCreateCarePlanFromSession(session: SessionResponseDTO): void {
+    this.setPage('CarePlans');
+  }
+
+  onSessionsChanged(): void {
+    // Sessions changed, could reload data if needed
+    console.log('[DoctorDashboard] Sessions changed — prescription/care plan dropdowns will reflect new sessions');
   }
 
   retryLoadPatients(): void {

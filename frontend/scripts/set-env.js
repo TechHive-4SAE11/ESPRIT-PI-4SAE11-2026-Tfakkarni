@@ -44,6 +44,15 @@ export const environment = {
   keycloakUrl: '${keycloakUrl}',
   tmdbApiKey: '${tmdbApiKey}',
   tmdbReadAccessToken: '${tmdbReadAccessToken}',
+  firebase: {
+    apiKey: '',
+    authDomain: 'techhive-7cbf7.firebaseapp.com',
+    projectId: 'techhive-7cbf7',
+    storageBucket: 'techhive-7cbf7.firebasestorage.app',
+    messagingSenderId: '',
+    appId: '',
+    vapidKey: '',
+  },
 };
 `;
 
