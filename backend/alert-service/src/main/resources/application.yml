@@ -62,3 +62,14 @@ notification:
   scheduler:
     enabled: true
     medication-reminder-cron: "0 */1 * * * *"
+
+# Mailtrap Sandbox (geofence + incident alerts)
+mailtrap:
+  token: f4ed6c5f383c7fe7e305eba8d1bcaef9
+  inbox-id: 4413425
+  from: noreply@tfakkarni.com
+
+# Telegram Bot — alerts on geofence violations
+telegram:
+  bot-token: "8761174713:AAEG23SiwUmSEDTFTlMm-7GLzUZQpqDJzzg"
+  default-chat-id: "5674590232"

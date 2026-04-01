@@ -36,6 +36,7 @@ import { CarePlanService } from '@/core/services/care-plan.service';
 import { CarePlanResponseDTO } from '@/core/models/care-plan.model';
 import { SuiviQuotidienComponent } from './suivi-quotidien/suivi-quotidien.component';
 import { StatisticsDashboardComponent } from './statistics-dashboard/statistics-dashboard.component';
+import { SafeZoneComponent } from './safe-zone/safe-zone.component';
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 
 @Component({
@@ -57,6 +58,7 @@ import { UserApiService, type UserInfo } from '@/core/services/user-api.service'
     TagManagerComponent,
     GameBuilderComponent,
     ProfileComponent,
+    SafeZoneComponent,
     MedicalFolderListComponent,
     PatientDossierViewComponent,
   ],
