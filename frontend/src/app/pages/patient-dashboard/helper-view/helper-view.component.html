@@ -225,15 +225,24 @@
         </div>
     </z-card>
 
-  <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="goToAppointments()">
-    <div class="flex items-center gap-3">
-      <z-icon zType="calendar" class="text-primary h-10 w-10" />
-      <div>
-        <h3 class="font-semibold">Appointments and Reminders</h3>
-        <p class="text-sm text-muted-foreground">View Appointments</p>
-      </div>
-    </div>
-  </z-card>
+    <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="goToAppointments()">
+        <div class="flex items-center gap-3">
+            <z-icon zType="calendar" class="text-primary h-10 w-10" />
+            <div>
+                <h3 class="font-semibold">Appointments and Reminders</h3>
+                <p class="text-sm text-muted-foreground">View Appointments</p>
+            </div>
+        </div>
+    </z-card>
+    <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Safe Zone')">
+        <div class="flex items-center gap-3">
+            <z-icon zType="shield" class="text-primary h-10 w-10" />
+            <div>
+                <h3 class="font-semibold">Safe Zone GPS</h3>
+                <p class="text-sm text-muted-foreground">Geofencing & real-time patient tracking</p>
+            </div>
+        </div>
+    </z-card>
 </div>
 }
 
@@ -298,11 +307,7 @@
 }
 
 @case ('Dossier médical') {
-<app-patient-dossier-view 
-  [keycloakId]="keycloakId"
-  [showBack]="true"
-  (goBack)="setPage('Home')"
-/>
+<app-patient-dossier-view [keycloakId]="keycloakId" [showBack]="true" (goBack)="setPage('Home')" />
 }
 
 @case ('Statistiques') {
@@ -314,5 +319,9 @@
     <h2 class="text-2xl font-bold">Statistiques & Analytics</h2>
 </div>
 <app-statistics-dashboard [keycloakId]="keycloakId" />
+}
+
+@case ('Safe Zone') {
+<app-safe-zone [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
 }
 }

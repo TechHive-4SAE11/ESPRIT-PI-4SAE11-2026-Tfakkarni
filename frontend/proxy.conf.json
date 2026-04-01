@@ -1,0 +1,11 @@
+{
+  "/dweet-proxy": {
+    "target": "https://dweet.cc",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/dweet-proxy": ""
+    },
+    "logLevel": "warn"
+  }
+}
