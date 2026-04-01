@@ -96,6 +96,17 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
   editingPrescriptionId = signal<number | null>(null);
   errorMessage = signal<string | null>(null);
 
+  // Quick-create session (inline in prescription form)
+  showQuickCreateSession = signal(false);
+  quickSessionDate = signal(new Date().toISOString().split('T')[0]);
+  quickSessionNotes = signal('');
+  quickSessionError = signal<string | null>(null);
+  isCreatingSession = signal(false);
+  todayString = new Date().toISOString().split('T')[0];
+
+  // Track the medical folder ID for quick session creation
+  private matchingFolderId = signal<number | null>(null);
+
   prescriptionForm!: FormGroup;
 
   // Zod Schemas
@@ -343,7 +354,7 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
     }
 
     this.isLoadingPrescriptions.set(true);
-    const patientDbId = String(this.patient.id);
+    const patientDbId = this.patient.keycloakId;
 
     this.prescriptionService.getPrescriptionsByPatient(patientDbId)
       .pipe(
@@ -374,8 +385,8 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
     }
 
     this.isLoadingSessions.set(true);
-    const currentDoctorDbId = String(this.doctor.id);
-    const patientDbId = String(this.patient.id);
+    const currentDoctorDbId = this.doctor.keycloakId;
+    const patientDbId = this.patient.keycloakId;
 
     console.log('[PrescriptionManagement] Loading sessions for patient:', patientDbId, 'doctor:', currentDoctorDbId);
 
@@ -388,10 +399,12 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
 
           if (matchingFolder) {
             console.log('[PrescriptionManagement] Found matching folder:', matchingFolder);
+            this.matchingFolderId.set(matchingFolder.id);
             this.loadSessionsForFolder(matchingFolder.id);
           } else {
             console.warn('[PrescriptionManagement] No matching folder found');
             this.sessions.set([]);
+            this.matchingFolderId.set(null);
             this.isLoadingSessions.set(false);
           }
         }),
@@ -598,6 +611,48 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
+  }
+
+  // ==================== Quick-Create Session ====================
+
+  quickCreateSession(): void {
+    const date = this.quickSessionDate();
+    const notes = this.quickSessionNotes().trim();
+    const folderId = this.matchingFolderId();
+
+    if (!date || !notes) {
+      this.quickSessionError.set('Please fill in both date and notes.');
+      return;
+    }
+    if (!folderId) {
+      this.quickSessionError.set('No medical folder found for this patient. Create a medical folder first.');
+      return;
+    }
+
+    this.isCreatingSession.set(true);
+    this.quickSessionError.set(null);
+
+    this.sessionService.createSession({
+      medicalFolderId: folderId,
+      sessionDate: date,
+      notes,
+    }).pipe(
+      tap(created => {
+        console.log('[PrescriptionManagement] Quick-created session:', created);
+        // Add to sessions list and auto-select it
+        this.sessions.update(list => [created, ...list]);
+        this.prescriptionForm.patchValue({ sessionId: created.id });
+        this.showQuickCreateSession.set(false);
+        this.quickSessionNotes.set('');
+      }),
+      catchError(error => {
+        const msg = error?.error?.message || error?.error?.error || 'Failed to create session.';
+        this.quickSessionError.set(msg);
+        return of(null);
+      }),
+      finalize(() => this.isCreatingSession.set(false)),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe();
   }
 
   // ==================== Template Management ====================

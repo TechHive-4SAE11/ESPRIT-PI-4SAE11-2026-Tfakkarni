@@ -15,6 +15,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'quiz',
+    loadComponent: () =>
+      import('@/pages/quiz/quiz.component').then(
+        (m) => m.QuizComponent
+      ),
+  },
+  {
     path: 'login',
     loadComponent: () =>
       import('@/pages/login/login.component').then((m) => m.LoginComponent),
