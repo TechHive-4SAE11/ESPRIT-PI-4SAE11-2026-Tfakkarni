@@ -296,18 +296,38 @@ import { ZardDialogService } from '@/shared/components/dialog/dialog.service';
           Are you sure you want to discontinue <strong>{{ data.med.medicationName }}</strong>? This action cannot be undone.
         </p>
         <div>
-          <label class="block text-sm font-medium mb-1">Reason for discontinuation</label>
+          <label class="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Reason for discontinuation</label>
           <textarea
             z-input
             [(ngModel)]="discontinueReason"
+            name="discontinueReason"
             rows="3"
             placeholder="e.g. Allergic reaction, Treatment completed..."
-            class="w-full"
+            class="w-full resize-none"
           ></textarea>
         </div>
-        <div class="flex justify-end gap-2 mt-6">
-          <button z-button zType="ghost" (click)="dialogRef.close()">Cancel</button>
-          <button z-button zType="destructive" (click)="submitDiscontinue(dialogRef)">Discontinue Medication</button>
+        <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <button 
+            z-button 
+            zType="ghost" 
+            (click)="dialogRef.close()"
+            [disabled]="isLoading()"
+          >
+            Cancel
+          </button>
+          <button 
+            z-button 
+            zType="destructive" 
+            (click)="submitDiscontinue(dialogRef)"
+            [disabled]="isLoading()"
+          >
+            @if (isLoading()) {
+              <z-icon zType="loader-2" class="animate-spin mr-2 h-4 w-4" />
+              Discontinuing...
+            } @else {
+              Discontinue Medication
+            }
+          </button>
         </div>
       </div>
     </ng-template>
@@ -539,7 +559,7 @@ export class MedicationManagementComponent implements OnInit {
       zTitle: 'Discontinue Medication',
       zContent: this.discontinueDialogTemplate,
       zData: { med },
-      zOkDestructive: true
+      zHideFooter: true
     });
   }
 

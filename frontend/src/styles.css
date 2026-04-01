@@ -1,4 +1,4 @@
-/* Leaflet CSS is imported directly in components that use it */
+@import "@angular/cdk/overlay-prebuilt.css";
 
 @tailwind base;
 @tailwind components;

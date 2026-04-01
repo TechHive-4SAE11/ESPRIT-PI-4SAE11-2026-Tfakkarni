@@ -246,7 +246,7 @@
     <h2 class="text-2xl font-bold">Patient Prescriptions</h2>
 </div>
 
-<app-prescription-list [patientId]="userNeonDbId()?.toString() || null" />
+<app-prescription-list [patientId]="keycloakId" />
 }
 
 @case ('Data Library') {
@@ -262,7 +262,7 @@
     <h2 class="text-2xl font-bold">Care Plans</h2>
 </div>
 
-<app-care-plan-list [patientId]="userNeonDbId()?.toString() || null" />
+<app-care-plan-list [patientId]="keycloakId" />
 }
 
 @case ('Medications') {
