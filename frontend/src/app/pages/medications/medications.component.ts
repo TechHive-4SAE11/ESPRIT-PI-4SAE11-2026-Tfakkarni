@@ -397,26 +397,26 @@ export class MedicationManagementComponent implements OnInit {
     this.isLoading.set(true);
     const userId = this.patient.keycloakId;
     const statusFilter = this.selectedStatus() || undefined;
-    
+
     console.log('[MedicationManagement] Loading medications - Patient ID:', userId, 'ViewMode:', this.viewMode, 'Page:', this.currentPage(), 'Status Filter:', statusFilter);
-    
+
     const serviceCall = this.viewMode === 'doctor' && this.doctor
       ? this.medicationService.getMedicationsByDoctorPaginated(
-          this.doctor.keycloakId,
-          this.currentPage(),
-          this.pageSize(),
-          'createdAt',
-          'DESC',
-          statusFilter
-        )
+        this.doctor.keycloakId,
+        this.currentPage(),
+        this.pageSize(),
+        'createdAt',
+        'DESC',
+        statusFilter
+      )
       : this.medicationService.getMedicationsByPatientPaginated(
-          userId,
-          this.currentPage(),
-          this.pageSize(),
-          'createdAt',
-          'DESC',
-          statusFilter
-        );
+        userId,
+        this.currentPage(),
+        this.pageSize(),
+        'createdAt',
+        'DESC',
+        statusFilter
+      );
 
     serviceCall.pipe(
       tap((response: PagedResponse<MedicationResponseDTO>) => {
@@ -528,7 +528,7 @@ export class MedicationManagementComponent implements OnInit {
       zContent: this.editDialogTemplate,
       zData: { med },
       zWidth: '100%',
-      zCustomClasses: 'sm:max-w-xl', 
+      zCustomClasses: 'sm:max-w-xl',
       zHideFooter: true
     });
   }
@@ -541,7 +541,7 @@ export class MedicationManagementComponent implements OnInit {
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (updatedMed) => {
-          this.medications.update(meds => 
+          this.medications.update(meds =>
             meds.map(m => m.id === updatedMed.id ? updatedMed : m)
           );
           dialogRef.close();
