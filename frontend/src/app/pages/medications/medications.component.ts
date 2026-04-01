@@ -21,7 +21,6 @@ import { ZardDialogService } from '@/shared/components/dialog/dialog.service';
   imports: [
     CommonModule,
     FormsModule,
-    ZardCardComponent,
     ZardIconComponent,
     ZardBadgeComponent,
     ZardButtonComponent,
@@ -376,14 +375,14 @@ export class MedicationManagementComponent implements OnInit {
     }
 
     this.isLoading.set(true);
-    const userId = this.patient.id.toString();
+    const userId = this.patient.keycloakId;
     const statusFilter = this.selectedStatus() || undefined;
     
     console.log('[MedicationManagement] Loading medications - Patient ID:', userId, 'ViewMode:', this.viewMode, 'Page:', this.currentPage(), 'Status Filter:', statusFilter);
     
     const serviceCall = this.viewMode === 'doctor' && this.doctor
       ? this.medicationService.getMedicationsByDoctorPaginated(
-          this.doctor.id.toString(),
+          this.doctor.keycloakId,
           this.currentPage(),
           this.pageSize(),
           'createdAt',

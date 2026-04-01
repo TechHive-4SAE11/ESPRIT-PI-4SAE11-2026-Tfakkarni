@@ -133,12 +133,20 @@ public class PrescriptionService {
 
     @Transactional(readOnly = true)
     public List<Prescription> getAllPrescriptions() {
-        return prescriptionRepository.findAll();
+        List<Prescription> prescriptions = prescriptionRepository.findAll();
+        prescriptions.forEach(p -> {
+            if (p.getMedications() != null) p.getMedications().size();
+        });
+        return prescriptions;
     }
 
     @Transactional(readOnly = true)
     public Optional<Prescription> getPrescriptionById(Long id) {
-        return prescriptionRepository.findById(id);
+        Optional<Prescription> p = prescriptionRepository.findById(id);
+        p.ifPresent(pr -> {
+            if (pr.getMedications() != null) pr.getMedications().size();
+        });
+        return p;
     }
 
     /**
@@ -156,17 +164,29 @@ public class PrescriptionService {
 
     @Transactional(readOnly = true)
     public List<Prescription> getPrescriptionsBySession(Long sessionId) {
-        return prescriptionRepository.findBySessionId(sessionId);
+        List<Prescription> prescriptions = prescriptionRepository.findBySessionId(sessionId);
+        prescriptions.forEach(p -> {
+            if (p.getMedications() != null) p.getMedications().size(); // Force initialization
+        });
+        return prescriptions;
     }
 
     @Transactional(readOnly = true)
     public List<Prescription> getPrescriptionsByPatient(String idPatient) {
-        return prescriptionRepository.findBySessionMedicalFolderIdPatient(idPatient);
+        List<Prescription> prescriptions = prescriptionRepository.findBySessionMedicalFolderIdPatient(idPatient);
+        prescriptions.forEach(p -> {
+            if (p.getMedications() != null) p.getMedications().size(); // Force initialization
+        });
+        return prescriptions;
     }
     
     @Transactional(readOnly = true)
     public Page<Prescription> getPrescriptionsByPatientPaginated(String idPatient, Pageable pageable) {
-        return prescriptionRepository.findBySessionMedicalFolderIdPatient(idPatient, pageable);
+        Page<Prescription> page = prescriptionRepository.findBySessionMedicalFolderIdPatient(idPatient, pageable);
+        page.getContent().forEach(p -> {
+            if (p.getMedications() != null) p.getMedications().size();
+        });
+        return page;
     }
 
     @Transactional

@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MedicalFolderRequestDTO {
 
-    private String idPatient;
-    private String idDoctor;
+    private String patientId;
+    private String doctorId;
+    private String bloodType;
+    private Double height;
+    private Double weight;
 }

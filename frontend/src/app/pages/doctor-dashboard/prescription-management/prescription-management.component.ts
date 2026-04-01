@@ -38,7 +38,6 @@ import {
     CommonModule,
     ReactiveFormsModule,
     ZardButtonComponent,
-    ZardCardComponent,
     ZardIconComponent,
     ZardBadgeComponent,
     ZardInputDirective

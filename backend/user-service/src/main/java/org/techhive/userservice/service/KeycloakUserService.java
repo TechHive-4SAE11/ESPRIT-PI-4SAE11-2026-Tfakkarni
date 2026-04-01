@@ -102,7 +102,7 @@ public class KeycloakUserService {
   @SuppressWarnings("unchecked")
   private String findUserByEmail(String adminToken, String email) {
     String searchUrl = keycloakConfig.getServerUrl() + "/admin/realms/"
-        + keycloakConfig.getRealm() + "/users?email=" + email + "&exact=true";
+         + keycloakConfig.getRealm() + "/users?email=" + email + "&exact=true";
 
     HttpHeaders headers = new HttpHeaders();
     headers.setBearerAuth(adminToken);

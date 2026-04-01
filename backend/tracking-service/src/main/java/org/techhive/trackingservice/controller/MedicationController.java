@@ -13,6 +13,7 @@ import org.techhive.trackingservice.dto.MedicationResponseDTO;
 import org.techhive.trackingservice.entity.Medication;
 import org.techhive.trackingservice.enums.MedicationStatus;
 import org.techhive.trackingservice.repository.MedicationRepository;
+import org.techhive.trackingservice.service.MedicationService;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,25 +31,8 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class MedicationController {
 
+    private final MedicationService medicationService;
     private final MedicationRepository medicationRepository;
-
-    private MedicationResponseDTO convertToDTO(Medication medication) {
-        return new MedicationResponseDTO(
-            medication.getId(),
-            medication.getMedicationName(),
-            medication.getDosage(),
-            medication.getFrequency(),
-            medication.getDuration(),
-            medication.getInstructions(),
-            medication.getStatus(),
-            medication.getStartDate(),
-            medication.getEndDate(),
-            medication.getCreatedAt(),
-            medication.getPrescription() != null && medication.getPrescription().getSession() != null ? medication.getPrescription().getSession().getId() : null,
-            medication.getPrescription() != null && medication.getPrescription().getSession() != null ? medication.getPrescription().getSession().getSessionDate() : null,
-            medication.getPrescription() != null && medication.getPrescription().getSession() != null && medication.getPrescription().getSession().getMedicalFolder() != null ? medication.getPrescription().getSession().getMedicalFolder().getIdDoctor() : null
-        );
-    }
 
     /**
      * Get paginated medications for a patient with optional status filter
@@ -70,17 +54,10 @@ public class MedicationController {
             
             Pageable pageable = PageRequest.of(page, size, sort);
             
-            Page<Medication> medicationPage;
-            if (status != null) {
-                medicationPage = medicationRepository.findByPrescriptionSessionMedicalFolderIdPatientAndStatus(
-                        idPatient, status, pageable);
-            } else {
-                medicationPage = medicationRepository.findByPrescriptionSessionMedicalFolderIdPatient(
-                        idPatient, pageable);
-            }
+            Page<MedicationResponseDTO> medicationPage = medicationService.getMedicationsByPatient(idPatient, status, pageable);
             
             PagedResponse<MedicationResponseDTO> response = new PagedResponse<>(
-                    medicationPage.getContent().stream().map(this::convertToDTO).toList(),
+                    medicationPage.getContent(),
                     medicationPage.getNumber(),
                     medicationPage.getSize(),
                     medicationPage.getTotalElements(),
@@ -119,17 +96,10 @@ public class MedicationController {
             
             Pageable pageable = PageRequest.of(page, size, sort);
             
-            Page<Medication> medicationPage;
-            if (status != null) {
-                medicationPage = medicationRepository.findByPrescriptionSessionMedicalFolderIdDoctorAndStatus(
-                        idDoctor, status, pageable);
-            } else {
-                medicationPage = medicationRepository.findByPrescriptionSessionMedicalFolderIdDoctor(
-                        idDoctor, pageable);
-            }
+            Page<MedicationResponseDTO> medicationPage = medicationService.getMedicationsByDoctor(idDoctor, status, pageable);
             
             PagedResponse<MedicationResponseDTO> response = new PagedResponse<>(
-                    medicationPage.getContent().stream().map(this::convertToDTO).toList(),
+                    medicationPage.getContent(),
                     medicationPage.getNumber(),
                     medicationPage.getSize(),
                     medicationPage.getTotalElements(),
@@ -212,21 +182,7 @@ public class MedicationController {
     @GetMapping("/{medicationId}")
     public ResponseEntity<?> getMedication(@PathVariable Long medicationId) {
         return medicationRepository.findById(medicationId)
-                .map(medication -> {
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("id", medication.getId());
-                    response.put("medicationName", medication.getMedicationName());
-                    response.put("dosage", medication.getDosage());
-                    response.put("frequency", medication.getFrequency());
-                    response.put("duration", medication.getDuration());
-                    response.put("instructions", medication.getInstructions());
-                    response.put("status", medication.getStatus());
-                    response.put("startDate", medication.getStartDate());
-                    response.put("endDate", medication.getEndDate());
-                    response.put("createdAt", medication.getCreatedAt());
-                    response.put("updatedAt", medication.getUpdatedAt());
-                    return ResponseEntity.ok(response);
-                })
+                .map(medication -> ResponseEntity.ok(medicationService.convertToDTO(medication)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -240,9 +196,7 @@ public class MedicationController {
             @PathVariable Long medicationId,
             @RequestBody UpdateMedicationRequest request) {
         try {
-            Medication medication = medicationRepository.findById(medicationId)
-                    .orElseThrow(() -> new IllegalArgumentException("Medication not found with id: " + medicationId));
-
+            Medication medication = new Medication();
             medication.setMedicationName(request.getMedicationName());
             medication.setDosage(request.getDosage());
             medication.setFrequency(request.getFrequency());
@@ -250,12 +204,11 @@ public class MedicationController {
             medication.setInstructions(request.getInstructions());
             medication.setStartDate(request.getStartDate());
             medication.setEndDate(request.getEndDate());
-            medication.setUpdatedAt(LocalDateTime.now());
 
-            Medication updated = medicationRepository.save(medication);
+            MedicationResponseDTO updated = medicationService.updateMedication(medicationId, medication);
 
             log.info("Medication {} updated by doctor", medicationId);
-            return ResponseEntity.ok(this.convertToDTO(updated));
+            return ResponseEntity.ok(updated);
         } catch (IllegalArgumentException e) {
             log.error("Error updating medication: {}", e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

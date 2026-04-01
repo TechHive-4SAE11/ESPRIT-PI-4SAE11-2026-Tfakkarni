@@ -105,6 +105,7 @@ export class ZardDialogService {
           null as unknown as ViewContainerRef,
           {
             dialogRef,
+            data: config.zData,
           } as T,
         ),
       );

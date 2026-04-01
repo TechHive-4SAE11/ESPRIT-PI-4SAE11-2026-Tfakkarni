@@ -74,17 +74,29 @@ public class PrescriptionTemplateService {
 
     @Transactional(readOnly = true)
     public List<PrescriptionTemplate> getTemplatesByDoctor(String doctorId) {
-        return templateRepository.findByDoctorIdOrderByCreatedAtDesc(doctorId);
+        List<PrescriptionTemplate> templates = templateRepository.findByDoctorIdOrderByCreatedAtDesc(doctorId);
+        templates.forEach(t -> {
+            if (t.getMedications() != null) t.getMedications().size();
+        });
+        return templates;
     }
 
     @Transactional(readOnly = true)
     public Optional<PrescriptionTemplate> getTemplateById(Long id) {
-        return templateRepository.findById(id);
+        Optional<PrescriptionTemplate> template = templateRepository.findById(id);
+        template.ifPresent(t -> {
+            if (t.getMedications() != null) t.getMedications().size();
+        });
+        return template;
     }
 
     @Transactional(readOnly = true)
     public List<PrescriptionTemplate> searchTemplates(String doctorId, String query) {
-        return templateRepository.findByDoctorIdAndNameContainingIgnoreCase(doctorId, query);
+        List<PrescriptionTemplate> templates = templateRepository.findByDoctorIdAndNameContainingIgnoreCase(doctorId, query);
+        templates.forEach(t -> {
+            if (t.getMedications() != null) t.getMedications().size();
+        });
+        return templates;
     }
 
     public PrescriptionTemplate updateTemplate(Long id, PrescriptionTemplate updated) {
