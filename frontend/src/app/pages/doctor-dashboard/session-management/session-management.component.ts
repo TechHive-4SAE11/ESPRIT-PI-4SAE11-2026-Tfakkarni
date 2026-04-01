@@ -368,9 +368,12 @@ export class SessionManagementComponent implements OnInit, OnChanges {
     this.isSubmitting.set(true);
     this.formError.set(null);
 
+    // Backend requires LocalDateTime format (YYYY-MM-DDTHH:mm:ss)
+    const dateTime = this.formDate.includes('T') ? this.formDate : `${this.formDate}T00:00:00`;
+
     const request: SessionRequestDTO = {
       medicalFolderId: folder.id,
-      sessionDate: this.formDate,
+      sessionDate: dateTime,
       notes: this.formNotes.trim(),
     };
 

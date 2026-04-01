@@ -632,9 +632,12 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
     this.isCreatingSession.set(true);
     this.quickSessionError.set(null);
 
+    // Backend requires LocalDateTime (YYYY-MM-DDTHH:mm:ss)
+    const dateTime = date.includes('T') ? date : `${date}T00:00:00`;
+
     this.sessionService.createSession({
       medicalFolderId: folderId,
-      sessionDate: date,
+      sessionDate: dateTime,
       notes,
     }).pipe(
       tap(created => {
