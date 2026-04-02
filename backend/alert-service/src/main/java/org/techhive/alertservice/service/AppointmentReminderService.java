@@ -24,7 +24,7 @@ public class AppointmentReminderService {
     private final WebClient userServiceClient;
 
     public AppointmentReminderService(AppointmentReminderRepository repository,
-                                      @Qualifier("userServiceClient") WebClient userServiceClient) {
+            @Qualifier("userServiceClient") WebClient userServiceClient) {
         this.repository = repository;
         this.userServiceClient = userServiceClient;
     }
@@ -110,11 +110,13 @@ public class AppointmentReminderService {
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
-            if (response == null) return true;
+            if (response == null)
+                return true;
             Object enabled = response.get("enabled");
             return enabled == null || Boolean.TRUE.equals(enabled);
         } catch (Exception e) {
-            log.warn("Could not check notifications status for patient {} — defaulting to enabled: {}", patientId, e.getMessage());
+            log.warn("Could not check notifications status for patient {} — defaulting to enabled: {}", patientId,
+                    e.getMessage());
             return true;
         }
     }

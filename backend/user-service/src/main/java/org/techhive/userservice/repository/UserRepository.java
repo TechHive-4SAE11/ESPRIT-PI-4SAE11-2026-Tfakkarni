@@ -23,8 +23,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
   /**
    * Find enabled patient users who have been inactive for too long.
    * A patient is considered inactive if:
-   *   - lastActiveAt is null AND createdAt is before the threshold (never logged in after feature rolled out), OR
-   *   - lastActiveAt is not null AND lastActiveAt is before the threshold
+   * - lastActiveAt is null AND createdAt is before the threshold (never logged in
+   * after feature rolled out), OR
+   * - lastActiveAt is not null AND lastActiveAt is before the threshold
    */
   @Query("""
       SELECT u FROM User u

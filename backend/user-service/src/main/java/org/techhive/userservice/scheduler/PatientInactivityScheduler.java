@@ -29,44 +29,46 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PatientInactivityScheduler {
 
-    private final UserService userService;
+  private final UserService userService;
 
-    /** Number of days without activity before notifications are muted. */
-    @Value("${patient.inactivity.threshold-days:30}")
-    private int inactivityThresholdDays;
+  /** Number of days without activity before notifications are muted. */
+  @Value("${patient.inactivity.threshold-days:30}")
+  private int inactivityThresholdDays;
 
-    @Scheduled(cron = "${patient.inactivity.cron:0 0 2 * * *}")
-    public void muteInactivePatientNotifications() {
-        LocalDateTime threshold = LocalDateTime.now().minusDays(inactivityThresholdDays);
-        log.info("[PatientInactivityScheduler] Running — muting notifications for patients inactive since before {}",
-                threshold);
+  @Scheduled(cron = "${patient.inactivity.cron:0 0 2 * * *}")
+  public void muteInactivePatientNotifications() {
+    LocalDateTime threshold = LocalDateTime.now().minusDays(inactivityThresholdDays);
+    log.info("[PatientInactivityScheduler] Running — muting notifications for patients inactive since before {}",
+        threshold);
 
-        List<User> inactivePatients = userService.findInactivePatients(threshold);
+    List<User> inactivePatients = userService.findInactivePatients(threshold);
 
-        if (inactivePatients.isEmpty()) {
-            log.info("[PatientInactivityScheduler] No inactive patients found.");
-            return;
-        }
-
-        log.info("[PatientInactivityScheduler] Found {} inactive patient(s) — muting notifications.", inactivePatients.size());
-
-        for (User patient : inactivePatients) {
-            try {
-                if (patient.isNotificationsEnabled()) {
-                    patient.setNotificationsEnabled(false);
-                    userService.save(patient);
-                    log.info("[PatientInactivityScheduler] Muted notifications for patient keycloakId={} ({} {}) — last active: {}",
-                            patient.getKeycloakId(),
-                            patient.getFirstName(),
-                            patient.getLastName(),
-                            patient.getLastActiveAt() != null ? patient.getLastActiveAt() : "never");
-                }
-            } catch (Exception e) {
-                log.error("[PatientInactivityScheduler] Failed to mute patient keycloakId={}: {}",
-                        patient.getKeycloakId(), e.getMessage(), e);
-            }
-        }
-
-        log.info("[PatientInactivityScheduler] Completed.");
+    if (inactivePatients.isEmpty()) {
+      log.info("[PatientInactivityScheduler] No inactive patients found.");
+      return;
     }
+
+    log.info("[PatientInactivityScheduler] Found {} inactive patient(s) — muting notifications.",
+        inactivePatients.size());
+
+    for (User patient : inactivePatients) {
+      try {
+        if (patient.isNotificationsEnabled()) {
+          patient.setNotificationsEnabled(false);
+          userService.save(patient);
+          log.info(
+              "[PatientInactivityScheduler] Muted notifications for patient keycloakId={} ({} {}) — last active: {}",
+              patient.getKeycloakId(),
+              patient.getFirstName(),
+              patient.getLastName(),
+              patient.getLastActiveAt() != null ? patient.getLastActiveAt() : "never");
+        }
+      } catch (Exception e) {
+        log.error("[PatientInactivityScheduler] Failed to mute patient keycloakId={}: {}",
+            patient.getKeycloakId(), e.getMessage(), e);
+      }
+    }
+
+    log.info("[PatientInactivityScheduler] Completed.");
+  }
 }
