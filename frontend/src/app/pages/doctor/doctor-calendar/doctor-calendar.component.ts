@@ -6,10 +6,14 @@ import { CalendarOptions, EventClickArg } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import { forkJoin, of } from 'rxjs';
+import { switchMap, catchError } from 'rxjs/operators';
 
 import { AppointmentService } from '@/services/appointment.service';
 import { AuthService } from '@/core/auth';
 import { Appointment } from '@/models/appointment.model';
+import { MedicalFolderService } from '@/core/services/medical-folder.service';
+import { SessionService, SessionResponseDTO } from '@/core/services/session.service';
 
 @Component({
     selector: 'app-doctor-calendar',
@@ -43,15 +47,17 @@ export class DoctorCalendarComponent implements OnInit {
         slotMaxTime: '20:00:00',
     });
 
-    private appointmentService = inject(AppointmentService);
-    private authService = inject(AuthService);
-    private router = inject(Router);
+    private readonly appointmentService = inject(AppointmentService);
+    private readonly authService = inject(AuthService);
+    private readonly router = inject(Router);
+    private readonly medicalFolderService = inject(MedicalFolderService);
+    private readonly sessionService = inject(SessionService);
 
     ngOnInit(): void {
-        this.loadAppointments();
+        this.loadAllEvents();
     }
 
-  private loadAppointments(): void {
+  private loadAllEvents(): void {
     const doctorId = this.authService.getKeycloakId();
     console.log('👨‍⚕️ Doctor ID récupéré:', doctorId);
 
@@ -61,36 +67,41 @@ export class DoctorCalendarComponent implements OnInit {
       return;
     }
 
-    console.log('🟡 Tentative de chargement des rendez-vous pour le docteur:', doctorId);
+    // Load appointments and sessions in parallel
+    const appointments$ = this.appointmentService.getAppointmentsByDoctor(doctorId).pipe(
+      catchError(err => { console.error('❌ Erreur rendez-vous:', err); return of([] as Appointment[]); })
+    );
 
-    this.appointmentService.getAppointmentsByDoctor(doctorId).subscribe({
-      next: (appointments) => {
-        console.log('✅ Rendez-vous reçus du backend:', appointments);
+    const sessions$ = this.medicalFolderService.getByDoctorId(doctorId).pipe(
+      switchMap(folders => {
+        if (!folders || folders.length === 0) return of([] as SessionResponseDTO[]);
+        return forkJoin(
+          folders.map(f => this.sessionService.getSessionsByMedicalFolder(f.id).pipe(
+            catchError(() => of([] as SessionResponseDTO[]))
+          ))
+        ).pipe(
+          // flatten the array of arrays
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          switchMap(results => of(results.flat()))
+        );
+      }),
+      catchError(err => { console.error('❌ Erreur sessions:', err); return of([] as SessionResponseDTO[]); })
+    );
 
-        if (!appointments || appointments.length === 0) {
-          console.log('📭 Aucun rendez-vous trouvé pour ce docteur');
-          this.calendarOptions.update(options => ({ ...options, events: [] }));
-        } else {
-          const events = appointments.map(apt => this.mapAppointmentToEvent(apt));
-          console.log('📅 Événements générés pour le calendrier:', events);
-
-          this.calendarOptions.update(options => ({
-            ...options,
-            events: events
-          }));
-        }
+    forkJoin({ appointments: appointments$, sessions: sessions$ }).subscribe({
+      next: ({ appointments, sessions }) => {
+        const appointmentEvents = (appointments ?? []).map(apt => this.mapAppointmentToEvent(apt));
+        const sessionEvents = (sessions ?? []).map(s => this.mapSessionToEvent(s));
+        this.calendarOptions.update(options => ({
+          ...options,
+          events: [...appointmentEvents, ...sessionEvents],
+        }));
         this.isLoading.set(false);
       },
       error: (err) => {
-        console.error('❌ Erreur lors de la récupération des rendez-vous:', err);
-        console.error('Status:', err.status);
-        console.error('Message:', err.message);
-        console.error('URL qui a échoué:', err.url);
+        console.error('❌ Erreur chargement calendrier:', err);
         this.isLoading.set(false);
       },
-      complete: () => {
-        console.log('🏁 Requête terminée');
-      }
     });
   }
     private mapAppointmentToEvent(apt: Appointment): any {
@@ -122,5 +133,22 @@ export class DoctorCalendarComponent implements OnInit {
         if (appointmentId) {
             this.router.navigate(['/appointments', appointmentId]);
         }
+    }
+
+    private mapSessionToEvent(session: SessionResponseDTO): object {
+        return {
+            id: `session-${session.id}`,
+            title: `📋 Session #${session.id}`,
+            start: session.sessionDate,
+            allDay: true,
+            backgroundColor: '#8b5cf6', // purple
+            borderColor: '#8b5cf6',
+            textColor: '#ffffff',
+            extendedProps: {
+                type: 'session',
+                sessionId: session.id,
+                notes: session.notes,
+            },
+        };
     }
 }

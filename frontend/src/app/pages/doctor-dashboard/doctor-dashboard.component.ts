@@ -473,9 +473,9 @@ import type { SessionResponseDTO } from '@/core/services/session.service';
         @case ('Sessions') {
           @if (selectedPatient(); as patient) {
             <div class="flex items-center gap-2 mb-6">
-              <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
+              <button z-button zType="ghost" zSize="sm" (click)="clearSelectedPatient()">
                 <z-icon zType="arrow-left" class="mr-1" />
-                Back to List
+                Back to Sessions List
               </button>
             </div>
 
@@ -619,7 +619,7 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
         { icon: 'users', label: 'Patients', action: () => this.setPage('Home') },
         { icon: 'folder', label: 'Medical Folders', action: () => this.setPage('Medical Folders') },
         { icon: 'activity', label: 'Dossier Analytics', action: () => this.setPage('Dossier Analytics') },
-        { icon: 'calendar', label: 'Sessions', action: () => this.setPage('Sessions') },
+        { icon: 'calendar', label: 'Sessions', action: () => { this.selectedPatient.set(null); this.setPage('Sessions'); } },
         { icon: 'bar-chart-3', label: 'Patient Progress', action: () => this.setPage('Patient Progress') },
         { icon: 'pill', label: 'Prescriptions', action: () => this.setPage('Prescriptions') },
         { icon: 'activity', label: 'Care Plans', action: () => this.setPage('CarePlans') },
@@ -887,6 +887,10 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   manageSessions(patient: UserInfo): void {
     this.selectedPatient.set(patient);
     this.setPage('Sessions');
+  }
+
+  clearSelectedPatient(): void {
+    this.selectedPatient.set(null);
   }
 
   onCreatePrescriptionFromSession(session: SessionResponseDTO): void {
