@@ -57,6 +57,9 @@ firebase:
 tracking-service:
   url: http://localhost:18083
 
+user-service:
+  url: http://localhost:18081
+
 # Notification scheduler (gardé inchangé)
 notification:
   scheduler:

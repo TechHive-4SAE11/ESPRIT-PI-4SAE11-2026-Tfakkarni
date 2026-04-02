@@ -49,6 +49,12 @@ public class User {
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
+  @Column(name = "last_active_at")
+  private LocalDateTime lastActiveAt;
+
+  @Column(name = "notifications_enabled", nullable = false, columnDefinition = "boolean default true")
+  private boolean notificationsEnabled = true;
+
   public User() {
   }
 
@@ -178,5 +184,21 @@ public class User {
 
   public void setCreatedAt(LocalDateTime createdAt) {
     this.createdAt = createdAt;
+  }
+
+  public LocalDateTime getLastActiveAt() {
+    return lastActiveAt;
+  }
+
+  public void setLastActiveAt(LocalDateTime lastActiveAt) {
+    this.lastActiveAt = lastActiveAt;
+  }
+
+  public boolean isNotificationsEnabled() {
+    return notificationsEnabled;
+  }
+
+  public void setNotificationsEnabled(boolean notificationsEnabled) {
+    this.notificationsEnabled = notificationsEnabled;
   }
 }

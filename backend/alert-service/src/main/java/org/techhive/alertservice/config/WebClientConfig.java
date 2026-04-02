@@ -11,10 +11,20 @@ public class WebClientConfig {
     @Value("${tracking-service.url}")
     private String trackingServiceUrl;
 
+    @Value("${user-service.url}")
+    private String userServiceUrl;
+
     @Bean
     public WebClient trackingServiceClient() {
         return WebClient.builder()
                 .baseUrl(trackingServiceUrl)
+                .build();
+    }
+
+    @Bean
+    public WebClient userServiceClient() {
+        return WebClient.builder()
+                .baseUrl(userServiceUrl)
                 .build();
     }
 }

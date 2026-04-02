@@ -357,4 +357,26 @@ public class UserController {
           .body(Map.of("error", e.getMessage()));
     }
   }
+
+  /**
+   * Record patient activity (heartbeat). Call this whenever a patient interacts
+   * with the platform so the inactivity cron job knows they are still active.
+   * Also re-enables notifications if they were previously muted.
+   */
+  @PatchMapping("/activity/{keycloakId}")
+  public ResponseEntity<?> recordActivity(@PathVariable String keycloakId) {
+    userService.recordActivity(keycloakId);
+    return ResponseEntity.ok(Map.of("message", "Activity recorded"));
+  }
+
+  /**
+   * Returns whether push notifications are enabled for this patient.
+   * Called by the alert-service before dispatching reminders.
+   */
+  @GetMapping("/{keycloakId}/notifications-enabled")
+  public ResponseEntity<?> notificationsEnabled(@PathVariable String keycloakId) {
+    return userService.getUserByKeycloakId(keycloakId)
+        .map(u -> ResponseEntity.ok(Map.of("enabled", u.isNotificationsEnabled())))
+        .orElse(ResponseEntity.ok(Map.of("enabled", true))); // default allow if unknown
+  }
 }

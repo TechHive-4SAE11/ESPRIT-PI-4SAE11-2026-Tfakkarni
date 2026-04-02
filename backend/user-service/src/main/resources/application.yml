@@ -44,3 +44,11 @@ mailtrap:
 didit:
   api-key: ${DIDIT_API_KEY:}
   workflow-id: ${DIDIT_WORKFLOW_ID:}
+
+# ─── Patient inactivity cron job ──────────────────────────────────────
+# threshold-days: number of days without any activity before deactivation
+# cron: standard 6-field Spring cron (default: every day at 02:00 AM)
+patient:
+  inactivity:
+    threshold-days: ${PATIENT_INACTIVITY_DAYS:30}
+    cron: ${PATIENT_INACTIVITY_CRON:0 0 2 * * *}

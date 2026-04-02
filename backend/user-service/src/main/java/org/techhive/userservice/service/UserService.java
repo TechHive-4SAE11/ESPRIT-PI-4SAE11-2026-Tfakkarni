@@ -7,6 +7,7 @@ import org.techhive.userservice.dto.UpdateProfileRequest;
 import org.techhive.userservice.entity.User;
 import org.techhive.userservice.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -86,5 +87,24 @@ public class UserService {
    */
   public User save(User user) {
     return userRepository.save(user);
+  }
+
+  /**
+   * Record that a patient was seen active right now.
+   * Also re-enables notifications if they were previously suppressed.
+   */
+  public void recordActivity(String keycloakId) {
+    userRepository.findByKeycloakId(keycloakId).ifPresent(user -> {
+      user.setLastActiveAt(LocalDateTime.now());
+      user.setNotificationsEnabled(true);
+      userRepository.save(user);
+    });
+  }
+
+  /**
+   * Find enabled patients inactive since before the given threshold.
+   */
+  public List<User> findInactivePatients(LocalDateTime threshold) {
+    return userRepository.findInactivePatients(threshold);
   }
 }
