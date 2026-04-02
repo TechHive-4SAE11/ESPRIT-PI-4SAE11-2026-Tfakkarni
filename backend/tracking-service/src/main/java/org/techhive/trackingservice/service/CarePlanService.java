@@ -48,27 +48,47 @@ public class CarePlanService {
 
     @Transactional(readOnly = true)
     public List<CarePlan> getAllCarePlans() {
-        return carePlanRepository.findAll();
+        List<CarePlan> plans = carePlanRepository.findAll();
+        plans.forEach(p -> {
+            if (p.getCareActivities() != null) p.getCareActivities().size();
+        });
+        return plans;
     }
 
     @Transactional(readOnly = true)
     public Optional<CarePlan> getCarePlanById(Long id) {
-        return carePlanRepository.findById(id);
+        Optional<CarePlan> plan = carePlanRepository.findById(id);
+        plan.ifPresent(p -> {
+            if (p.getCareActivities() != null) p.getCareActivities().size();
+        });
+        return plan;
     }
 
     @Transactional(readOnly = true)
     public List<CarePlan> getCarePlansBySession(Long sessionId) {
-        return carePlanRepository.findBySessionId(sessionId);
+        List<CarePlan> plans = carePlanRepository.findBySessionId(sessionId);
+        plans.forEach(p -> {
+            if (p.getCareActivities() != null) p.getCareActivities().size();
+        });
+        return plans;
     }
 
     @Transactional(readOnly = true)
     public List<CarePlan> getCarePlansByPatient(String idPatient) {
-        return carePlanRepository.findBySessionMedicalFolderIdPatient(idPatient);
+        List<CarePlan> plans = carePlanRepository.findBySessionMedicalFolderIdPatient(idPatient);
+        plans.forEach(p -> {
+            if (p.getCareActivities() != null) p.getCareActivities().size();
+        });
+        return plans;
     }
     
     @Transactional(readOnly = true)
     public Page<CarePlan> getCarePlansByPatientPaginated(String idPatient, Pageable pageable) {
-        return carePlanRepository.findBySessionMedicalFolderIdPatient(idPatient, pageable);
+        Page<CarePlan> plans = carePlanRepository.findBySessionMedicalFolderIdPatient(idPatient, pageable);
+        plans.forEach(p -> {
+            if (p.getCareActivities() != null) p.getCareActivities().size();
+        });
+        return plans;
     }
 
     public CarePlan updateCarePlan(Long id, CarePlan carePlan) {

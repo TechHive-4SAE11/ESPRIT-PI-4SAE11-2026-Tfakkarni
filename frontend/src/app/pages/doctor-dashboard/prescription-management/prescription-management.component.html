@@ -238,9 +238,44 @@
                                 Note: Only sessions without an existing prescription are listed here.
                             </p>
                             @if (sessions().length === 0 && !isLoadingSessions()) {
-                            <p class="text-xs text-destructive">No available sessions found. Please create a new
-                                consultation
-                                session.</p>
+                            <div class="mt-2 p-3 rounded-lg border-2 border-dashed border-amber-300 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-700 space-y-2">
+                                <p class="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1">
+                                    <z-icon zType="alert-triangle" class="w-3.5 h-3.5" />
+                                    No available sessions found. You need a consultation session to create a prescription.
+                                </p>
+                                @if (!showQuickCreateSession()) {
+                                <button type="button" z-button zType="outline" zSize="sm" (click)="showQuickCreateSession.set(true)" class="text-xs">
+                                    <z-icon zType="plus" class="mr-1" />
+                                    Quick-Create Session
+                                </button>
+                                } @else {
+                                <div class="space-y-2 bg-background p-3 rounded-lg border">
+                                    <label class="text-xs font-medium block">Session Date <span class="text-destructive">*</span></label>
+                                    <input type="date" class="w-full p-2 border border-input rounded-md text-sm"
+                                           [value]="quickSessionDate()" [max]="todayString"
+                                           (input)="quickSessionDate.set($any($event.target).value)" />
+                                    <label class="text-xs font-medium block">Notes <span class="text-destructive">*</span></label>
+                                    <textarea class="w-full p-2 border border-input rounded-md text-sm resize-none" rows="2"
+                                              placeholder="Session notes (symptoms, observations…)"
+                                              [value]="quickSessionNotes()"
+                                              (input)="quickSessionNotes.set($any($event.target).value)"></textarea>
+                                    @if (quickSessionError()) {
+                                    <p class="text-xs text-destructive">{{ quickSessionError() }}</p>
+                                    }
+                                    <div class="flex gap-2">
+                                        <button type="button" z-button zSize="sm" [disabled]="isCreatingSession()" (click)="quickCreateSession()">
+                                            @if (isCreatingSession()) {
+                                            <z-icon zType="loader-2" class="mr-1 h-3 w-3 animate-spin" />
+                                            } @else {
+                                            <z-icon zType="check" class="mr-1" />
+                                            }
+                                            Create & Select
+                                        </button>
+                                        <button type="button" z-button zType="ghost" zSize="sm" (click)="showQuickCreateSession.set(false)">Cancel</button>
+                                    </div>
+                                </div>
+                                }
+                            </div>
                             }
                             @if (isLoadingSessions()) {
                             <p class="text-xs text-muted-foreground">Loading sessions...</p>

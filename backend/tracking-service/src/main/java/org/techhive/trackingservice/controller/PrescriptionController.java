@@ -180,10 +180,20 @@ public class PrescriptionController {
                         .getDoctorKeycloakIdForPrescription(id);
                 log.info("Resolved doctorId='{}' for prescription #{}", doctorId, id);
                 if (doctorId != null && !doctorId.isBlank()) {
-                    Long userId = Long.parseLong(doctorId);
-                    signatureImage = userServiceClient.getDoctorSignature(userId);
-                    log.info("Signature fetch result: {} bytes",
-                            signatureImage != null ? signatureImage.length : "null");
+                    try {
+                        Map<String, Object> userMap = userServiceClient.getUserByKeycloakId(doctorId);
+                        if (userMap != null && userMap.get("id") != null) {
+                            Object idRaw = userMap.get("id");
+                            Long numericId = idRaw instanceof Number ? ((Number) idRaw).longValue() : Long.parseLong(idRaw.toString());
+                            signatureImage = userServiceClient.getDoctorSignature(numericId);
+                            log.info("Signature fetch successful for doctor numeric ID {}: {} bytes",
+                                    numericId, signatureImage != null ? signatureImage.length : "null");
+                        } else {
+                            log.warn("Could not find user record to resolve numeric ID for Keycloak ID: {}", doctorId);
+                        }
+                    } catch (Exception e) {
+                        log.error("Failed to resolve numeric ID or signature for doctor {}: {}", doctorId, e.getMessage());
+                    }
                 }
             } catch (Exception e) {
                 log.warn("Could not fetch doctor signature for prescription #{}: {}", id, e.getMessage());

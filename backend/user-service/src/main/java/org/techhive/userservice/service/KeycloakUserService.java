@@ -34,7 +34,8 @@ public class KeycloakUserService {
   @Value("${keycloak.client-secret:}")
   private String clientSecret;
 
-  // Client frontend pour vérification du mot de passe actuel (direct access grants activés)
+  // Client frontend pour vérification du mot de passe actuel (direct access
+  // grants activés)
   @Value("${keycloak.frontend-client-id:tfakkarni-frontend}")
   private String frontendClientId;
 
@@ -56,7 +57,8 @@ public class KeycloakUserService {
   }
 
   private String getAdminToken() {
-    String tokenUrl = keycloakConfig.getServerUrl() + "/realms/master/protocol/openid-connect/token";
+    String tokenUrl = keycloakConfig.getServerUrl() + "/realms/" + keycloakConfig.getRealm()
+        + "/protocol/openid-connect/token";
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -100,7 +102,7 @@ public class KeycloakUserService {
   @SuppressWarnings("unchecked")
   private String findUserByEmail(String adminToken, String email) {
     String searchUrl = keycloakConfig.getServerUrl() + "/admin/realms/"
-        + keycloakConfig.getRealm() + "/users?email=" + email + "&exact=true";
+         + keycloakConfig.getRealm() + "/users?email=" + email + "&exact=true";
 
     HttpHeaders headers = new HttpHeaders();
     headers.setBearerAuth(adminToken);
@@ -302,7 +304,8 @@ public class KeycloakUserService {
           throw new RuntimeException("Mot de passe actuel incorrect");
         }
         // Any other 400 (unauthorized_client, invalid_client, account_disabled, etc.)
-        // means the client is not configured for direct-access grants → skip verification.
+        // means the client is not configured for direct-access grants → skip
+        // verification.
         log.warn("Client '{}' not configured for direct access grants — skipping password verification.", clientId);
         return;
       }

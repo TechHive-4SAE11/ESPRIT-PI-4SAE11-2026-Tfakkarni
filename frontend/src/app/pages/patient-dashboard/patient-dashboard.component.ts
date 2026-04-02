@@ -129,11 +129,13 @@ export class PatientDashboardComponent implements OnInit {
         items: [
           { icon: 'house', label: 'Home', action: () => this.helperView?.setPage('Home') },
           { icon: 'file-text', label: 'Suivi Quotidien', action: () => this.helperView?.setPage('Suivi Quotidien') },
+          { icon: 'folder', label: 'Dossier médical', action: () => this.helperView?.setPage('Dossier médical') },
           { icon: 'bar-chart-3', label: 'Statistiques', action: () => this.helperView?.setPage('Statistiques') },
-          { icon: 'gamepad-2', label: 'Manage Games', action: () => this.helperView?.setPage('My Games') },
-          { icon: 'bar-chart-3', label: 'Progress', action: () => this.helperView?.setPage('Progress') },
-          { icon: 'pill', label: 'My Prescriptions', action: () => this.helperView?.setPage('Prescriptions') },
           { icon: 'pill', label: 'Prescriptions', action: () => this.helperView?.setPage('Prescriptions') },
+          { icon: 'heart', label: 'Medications', action: () => this.helperView?.setPage('Medications') },
+          { icon: 'activity', label: 'Care Plans', action: () => this.helperView?.setPage('CarePlans') },
+          { icon: 'shield', label: 'Safe Zone', action: () => this.helperView?.setPage('Safe Zone') },
+          { icon: 'calendar', label: 'Appointments', action: () => this.router.navigate(['/appointments']) },
         ],
       },
       {

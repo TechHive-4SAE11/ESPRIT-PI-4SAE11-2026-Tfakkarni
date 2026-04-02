@@ -17,22 +17,20 @@ public interface MedicationRepository extends JpaRepository<Medication, Long> {
     List<Medication> findByPrescriptionSessionMedicalFolderIdPatient(String idPatient);
 
     List<Medication> findByPrescriptionSessionMedicalFolderIdDoctor(String idDoctor);
-    
+
     // Paginated queries for medications by patient
     Page<Medication> findByPrescriptionSessionMedicalFolderIdPatient(String idPatient, Pageable pageable);
-    
+
     Page<Medication> findByPrescriptionSessionMedicalFolderIdPatientAndStatus(
-        String idPatient, 
-        MedicationStatus status, 
-        Pageable pageable
-    );
-    
+            String idPatient,
+            MedicationStatus status,
+            Pageable pageable);
+
     // Paginated queries for medications by doctor
     Page<Medication> findByPrescriptionSessionMedicalFolderIdDoctor(String idDoctor, Pageable pageable);
-    
+
     Page<Medication> findByPrescriptionSessionMedicalFolderIdDoctorAndStatus(
-        String idDoctor, 
-        MedicationStatus status, 
-        Pageable pageable
-    );
+            String idDoctor,
+            MedicationStatus status,
+            Pageable pageable);
 }

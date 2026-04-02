@@ -1,0 +1,224 @@
+<div class="space-y-8 max-w-2xl mx-auto">
+  <div class="text-center sm:text-left">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+      Nouveau rendez-vous
+    </h1>
+    <p class="mt-2 text-muted-foreground">
+      Renseignez les informations du rendez-vous.
+    </p>
+  </div>
+
+  @if (errorMessage) {
+  <div
+    class="rounded-2xl border border-red-200 bg-red-50 dark:bg-red-950/30 px-5 py-4 text-red-700 dark:text-red-300 shadow-sm">
+    {{ errorMessage }}
+  </div>
+  }
+  @if (successMessage) {
+  <div
+    class="rounded-2xl border border-green-200 bg-green-50 dark:bg-green-950/30 px-5 py-4 text-green-700 dark:text-green-300 shadow-sm">
+    {{ successMessage }}
+  </div>
+  }
+
+  <z-card class="p-8 rounded-2xl shadow-md border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+      <!-- Titre -->
+      <div class="space-y-2">
+        <label for="title" class="text-sm font-medium text-gray-700 dark:text-gray-300">📝 Titre</label>
+        <div
+          class="relative rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400">
+          <input z-input id="title" type="text" formControlName="title" placeholder="Ex : Consultation annuelle"
+            class="w-full rounded-xl bg-transparent px-4 py-3 text-gray-900 dark:text-white placeholder:text-muted-foreground border-0 focus:ring-0" />
+        </div>
+        @if (getControlError('title')) {
+        <p class="text-sm text-red-600 dark:text-red-400">{{ getControlError('title') }}</p>
+        }
+      </div>
+
+      <!-- Description -->
+      <div class="space-y-2">
+        <label for="description" class="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+        <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shadow-sm">
+          <textarea z-input id="description" formControlName="description" placeholder="Description optionnelle"
+            rows="2"
+            class="w-full rounded-xl bg-transparent px-4 py-3 text-gray-900 dark:text-white placeholder:text-muted-foreground border-0 resize-none focus:ring-0"></textarea>
+        </div>
+      </div>
+
+      <!-- Type -->
+      <div class="space-y-2">
+        <label for="type" class="text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
+        <select id="type" formControlName="type"
+          class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 px-4 py-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
+          @for (opt of typeOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        @if (getControlError('type')) {
+        <p class="text-sm text-red-600 dark:text-red-400">{{ getControlError('type') }}</p>
+        }
+      </div>
+
+      <!-- Patient -->
+      <div class="space-y-2">
+        <label for="patientName" class="text-sm font-medium text-gray-700 dark:text-gray-300">👤 Patient</label>
+        <div
+          class="relative rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400">
+          <input z-input id="patientName" type="text" formControlName="patientName" list="add-patient-suggestions"
+            placeholder="Nom du patient"
+            class="w-full rounded-xl bg-transparent px-4 py-3 text-gray-900 dark:text-white placeholder:text-muted-foreground border-0 focus:ring-0" />
+          <datalist id="add-patient-suggestions">
+            @for (s of patientSuggestions; track s.id) {
+            <option [value]="s.name"></option>
+            }
+          </datalist>
+        </div>
+        @if (getControlError('patientName')) {
+        <p class="text-sm text-red-600 dark:text-red-400">{{ getControlError('patientName') }}</p>
+        }
+        <input type="hidden" formControlName="patientId" />
+      </div>
+
+      <!-- Médecin -->
+      <!-- Médecin -->
+      <div class="space-y-2">
+        <label for="doctorName" class="text-sm font-medium text-gray-700 dark:text-gray-300">👨‍⚕️ Médecin</label>
+        <div
+          class="relative rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400">
+          <input
+            z-input
+            id="doctorName"
+            type="text"
+            formControlName="doctorName"
+            list="add-doctor-suggestions"
+            placeholder="Nom du médecin"
+            [attr.readonly]="authService.getUserRoles().includes('doctor') ? true : null"
+            [ngClass]="{'bg-gray-100 cursor-not-allowed': authService.getUserRoles().includes('doctor')}"
+            class="w-full rounded-xl bg-transparent px-4 py-3 text-gray-900 dark:text-white placeholder:text-muted-foreground border-0 focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+          <datalist id="add-doctor-suggestions">
+            @for (s of doctorSuggestions; track s.id) {
+              <option [value]="s.name"></option>
+            }
+          </datalist>
+        </div>
+
+        <!-- Message informatif pour les docteurs -->
+        @if (authService.getUserRoles().includes('doctor')) {
+          <p class="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+            <span>⚕️</span> Vous êtes le médecin traitant (champ verrouillé)
+          </p>
+        }
+
+        @if (getControlError('doctorName')) {
+          <p class="text-sm text-red-600 dark:text-red-400">{{ getControlError('doctorName') }}</p>
+        }
+        <input type="hidden" formControlName="doctorId" />
+      </div>
+
+      <!-- Dates -->
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div class="space-y-2">
+          <label for="startTime" class="text-sm font-medium text-gray-700 dark:text-gray-300">📅 Début</label>
+          <input id="startTime" type="datetime-local" formControlName="startTime"
+            class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 px-4 py-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+          @if (getControlError('startTime')) {
+          <p class="text-sm text-red-600 dark:text-red-400">{{ getControlError('startTime') }}</p>
+          }
+        </div>
+        <div class="space-y-2">
+          <label for="endTime" class="text-sm font-medium text-gray-700 dark:text-gray-300">📅 Fin</label>
+          <input id="endTime" type="datetime-local" formControlName="endTime"
+            class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 px-4 py-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+          @if (getControlError('endTime')) {
+          <p class="text-sm text-red-600 dark:text-red-400">{{ getControlError('endTime') }}</p>
+          }
+        </div>
+      </div>
+      @if (getFormError()) {
+      <p class="text-sm text-red-600 dark:text-red-400">{{ getFormError() }}</p>
+      }
+
+      <!-- Notes -->
+      <div class="space-y-2">
+        <label for="notes" class="text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+        <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shadow-sm">
+          <textarea z-input id="notes" formControlName="notes" placeholder="Notes optionnelles" rows="2"
+            class="w-full rounded-xl bg-transparent px-4 py-3 text-gray-900 dark:text-white placeholder:text-muted-foreground border-0 resize-none focus:ring-0"></textarea>
+        </div>
+      </div>
+
+      @if (isCaregiver) {
+      <div
+        class="space-y-4 rounded-2xl border border-dashed border-blue-300/60 dark:border-blue-700/60 bg-blue-50/40 dark:bg-blue-950/20 p-4">
+        <div class="flex items-center gap-2">
+          <input id="isRecurring" type="checkbox" formControlName="isRecurring"
+            class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+          <label for="isRecurring" class="text-sm font-medium text-gray-800 dark:text-gray-100">
+            Rendez-vous récurrent
+          </label>
+        </div>
+
+        @if (form.get('isRecurring')?.value) {
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="space-y-2">
+            <label for="recurringFrequency" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Fréquence
+            </label>
+            <select id="recurringFrequency" formControlName="recurringFrequency"
+              class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 px-4 py-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
+              <option value="DAILY">Quotidien</option>
+              <option value="WEEKLY">Hebdomadaire</option>
+              <option value="MONTHLY">Mensuel</option>
+            </select>
+          </div>
+
+          <div class="space-y-2">
+            <label for="recurringOccurrences" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Nombre d'occurrences
+            </label>
+            <input id="recurringOccurrences" type="number" min="1" max="52" formControlName="recurringOccurrences"
+              class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 px-4 py-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+            @if (form.get('recurringOccurrences')?.errors?.['min']) {
+            <p class="text-sm text-red-600 dark:text-red-400">Minimum 1 occurrence.</p>
+            }
+            @if (form.get('recurringOccurrences')?.errors?.['max']) {
+            <p class="text-sm text-red-600 dark:text-red-400">Maximum 52 occurrences.</p>
+            }
+          </div>
+        </div>
+
+        @if (previewDates.length) {
+        <div class="space-y-2">
+          <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Aperçu des dates générées
+          </p>
+          <ul class="space-y-1 text-sm text-gray-800 dark:text-gray-100 max-h-40 overflow-auto">
+            @for (d of previewDates; track d) {
+            <li class="flex items-center gap-2">
+              <span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+              <span>{{ d }}</span>
+            </li>
+            }
+          </ul>
+        </div>
+        }
+        }
+      </div>
+      }
+
+      <div
+        class="flex flex-col-reverse gap-4 pt-6 sm:flex-row sm:justify-end sm:gap-4 border-t border-gray-100 dark:border-gray-800">
+        <button z-button zType="outline" zSize="lg" type="button" class="rounded-full px-8 w-full sm:w-auto"
+          (click)="onCancel()" [disabled]="isSubmitting">
+          Annuler
+        </button>
+        <button z-button zSize="lg" type="submit" class="rounded-full px-8 w-full sm:w-auto"
+          [disabled]="form.invalid || isSubmitting" [zLoading]="isSubmitting">
+          {{ isSubmitting ? 'Création...' : 'Créer' }}
+        </button>
+      </div>
+    </form>
+  </z-card>
+</div>

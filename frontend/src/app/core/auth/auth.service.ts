@@ -66,7 +66,7 @@ export class AuthService {
         this.router.navigate(['/patient']);
         break;
       default:
-        this.router.navigate(['/access-denied']);
+        // No recognized role — stay put; don't redirect to access-denied
         break;
     }
   }

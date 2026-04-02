@@ -1,0 +1,63 @@
+package org.techhive.medicalservice.dto;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/** Payload sent to ml-service for clinical analysis */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class DossierForMlRequest {
+
+	private Long folderId;
+	private String patientId;
+	private String doctorId;
+	private String bloodType;
+	private Double height;
+	private Double weight;
+
+	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+	private LocalDateTime folderCreatedAt;
+
+	private List<DiagnosticsSummary> diagnostics;
+	private List<MedicalHistorySummary> medicalHistory;
+
+	@Data
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class DiagnosticsSummary {
+		private Long id;
+		private String diseaseName;
+		private String stage;
+		private String comorbidities;
+
+		@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+		private LocalDateTime diagnosisDate;
+	}
+
+	@Data
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class MedicalHistorySummary {
+		private Long id;
+		private String allergies;
+		private String conditions;
+		private String surgeries;
+		private String symptoms;
+		private String recommendedTreatment;
+		private String familyHistory;
+
+		@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+		private LocalDateTime createdAt;
+	}
+}

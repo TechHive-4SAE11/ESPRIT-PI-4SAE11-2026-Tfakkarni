@@ -1,6 +1,9 @@
-import { Component, OnInit, signal, PLATFORM_ID, inject, OnDestroy } from '@angular/core';
+import { Component, DestroyRef, OnInit, OnDestroy, signal, PLATFORM_ID, inject, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, of } from 'rxjs';
+import { debounceTime, switchMap, map } from 'rxjs/operators';
 import { AuthService } from '@/core/auth';
 import { DashboardLayoutComponent, type SidebarMenuGroup } from '@/shared/components/dashboard-layout';
 import { ZardCardComponent } from '@/shared/components/card';
@@ -12,15 +15,21 @@ import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardProgressBarComponent } from '@/shared/components/progress-bar';
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 import { GameService, type GameStatsResponse } from '@/core/services/game.service';
+import { MedicalFolderService } from '@/core/services/medical-folder.service';
+import type { MedicalFolder } from '@/core/services/medical-folder.service';
 import { DoctorNotificationService } from '@/core/services/doctor-notification.service';
 import { type DoctorNotification } from '@/core/models/notification.model';
 import { PrescriptionManagementComponent } from './prescription-management/prescription-management.component';
 import { SuiviQuotidienComponent } from '@/pages/patient-dashboard/helper-view/suivi-quotidien/suivi-quotidien.component';
 import { CarePlanManagementComponent } from './care-plan-management/care-plan-management.component';
+import { SessionManagementComponent } from './session-management/session-management.component';
+import { MedicalFolderListComponent } from '@/pages/medical-folders/medical-folder-list/medical-folder-list.component';
+import { DossierAnalyticsComponent } from '@/pages/medical-folders/dossier-analytics/dossier-analytics.component';
 import { MedicationManagementComponent } from '../medications/medications.component';
 import { PatientAnalyticsComponent } from './patient-analytics/patient-analytics.component';
 import { ProfileComponent } from '@/pages/patient-dashboard/helper-view/profile/profile.component';
 import { KeycloakService } from 'keycloak-angular';
+import type { SessionResponseDTO } from '@/core/services/session.service';
 
 @Component({
   selector: 'app-doctor-dashboard',
@@ -37,6 +46,9 @@ import { KeycloakService } from 'keycloak-angular';
     PrescriptionManagementComponent,
     SuiviQuotidienComponent,
     CarePlanManagementComponent,
+    SessionManagementComponent,
+    MedicalFolderListComponent,
+    DossierAnalyticsComponent,
     MedicationManagementComponent,
     PatientAnalyticsComponent,
     ProfileComponent,
@@ -108,6 +120,7 @@ import { KeycloakService } from 'keycloak-angular';
       [pageTitle]="currentPage()"
       basePath="/doctor"
     >
+      <div class="space-y-4">
       @switch (currentPage()) {
         @case ('Home') {
           <div class="flex items-center justify-between mb-6">
@@ -340,7 +353,11 @@ import { KeycloakService } from 'keycloak-angular';
                           }
                         </td>
                         <td z-table-cell>
-                          <div class="flex gap-2">
+                          <div class="flex gap-2 flex-wrap">
+                             <button z-button zType="ghost" zSize="sm" (click)="manageSessions(patient)">
+                               <z-icon zType="calendar" class="mr-1" />
+                               Sessions
+                             </button>
                              <button z-button zType="ghost" zSize="sm" (click)="viewPatientProgress(patient)">
                                <z-icon zType="bar-chart-3" class="mr-1" />
                                Progress
@@ -453,6 +470,77 @@ import { KeycloakService } from 'keycloak-angular';
           }
         }
 
+        @case ('Sessions') {
+          @if (selectedPatient(); as patient) {
+            <div class="flex items-center gap-2 mb-6">
+              <button z-button zType="ghost" zSize="sm" (click)="clearSelectedPatient()">
+                <z-icon zType="arrow-left" class="mr-1" />
+                Back to Sessions List
+              </button>
+            </div>
+
+            <app-session-management
+              [patient]="patient"
+              [doctor]="currentDoctor()"
+              (goToMedicalFolders)="setPage('Medical Folders')"
+              (createPrescriptionFrom)="onCreatePrescriptionFromSession($event)"
+              (createCarePlanFrom)="onCreateCarePlanFromSession($event)"
+              (sessionsChanged)="onSessionsChanged()"
+            />
+          } @else {
+            <div class="space-y-6">
+              <div>
+                <h2 class="text-2xl font-bold">Consultation Sessions</h2>
+                <p class="text-sm text-muted-foreground mt-1">Select a patient to view or create consultation sessions.</p>
+              </div>
+
+              @if (isLoading()) {
+                <div class="space-y-3">
+                  <z-skeleton class="h-20 w-full rounded-xl" />
+                  <z-skeleton class="h-20 w-full rounded-xl" />
+                  <z-skeleton class="h-20 w-full rounded-xl" />
+                </div>
+              } @else if (patients().length > 0) {
+                <div class="grid gap-3">
+                  @for (patient of patients(); track patient.keycloakId) {
+                    <div class="flex items-center gap-4 p-4 border rounded-xl bg-card hover:shadow-md transition-shadow cursor-pointer group"
+                         (click)="manageSessions(patient)">
+                      <div class="shrink-0 w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                        {{ patient.firstName?.charAt(0) || '?' }}{{ patient.lastName?.charAt(0) || '?' }}
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-sm truncate">{{ patient.firstName }} {{ patient.lastName }}</p>
+                        <p class="text-xs text-muted-foreground truncate">{{ patient.email }}</p>
+                      </div>
+                      <button z-button zSize="sm" class="shrink-0 opacity-80 group-hover:opacity-100 transition-opacity"
+                              (click)="$event.stopPropagation(); manageSessions(patient)">
+                        <z-icon zType="calendar" class="mr-1.5 h-3.5 w-3.5" />
+                        Manage Sessions
+                      </button>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="p-12 text-center border-2 border-dashed rounded-xl bg-muted/10">
+                  <z-icon zType="users" class="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-40" />
+                  <p class="text-lg font-medium text-muted-foreground">No patients found</p>
+                  <p class="text-sm text-muted-foreground mt-1">Patients assigned to you will appear here.</p>
+                </div>
+              }
+            </div>
+          }
+        }
+        @case ('Medical Folders') {
+          <app-medical-folder-list
+            [initialFolderId]="searchSelectedFolderId()"
+            [doctorId]="doctorIdString()"
+            [doctor]="currentDoctor()"
+            (detailClosed)="searchSelectedFolderId.set(null)"
+          />
+        }
+        @case ('Dossier Analytics') {
+          <app-dossier-analytics />
+        }
         @case ('Medications') {
           @if (selectedPatient(); as patient) {
              <div class="flex items-center gap-2 mb-6">
@@ -474,13 +562,17 @@ import { KeycloakService } from 'keycloak-angular';
                </div>
              </div>
           }
-        }
       }
+      }
+      </div>
     </app-dashboard-layout>
     }
   `,
 })
 export class DoctorDashboardComponent implements OnInit, OnDestroy {
+  private static readonly PAGE_STORAGE_KEY = 'tfk_doctor_current_page';
+  private static readonly PAGE_QUERY_PARAM = 'page';
+
   currentPage = signal('Home');
   patients = signal<UserInfo[]>([]);
   patientStats = signal<Map<string, GameStatsResponse>>(new Map());
@@ -492,6 +584,17 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   totalPatientGames = 0;
   avgPatientScore = 0;
 
+  // Search/Medical Folders
+  searchInput = signal('');
+  searchResults = signal<MedicalFolder[]>([]);
+  searchSelectedFolderId = signal<number | null>(null);
+  private readonly searchSubject = new Subject<string>();
+  private readonly medicalFolderService = inject(MedicalFolderService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private platformId = inject(PLATFORM_ID);
+
   // Notifications
   showNotifications = signal(false);
   selectedNotif = signal<DoctorNotification | null>(null);
@@ -502,12 +605,21 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   kycChecking = signal(true);
   kycSkipping = signal(false);
 
+  /** Use doctor's Keycloak ID to match medical-folder doctorId storage */
+  doctorIdString = computed(() => {
+    const keycloakId = this.currentDoctor()?.keycloakId;
+    return keycloakId || null;
+  });
+
   menuGroups: SidebarMenuGroup[] = [
     {
       label: 'Navigation',
       items: [
         { icon: 'house', label: 'Home', action: () => this.setPage('Home') },
         { icon: 'users', label: 'Patients', action: () => this.setPage('Home') },
+        { icon: 'folder', label: 'Medical Folders', action: () => this.setPage('Medical Folders') },
+        { icon: 'activity', label: 'Dossier Analytics', action: () => this.setPage('Dossier Analytics') },
+        { icon: 'calendar', label: 'Sessions', action: () => { this.selectedPatient.set(null); this.setPage('Sessions'); } },
         { icon: 'bar-chart-3', label: 'Patient Progress', action: () => this.setPage('Patient Progress') },
         { icon: 'pill', label: 'Prescriptions', action: () => this.setPage('Prescriptions') },
         { icon: 'activity', label: 'Care Plans', action: () => this.setPage('CarePlans') },
@@ -517,13 +629,14 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
     {
       label: 'Compte',
       items: [
+        { icon: 'calendar', label: '📅 Calendrier', action: () => this.router.navigate(['/doctor/calendar']) },
+        { icon: 'calendar', label: 'Synchronisation Google', action: () => this.router.navigate(['/doctor/calendar-sync']) },
         { icon: 'user', label: 'Mon Profil', action: () => this.setPage('Mon Profil') },
       ],
     },
   ];
 
   doctorKeycloakId = '';
-  private platformId: Object;
 
   constructor(
     private readonly authService: AuthService,
@@ -532,11 +645,40 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
     private readonly keycloakService: KeycloakService,
     public readonly notifService: DoctorNotificationService,
   ) {
-    this.platformId = inject(PLATFORM_ID);
   }
 
   ngOnInit(): void {
-    // Only load patients in browser, not during SSR
+    console.log('[doctor-dashboard] ngOnInit started');
+    this.restoreCurrentPage();
+    console.log('[doctor-dashboard] After restore, currentPage:', this.currentPage());
+    
+    this.searchSubject
+      .pipe(
+        debounceTime(300),
+        switchMap((term) => {
+          if (!term.trim()) {
+            this.searchResults.set([]);
+            return of({ term: '', folders: [] as MedicalFolder[] });
+          }
+          return this.medicalFolderService.getAll().pipe(
+            map((folders) => ({ term: term.trim().toLowerCase(), folders })),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(({ term, folders }) => {
+        if (!term) {
+          this.searchResults.set([]);
+          return;
+        }
+        const filtered = folders.filter(
+          (f) =>
+            f.patientId?.toLowerCase().includes(term) ||
+            f.doctorId?.toLowerCase().includes(term),
+        );
+        this.searchResults.set(filtered.slice(0, 5));
+      });
+
     if (isPlatformBrowser(this.platformId)) {
       // Get keycloak ID for profile
       const kc = this.keycloakService.getKeycloakInstance();
@@ -566,7 +708,6 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
       } else {
         this.kycChecking.set(false);
       }
-
       this.loadPatients();
 
       // Load notifications and poll every 30s
@@ -579,12 +720,139 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  onSearchInput(value: string): void {
+    this.searchInput.set(value);
+    this.searchSubject.next(value);
+  }
+
+  openFolderFromSearch(folder: MedicalFolder): void {
+    this.searchSelectedFolderId.set(folder.id);
+    this.searchResults.set([]);
+    this.searchInput.set('');
+    this.setPage('Medical Folders');
+  }
+
   ngOnDestroy(): void {
     if (this.notifInterval) clearInterval(this.notifInterval);
   }
 
   setPage(page: string): void {
     this.currentPage.set(page);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(DoctorDashboardComponent.PAGE_STORAGE_KEY, page);
+    }
+
+    const queryPage = this.toQueryPage(page);
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: queryPage ? { [DoctorDashboardComponent.PAGE_QUERY_PARAM]: queryPage } : { [DoctorDashboardComponent.PAGE_QUERY_PARAM]: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  private restoreCurrentPage(): void {
+    console.log('[doctor-dashboard] restoreCurrentPage called');
+    const queryPage = this.fromQueryPage(this.route.snapshot.queryParamMap.get(DoctorDashboardComponent.PAGE_QUERY_PARAM));
+    console.log('[doctor-dashboard] queryPage from route:', queryPage, 'currentPage before set:', this.currentPage());
+    if (queryPage) {
+      this.currentPage.set(queryPage);
+      console.log('[doctor-dashboard] Set currentPage from route query to:', queryPage, 'currentPage after set:', this.currentPage());
+      if (isPlatformBrowser(this.platformId)) {
+        localStorage.setItem(DoctorDashboardComponent.PAGE_STORAGE_KEY, queryPage);
+      }
+      return;
+    }
+
+    if (!isPlatformBrowser(this.platformId)) {
+      console.log('[doctor-dashboard] Not in browser, skipping localStorage restore');
+      return;
+    }
+
+    const savedPage = localStorage.getItem(DoctorDashboardComponent.PAGE_STORAGE_KEY);
+    console.log('[doctor-dashboard] savedPage from localStorage:', savedPage);
+    if (!savedPage) {
+      console.log('[doctor-dashboard] No saved page in localStorage');
+      return;
+    }
+
+    const validPages = new Set([
+      'Home',
+      'Patient Progress',
+      'Prescriptions',
+      'CarePlans',
+      'Sessions',
+      'Medical Folders',
+      'Dossier Analytics',
+      'Medications',
+      'Daily Log',
+      'Mon Profil',
+    ]);
+
+    if (validPages.has(savedPage)) {
+      this.currentPage.set(savedPage);
+      console.log('[doctor-dashboard] Set currentPage from localStorage to:', savedPage, 'currentPage after set:', this.currentPage());
+      const savedQueryPage = this.toQueryPage(savedPage);
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: savedQueryPage ? { [DoctorDashboardComponent.PAGE_QUERY_PARAM]: savedQueryPage } : { [DoctorDashboardComponent.PAGE_QUERY_PARAM]: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }
+  }
+
+  private toQueryPage(page: string): string | null {
+    switch (page) {
+      case 'Medical Folders':
+        return 'medical-folders';
+      case 'Dossier Analytics':
+        return 'dossier-analytics';
+      case 'Patient Progress':
+        return 'patient-progress';
+      case 'Prescriptions':
+        return 'prescriptions';
+      case 'CarePlans':
+        return 'careplans';
+      case 'Sessions':
+        return 'sessions';
+      case 'Medications':
+        return 'medications';
+      case 'Daily Log':
+        return 'daily-log';
+      case 'Mon Profil':
+        return 'profile';
+      case 'Home':
+      default:
+        return null;
+    }
+  }
+
+  private fromQueryPage(queryPage: string | null): string | null {
+    switch (queryPage) {
+      case 'medical-folders':
+        return 'Medical Folders';
+      case 'dossier-analytics':
+        return 'Dossier Analytics';
+      case 'patient-progress':
+        return 'Patient Progress';
+      case 'prescriptions':
+        return 'Prescriptions';
+      case 'careplans':
+        return 'CarePlans';
+      case 'sessions':
+        return 'Sessions';
+      case 'medications':
+        return 'Medications';
+      case 'daily-log':
+        return 'Daily Log';
+      case 'profile':
+        return 'Mon Profil';
+      case 'home':
+        return 'Home';
+      default:
+        return null;
+    }
   }
 
   getPatientStat(keycloakId: string): GameStatsResponse | undefined {
@@ -614,6 +882,29 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   viewDailyLog(patient: UserInfo): void {
     this.selectedPatient.set(patient);
     this.setPage('Daily Log');
+  }
+
+  manageSessions(patient: UserInfo): void {
+    this.selectedPatient.set(patient);
+    this.setPage('Sessions');
+  }
+
+  clearSelectedPatient(): void {
+    this.selectedPatient.set(null);
+  }
+
+  onCreatePrescriptionFromSession(session: SessionResponseDTO): void {
+    // Navigate to prescriptions page — the session is already created
+    this.setPage('Prescriptions');
+  }
+
+  onCreateCarePlanFromSession(session: SessionResponseDTO): void {
+    this.setPage('CarePlans');
+  }
+
+  onSessionsChanged(): void {
+    // Sessions changed, could reload data if needed
+    console.log('[DoctorDashboard] Sessions changed — prescription/care plan dropdowns will reflect new sessions');
   }
 
   retryLoadPatients(): void {

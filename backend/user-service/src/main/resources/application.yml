@@ -5,9 +5,10 @@ spring:
   application:
     name: user-service
   datasource:
-    url: jdbc:postgresql://ep-purple-sun-aga3c9f6-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require
-    username: neondb_owner
-    password: npg_4kKCY7bocxUn
+    # Replace with YOUR Neon connection string from https://console.neon.tech (Dashboard → Connection string)
+    url: ${NEON_DATABASE_URL:jdbc:postgresql://ep-purple-sun-aga3c9f6-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require}
+    username: ${NEON_USER:neondb_owner}
+    password: ${NEON_PASSWORD:npg_4kKCY7bocxUn}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -27,11 +28,11 @@ eureka:
     register-with-eureka: true
 
 keycloak:
-  server-url: http://localhost:8280
-  realm: techhive
+  server-url: https://lemur-12.cloud-iam.com/auth
+  realm: tfakkarni
   admin:
     username: admin
-    password: admin
+    password: "${KEYCLOAK_ADMIN_PASSWORD:3ejcJta;Mz7UE//OjV0M}"
   # Client frontend utilisé pour vérifier le mot de passe actuel
   frontend-client-id: tfakkarni-frontend
 

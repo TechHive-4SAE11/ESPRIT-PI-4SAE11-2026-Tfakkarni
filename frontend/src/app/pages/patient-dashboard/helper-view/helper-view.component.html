@@ -161,6 +161,15 @@
             </div>
         </div>
     </z-card>
+    <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Dossier médical')">
+        <div class="flex items-center gap-3">
+            <z-icon zType="folder" class="text-primary h-10 w-10" />
+            <div>
+                <h3 class="font-semibold">Dossier Médical</h3>
+                <p class="text-sm text-muted-foreground">Medical diagnoses, history & documents</p>
+            </div>
+        </div>
+    </z-card>
     <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Tags')">
         <div class="flex items-center gap-3">
             <z-icon zType="search" class="text-primary h-10 w-10" />
@@ -215,6 +224,25 @@
             </div>
         </div>
     </z-card>
+
+    <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="goToAppointments()">
+        <div class="flex items-center gap-3">
+            <z-icon zType="calendar" class="text-primary h-10 w-10" />
+            <div>
+                <h3 class="font-semibold">Appointments and Reminders</h3>
+                <p class="text-sm text-muted-foreground">View Appointments</p>
+            </div>
+        </div>
+    </z-card>
+    <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Safe Zone')">
+        <div class="flex items-center gap-3">
+            <z-icon zType="shield" class="text-primary h-10 w-10" />
+            <div>
+                <h3 class="font-semibold">Safe Zone GPS</h3>
+                <p class="text-sm text-muted-foreground">Geofencing & real-time patient tracking</p>
+            </div>
+        </div>
+    </z-card>
 </div>
 }
 
@@ -227,7 +255,7 @@
     <h2 class="text-2xl font-bold">Patient Prescriptions</h2>
 </div>
 
-<app-prescription-list [patientId]="userNeonDbId()?.toString() || null" />
+<app-prescription-list [patientId]="keycloakId" />
 }
 
 @case ('Data Library') {
@@ -243,7 +271,7 @@
     <h2 class="text-2xl font-bold">Care Plans</h2>
 </div>
 
-<app-care-plan-list [patientId]="userNeonDbId()?.toString() || null" />
+<app-care-plan-list [patientId]="keycloakId" />
 }
 
 @case ('Medications') {
@@ -278,6 +306,10 @@
 <app-profile [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
 }
 
+@case ('Dossier médical') {
+<app-patient-dossier-view [keycloakId]="keycloakId" [showBack]="true" (goBack)="setPage('Home')" />
+}
+
 @case ('Statistiques') {
 <div class="flex items-center gap-2 mb-6">
     <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
@@ -287,5 +319,9 @@
     <h2 class="text-2xl font-bold">Statistiques & Analytics</h2>
 </div>
 <app-statistics-dashboard [keycloakId]="keycloakId" />
+}
+
+@case ('Safe Zone') {
+<app-safe-zone [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
 }
 }

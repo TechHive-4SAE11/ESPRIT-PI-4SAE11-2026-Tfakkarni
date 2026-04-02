@@ -14,6 +14,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, finalize, of, tap, switchMap } from 'rxjs';
 import { KeycloakService } from 'keycloak-angular';
 import { NotificationService, type MedicationNotification, type NotificationResponse } from '@/core/services/notification.service';
+import { Router } from '@angular/router';
 
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
@@ -25,6 +26,9 @@ import { DataLibraryComponent } from './data-library/data-library.component';
 import { TagManagerComponent } from './tag-manager/tag-manager.component';
 import { GameBuilderComponent } from './game-builder/game-builder.component';
 import { ProfileComponent } from './profile/profile.component';
+// @ts-ignore - used for dynamic component instantiation
+import { MedicalFolderListComponent } from '@/pages/medical-folders/medical-folder-list/medical-folder-list.component';
+import { PatientDossierViewComponent } from '@/pages/patient-dashboard/patient-dossier-view/patient-dossier-view.component';
 
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
@@ -32,6 +36,7 @@ import { CarePlanService } from '@/core/services/care-plan.service';
 import { CarePlanResponseDTO } from '@/core/models/care-plan.model';
 import { SuiviQuotidienComponent } from './suivi-quotidien/suivi-quotidien.component';
 import { StatisticsDashboardComponent } from './statistics-dashboard/statistics-dashboard.component';
+import { SafeZoneComponent } from './safe-zone/safe-zone.component';
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 
 @Component({
@@ -53,12 +58,16 @@ import { UserApiService, type UserInfo } from '@/core/services/user-api.service'
     TagManagerComponent,
     GameBuilderComponent,
     ProfileComponent,
+    SafeZoneComponent,
+    MedicalFolderListComponent,
+    PatientDossierViewComponent,
   ],
 })
 export class HelperViewComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly keycloakService = inject(KeycloakService);
   private readonly userApiService = inject(UserApiService);
+  private readonly router = inject(Router);
 
   @Input() keycloakId = '';
   @Output() pageChange = new EventEmitter<string>();
@@ -78,12 +87,18 @@ export class HelperViewComponent implements OnInit {
   ngOnInit(): void {
     if (this.keycloakId) {
       this.loadUserNeonDbId();
+      this.loadNotifications();
     }
   }
 
   setPage(page: string): void {
     this.currentPage.set(page);
     this.pageChange.emit(page);
+  }
+
+
+  goToAppointments(): void {
+    this.router.navigate(['/appointments']);
   }
 
   private loadUserNeonDbId(): void {
@@ -93,7 +108,6 @@ export class HelperViewComponent implements OnInit {
           console.log('[HelperView] User info retrieved. DB ID:', userInfo.id);
           this.userNeonDbId.set(userInfo.id);
           this.currentUser.set(userInfo);
-          this.loadNotifications();
         }),
         catchError(err => {
           console.error('[HelperView] Failed to load user info', err);
@@ -104,13 +118,12 @@ export class HelperViewComponent implements OnInit {
       .subscribe();
   }
 
-  // ── Notification Methods ────────────────────────────────────────────────────
+  // ── Notification Methods ───────────────────────────────────────────────────
 
   loadNotifications(): void {
-    const neonId = this.userNeonDbId();
-    if (!neonId) return;
+    if (!this.keycloakId) return;
     this.isLoadingNotifs.set(true);
-    this.notificationService.getNotifications(neonId.toString())
+    this.notificationService.getNotifications(this.keycloakId)
       .pipe(
         tap((res: NotificationResponse) => {
           this.notifications.set(res.notifications || []);
@@ -139,9 +152,8 @@ export class HelperViewComponent implements OnInit {
   }
 
   markNotifAsRead(notif: MedicationNotification): void {
-    const neonId = this.userNeonDbId();
-    if (notif.read || !neonId) return;
-    this.notificationService.markAsRead(neonId.toString(), notif.id)
+    if (notif.read || !this.keycloakId) return;
+    this.notificationService.markAsRead(this.keycloakId, notif.id)
       .pipe(
         tap(() => {
           this.notifications.update(list =>
@@ -156,9 +168,8 @@ export class HelperViewComponent implements OnInit {
   }
 
   markAllNotifsAsRead(): void {
-    const neonId = this.userNeonDbId();
-    if (!neonId) return;
-    this.notificationService.markAllAsRead(neonId.toString())
+    if (!this.keycloakId) return;
+    this.notificationService.markAllAsRead(this.keycloakId)
       .pipe(
         tap(() => {
           this.notifications.update(list =>
@@ -173,10 +184,9 @@ export class HelperViewComponent implements OnInit {
   }
 
   refreshNotifications(): void {
-    const neonId = this.userNeonDbId();
-    if (!neonId) return;
+    if (!this.keycloakId) return;
     this.isLoadingNotifs.set(true);
-    this.notificationService.refreshNotifications(neonId.toString())
+    this.notificationService.refreshNotifications(this.keycloakId)
       .pipe(
         tap((res: NotificationResponse) => {
           this.notifications.set(res.notifications || []);

@@ -10,10 +10,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MedicalFolderResponseDTO {
-    
+
     private Long id;
-    private String idPatient;
-    private String idDoctor;
+    private String patientId;
+    private String doctorId;
+    private String bloodType;
+    private Double height;
+    private Double weight;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

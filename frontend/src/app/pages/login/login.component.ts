@@ -67,7 +67,7 @@ export class LoginComponent implements OnInit {
     this.errorMessage = '';
 
     try {
-      const tokenEndpoint = `${environment.keycloakUrl}/realms/techhive/protocol/openid-connect/token`;
+      const tokenEndpoint = `${environment.keycloakUrl}/realms/tfakkarni/protocol/openid-connect/token`;
       console.log('[LOGIN] Requesting token from:', tokenEndpoint);
 
       const body = new URLSearchParams();
@@ -144,8 +144,8 @@ export class LoginComponent implements OnInit {
               this.router.navigate(['/patient']);
               break;
             default:
-              console.error('[LOGIN] No recognized role, going to access-denied');
-              this.router.navigate(['/access-denied']);
+              console.error('[LOGIN] No recognized role found in token. Check Keycloak realm roles.');
+              this.errorMessage = 'Login succeeded but your account has no role assigned. Please contact an administrator.';
               break;
           }
         });

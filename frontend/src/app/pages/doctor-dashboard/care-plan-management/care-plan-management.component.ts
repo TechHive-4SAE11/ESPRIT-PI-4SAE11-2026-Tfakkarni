@@ -70,6 +70,15 @@ export class CarePlanManagementComponent implements OnInit, OnDestroy {
   showViewDialog = signal(false);
   errorMessage = signal<string | null>(null);
 
+  // Quick-create session (inline in care plan form)
+  showQuickCreateSession = signal(false);
+  quickSessionDate = signal(new Date().toISOString().split('T')[0]);
+  quickSessionNotes = signal('');
+  quickSessionError = signal<string | null>(null);
+  isCreatingSession = signal(false);
+  todayString = new Date().toISOString().split('T')[0];
+  private matchingFolderId = signal<number | null>(null);
+
   carePlanForm!: FormGroup;
 
   // Constants
@@ -98,8 +107,8 @@ export class CarePlanManagementComponent implements OnInit, OnDestroy {
     sessionId: z.union([
       z.number(),
       z.string().min(1)
-    ]).refine(val => val !== null && val !== '', { message: 'Please select a consultation session' }),
-    activities: z.array(z.any()).min(1, { message: 'At least one care activity is required' })
+    ]).refine((val: number | string) => val !== null && val !== '', { message: 'Session is required' }),
+    activities: z.array(z.any()).min(1, { message: 'At least one activity is required' })
   });
 
   ngOnInit(): void {
@@ -200,7 +209,7 @@ export class CarePlanManagementComponent implements OnInit, OnDestroy {
     }
 
     this.isLoadingCarePlans.set(true);
-    this.carePlanService.getCarePlansByPatient(this.patient.id.toString())
+    this.carePlanService.getCarePlansByPatient(this.patient.keycloakId)
       .pipe(
         tap(plans => this.carePlans.set(plans)),
         catchError(err => {
@@ -219,17 +228,19 @@ export class CarePlanManagementComponent implements OnInit, OnDestroy {
     if (!this.doctor) return;
 
     this.isLoadingSessions.set(true);
-    const currentDoctorDbId = String(this.doctor.id);
-    const patientDbId = String(this.patient.id);
+    const currentDoctorDbId = this.doctor.keycloakId;
+    const patientDbId = this.patient.keycloakId;
 
     this.medicalFolderService.getMedicalFoldersByPatient(patientDbId)
       .pipe(
         tap(folders => {
-          const matchingFolder = folders.find(f => f.idDoctor === currentDoctorDbId);
+          const matchingFolder = folders.find(f => f.doctorId === currentDoctorDbId);
           if (matchingFolder) {
+            this.matchingFolderId.set(matchingFolder.id);
             this.loadSessionsForFolder(matchingFolder.id);
           } else {
             this.sessions.set([]);
+            this.matchingFolderId.set(null);
             this.isLoadingSessions.set(false);
           }
         }),
@@ -257,6 +268,46 @@ export class CarePlanManagementComponent implements OnInit, OnDestroy {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
+  }
+
+  // ==================== Quick-Create Session ====================
+
+  quickCreateSession(): void {
+    const date = this.quickSessionDate();
+    const notes = this.quickSessionNotes().trim();
+    const folderId = this.matchingFolderId();
+
+    if (!date || !notes) {
+      this.quickSessionError.set('Please fill in both date and notes.');
+      return;
+    }
+    if (!folderId) {
+      this.quickSessionError.set('No medical folder found. Create one first.');
+      return;
+    }
+
+    this.isCreatingSession.set(true);
+    this.quickSessionError.set(null);
+
+    this.sessionService.createSession({
+      medicalFolderId: folderId,
+      sessionDate: date,
+      notes,
+    }).pipe(
+      tap(created => {
+        this.sessions.update(list => [created, ...list]);
+        this.carePlanForm.patchValue({ sessionId: created.id });
+        this.showQuickCreateSession.set(false);
+        this.quickSessionNotes.set('');
+      }),
+      catchError(error => {
+        const msg = error?.error?.message || error?.error?.error || 'Failed to create session.';
+        this.quickSessionError.set(msg);
+        return of(null);
+      }),
+      finalize(() => this.isCreatingSession.set(false)),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe();
   }
 
   // ==================== Portal Helpers ====================

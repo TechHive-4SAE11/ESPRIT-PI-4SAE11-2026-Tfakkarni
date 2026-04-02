@@ -23,8 +23,9 @@ public class MedicalFolderController {
     @PostMapping
     public ResponseEntity<MedicalFolderResponseDTO> createMedicalFolder(@RequestBody MedicalFolderRequestDTO requestDTO) {
         MedicalFolder medicalFolder = new MedicalFolder();
-        medicalFolder.setIdPatient(requestDTO.getIdPatient());
-        medicalFolder.setIdDoctor(requestDTO.getIdDoctor());
+        medicalFolder.setIdPatient(requestDTO.getPatientId());
+        medicalFolder.setIdDoctor(requestDTO.getDoctorId());
+        // Meta data can be added to entity if we update it later
         
         MedicalFolder saved = medicalFolderService.createMedicalFolder(medicalFolder);
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponseDTO(saved));
@@ -80,9 +81,9 @@ public class MedicalFolderController {
             @PathVariable Long id,
             @RequestBody MedicalFolderRequestDTO requestDTO) {
         MedicalFolder medicalFolder = new MedicalFolder();
-        medicalFolder.setIdPatient(requestDTO.getIdPatient());
-        medicalFolder.setIdDoctor(requestDTO.getIdDoctor());
-        
+        medicalFolder.setIdPatient(requestDTO.getPatientId());
+        medicalFolder.setIdDoctor(requestDTO.getDoctorId());
+
         try {
             MedicalFolder updated = medicalFolderService.updateMedicalFolder(id, medicalFolder);
             return ResponseEntity.ok(toResponseDTO(updated));
@@ -102,6 +103,9 @@ public class MedicalFolderController {
                 folder.getId(),
                 folder.getIdPatient(),
                 folder.getIdDoctor(),
+                null, // bloodType
+                null, // height
+                null, // weight
                 folder.getCreatedAt(),
                 folder.getUpdatedAt()
         );

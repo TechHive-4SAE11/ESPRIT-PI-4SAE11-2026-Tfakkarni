@@ -1,7 +1,6 @@
 /keycloak
 
 # Environment secrets
-.env
 .env.secret
 
 # IDE
@@ -21,6 +20,7 @@
 *.class
 *.jar
 *.war
+backend/medical-service/src/main/resources/credentials.json
 
-.env
-.env.secret
+# Cursor AI Instructions (local development reference)
+CURSOR_AI_INSTRUCTIONS.md
