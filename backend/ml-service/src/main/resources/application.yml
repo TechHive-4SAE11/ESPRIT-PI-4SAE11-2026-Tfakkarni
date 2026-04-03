@@ -1,9 +1,15 @@
-server:
-  port: 18085
-
 spring:
   application:
     name: ml-service
+
+  # config service/client — values below are fallbacks used when config-server is not running
+  cloud:
+    config:
+      enabled: true
+  config:
+    import: optional:configserver:http://localhost:8888
+
+  # Fallback datasource (overridden by config-server when running)
   datasource:
     url: jdbc:postgresql://ep-damp-bar-agi72bgl-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
     username: neondb_owner
@@ -18,6 +24,9 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+server:
+  port: 18085
+
 eureka:
   client:
     service-url:
@@ -25,7 +34,17 @@ eureka:
     fetch-registry: true
     register-with-eureka: true
 
-# Override with GEMINI_API_KEY env in production; do not commit real keys to git
+# Fallback Gemini key (overridden by config-server; set GEMINI_API_KEY env var in production)
 gemini:
   api-key: ${GEMINI_API_KEY:XXXXXXXXXXXXXXXXXXXXXXXXXXX}
   model: gemini-2.5-flash
+
+# actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always

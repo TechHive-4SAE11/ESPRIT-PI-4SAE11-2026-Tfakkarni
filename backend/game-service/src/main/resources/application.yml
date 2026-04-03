@@ -1,11 +1,15 @@
-server:
-  port: 18082
-
 spring:
   application:
     name: game-service
-  profiles:
-    active: prod  # Change to 'local' for H2 database
+
+  # config service/client — values below are fallbacks used when config-server is not running
+  cloud:
+    config:
+      enabled: true
+  config:
+    import: optional:configserver:http://localhost:8888
+
+  # Fallback datasource (overridden by config-server when running)
   datasource:
     url: jdbc:postgresql://ep-damp-bar-agi72bgl-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
     username: neondb_owner
@@ -19,10 +23,9 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 50MB
+
+server:
+  port: 18082
 
 eureka:
   client:
@@ -34,7 +37,7 @@ eureka:
 tmdb:
   api-key: bac4726f178ccc49f4659a52479b4725
 
-# ── TTS Pipeline (Google Translate + ElevenLabs) ──────────────────────────────
+# Fallback API keys — override via env vars or config-server in production
 google:
   translate:
     api-key: ${GOOGLE_TRANSLATE_API_KEY:YOUR_GOOGLE_TRANSLATE_API_KEY}
@@ -45,21 +48,12 @@ elevenlabs:
   voice-id-tn: GLRyn2pNxpZ4FAjmlY3z
   model-id: eleven_multilingual_v2
 
----
-spring:
-  config:
-    activate:
-      on-profile: local
-  datasource:
-    url: jdbc:h2:mem:testdb
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
-        format_sql: true
+# actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always

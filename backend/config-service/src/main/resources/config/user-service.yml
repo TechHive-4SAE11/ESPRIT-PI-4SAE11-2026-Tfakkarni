@@ -2,14 +2,14 @@ server:
   port: 18081
 
 spring:
-  application:
-    name: user-service
+
   profiles:
     active: prod  # Change to 'local' for H2 database
   datasource:
-    url: jdbc:postgresql://ep-purple-sun-aga3c9f6-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require
-    username: neondb_owner
-    password: npg_4kKCY7bocxUn
+    # Replace with YOUR Neon connection string from https://console.neon.tech (Dashboard → Connection string)
+    url: ${NEON_DATABASE_URL:jdbc:postgresql://ep-purple-sun-aga3c9f6-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require}
+    username: ${NEON_USER:neondb_owner}
+    password: ${NEON_PASSWORD:npg_4kKCY7bocxUn}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -34,6 +34,10 @@ keycloak:
   admin:
     username: admin
     password: admin
+
+didit:
+  api-key: ${DIDIT_API_KEY:}
+  workflow-id: ${DIDIT_WORKFLOW_ID:}
 
 ---
 spring:

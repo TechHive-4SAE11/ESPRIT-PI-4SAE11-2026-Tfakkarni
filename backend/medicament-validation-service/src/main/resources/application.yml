@@ -1,9 +1,15 @@
-server:
-  port: 18087
-
 spring:
   application:
     name: medicament-validation-service
+
+  # config service/client — values below are fallbacks used when config-server is not running
+  cloud:
+    config:
+      enabled: true
+  config:
+    import: optional:configserver:http://localhost:8888
+
+  # Fallback H2 datasource (overridden by config-server when running)
   datasource:
     url: jdbc:h2:mem:medicamentdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     username: sa
@@ -24,21 +30,10 @@ spring:
     jdbc:
       initialize-schema: always
     job:
-      enabled: false  # We trigger jobs manually/scheduled, not on startup context refresh
+      enabled: false
 
-# OpenFDA API configuration
-openfda:
-  api:
-    base-url: https://api.fda.gov/drug/drugsfda.json
-    page-size: 100
-    max-pages: 50  # Load up to 5000 drugs
-
-# Scheduler to refresh drug data
-medicament:
-  scheduler:
-    enabled: true
-    load-on-startup: true
-    refresh-cron: "0 0 3 * * *"  # 3 AM daily refresh
+server:
+  port: 18087
 
 eureka:
   client:
@@ -46,3 +41,27 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
+
+# OpenFDA API configuration
+openfda:
+  api:
+    base-url: https://api.fda.gov/drug/drugsfda.json
+    page-size: 100
+    max-pages: 50
+
+# Scheduler to refresh drug data
+medicament:
+  scheduler:
+    enabled: true
+    load-on-startup: true
+    refresh-cron: "0 0 3 * * *"
+
+# actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always

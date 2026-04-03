@@ -1,16 +1,20 @@
-server:
-  port: 18084
-
 spring:
   application:
     name: alert-service
 
+  # config service/client — values below are fallbacks used when config-server is not running
+  cloud:
+    config:
+      enabled: true
+  config:
+    import: optional:configserver:http://localhost:8888
+
+  # Fallback datasource (overridden by config-server when running)
   datasource:
     url: jdbc:postgresql://ep-damp-bar-agi72bgl-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
     username: neondb_owner
     password: npg_8ZUiCsXMu0jd
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -18,16 +22,6 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-
-  # Console H2 pour voir les données (SUPER UTILE !)
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-      settings:
-        web-allow-others: true
-
-  # Redis configuration (gardé inchangé)
   data:
     redis:
       host: live-bullfrog-45869.upstash.io
@@ -42,6 +36,9 @@ spring:
           max-idle: 5
           min-idle: 1
 
+server:
+  port: 18084
+
 eureka:
   client:
     service-url:
@@ -49,16 +46,23 @@ eureka:
     fetch-registry: true
     register-with-eureka: true
 
-# Firebase configuration (gardé inchangé)
 firebase:
   config-file: classpath:firebase-service-account.json
 
-# Tracking service URL (gardé inchangé)
 tracking-service:
   url: http://localhost:18083
 
-# Notification scheduler (gardé inchangé)
 notification:
   scheduler:
     enabled: true
     medication-reminder-cron: "0 */1 * * * *"
+
+# actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
