@@ -39,6 +39,7 @@ import { StatisticsDashboardComponent } from './statistics-dashboard/statistics-
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 import { MeetingRoomComponent } from '@/pages/doctor-dashboard/meeting-room/meeting-room.component';
 import { HelperMeetingListComponent } from './helper-meeting-list/helper-meeting-list.component';
+import { FollowUpReminderAlertComponent } from '@/shared/components/follow-up-reminder-alert/follow-up-reminder-alert.component';
 import { Meeting } from '@/core/services/meeting.service';
 
 @Component({
@@ -64,6 +65,7 @@ import { Meeting } from '@/core/services/meeting.service';
     PatientDossierViewComponent,
     MeetingRoomComponent,
     HelperMeetingListComponent,
+    FollowUpReminderAlertComponent,
   ],
 })
 export class HelperViewComponent implements OnInit {

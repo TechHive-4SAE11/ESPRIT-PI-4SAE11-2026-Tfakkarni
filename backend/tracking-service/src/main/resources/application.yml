@@ -33,6 +33,11 @@ medication:
     daily-update-cron: "0 0 0 * * *"          # Midnight daily
     periodic-update-cron: "0 0 */6 * * *"     # Every 6 hours
 
+# Daily follow-up reminder scheduler
+followup:
+  scheduler:
+    cron: "0 0 22 * * *"                       # Every day at 22:00
+
 eureka:
   client:
     service-url:
