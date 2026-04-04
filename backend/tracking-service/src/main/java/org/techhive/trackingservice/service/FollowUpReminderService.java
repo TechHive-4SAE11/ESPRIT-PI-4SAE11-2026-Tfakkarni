@@ -1,5 +1,6 @@
 package org.techhive.trackingservice.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,123 +48,57 @@ public class FollowUpReminderService {
         this.plainRestTemplate  = plainRestTemplate;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // MAIN ENTRY — appelé par le scheduler à 22:00 ou POST /check
-    // ─────────────────────────────────────────────────────────────────────────
-
     @Transactional
     public int checkAndCreateReminders() {
         LocalDate today = LocalDate.now();
-
         List<String> allPatientIds = reminderRepository.findAllRegisteredPatientIds();
 
         log.info("══════════════════════════════════════════════════════");
-        log.info("[FollowUp] Check démarré — {} patients — {}", allPatientIds.size(), today);
+        log.info("[FollowUp] Daily check — {} patients — {}", allPatientIds.size(), today);
         log.info("══════════════════════════════════════════════════════");
 
-        if (allPatientIds.isEmpty()) {
-            log.warn("[FollowUp] Aucun patient trouvé dans medical_folders !");
-            return 0;
-        }
-
-        int newRemindersCreated = 0;
-
-        // ── ÉTAPE 1 : Évaluer TOUS les patients (pour DB + Telegram) ───────────
-        // IMPORTANT: on collecte les incomplets SÉPARÉMENT de l'idempotency check
-        // pour s'assurer que Telegram est toujours envoyé
-
-        List<Map<String, Object>> allIncompletePatients = new ArrayList<>();
+        int created = 0;
+        List<Map<String, Object>> nonCompliantPatients = new ArrayList<>();
 
         for (String patientId : allPatientIds) {
-            Optional<DailyLog> logOpt = dailyLogRepository
-                    .findByPatientKeycloakIdAndLogDate(patientId, today);
-            List<String> missing = evaluateCompletion(logOpt.orElse(null));
 
-            if (missing.isEmpty()) {
-                log.debug("  [ok] patient={} — suivi complet ✅", patientId);
+            if (reminderRepository.existsByPatientKeycloakIdAndReminderDate(patientId, today)) {
+                log.debug("  [skip] Already reminded patient={} today", patientId);
                 continue;
             }
 
-            // Récupérer le nom du patient
-            String patientName = fetchPatientName(patientId);
-            log.info("  [incomplet] '{}' — manque: {}", patientName, missing);
+            Optional<DailyLog> logOpt = dailyLogRepository.findByPatientKeycloakIdAndLogDate(patientId, today);
+            List<String> missing = evaluateCompletion(logOpt.orElse(null));
 
-            // Collect pour Telegram (TOUJOURS, même si déjà en DB)
+            if (missing.isEmpty()) {
+                log.debug("  [ok] patient={} — suivi complet", patientId);
+                continue;
+            }
+
+            String patientName = fetchPatientName(patientId);
+            log.info("  [alert] Patient='{}' ({}) — manque: {}", patientName, patientId, missing);
+
+            FollowUpReminder reminder = buildReminder(patientId, patientName, today, missing);
+            reminderRepository.save(reminder);
+            created++;
+
             Map<String, Object> entry = new LinkedHashMap<>();
             entry.put("name",    patientName);
             entry.put("id",      patientId);
             entry.put("missing", missing);
-            allIncompletePatients.add(entry);
-
-            // ── ÉTAPE 2 : Sauvegarder en DB seulement si pas déjà fait aujourd'hui ─
-            boolean alreadyInDb = reminderRepository
-                    .existsByPatientKeycloakIdAndReminderDate(patientId, today);
-
-            if (!alreadyInDb) {
-                FollowUpReminder reminder = buildReminder(patientId, patientName, today, missing);
-                reminderRepository.save(reminder);
-                newRemindersCreated++;
-                log.info("  [DB] Reminder sauvegardé pour '{}'", patientName);
-            } else {
-                log.debug("  [DB skip] Reminder déjà en DB pour '{}' aujourd'hui", patientName);
-            }
+            nonCompliantPatients.add(entry);
         }
 
-        // ── ÉTAPE 3 : Telegram — TOUJOURS envoyé si des patients sont incomplets ─
-        // Peu importe si les reminders DB existaient déjà ou non
-        if (!allIncompletePatients.isEmpty()) {
-            log.info("[FollowUp] Envoi Telegram pour {} patient(s) incomplet(s)...",
-                    allIncompletePatients.size());
-            sendGroupedTelegramAlert(allIncompletePatients, today);
+        if (!nonCompliantPatients.isEmpty()) {
+            sendGroupedTelegramAlert(nonCompliantPatients, today);
         } else {
-            log.info("[FollowUp] ✅ Tous les patients ont complété leur suivi !");
+            log.info("[FollowUp] ✅ Tous les patients ont complété leur suivi aujourd'hui");
         }
 
-        log.info("[FollowUp] Terminé — {} nouveau(x) reminder(s) en DB", newRemindersCreated);
+        log.info("[FollowUp] Done — {} reminder(s) created", created);
         log.info("══════════════════════════════════════════════════════");
-        return newRemindersCreated;
+        return created;
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // TEST TELEGRAM — endpoint dédié pour vérifier la connexion
-    // ─────────────────────────────────────────────────────────────────────────
-
-    public Map<String, Object> testTelegram() {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("botToken",  telegramBotToken != null && !telegramBotToken.isBlank()
-                ? telegramBotToken.substring(0, Math.min(10, telegramBotToken.length())) + "***"
-                : "❌ VIDE");
-        result.put("chatId",    telegramChatId != null ? telegramChatId : "❌ VIDE");
-        result.put("configured", !telegramBotToken.isBlank() && !telegramChatId.isBlank());
-
-        if (telegramBotToken.isBlank() || telegramChatId.isBlank()) {
-            result.put("status", "❌ Telegram non configuré dans application.yml");
-            return result;
-        }
-
-        try {
-            String url = "https://api.telegram.org/bot" + telegramBotToken + "/sendMessage";
-            Map<String, Object> body = new HashMap<>();
-            body.put("chat_id",    telegramChatId);
-            body.put("parse_mode", "HTML");
-            body.put("text",       "🔔 <b>Test Tfakkarni</b>\n\n✅ La connexion Telegram fonctionne !");
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            String resp = plainRestTemplate.postForObject(
-                    url, new HttpEntity<>(body, headers), String.class);
-            result.put("status",   "✅ Telegram OK — message envoyé");
-            result.put("response", resp);
-        } catch (Exception e) {
-            result.put("status", "❌ Erreur: " + e.getMessage());
-        }
-        return result;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Completeness check
-    // ─────────────────────────────────────────────────────────────────────────
 
     private List<String> evaluateCompletion(DailyLog log) {
         List<String> missing = new ArrayList<>();
@@ -178,10 +113,6 @@ public class FollowUpReminderService {
         if (log.getActivityEntries()   == null || log.getActivityEntries().isEmpty())   missing.add("ACTIVITY");
         return missing;
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Build DB entity
-    // ─────────────────────────────────────────────────────────────────────────
 
     private FollowUpReminder buildReminder(String patientId, String patientName,
                                            LocalDate date, List<String> missing) {
@@ -208,10 +139,6 @@ public class FollowUpReminderService {
         };
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Fetch patient name from user-service
-    // ─────────────────────────────────────────────────────────────────────────
-
     @SuppressWarnings("unchecked")
     private String fetchPatientName(String keycloakId) {
         try {
@@ -226,7 +153,6 @@ public class FollowUpReminderService {
         } catch (Exception e) {
             log.warn("  fetchPatientName({}) KO: {}", keycloakId, e.getMessage());
         }
-        // Fallback : ID tronqué
         return "Patient " + (keycloakId.length() > 8
                 ? keycloakId.substring(0, 8) + "..." : keycloakId);
     }
@@ -236,82 +162,57 @@ public class FollowUpReminderService {
         return v instanceof String s ? s : "";
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Telegram — UN seul message groupé pour tous les patients incomplets
-    // ─────────────────────────────────────────────────────────────────────────
-
     @SuppressWarnings("unchecked")
     private void sendGroupedTelegramAlert(List<Map<String, Object>> patients, LocalDate date) {
-        if (telegramBotToken == null || telegramBotToken.isBlank()) {
-            log.error("[Telegram] ❌ telegram.bot-token est VIDE dans application.yml !");
+        if (telegramBotToken == null || telegramBotToken.isBlank()
+                || telegramChatId == null || telegramChatId.isBlank()) {
+            log.warn("[FollowUp] Telegram not configured — skipping");
             return;
         }
-        if (telegramChatId == null || telegramChatId.isBlank()) {
-            log.error("[Telegram] ❌ telegram.default-chat-id est VIDE dans application.yml !");
-            return;
-        }
-
         try {
             String url = "https://api.telegram.org/bot" + telegramBotToken + "/sendMessage";
-
             Map<String, Object> body = new HashMap<>();
             body.put("chat_id",    telegramChatId);
             body.put("parse_mode", "HTML");
             body.put("text",       buildGroupedMessage(patients, date));
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-
-            String response = plainRestTemplate.postForObject(
-                    url, new HttpEntity<>(body, headers), String.class);
-
-            log.info("[Telegram] ✅ Message envoyé — {} patient(s) | response={}",
-                    patients.size(), response);
+            plainRestTemplate.postForObject(url, new HttpEntity<>(body, headers), String.class);
+            log.info("[FollowUp] ✅ Telegram envoyé — {} patient(s)", patients.size());
         } catch (Exception e) {
-            log.error("[Telegram] ❌ Envoi échoué: {}", e.getMessage(), e);
+            log.error("[FollowUp] Telegram échoué: {}", e.getMessage(), e);
         }
     }
 
     @SuppressWarnings("unchecked")
     private String buildGroupedMessage(List<Map<String, Object>> patients, LocalDate date) {
         String dateStr = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-
         StringBuilder sb = new StringBuilder();
         sb.append("⚠️ <b>RAPPEL SUIVI QUOTIDIEN — Tfakkarni</b>\n");
         sb.append("📅 <b>Date :</b> ").append(dateStr).append("\n\n");
-
         if (patients.size() == 1) {
             sb.append("Le patient suivant n'a <b>pas complété</b> son suivi aujourd'hui :\n\n");
         } else {
             sb.append("Les ").append(patients.size())
               .append(" patients suivants n'ont <b>pas complété</b> leur suivi aujourd'hui :\n\n");
         }
-
         for (Map<String, Object> p : patients) {
             String name          = (String) p.get("name");
             List<String> missing = (List<String>) p.get("missing");
-
             sb.append("👤 <b>").append(esc(name)).append("</b>\n");
             sb.append("   ❌ ");
-
             String cats = missing.stream().map(c -> switch (c) {
                 case "NUTRITION"  -> "🍽️ Alimentation";
                 case "MEDICATION" -> "💊 Médicaments";
                 case "ACTIVITY"   -> "🏃 Activités";
                 default           -> c;
             }).collect(Collectors.joining(" · "));
-
             sb.append(cats).append("\n\n");
         }
-
         sb.append("─".repeat(20)).append("\n");
         sb.append("📋 Connectez-vous à <b>Tfakkarni</b> pour compléter le suivi.");
         return sb.toString();
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // CRUD — read / acknowledge reminders
-    // ─────────────────────────────────────────────────────────────────────────
 
     public List<FollowUpReminderResponse> getReminders(String patientKeycloakId) {
         return reminderRepository
@@ -346,10 +247,6 @@ public class FollowUpReminderService {
         unread.forEach(r -> { r.setRead(true); r.setReadAt(now); });
         reminderRepository.saveAll(unread);
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Mapper
-    // ─────────────────────────────────────────────────────────────────────────
 
     private FollowUpReminderResponse toResponse(FollowUpReminder r) {
         return FollowUpReminderResponse.builder()

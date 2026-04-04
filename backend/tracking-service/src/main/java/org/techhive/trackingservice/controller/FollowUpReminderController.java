@@ -11,7 +11,6 @@ import java.util.Map;
 
 /**
  * REST API for follow-up reminders.
- * All routes are protected by the API Gateway (JWT required).
  */
 @RestController
 @RequestMapping("/api/follow-up-reminders")
@@ -53,7 +52,7 @@ public class FollowUpReminderController {
 
     /**
      * Manual trigger for testing — simulates the 22:00 cron job immediately.
-     * No need to wait for the scheduled time.
+     * POST /api/follow-up-reminders/check
      */
     @PostMapping("/check")
     public ResponseEntity<Map<String, Object>> triggerCheck() {
