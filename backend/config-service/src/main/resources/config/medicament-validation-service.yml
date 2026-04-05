@@ -1,0 +1,47 @@
+server:
+  port: 18087
+
+spring:
+
+  datasource:
+    url: jdbc:h2:mem:medicamentdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false  # We trigger jobs manually/scheduled, not on startup context refresh
+
+# OpenFDA API configuration
+openfda:
+  api:
+    base-url: https://api.fda.gov/drug/drugsfda.json
+    page-size: 100
+    max-pages: 50  # Load up to 5000 drugs
+
+# Scheduler to refresh drug data
+medicament:
+  scheduler:
+    enabled: true
+    load-on-startup: true
+    refresh-cron: "0 0 3 * * *"  # 3 AM daily refresh
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
