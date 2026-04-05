@@ -4,11 +4,12 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '@/core/auth';
 import { ZardButtonComponent } from '@/shared/components/button/button.component';
 import { ZardIconComponent } from '@/shared/components/icon';
+import { PublicQuizComponent } from './public-quiz/public-quiz.component';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, RouterLink, ZardButtonComponent, ZardIconComponent],
+  imports: [CommonModule, RouterLink, ZardButtonComponent, ZardIconComponent, PublicQuizComponent],
   template: `
     <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
 
@@ -124,6 +125,7 @@ import { ZardIconComponent } from '@/shared/components/icon';
               </div>
             </div>
           </div>
+          <app-public-quiz />
         </section>
 
         <!-- ─── How It Works ─── -->

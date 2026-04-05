@@ -33,8 +33,7 @@ public class SecurityConfig {
         "http://localhost:4200",
         "http://127.0.0.1:4200",
         "http://localhost:5173",
-        "http://127.0.0.1:5173"
-    ));
+        "http://127.0.0.1:5173"));
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
     config.setAllowedHeaders(
         List.of("Authorization", "Content-Type", "X-User-Id", "Accept", "Origin", "X-Requested-With"));
@@ -50,6 +49,7 @@ public class SecurityConfig {
     http
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .csrf(ServerHttpSecurity.CsrfSpec::disable)
+        .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
         .authorizeExchange(exchanges -> exchanges
             // Allow all CORS preflight requests
             .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -63,6 +63,11 @@ public class SecurityConfig {
             .pathMatchers("/api/games/movies/play/**").permitAll()
             // Admin health check endpoint (for monitoring/testing)
             .pathMatchers("/api/admin/medication-status/health").permitAll()
+            // Public quiz endpoints
+            .pathMatchers(HttpMethod.GET, "/api/games/quiz/1").permitAll()
+            .pathMatchers(HttpMethod.GET, "/api/games/quiz/**").permitAll()
+            .pathMatchers(HttpMethod.GET, "/api/games/quiz/questions/**").permitAll()
+            .pathMatchers(HttpMethod.GET, "/api/games/quiz/answer/**").permitAll()
             // All other endpoints require authentication
             .anyExchange().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2

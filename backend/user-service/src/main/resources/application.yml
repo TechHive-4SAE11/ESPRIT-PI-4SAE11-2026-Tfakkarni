@@ -4,6 +4,14 @@ server:
 spring:
   application:
     name: user-service
+
+  # config service/client — values below are fallbacks used when config-server is not running
+  cloud:
+    config:
+      enabled: true
+  config:
+    import: optional:configserver:http://localhost:8888
+
   datasource:
     # Replace with YOUR Neon connection string from https://console.neon.tech (Dashboard → Connection string)
     url: ${NEON_DATABASE_URL:jdbc:postgresql://ep-purple-sun-aga3c9f6-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require}
@@ -44,3 +52,13 @@ mailtrap:
 didit:
   api-key: ${DIDIT_API_KEY:}
   workflow-id: ${DIDIT_WORKFLOW_ID:}
+
+# actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always

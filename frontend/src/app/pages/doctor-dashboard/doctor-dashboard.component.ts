@@ -2,7 +2,7 @@ import { Component, DestroyRef, OnInit, OnDestroy, signal, PLATFORM_ID, inject, 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, of } from 'rxjs';
+import { Subject, of, catchError } from 'rxjs';
 import { debounceTime, switchMap, map } from 'rxjs/operators';
 import { AuthService } from '@/core/auth';
 import { DashboardLayoutComponent, type SidebarMenuGroup } from '@/shared/components/dashboard-layout';
@@ -19,6 +19,8 @@ import { MedicalFolderService } from '@/core/services/medical-folder.service';
 import type { MedicalFolder } from '@/core/services/medical-folder.service';
 import { DoctorNotificationService } from '@/core/services/doctor-notification.service';
 import { type DoctorNotification } from '@/core/models/notification.model';
+import { QuizService } from '@/core/services/quiz.service';
+import { QuizDTO, QuestionDTO } from '@/core/models/quiz.model';
 import { PrescriptionManagementComponent } from './prescription-management/prescription-management.component';
 import { SuiviQuotidienComponent } from '@/pages/patient-dashboard/helper-view/suivi-quotidien/suivi-quotidien.component';
 import { CarePlanManagementComponent } from './care-plan-management/care-plan-management.component';
@@ -332,6 +334,13 @@ import type { SessionResponseDTO } from '@/core/services/session.service';
                       <th z-table-head>Games Created</th>
                       <th z-table-head>Games Played</th>
                       <th z-table-head>Avg Score</th>
+                      <th z-table-head>
+                        <span class="flex items-center gap-1">
+                          🧠 Alzheimer's Risk
+                          <span class="text-xs text-muted-foreground font-normal ml-1">(avg quiz)</span>
+                        </span>
+                      </th>
+                      <th z-table-head>Risk Level</th>
                       <th z-table-head>Actions</th>
                     </tr>
                   </thead>
@@ -350,6 +359,40 @@ import type { SessionResponseDTO } from '@/core/services/session.service';
                             </div>
                           } @else {
                             <span class="text-muted-foreground">-</span>
+                          }
+                        </td>
+                        <!-- Alzheimer's risk score (avg quiz = % wrong) -->
+                        <td z-table-cell>
+                          @if (getQuizScore(patient.keycloakId); as qs) {
+                            <div class="flex items-center gap-2">
+                              <div class="w-full max-w-[80px] h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                                <div class="h-full rounded-full transition-all"
+                                  [style.width.%]="qs"
+                                  [class]="qs >= 60 ? 'bg-red-500' : qs >= 30 ? 'bg-amber-400' : 'bg-emerald-500'">
+                                </div>
+                              </div>
+                              <span class="text-sm font-semibold"
+                                [class]="qs >= 60 ? 'text-red-600' : qs >= 30 ? 'text-amber-600' : 'text-emerald-600'">
+                                {{ qs | number:'1.0-0' }}%
+                              </span>
+                            </div>
+                          } @else {
+                            <span class="text-xs text-muted-foreground italic">No quiz yet</span>
+                          }
+                        </td>
+                        <!-- Risk level badge -->
+                        <td z-table-cell>
+                          @if (getQuizScore(patient.keycloakId); as qs) {
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                              [class]="qs >= 60
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                                : qs >= 30
+                                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                                  : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'">
+                              {{ qs >= 60 ? '🔴 High Risk' : qs >= 30 ? '🟡 Moderate' : '🟢 Low Risk' }}
+                            </span>
+                          } @else {
+                            <span class="text-xs text-muted-foreground">—</span>
                           }
                         </td>
                         <td z-table-cell>
@@ -406,6 +449,120 @@ import type { SessionResponseDTO } from '@/core/services/session.service';
             </div>
 
             <app-patient-analytics [patientKeycloakId]="selectedPatient()!.keycloakId"></app-patient-analytics>
+
+            <!-- ── Alzheimer's Risk Quiz Summary ──────────────── -->
+            <div class="grid gap-4 md:grid-cols-3 mt-8 mb-6">
+              <!-- Average risk score -->
+              <z-card class="p-5">
+                <p class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">🧠 Alzheimer's Risk</p>
+                @if (getQuizScore(selectedPatient()!.keycloakId); as qs) {
+                  <p class="text-4xl font-black"
+                    [class]="qs >= 60 ? 'text-red-500' : qs >= 30 ? 'text-amber-500' : 'text-emerald-500'">
+                    {{ qs | number:'1.0-0' }}%
+                  </p>
+                } @else {
+                  <p class="text-xs text-muted-foreground mt-1">No quiz taken yet</p>
+                }
+              </z-card>
+              <!-- Total quizzes taken -->
+              <z-card class="p-5">
+                <p class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">📝 Quiz Attempts</p>
+                @if (selectedPatientQuizCount() !== null) {
+                  <p class="text-4xl font-black text-blue-600">{{ selectedPatientQuizCount() }}</p>
+                } @else {
+                  <p class="text-xs text-muted-foreground mt-1">No quiz taken yet</p>
+                }
+              </z-card>
+              <!-- Highest level reached -->
+              <z-card class="p-5">
+                <p class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">🎯 Last Level Reached</p>
+                @if (selectedPatientLastLevel(); as lvl) {
+                  <p class="text-4xl font-black text-violet-600">Level {{ lvl }}</p>
+                  <p class="text-xs text-muted-foreground">{{ getLevelLabel(lvl) }}</p>
+                } @else {
+                  <p class="text-xs text-muted-foreground mt-1">No quiz taken yet</p>
+                }
+              </z-card>
+            </div>
+
+            <!-- ── Quiz History Table ────────────────────────────── -->
+            <z-card class="mt-4">
+              <div class="p-6">
+                <h3 class="text-lg font-semibold mb-4">📊 Quiz History</h3>
+                @if (isLoadingQuizHistory()) {
+                  <z-skeleton class="h-32 w-full" />
+                } @else if (selectedPatientQuizHistory().length > 0) {
+                  <table z-table>
+                    <thead z-table-header>
+                      <tr z-table-row>
+                        <th z-table-head>Quiz Topic</th>
+                        <th z-table-head>Date</th>
+                        <th z-table-head>Score</th>
+                        <th z-table-head>Level</th>
+                        <th z-table-head>Recommendation</th>
+                      </tr>
+                    </thead>
+                    <tbody z-table-body>
+                      @for (quiz of selectedPatientQuizHistory(); track quiz.id) {
+                        <tr z-table-row>
+                          <td z-table-cell class="font-medium">{{ quiz.topic }}</td>
+                          <td z-table-cell class="text-muted-foreground">
+                            {{ quiz.dateTaken ? (quiz.dateTaken | date:'dd/MM/yyyy HH:mm') : '—' }}
+                          </td>
+                          <td z-table-cell>
+                            @if (quiz.totalScore !== null && quiz.totalScore !== undefined) {
+                              <div class="flex items-center gap-2">
+                                <div class="w-full max-w-[60px] h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                                  <div class="h-full rounded-full transition-all"
+                                    [style.width.%]="quiz.totalScore"
+                                    [class]="quiz.totalScore >= 60 ? 'bg-red-500' : quiz.totalScore >= 30 ? 'bg-amber-400' : 'bg-emerald-500'">
+                                  </div>
+                                </div>
+                                <span class="text-sm font-semibold"
+                                  [class]="quiz.totalScore >= 60 ? 'text-red-600' : quiz.totalScore >= 30 ? 'text-amber-600' : 'text-emerald-600'">
+                                  {{ quiz.totalScore }}%
+                                </span>
+                              </div>
+                            } @else {
+                              <span class="text-muted-foreground">—</span>
+                            }
+                          </td>
+                          <td z-table-cell>
+                            @if (quiz.levelReached) {
+                              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold"
+                                [class]="quiz.levelReached === 3
+                                  ? 'bg-red-100 text-red-700'
+                                  : quiz.levelReached === 2
+                                    ? 'bg-amber-100 text-amber-700'
+                                    : 'bg-emerald-100 text-emerald-700'">
+                                {{ quiz.levelReached === 3 ? '🔴' : quiz.levelReached === 2 ? '🟡' : '🟢' }}
+                                Level {{ quiz.levelReached }} — {{ getLevelLabel(quiz.levelReached) }}
+                              </span>
+                            } @else {
+                              <span class="text-muted-foreground">—</span>
+                            }
+                          </td>
+                          <td z-table-cell>
+                            @if (quiz.totalScore !== null && quiz.totalScore !== undefined) {
+                              @if (quiz.totalScore >= 60 && quiz.levelReached === 3) {
+                                <span class="text-xs text-red-600 font-semibold">⚠️ Consult recommended</span>
+                              } @else if (quiz.totalScore < 60) {
+                                <span class="text-xs text-emerald-600">✅ Within normal range</span>
+                              }
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <div class="p-8 text-center text-muted-foreground">
+                    <p class="font-medium">No quiz history found</p>
+                    <p class="text-sm mt-1">This patient has not completed any quizzes yet.</p>
+                  </div>
+                }
+              </div>
+            </z-card>
           } @else {
             <p class="text-muted-foreground">Select a patient from the Patients list to view their progress.</p>
           }
@@ -563,6 +720,142 @@ import type { SessionResponseDTO } from '@/core/services/session.service';
              </div>
           }
       }
+
+        <!-- ══════════════════ QUIZ OVERVIEW ══════════════════ -->
+        @case ('Quiz Overview') {
+          <h2 class="text-2xl font-bold mb-6">🧠 Quiz Overview — All Patients</h2>
+
+          <!-- Risk summary cards -->
+          <div class="grid gap-4 md:grid-cols-3 mb-8">
+            <z-card class="p-6 border-l-4 border-red-500">
+              <p class="text-sm text-muted-foreground">High Risk (≥60%)</p>
+              <p class="text-4xl font-black text-red-500">{{ quizHighRiskCount() }}</p>
+            </z-card>
+            <z-card class="p-6 border-l-4 border-amber-400">
+              <p class="text-sm text-muted-foreground">Moderate (30–59%)</p>
+              <p class="text-4xl font-black text-amber-500">{{ quizModerateRiskCount() }}</p>
+            </z-card>
+            <z-card class="p-6 border-l-4 border-emerald-500">
+              <p class="text-sm text-muted-foreground">Low Risk (&lt;30%)</p>
+              <p class="text-4xl font-black text-emerald-500">{{ quizLowRiskCount() }}</p>
+            </z-card>
+          </div>
+
+          <!-- Patients Quiz Summary Table -->
+          <z-card>
+            <div class="p-6">
+              <h3 class="text-lg font-semibold mb-4">Patient Quiz Risk Scores</h3>
+              @if (patients().length > 0) {
+                <table z-table>
+                  <thead z-table-header>
+                    <tr z-table-row>
+                      <th z-table-head>Patient</th>
+                      <th z-table-head>Alzheimer's Risk</th>
+                      <th z-table-head>Risk Level</th>
+                    </tr>
+                  </thead>
+                  <tbody z-table-body>
+                    @for (patient of patients(); track patient.keycloakId) {
+                      <tr z-table-row>
+                        <td z-table-cell class="font-medium">{{ patient.firstName }} {{ patient.lastName }}</td>
+                        <td z-table-cell>
+                          @if (getQuizScore(patient.keycloakId); as qs) {
+                            <div class="flex items-center gap-2">
+                              <div class="w-full max-w-[80px] h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                                <div class="h-full rounded-full transition-all"
+                                  [style.width.%]="qs"
+                                  [class]="qs >= 60 ? 'bg-red-500' : qs >= 30 ? 'bg-amber-400' : 'bg-emerald-500'">
+                                </div>
+                              </div>
+                              <span class="text-sm font-semibold"
+                                [class]="qs >= 60 ? 'text-red-600' : qs >= 30 ? 'text-amber-600' : 'text-emerald-600'">
+                                {{ qs | number:'1.0-0' }}%
+                              </span>
+                            </div>
+                          } @else {
+                            <span class="text-xs text-muted-foreground italic">No quiz yet</span>
+                          }
+                        </td>
+                        <td z-table-cell>
+                          @if (getQuizScore(patient.keycloakId); as qs) {
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                              [class]="qs >= 60
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                                : qs >= 30
+                                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                                  : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'">
+                              {{ qs >= 60 ? '🔴 High Risk' : qs >= 30 ? '🟡 Moderate' : '🟢 Low Risk' }}
+                            </span>
+                          } @else {
+                            <span class="text-xs text-muted-foreground">—</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
+            </div>
+          </z-card>
+        }
+
+        <!-- ══════════════════ QUIZ BANK ══════════════════ -->
+        @case ('Quiz Bank') {
+          <div class="flex items-center gap-4 mb-6">
+            <h2 class="text-2xl font-bold">📚 Quiz Question Bank</h2>
+          </div>
+
+          <!-- Difficulty filter buttons -->
+          <div class="flex gap-2 mb-6">
+            <button z-button [zType]="selectedDifficulty() === 0 ? 'default' : 'outline'" zSize="sm"
+              (click)="filterQuestions(0)">All</button>
+            <button z-button [zType]="selectedDifficulty() === 1 ? 'default' : 'outline'" zSize="sm"
+              (click)="filterQuestions(1)">🟢 Easy</button>
+            <button z-button [zType]="selectedDifficulty() === 2 ? 'default' : 'outline'" zSize="sm"
+              (click)="filterQuestions(2)">🟡 Medium</button>
+            <button z-button [zType]="selectedDifficulty() === 3 ? 'default' : 'outline'" zSize="sm"
+              (click)="filterQuestions(3)">🔴 Hard</button>
+          </div>
+
+          @if (isLoadingQuizBank()) {
+            <z-skeleton class="h-48 w-full" />
+          } @else if (filteredQuestions().length > 0) {
+            <div class="grid gap-4 md:grid-cols-2">
+              @for (q of filteredQuestions(); track q.id) {
+                <z-card class="p-5">
+                  <div class="flex items-start justify-between mb-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold"
+                      [class]="q.difficultyLevel === 3
+                        ? 'bg-red-100 text-red-700'
+                        : q.difficultyLevel === 2
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-emerald-100 text-emerald-700'">
+                      Level {{ q.difficultyLevel }} — {{ getLevelLabel(q.difficultyLevel) }}
+                    </span>
+                  </div>
+                  <p class="font-medium text-sm mb-3">{{ q.text }}</p>
+                  @if (q.answers && q.answers.length > 0) {
+                    <div class="space-y-1.5">
+                      @for (a of q.answers; track a.id) {
+                        <div class="flex items-center gap-2 text-xs px-2 py-1 rounded"
+                          [class]="a.isCorrect ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 font-semibold' : 'text-muted-foreground'">
+                          <span>{{ a.isCorrect ? '✅' : '○' }}</span>
+                          <span>{{ a.text }}</span>
+                        </div>
+                      }
+                    </div>
+                  }
+                </z-card>
+              }
+            </div>
+          } @else {
+            <div class="p-12 text-center text-muted-foreground bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+              <p class="text-lg font-medium">No questions found</p>
+              <p class="text-sm mt-1">No questions match the selected filter.</p>
+            </div>
+          }
+        }
+
       }
       </div>
     </app-dashboard-layout>
@@ -605,6 +898,24 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   kycChecking = signal(true);
   kycSkipping = signal(false);
 
+  // ── Quiz analytics ──
+  /** keycloakId → average quiz risk score (0–100, higher = more risk) */
+  quizScores = signal<Map<string, number>>(new Map());
+  // Selected patient quiz data
+  selectedPatientQuizCount = signal<number | null>(null);
+  selectedPatientLastLevel = signal<number | null>(null);
+  selectedPatientQuizHistory = signal<QuizDTO[]>([]);
+  isLoadingQuizHistory = signal(false);
+  // Quiz Bank data
+  allQuestions = signal<QuestionDTO[]>([]);
+  filteredQuestions = signal<QuestionDTO[]>([]);
+  selectedDifficulty = signal<number>(0);
+  isLoadingQuizBank = signal(false);
+  // Quiz Overview computed counts
+  quizHighRiskCount = signal<number>(0);
+  quizModerateRiskCount = signal<number>(0);
+  quizLowRiskCount = signal<number>(0);
+
   /** Use doctor's Keycloak ID to match medical-folder doctorId storage */
   doctorIdString = computed(() => {
     const keycloakId = this.currentDoctor()?.keycloakId;
@@ -634,6 +945,13 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
         { icon: 'user', label: 'Mon Profil', action: () => this.setPage('Mon Profil') },
       ],
     },
+    {
+      label: 'Quiz',
+      items: [
+        { icon: 'brain', label: 'Quiz Overview', action: () => this.setPage('Quiz Overview') },
+        { icon: 'file', label: 'Quiz Bank', action: () => this.loadQuizBank() },
+      ],
+    },
   ];
 
   doctorKeycloakId = '';
@@ -644,6 +962,7 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
     private readonly gameService: GameService,
     private readonly keycloakService: KeycloakService,
     public readonly notifService: DoctorNotificationService,
+    private readonly quizService: QuizService,
   ) {
   }
 
@@ -862,6 +1181,41 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   viewPatientProgress(patient: UserInfo): void {
     this.selectedPatient.set(patient);
     this.setPage('Patient Progress');
+
+    // Reset quiz state
+    this.selectedPatientQuizCount.set(null);
+    this.selectedPatientLastLevel.set(null);
+    this.selectedPatientQuizHistory.set([]);
+
+    // Load quiz data (needs neondb user id)
+    this.isLoadingQuizHistory.set(true);
+    this.userApiService.getUserByKeycloakId(patient.keycloakId).subscribe({
+      next: userInfo => {
+        if (userInfo?.id) {
+          const neonId = userInfo.id;
+
+          this.quizService.getAverageScoreByCaregiver(neonId).pipe(
+            catchError(() => of(null))
+          ).subscribe();
+
+          this.quizService.getQuizCountByCaregiver(neonId).pipe(
+            catchError(() => of(null))
+          ).subscribe(count => this.selectedPatientQuizCount.set(count));
+
+          this.quizService.getRecentQuizzesByCaregiver(neonId, 20).pipe(
+            catchError(() => of([]))
+          ).subscribe(quizzes => {
+            this.selectedPatientQuizHistory.set(quizzes);
+            const lastQuiz = quizzes.find(q => q.levelReached != null);
+            this.selectedPatientLastLevel.set(lastQuiz?.levelReached ?? null);
+            this.isLoadingQuizHistory.set(false);
+          });
+        } else {
+          this.isLoadingQuizHistory.set(false);
+        }
+      },
+      error: () => this.isLoadingQuizHistory.set(false),
+    });
   }
 
   managePrescriptions(patient: UserInfo): void {
@@ -1028,6 +1382,24 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
               console.warn(`Failed to load game stats for patient ${patient.keycloakId}`, err);
             },
           });
+
+          // Load quiz risk score (needs neondb user id)
+          this.userApiService.getUserByKeycloakId(patient.keycloakId).subscribe({
+            next: userInfo => {
+              if (userInfo?.id) {
+                this.quizService.getAverageScoreByCaregiver(userInfo.id).subscribe({
+                  next: avg => {
+                    if (avg !== null && avg !== undefined) {
+                      const map = new Map(this.quizScores());
+                      map.set(patient.keycloakId, avg);
+                      this.quizScores.set(map);
+                      this.computeRiskCounts();
+                    }
+                  },
+                });
+              }
+            },
+          });
         }
       },
       error: err => {
@@ -1045,5 +1417,50 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
     this.avgPatientScore = withScores.length > 0
       ? withScores.reduce((sum, s) => sum + s.averageScore, 0) / withScores.length
       : 0;
+  }
+
+  private computeRiskCounts(): void {
+    const scores = Array.from(this.quizScores().values());
+    this.quizHighRiskCount.set(scores.filter(s => s >= 60).length);
+    this.quizModerateRiskCount.set(scores.filter(s => s >= 30 && s < 60).length);
+    this.quizLowRiskCount.set(scores.filter(s => s < 30).length);
+  }
+
+  /** Average quiz risk score (0–100) for a patient, or null if not loaded */
+  getQuizScore(keycloakId: string): number | null {
+    return this.quizScores().get(keycloakId) ?? null;
+  }
+
+  getLevelLabel(level: number): string {
+    switch (level) {
+      case 1: return 'Easy';
+      case 2: return 'Medium';
+      case 3: return 'Hard';
+      default: return '';
+    }
+  }
+
+  /** Load all questions for the Quiz Bank page, then navigate to it */
+  loadQuizBank(): void {
+    this.setPage('Quiz Bank');
+    if (this.allQuestions().length > 0) return;
+    this.isLoadingQuizBank.set(true);
+    this.quizService.getAllQuestions().pipe(
+      catchError(() => of([]))
+    ).subscribe(questions => {
+      this.allQuestions.set(questions);
+      this.filteredQuestions.set(questions);
+      this.isLoadingQuizBank.set(false);
+    });
+  }
+
+  /** Filter questions by difficulty level (0 = all) */
+  filterQuestions(level: number): void {
+    this.selectedDifficulty.set(level);
+    if (level === 0) {
+      this.filteredQuestions.set(this.allQuestions());
+    } else {
+      this.filteredQuestions.set(this.allQuestions().filter(q => q.difficultyLevel === level));
+    }
   }
 }

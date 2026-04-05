@@ -1,6 +1,7 @@
 /keycloak
 
 # Environment secrets
+.env
 .env.secret
 
 # IDE
