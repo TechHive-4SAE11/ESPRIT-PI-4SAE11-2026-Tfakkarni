@@ -3,6 +3,7 @@ import {
   signal,
   computed,
   inject,
+  input,
   DestroyRef,
   OnInit
 } from '@angular/core';
@@ -18,7 +19,7 @@ import { QuizService } from '@/core/services/quiz.service';
 import { QuestionDTO, AnswerDTO } from '@/core/models/quiz.model';
 
 // View states for the public quiz flow
-type QuizView = 'intro' | 'level-transition' | 'playing' | 'result';
+type QuizView = 'hidden' | 'intro' | 'level-transition' | 'playing' | 'result';
 
 @Component({
   selector: 'app-public-quiz',
@@ -28,7 +29,7 @@ type QuizView = 'intro' | 'level-transition' | 'playing' | 'result';
     <div class="w-full max-w-4xl mx-auto">
 
       <!-- ══════════ INTRO ══════════ -->
-      @if (view() === 'intro') {
+      @if (view() === 'intro' && !hideIntro()) {
       <z-card class="p-8 text-center">
         <z-icon zType="brain" class="h-16 w-16 mx-auto mb-4 text-primary" />
         <h2 class="text-3xl font-bold mb-4">Cognitive Assessment</h2>
@@ -276,6 +277,9 @@ export class PublicQuizComponent implements OnInit {
   private readonly quizService = inject(QuizService);
   private readonly router = inject(Router);
 
+  // ─── Inputs ────────────────────────────────────────────────────
+  hideIntro = input<boolean>(false);
+
   // ─── View State ───────────────────────────────────────────────
   view = signal<QuizView>('intro');
 
@@ -496,7 +500,7 @@ export class PublicQuizComponent implements OnInit {
   }
 
   closeResult(): void {
-    this.view.set('intro');
+    this.view.set(this.hideIntro() ? 'hidden' : 'intro');
     // Reset everything
     this.allQuestions.set([]);
     this.currentQuestion.set(null);

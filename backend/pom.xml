@@ -30,6 +30,7 @@
 		<module>ml-service</module>
 		<module>medical-service</module>
 		<module>medicament-validation-service</module>
+		<module>assistant-service</module>
 	</modules>
 	<dependencyManagement>
 		<dependencies>

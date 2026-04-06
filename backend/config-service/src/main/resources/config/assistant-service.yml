@@ -1,0 +1,116 @@
+# ═══════════════════════════════════════════════════════════════════════
+# assistant-service — Centralized config served by config-service (:8888)
+# ═══════════════════════════════════════════════════════════════════════
+
+server:
+  port: 18088
+
+spring:
+  # ── Database (PostgreSQL) ──
+  datasource:
+    url: jdbc:postgresql://ep-damp-bar-agi72bgl-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
+    username: neondb_owner
+    password: npg_8ZUiCsXMu0jd
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # ── Spring AI - OpenAI ──
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:sk-placeholder}
+      chat:
+        options:
+          model: gpt-4
+          temperature: 0.7
+          max-tokens: 2000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+# ── Feign ──
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 10000
+        loggerLevel: BASIC
+
+# ── External Video API (optional) ──
+assistant:
+  video:
+    provider: SCRIPT_ONLY
+    d-id:
+      api-key: ${DID_API_KEY:}
+      api-url: https://api.d-id.com
+    heygen:
+      api-key: ${HEYGEN_API_KEY:}
+      api-url: https://api.heygen.com
+    luma:
+      api-key: ${LUMA_API_KEY:}
+      api-url: https://api.lumalabs.ai
+    runway:
+      api-key: ${RUNWAY_API_KEY:}
+      api-url: https://api.runwayml.com
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# ── Logging ──
+logging:
+  level:
+    org.techhive.assistantservice: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
+    org.springframework.ai: DEBUG
+
+# ── Springdoc ──
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+---
+# ── Profile: local (H2 fallback) ──
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:h2:mem:assistantdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
