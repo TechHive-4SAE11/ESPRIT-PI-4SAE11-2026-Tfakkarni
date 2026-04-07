@@ -138,6 +138,7 @@ export class PatientDashboardComponent implements OnInit {
           { icon: 'calendar', label: 'Appointments', action: () => this.router.navigate(['/appointments']) },
           { icon: 'brain', label: 'Quiz Management', action: () => this.helperView?.setPage('Quizzes') },
           { icon: 'shield', label: 'Equipment', action: () => this.helperView?.setPage('Equipment') },
+          { icon: 'sparkles', label: '🤖 AI Assistant', action: () => this.router.navigate(['/ai-assistant']) },
         ],
       },
       {

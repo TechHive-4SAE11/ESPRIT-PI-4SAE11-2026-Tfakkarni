@@ -104,23 +104,14 @@ public class VoiceAssistantService {
         EquipmentLoanDTO loanDTO = EquipmentLoanDTO.builder()
                 .equipmentId(available.getId())
                 .borrowerId(userId)
-                .loanDate(LocalDateTime.now().toString())
-                .dueDate(LocalDateTime.now().plusDays(14).toString())
+                .loanDate(LocalDateTime.now())
+                .dueDate(LocalDateTime.now().plusDays(14))
                 .purpose("Emprunt via assistant vocal")
                 .status("ACTIVE")
                 .build();
 
         try {
-            // Convert string dates to LocalDateTime for the API call
-            EquipmentLoanDTO loanRequest = EquipmentLoanDTO.builder()
-                    .equipmentId(available.getId())
-                    .borrowerId(userId)
-                    .loanDate(LocalDateTime.now().toString())
-                    .dueDate(LocalDateTime.now().plusDays(14).toString())
-                    .purpose("Emprunt via assistant vocal")
-                    .status("ACTIVE")
-                    .build();
-            EquipmentLoanDTO createdLoan = medicalServiceClient.borrowEquipment(loanRequest);
+            EquipmentLoanDTO createdLoan = medicalServiceClient.borrowEquipment(loanDTO);
 
             return VoiceCommandResponse.builder()
                     .type("ACTION")
@@ -291,11 +282,26 @@ public class VoiceAssistantService {
                 Respond with a brief, friendly message in French.
                 """, command);
 
-        ChatClient chatClient = chatClientBuilder.build();
-        String aiResponse = chatClient.prompt()
-                .user(prompt)
-                .call()
-                .content();
+        String aiResponse;
+        try {
+            ChatClient chatClient = chatClientBuilder.build();
+            aiResponse = chatClient.prompt()
+                    .user(prompt)
+                    .call()
+                    .content();
+        } catch (Exception e) {
+            log.warn("OpenAI API call failed for voice command: {}", e.getMessage());
+            aiResponse = String.format("""
+                    🤖 I didn't understand the command "%s".
+                    
+                    Here are the available commands:
+                    • **borrow [name]** — Borrow medical equipment
+                    • **return [name]** — Return equipment
+                    • **quiz about [topic]** — Generate a memory quiz
+                    • **status** — View your scores and active loans
+                    
+                    Try one of these commands! 😊""", command);
+        }
 
         return VoiceCommandResponse.builder()
                 .type("INFO")

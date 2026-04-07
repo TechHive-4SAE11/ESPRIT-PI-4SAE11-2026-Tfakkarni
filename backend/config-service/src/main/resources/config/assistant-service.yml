@@ -29,10 +29,10 @@ spring:
   # ── Spring AI - OpenAI ──
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY:sk-placeholder}
+      api-key: ${OPENAI_API_KEY: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}
       chat:
         options:
-          model: gpt-4
+          model: gpt-4o-mini
           temperature: 0.7
           max-tokens: 2000
 

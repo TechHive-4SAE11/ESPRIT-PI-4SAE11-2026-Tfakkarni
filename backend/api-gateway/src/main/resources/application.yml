@@ -139,6 +139,14 @@ spring:
           uri: lb://tracking-service
           predicates:
             - Path=/api/notifications/**
+        - id: assistant-service-ai
+          uri: lb://assistant-service
+          predicates:
+            - Path=/api/ai/**
+        - id: assistant-service-ws
+          uri: lb://assistant-service
+          predicates:
+            - Path=/ws/**
   security:
     oauth2:
       resourceserver:

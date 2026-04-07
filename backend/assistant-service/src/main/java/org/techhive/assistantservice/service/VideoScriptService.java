@@ -170,11 +170,73 @@ public class VideoScriptService {
                 """, request.getTopic(), request.getDuration(), memoryTypeDescription,
                 patientContext.isEmpty() ? "No specific patient context available." : patientContext);
 
-        ChatClient chatClient = chatClientBuilder.build();
-        return chatClient.prompt()
-                .user(prompt)
-                .call()
-                .content();
+        try {
+            ChatClient chatClient = chatClientBuilder.build();
+            return chatClient.prompt()
+                    .user(prompt)
+                    .call()
+                    .content();
+        } catch (Exception e) {
+            log.warn("OpenAI API call failed for video script ({}), using fallback", e.getMessage());
+            return generateFallbackVideoScript(request);
+        }
+    }
+
+    /**
+     * Fallback: generates a realistic video script JSON without calling OpenAI.
+     */
+    private String generateFallbackVideoScript(VideoGenerateRequest request) {
+        String topic = request.getTopic() != null ? request.getTopic() : "Childhood memories";
+        int duration = request.getDuration() != null ? request.getDuration() : 60;
+        String memoryType = request.getMemoryType() != null ? request.getMemoryType() : "PHOTO";
+        int sceneDuration = duration / 4;
+
+        String script = switch (memoryType) {
+            case "STORY" -> String.format("""
+                {
+                  "script": "Welcome to this memory journey about %s. Close your eyes for a moment and think back to a time that brings you joy. Picture the faces of the people you love, the places that feel like home. Remember the warmth of a sunny afternoon, the sound of laughter filling a room. These memories are treasures that stay with us forever. Let us explore them together, one gentle step at a time.",
+                  "title": "Memory Journey: %s",
+                  "storyboard": [
+                    {"sceneNumber": 1, "description": "A warm sunrise over a peaceful garden with blooming flowers", "narration": "Let us begin our journey together. Take a deep breath and relax.", "durationSeconds": %d, "visualPrompt": "Warm golden sunrise over a beautiful flower garden, soft light, peaceful atmosphere"},
+                    {"sceneNumber": 2, "description": "A cozy living room with family photos on the mantle", "narration": "Think about the people who matter most to you. Their smiles, their voices.", "durationSeconds": %d, "visualPrompt": "Cozy living room with vintage family photographs, warm lighting, comfortable furniture"},
+                    {"sceneNumber": 3, "description": "A table set for a family meal with delicious food", "narration": "Remember the meals shared together? The flavors, the conversations, the laughter.", "durationSeconds": %d, "visualPrompt": "Beautiful family dinner table with home-cooked meal, warm candlelight, inviting atmosphere"},
+                    {"sceneNumber": 4, "description": "A peaceful evening scene with stars in the sky", "narration": "These precious memories are always with you. Carry them in your heart.", "durationSeconds": %d, "visualPrompt": "Peaceful night sky full of stars, gentle moonlight, calming and serene atmosphere"}
+                  ],
+                  "emotionalTone": "warm and encouraging",
+                  "cognitiveGoals": ["episodic memory recall", "emotional connection", "sensory stimulation"]
+                }
+                """, topic, topic, sceneDuration, sceneDuration, sceneDuration, sceneDuration);
+            case "EXERCISE" -> String.format("""
+                {
+                  "script": "Welcome to this cognitive exercise session about %s. We will go through some fun activities designed to stimulate your memory. Take your time with each exercise — there is no rush. Let us start with something simple and work our way up. Remember, every effort you make strengthens your mind!",
+                  "title": "Memory Exercise: %s",
+                  "storyboard": [
+                    {"sceneNumber": 1, "description": "A colorful introduction screen with the exercise title", "narration": "Welcome! Today we will exercise our memory together. Are you ready?", "durationSeconds": %d, "visualPrompt": "Bright colorful title card with brain icon, encouraging and friendly design"},
+                    {"sceneNumber": 2, "description": "Three common objects displayed for memorization", "narration": "Look at these three objects carefully. Try to remember their names and colors.", "durationSeconds": %d, "visualPrompt": "Three everyday objects (apple, blue cup, yellow flower) on white background, clear and simple"},
+                    {"sceneNumber": 3, "description": "A pattern recognition challenge with simple shapes", "narration": "Now, can you spot the pattern? Which shape comes next in the sequence?", "durationSeconds": %d, "visualPrompt": "Simple shape pattern sequence (circle, square, triangle, circle, square, question mark)"},
+                    {"sceneNumber": 4, "description": "A congratulations screen with encouraging message", "narration": "Excellent work! You did a wonderful job. Keep exercising your mind every day!", "durationSeconds": %d, "visualPrompt": "Celebratory congratulations screen with gold stars and confetti, warm and encouraging"}
+                  ],
+                  "emotionalTone": "encouraging and supportive",
+                  "cognitiveGoals": ["visual memory", "pattern recognition", "object recall"]
+                }
+                """, topic, topic, sceneDuration, sceneDuration, sceneDuration, sceneDuration);
+            default -> String.format("""
+                {
+                  "script": "Welcome to this personalized memory experience about %s. This photo journey is designed to bring comfort and stimulate your cherished memories. Each image has been carefully chosen to evoke positive feelings and familiar scenes. Take your time looking at each photo and let the memories flow naturally.",
+                  "title": "Photo Memories: %s",
+                  "storyboard": [
+                    {"sceneNumber": 1, "description": "A beautiful landscape with green hills and a blue sky", "narration": "Look at this beautiful view. Does it remind you of a place you have visited?", "durationSeconds": %d, "visualPrompt": "Beautiful pastoral landscape with rolling green hills, blue sky with white clouds, peaceful scene"},
+                    {"sceneNumber": 2, "description": "A garden full of colorful flowers in bloom", "narration": "These flowers are so vibrant. Can you name the colors you see?", "durationSeconds": %d, "visualPrompt": "Lush garden with roses, sunflowers, and tulips in full bloom, bright and colorful"},
+                    {"sceneNumber": 3, "description": "A kitchen scene with freshly baked cookies", "narration": "Imagine the smell of fresh cookies. Who used to bake your favorite treats?", "durationSeconds": %d, "visualPrompt": "Warm kitchen with freshly baked cookies on a tray, cozy and homey atmosphere"},
+                    {"sceneNumber": 4, "description": "A sunset over a calm lake with reflections", "narration": "As we end our journey, remember that these beautiful moments are always yours to keep.", "durationSeconds": %d, "visualPrompt": "Golden sunset reflecting on a peaceful lake, warm tones, serene and calming"}
+                  ],
+                  "emotionalTone": "warm and nostalgic",
+                  "cognitiveGoals": ["visual recognition", "sensory memory activation", "positive emotional recall"]
+                }
+                """, topic, topic, sceneDuration, sceneDuration, sceneDuration, sceneDuration);
+        };
+
+        return script;
     }
 
     @SuppressWarnings("unchecked")

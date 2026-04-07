@@ -165,6 +165,17 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
   },
 
+  // ===== ROUTES POUR L'ASSISTANT IA =====
+  {
+    path: 'ai-assistant',
+    loadComponent: () =>
+      import('@/pages/ai-assistant/ai-assistant-dashboard.component').then(
+        (m) => m.AiAssistantDashboardComponent
+      ),
+    canActivate: [AuthGuard],
+    data: { roles: ['patient', 'admin'] },
+  },
+
   {
     path: '**',
     redirectTo: 'landing',
