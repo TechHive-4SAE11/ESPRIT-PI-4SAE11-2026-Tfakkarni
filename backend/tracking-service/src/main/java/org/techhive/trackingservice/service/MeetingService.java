@@ -22,6 +22,7 @@ public class MeetingService {
     private final MedicalMeetingRepository meetingRepository;
     private final DailyRoomService dailyRoomService;
     private final MeetingSummaryService meetingSummaryService;
+    private final MeetingPdfService meetingPdfService;
 
     /**
      * Create a new meeting with a Daily.co room.
@@ -106,6 +107,74 @@ public class MeetingService {
     }
 
     /**
+     * Save live transcript chunk (auto-save from frontend).
+     * Optionally generates a Groq mini-summary for the current segment.
+     */
+    @Transactional
+    public PartialSummaryResponse saveTranscript(Long meetingId, String transcript,
+                                                  boolean requestPartialSummary,
+                                                  String segmentLabel) {
+        MedicalMeeting meeting = meetingRepository.findById(meetingId)
+                .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + meetingId));
+
+        meeting.setTranscript(transcript);
+
+        String miniSummary = null;
+        String updatedSummaries = meeting.getTranscriptSummaries();
+
+        if (requestPartialSummary && transcript != null && !transcript.trim().isEmpty()) {
+            miniSummary = meetingSummaryService.generatePartialSummary(
+                    transcript, segmentLabel,
+                    meeting.getPatientName(), meeting.getDoctorName());
+
+            // Append to JSON array stored as plain text
+            String entry = "{\"label\":\"" + escJson(segmentLabel)
+                    + "\",\"summary\":\"" + escJson(miniSummary) + "\"}";
+            if (updatedSummaries == null || updatedSummaries.isBlank()) {
+                updatedSummaries = "[" + entry + "]";
+            } else {
+                updatedSummaries = updatedSummaries.substring(0, updatedSummaries.lastIndexOf(']'))
+                        + "," + entry + "]";
+            }
+            meeting.setTranscriptSummaries(updatedSummaries);
+        }
+
+        meetingRepository.save(meeting);
+        log.debug("Transcript saved for meeting {} ({} chars)", meetingId,
+                transcript == null ? 0 : transcript.length());
+
+        return PartialSummaryResponse.builder()
+                .meetingId(meetingId)
+                .segmentLabel(segmentLabel)
+                .summary(miniSummary)
+                .transcriptSummaries(updatedSummaries)
+                .build();
+    }
+
+    /** Escape double-quotes and backslashes for inline JSON embedding. */
+    private String escJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
+    }
+
+    /**
+     * Combine notes + transcript into a single text for the final AI summary.
+     * If both exist, sections are clearly separated.
+     */
+    private String building(String notes, String transcript) {
+        boolean hasNotes      = notes != null && !notes.isBlank();
+        boolean hasTranscript = transcript != null && !transcript.isBlank();
+        if (hasNotes && hasTranscript) {
+            return "=== NOTES DU MÉDECIN ===\n" + notes
+                 + "\n\n=== TRANSCRIPTION EN DIRECT ===\n" + transcript;
+        } else if (hasTranscript) {
+            return "=== TRANSCRIPTION EN DIRECT ===\n" + transcript;
+        } else {
+            return notes;
+        }
+    }
+
+    /**
      * Update meeting notes (auto-save from frontend).
      */
     @Transactional
@@ -154,11 +223,12 @@ public class MeetingService {
             meeting.setEndedAt(LocalDateTime.now());
             meetingRepository.save(meeting);
 
-            // Generate AI summary (non-blocking for meeting end)
+            // Generate AI summary (uses notes + transcript if available)
+            String notesForSummary = building(meeting.getNotes(), meeting.getTranscript());
             String summary;
             try {
                 summary = meetingSummaryService.generateSummary(
-                        meeting.getNotes(),
+                        notesForSummary,
                         meeting.getPatientName(),
                         meeting.getDoctorName(),
                         duration
@@ -208,6 +278,15 @@ public class MeetingService {
         }
         meetingRepository.deleteById(meetingId);
         log.info("Meeting {} deleted", meetingId);
+    }
+
+    /**
+     * Generate PDF bytes for a meeting.
+     */
+    public byte[] generatePdf(Long meetingId) throws Exception {
+        MedicalMeeting meeting = meetingRepository.findById(meetingId)
+                .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + meetingId));
+        return meetingPdfService.generateMeetingPdf(meeting);
     }
 
     /**
@@ -287,6 +366,8 @@ public class MeetingService {
                 .doctorName(m.getDoctorName())
                 .notes(m.getNotes())
                 .aiSummary(m.getAiSummary())
+                .transcript(m.getTranscript())
+                .transcriptSummaries(m.getTranscriptSummaries())
                 .scheduledAt(m.getScheduledAt())
                 .startedAt(m.getStartedAt())
                 .endedAt(m.getEndedAt())

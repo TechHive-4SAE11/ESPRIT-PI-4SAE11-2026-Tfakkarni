@@ -48,6 +48,14 @@ public class MedicalMeeting {
     @Column(columnDefinition = "TEXT")
     private String aiSummary;
 
+    /** Full live transcript captured during the meeting */
+    @Column(columnDefinition = "TEXT")
+    private String transcript;
+
+    /** JSON array of periodic AI mini-summaries (every N minutes) */
+    @Column(columnDefinition = "TEXT")
+    private String transcriptSummaries;
+
     private LocalDateTime scheduledAt;
 
     private LocalDateTime startedAt;

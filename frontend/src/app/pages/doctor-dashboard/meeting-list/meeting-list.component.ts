@@ -16,6 +16,10 @@ import {
 import { UserApiService, UserInfo } from '@/core/services/user-api.service';
 import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardIconComponent } from '@/shared/components/icon';
+import { environment } from '@/environments/environment';
+
+// ── Type for parsed transcript segment summaries ──────────────────────────────
+interface SegmentSummary { label: string; summary: string; }
 
 @Component({
   selector: 'app-meeting-list',
@@ -88,18 +92,31 @@ import { ZardIconComponent } from '@/shared/components/icon';
       } @else {
         <div class="space-y-3">
           @for (m of meetings; track m.id) {
-            <div class="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition">
-              <div class="flex items-start justify-between gap-3">
+            <div class="bg-card border border-border rounded-xl overflow-hidden transition hover:border-primary/30">
+
+              <!-- ── Card header ── -->
+              <div class="flex items-start justify-between gap-3 p-4">
 
                 <!-- Info -->
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1 flex-wrap">
                     <span class="font-medium text-sm">👤 {{ m.patientName }}</span>
-                    <span class="text-xs font-medium px-2 py-0.5 rounded-full" [ngClass]="getStatusBadgeClass(m.status)">
+                    <span class="text-xs font-medium px-2 py-0.5 rounded-full"
+                          [ngClass]="getStatusBadgeClass(m.status)">
                       {{ getStatusLabel(m.status) }}
                     </span>
                     @if (m.durationMinutes) {
                       <span class="text-xs text-muted-foreground">⏱ {{ m.durationMinutes }} min</span>
+                    }
+                    @if (m.transcript) {
+                      <span class="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 px-1.5 py-0.5 rounded">
+                        🎙 Transcript
+                      </span>
+                    }
+                    @if (m.transcriptSummaries) {
+                      <span class="text-xs text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 px-1.5 py-0.5 rounded">
+                        🤖 {{ parseSegmentSummaries(m.transcriptSummaries).length }} résumés
+                      </span>
                     }
                   </div>
                   <div class="text-xs text-muted-foreground">
@@ -113,147 +130,161 @@ import { ZardIconComponent } from '@/shared/components/icon';
 
                   <!-- Rejoindre -->
                   @if (m.status === 'SCHEDULED' || m.status === 'ACTIVE') {
-                    <button
-                      z-button zSize="sm"
+                    <button z-button zSize="sm"
                       class="bg-emerald-600 hover:bg-emerald-700 text-white"
-                      (click)="openMeeting.emit(m)"
-                    >
+                      (click)="openMeeting.emit(m)">
                       🎥 Rejoindre
                     </button>
                   }
 
-                  <!-- Voir résumé AI -->
+                  <!-- Expand sections -->
                   @if (m.status === 'ENDED') {
-                    <button
-                      z-button zType="outline" zSize="sm"
-                      (click)="toggleSummary(m.id)"
-                    >
-                      @if (expandedSummaryId === m.id) { ▲ Masquer } @else { 🤖 Résumé AI }
+
+                    <!-- Résumé AI -->
+                    <button z-button zType="outline" zSize="sm"
+                      (click)="toggleSection(m.id, 'summary')">
+                      @if (isOpen(m.id, 'summary')) { ▲ Résumé } @else { 🤖 Résumé AI }
                     </button>
 
-                    <!-- Voir notes -->
+                    <!-- Notes -->
                     @if (m.notes) {
-                      <button
-                        z-button zType="outline" zSize="sm"
-                        (click)="openNotesModal(m)"
-                        title="Voir les notes complètes"
-                      >
-                        📋 Notes
+                      <button z-button zType="outline" zSize="sm"
+                        (click)="toggleSection(m.id, 'notes')">
+                        @if (isOpen(m.id, 'notes')) { ▲ Notes } @else { 📋 Notes }
                       </button>
                     }
 
-                    <!-- Télécharger PDF -->
-                    <button
-                      z-button zType="outline" zSize="sm"
+                    <!-- Transcript -->
+                    @if (m.transcript) {
+                      <button z-button zType="outline" zSize="sm"
+                        (click)="toggleSection(m.id, 'transcript')">
+                        @if (isOpen(m.id, 'transcript')) { ▲ Transcript } @else { 🎙 Transcript }
+                      </button>
+                    }
+
+                    <!-- ⬇️ PDF (backend) -->
+                    <button z-button zSize="sm"
+                      class="bg-indigo-600 hover:bg-indigo-700 text-white"
                       (click)="downloadPdf(m)"
-                      title="Télécharger rapport PDF"
-                    >
-                      ⬇️ PDF
+                      [disabled]="pdfLoadingIds.has(m.id)"
+                      title="Télécharger le rapport PDF complet">
+                      @if (pdfLoadingIds.has(m.id)) { ⏳ PDF... } @else { ⬇️ PDF }
                     </button>
                   }
 
                   <!-- Supprimer -->
                   @if (confirmDeleteId === m.id) {
                     <span class="text-xs text-red-500 font-medium">Confirmer ?</span>
-                    <button
-                      z-button zSize="sm"
+                    <button z-button zSize="sm"
                       class="bg-red-600 hover:bg-red-700 text-white"
-                      (click)="deleteMeeting(m.id)"
-                    >
-                      ✓ Oui
-                    </button>
-                    <button
-                      z-button zType="outline" zSize="sm"
-                      (click)="confirmDeleteId = null"
-                    >
-                      ✕
-                    </button>
+                      (click)="deleteMeeting(m.id)">✓ Oui</button>
+                    <button z-button zType="outline" zSize="sm"
+                      (click)="confirmDeleteId = null">✕</button>
                   } @else {
-                    <button
-                      z-button zType="outline" zSize="sm"
+                    <button z-button zType="outline" zSize="sm"
                       class="text-red-500 border-red-200 hover:bg-red-50 dark:hover:bg-red-950"
                       (click)="confirmDeleteId = m.id"
                       [disabled]="deletingIds.has(m.id)"
-                      title="Supprimer la réunion"
-                    >
+                      title="Supprimer la réunion">
                       @if (deletingIds.has(m.id)) { ⏳ } @else { 🗑️ }
                     </button>
                   }
                 </div>
               </div>
 
-              <!-- Résumé AI expandé -->
-              @if (expandedSummaryId === m.id) {
-                <div class="mt-3 pt-3 border-t border-border">
-                  @if (m.aiSummary) {
-                    @for (section of parseSummary(m.aiSummary); track section.title) {
-                      @if (section.title) {
-                        <h4 class="text-emerald-600 dark:text-emerald-400 font-semibold text-xs mt-3 mb-1 first:mt-0">{{ section.title }}</h4>
+              <!-- ══ EXPANDABLE SECTIONS ══ -->
+              @if (m.status === 'ENDED') {
+
+                <!-- ── AI SUMMARY ── -->
+                @if (isOpen(m.id, 'summary')) {
+                  <div class="border-t border-border px-4 py-3 bg-emerald-50/40 dark:bg-emerald-950/10">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-emerald-700 dark:text-emerald-400 text-xs font-bold">🤖 Résumé AI Final (Groq)</span>
+                      <div class="flex gap-1.5">
+                        <button z-button zType="outline" zSize="sm" (click)="copySummary(m.aiSummary, m.id)">
+                          {{ copyTexts[m.id] || '📋 Copier' }}
+                        </button>
+                        <button z-button zSize="sm"
+                          class="bg-indigo-600 hover:bg-indigo-700 text-white"
+                          (click)="downloadPdf(m)">⬇️ PDF</button>
+                      </div>
+                    </div>
+                    @if (m.aiSummary) {
+                      @for (section of parseSummary(m.aiSummary); track section.title) {
+                        @if (section.title) {
+                          <h4 class="text-emerald-600 dark:text-emerald-400 font-semibold text-xs mt-3 mb-1 first:mt-0">
+                            {{ section.title }}
+                          </h4>
+                        }
+                        <p class="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">{{ section.content }}</p>
                       }
-                      <p class="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">{{ section.content }}</p>
+                    } @else {
+                      <p class="text-xs text-muted-foreground italic">Aucun résumé AI disponible.</p>
+                      @if (m.notes || m.transcript) {
+                        <button z-button zType="outline" zSize="sm"
+                          class="mt-2 text-orange-600"
+                          (click)="regenerateSummary(m)"
+                          [disabled]="regeneratingIds.has(m.id)">
+                          @if (regeneratingIds.has(m.id)) { ⏳ Génération... } @else { ✨ Générer résumé AI }
+                        </button>
+                      }
                     }
-                    <div class="flex gap-2 mt-3">
-                      <button
-                        z-button zType="outline" zSize="sm"
-                        (click)="copySummary(m.aiSummary, m.id)"
-                      >
-                        {{ copyTexts[m.id] || '📋 Copier' }}
-                      </button>
-                      <button z-button zType="outline" zSize="sm" (click)="downloadPdf(m)">
-                        ⬇️ PDF
+                  </div>
+                }
+
+                <!-- ── NOTES ── -->
+                @if (isOpen(m.id, 'notes') && m.notes) {
+                  <div class="border-t border-border px-4 py-3 bg-blue-50/30 dark:bg-blue-950/10">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-blue-700 dark:text-blue-400 text-xs font-bold">📋 Notes du médecin</span>
+                      <button z-button zType="outline" zSize="sm" (click)="copyNotes(m.notes, m.id)">
+                        {{ copyNotesTexts[m.id] || '📋 Copier' }}
                       </button>
                     </div>
-                  } @else {
-                    <p class="text-xs text-muted-foreground italic">Aucun résumé AI disponible.</p>
-                    @if (m.notes) {
-                      <button
-                        z-button zType="outline" zSize="sm"
-                        class="mt-2 text-orange-600"
-                        (click)="regenerateSummary(m)"
-                        [disabled]="regeneratingIds.has(m.id)"
-                      >
-                        @if (regeneratingIds.has(m.id)) { ⏳ Génération... } @else { ✨ Générer résumé AI }
+                    <pre class="text-sm leading-relaxed text-foreground/80 whitespace-pre-wrap font-sans bg-background/60 rounded p-3 border border-border max-h-60 overflow-y-auto">{{ m.notes }}</pre>
+                  </div>
+                }
+
+                <!-- ── TRANSCRIPT ── -->
+                @if (isOpen(m.id, 'transcript') && m.transcript) {
+                  <div class="border-t border-border px-4 py-3 bg-purple-50/30 dark:bg-purple-950/10">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-purple-700 dark:text-purple-400 text-xs font-bold">🎙️ Transcription en direct</span>
+                      <button z-button zType="outline" zSize="sm" (click)="copyTranscript(m.transcript, m.id)">
+                        {{ copyTranscriptTexts[m.id] || '📋 Copier' }}
                       </button>
+                    </div>
+
+                    <!-- Segment mini-summaries (if any) -->
+                    @if (m.transcriptSummaries) {
+                      <div class="mb-3 space-y-2">
+                        <p class="text-purple-600 dark:text-purple-400 text-xs font-semibold mb-1.5">
+                          🤖 Résumés périodiques Groq ({{ parseSegmentSummaries(m.transcriptSummaries).length }} segments)
+                        </p>
+                        @for (seg of parseSegmentSummaries(m.transcriptSummaries); track seg.label) {
+                          <div class="rounded-lg overflow-hidden border border-purple-200 dark:border-purple-800">
+                            <div class="bg-purple-100 dark:bg-purple-950/40 px-3 py-1.5 text-purple-700 dark:text-purple-300 text-xs font-semibold">
+                              {{ seg.label }}
+                            </div>
+                            <div class="bg-white/50 dark:bg-background/30 px-3 py-2 text-xs text-muted-foreground leading-relaxed">
+                              {{ seg.summary }}
+                            </div>
+                          </div>
+                        }
+                      </div>
                     }
-                  }
-                </div>
+
+                    <!-- Raw transcript -->
+                    <pre class="text-xs leading-relaxed text-foreground/70 whitespace-pre-wrap font-sans bg-background/60 rounded p-3 border border-border max-h-72 overflow-y-auto">{{ m.transcript }}</pre>
+                  </div>
+                }
+
               }
             </div>
           }
         </div>
       }
     </div>
-
-    <!-- ═══ MODAL NOTES ═══ -->
-    @if (selectedNotesMeeting) {
-      <div class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
-           (click)="selectedNotesMeeting = null">
-        <div class="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
-             (click)="$event.stopPropagation()">
-          <div class="flex items-center justify-between px-5 py-4 border-b border-border">
-            <div>
-              <h2 class="font-bold text-base">📋 Notes de la réunion</h2>
-              <p class="text-muted-foreground text-xs mt-0.5">
-                {{ selectedNotesMeeting.patientName }} — {{ selectedNotesMeeting.createdAt | date:'dd/MM/yyyy' }}
-                @if (selectedNotesMeeting.durationMinutes) { — {{ selectedNotesMeeting.durationMinutes }} min }
-              </p>
-            </div>
-            <div class="flex gap-2">
-              <button z-button zType="outline" zSize="sm" (click)="copyNotes(selectedNotesMeeting.notes)">
-                {{ copyNotesText }}
-              </button>
-              <button z-button zType="outline" zSize="sm" (click)="downloadPdf(selectedNotesMeeting)">
-                ⬇️ PDF
-              </button>
-              <button z-button zType="ghost" zSize="sm" (click)="selectedNotesMeeting = null">✕</button>
-            </div>
-          </div>
-          <div class="flex-1 overflow-y-auto p-5">
-            <pre class="text-sm leading-relaxed whitespace-pre-wrap font-sans">{{ selectedNotesMeeting.notes }}</pre>
-          </div>
-        </div>
-      </div>
-    }
   `,
 })
 export class MeetingListComponent implements OnInit {
@@ -273,18 +304,28 @@ export class MeetingListComponent implements OnInit {
   creating = false;
   createError = '';
 
-  // Summary
-  expandedSummaryId: number | null = null;
-  copyTexts: Record<number, string> = {};
-  regeneratingIds = new Set<number>();
+  // ── Open sections (per meeting id) ────────────────────────────────────────
+  /** Map of meetingId → set of open section names */
+  private openSections = new Map<number, Set<string>>();
 
-  // Delete
+  isOpen(id: number, section: string): boolean {
+    return this.openSections.get(id)?.has(section) ?? false;
+  }
+
+  toggleSection(id: number, section: string): void {
+    if (!this.openSections.has(id)) this.openSections.set(id, new Set());
+    const s = this.openSections.get(id)!;
+    s.has(section) ? s.delete(section) : s.add(section);
+  }
+
+  // ── Copy / Download buttons ────────────────────────────────────────────────
+  copyTexts: Record<number, string>          = {};
+  copyNotesTexts: Record<number, string>     = {};
+  copyTranscriptTexts: Record<number, string> = {};
+  pdfLoadingIds = new Set<number>();
+  regeneratingIds = new Set<number>();
   confirmDeleteId: number | null = null;
   deletingIds = new Set<number>();
-
-  // Notes modal
-  selectedNotesMeeting: Meeting | null = null;
-  copyNotesText = '📋 Copier';
 
   ngOnInit(): void {
     this.loadMeetings();
@@ -301,8 +342,8 @@ export class MeetingListComponent implements OnInit {
 
   loadPatients(): void {
     this.userApiService.getUsersByRole('patient').subscribe({
-      next: (patients) => { this.patients = patients; },
-      error: (err) => { console.warn('Could not load patients:', err); this.patients = []; },
+      next: (p) => { this.patients = p; },
+      error: (err) => { console.warn('Could not load patients:', err); },
     });
   }
 
@@ -310,26 +351,37 @@ export class MeetingListComponent implements OnInit {
     if (!this.selectedPatientId || this.creating) return;
     this.creating = true;
     this.createError = '';
-    const request: CreateMeetingRequest = {
+    const req: CreateMeetingRequest = {
       patientKeycloakId: this.selectedPatientId,
       doctorKeycloakId: this.doctorKeycloakId,
       scheduledAt: this.scheduledAt || undefined,
     };
-    this.meetingService.createMeeting(request).subscribe({
-      next: (meeting) => {
+    this.meetingService.createMeeting(req).subscribe({
+      next: (m) => {
         this.creating = false;
         this.showCreateForm = false;
         this.selectedPatientId = '';
         this.scheduledAt = '';
-        this.meetings.unshift(meeting);
-        this.openMeeting.emit(meeting);
+        this.meetings.unshift(m);
+        this.openMeeting.emit(m);
       },
-      error: (err) => {
+      error: () => {
         this.creating = false;
         this.createError = 'Erreur lors de la création de la réunion.';
-        console.error(err);
       },
     });
+  }
+
+  // ── PDF (backend) ──────────────────────────────────────────────────────────
+
+  downloadPdf(m: Meeting): void {
+    this.pdfLoadingIds.add(m.id);
+    // Use backend endpoint — direct link with timeout feedback
+    try {
+      this.meetingService.downloadMeetingPdf(m.id, m.patientName);
+    } finally {
+      setTimeout(() => this.pdfLoadingIds.delete(m.id), 3000);
+    }
   }
 
   // ── Delete ─────────────────────────────────────────────────────────────────
@@ -349,30 +401,26 @@ export class MeetingListComponent implements OnInit {
     });
   }
 
-  // ── Notes modal ────────────────────────────────────────────────────────────
+  // ── Summary ────────────────────────────────────────────────────────────────
 
-  openNotesModal(m: Meeting): void {
-    this.selectedNotesMeeting = m;
-    this.copyNotesText = '📋 Copier';
-  }
-
-  copyNotes(notes: string): void {
-    navigator.clipboard.writeText(notes || '').then(() => {
-      this.copyNotesText = '✅ Copié !';
-      setTimeout(() => (this.copyNotesText = '📋 Copier'), 2000);
+  copySummary(summary: string, id: number): void {
+    navigator.clipboard.writeText(summary || '').then(() => {
+      this.copyTexts[id] = '✅ Copié !';
+      setTimeout(() => delete this.copyTexts[id], 2000);
     });
   }
 
-  // ── Summary ────────────────────────────────────────────────────────────────
-
-  toggleSummary(id: number): void {
-    this.expandedSummaryId = this.expandedSummaryId === id ? null : id;
+  copyNotes(notes: string, id: number): void {
+    navigator.clipboard.writeText(notes || '').then(() => {
+      this.copyNotesTexts[id] = '✅ Copié !';
+      setTimeout(() => delete this.copyNotesTexts[id], 2000);
+    });
   }
 
-  copySummary(summary: string, id: number): void {
-    navigator.clipboard.writeText(summary).then(() => {
-      this.copyTexts[id] = '✅ Copié !';
-      setTimeout(() => delete this.copyTexts[id], 2000);
+  copyTranscript(transcript: string, id: number): void {
+    navigator.clipboard.writeText(transcript || '').then(() => {
+      this.copyTranscriptTexts[id] = '✅ Copié !';
+      setTimeout(() => delete this.copyTranscriptTexts[id], 2000);
     });
   }
 
@@ -393,7 +441,10 @@ export class MeetingListComponent implements OnInit {
     });
   }
 
+  // ── Parsers ────────────────────────────────────────────────────────────────
+
   parseSummary(text: string): { title: string; content: string }[] {
+    if (!text) return [];
     const sections: { title: string; content: string }[] = [];
     let currentTitle = '';
     let currentContent: string[] = [];
@@ -402,7 +453,7 @@ export class MeetingListComponent implements OnInit {
       if (match) {
         if (currentContent.length || currentTitle)
           sections.push({ title: currentTitle, content: currentContent.join('\n').trim() });
-        currentTitle = match[1].trim();
+        currentTitle   = match[1].trim();
         currentContent = [];
       } else {
         currentContent.push(line);
@@ -413,84 +464,37 @@ export class MeetingListComponent implements OnInit {
     return sections.length ? sections : [{ title: '', content: text }];
   }
 
-  // ── PDF Download ───────────────────────────────────────────────────────────
-
-  downloadPdf(m: Meeting): void {
-    const date = m.createdAt
-      ? new Date(m.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
-      : '';
-    const duration = m.durationMinutes ? `${m.durationMinutes} minutes` : 'N/A';
-
-    const html = `<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>Rapport de réunion — ${m.patientName}</title>
-  <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; color: #1f2937; margin: 0; padding: 40px; background: #fff; }
-    .header { background: linear-gradient(135deg, #059669, #047857); color: #fff; padding: 28px 32px; border-radius: 12px; margin-bottom: 28px; }
-    .header h1 { margin: 0 0 6px; font-size: 22px; font-weight: 700; }
-    .header p { margin: 0; opacity: 0.85; font-size: 13px; }
-    .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
-    .meta-item { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; }
-    .meta-item .label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-    .meta-item .value { font-size: 14px; font-weight: 600; color: #111827; }
-    .section { margin-bottom: 24px; }
-    .section h2 { font-size: 15px; font-weight: 700; color: #059669; border-bottom: 2px solid #d1fae5; padding-bottom: 8px; margin-bottom: 14px; }
-    .notes-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; white-space: pre-wrap; font-size: 13px; line-height: 1.7; color: #374151; }
-    .summary-section h3 { font-size: 13px; font-weight: 600; color: #065f46; margin: 14px 0 6px; }
-    .summary-section p { font-size: 13px; line-height: 1.7; color: #374151; white-space: pre-wrap; margin: 0; }
-    .footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 11px; }
-    @media print { body { padding: 20px; } }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>📋 Rapport de réunion médicale</h1>
-    <p>Plateforme Tfakkarni – Suivi des patients Alzheimer</p>
-  </div>
-
-  <div class="meta">
-    <div class="meta-item"><div class="label">Patient</div><div class="value">${this.esc(m.patientName)}</div></div>
-    <div class="meta-item"><div class="label">Médecin</div><div class="value">Dr. ${this.esc(m.doctorName)}</div></div>
-    <div class="meta-item"><div class="label">Date</div><div class="value">${date}</div></div>
-    <div class="meta-item"><div class="label">Durée</div><div class="value">${duration}</div></div>
-  </div>
-
-  ${m.notes ? `
-  <div class="section">
-    <h2>📝 Notes de la réunion</h2>
-    <div class="notes-box">${this.esc(m.notes)}</div>
-  </div>` : ''}
-
-  ${m.aiSummary ? `
-  <div class="section">
-    <h2>🤖 Résumé AI (généré automatiquement)</h2>
-    <div class="summary-section">
-      ${this.parseSummary(m.aiSummary).map(s => `
-        ${s.title ? `<h3>${this.esc(s.title)}</h3>` : ''}
-        <p>${this.esc(s.content)}</p>
-      `).join('')}
-    </div>
-  </div>` : ''}
-
-  <div class="footer">
-    Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')} — Tfakkarni © 2026
-  </div>
-</body>
-</html>`;
-
-    const win = window.open('', '_blank', 'width=900,height=700');
-    if (win) {
-      win.document.write(html);
-      win.document.close();
-      setTimeout(() => { win.focus(); win.print(); }, 500);
+  parseSegmentSummaries(json: string): SegmentSummary[] {
+    if (!json) return [];
+    try {
+      return JSON.parse(json) as SegmentSummary[];
+    } catch {
+      // Fallback manual parse
+      const results: SegmentSummary[] = [];
+      const inner = json.replace(/^\[|\]$/g, '');
+      const entries = inner.split(/\},\s*\{/);
+      for (const entry of entries) {
+        const label   = this.extractField(entry, 'label');
+        const summary = this.extractField(entry, 'summary');
+        if (label && summary) results.push({ label, summary });
+      }
+      return results;
     }
   }
 
-  private esc(s: string | null | undefined): string {
-    if (!s) return '';
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  private extractField(json: string, field: string): string | null {
+    const key = `"${field}":"`;
+    const start = json.indexOf(key);
+    if (start < 0) return null;
+    let i = start + key.length;
+    let result = '';
+    while (i < json.length) {
+      const ch = json[i];
+      if (ch === '"' && json[i - 1] !== '\\') break;
+      result += ch;
+      i++;
+    }
+    return result.replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\\\/g, '\\');
   }
 
   // ── Utils ──────────────────────────────────────────────────────────────────
@@ -498,17 +502,20 @@ export class MeetingListComponent implements OnInit {
   getStatusLabel(status: string): string {
     switch (status) {
       case 'SCHEDULED': return 'Planifiée';
-      case 'ACTIVE': return 'En cours';
-      case 'ENDED': return 'Terminée';
-      default: return status;
+      case 'ACTIVE':    return 'En cours';
+      case 'ENDED':     return 'Terminée';
+      default:          return status;
     }
   }
 
   getStatusBadgeClass(status: string): Record<string, boolean> {
     return {
-      'bg-muted text-muted-foreground': status === 'SCHEDULED',
-      'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300': status === 'ACTIVE',
-      'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300': status === 'ENDED',
+      'bg-muted text-muted-foreground':
+        status === 'SCHEDULED',
+      'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300':
+        status === 'ACTIVE',
+      'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300':
+        status === 'ENDED',
     };
   }
 }

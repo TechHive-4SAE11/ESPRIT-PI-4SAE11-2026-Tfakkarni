@@ -14,6 +14,8 @@ export interface Meeting {
   doctorName: string;
   notes: string;
   aiSummary: string;
+  transcript: string;
+  transcriptSummaries: string;
   scheduledAt: string;
   startedAt: string;
   endedAt: string;
@@ -37,6 +39,13 @@ export interface MeetingToken {
   token: string;
   roomUrl: string;
   roomName: string;
+}
+
+export interface PartialSummaryResult {
+  meetingId: number;
+  segmentLabel: string;
+  summary: string | null;
+  transcriptSummaries: string | null;
 }
 
 // ── Service ─────────────────────────────────────────────
@@ -110,6 +119,15 @@ export class MeetingService {
     );
   }
 
+  /** Save live transcript chunk + optionally request a Groq partial summary */
+  saveTranscript(id: number, transcript: string,
+    requestPartialSummary: boolean,
+    segmentLabel: string): Observable<PartialSummaryResult> {
+    return this.http.put<PartialSummaryResult>(`${this.base}/${id}/transcript`, {
+      transcript, requestPartialSummary, segmentLabel
+    }).pipe(catchError(err => { console.error('Error saving transcript:', err); throw err; }));
+  }
+
   endMeeting(id: number, notes?: string): Observable<MeetingSummaryResult> {
     return this.http.put<MeetingSummaryResult>(
       `${this.base}/${id}/end`,
@@ -119,9 +137,6 @@ export class MeetingService {
     );
   }
 
-  /**
-   * Regenerate AI summary for a meeting that has a bad/missing summary.
-   */
   deleteMeeting(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}`).pipe(
       catchError(err => { console.error('Error deleting meeting:', err); throw err; })
@@ -134,6 +149,18 @@ export class MeetingService {
     ).pipe(
       catchError(err => { console.error('Error regenerating summary:', err); throw err; })
     );
+  }
+
+  /** Download meeting PDF from backend (includes transcript + AI summaries) */
+  downloadMeetingPdf(id: number, patientName: string): void {
+    const url = `${this.base}/${id}/pdf`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rapport-reunion-${patientName.replace(/\s+/g, '_')}-${id}.pdf`;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   getMeetingsForDoctor(doctorId: string): Observable<Meeting[]> {

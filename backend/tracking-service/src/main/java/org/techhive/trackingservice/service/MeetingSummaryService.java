@@ -129,7 +129,47 @@ public class MeetingSummaryService {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // HTTP helpers — OpenAI-compatible format (works with Groq + OpenAI)
+    // PARTIAL SUMMARY — Generate a mini-summary for a transcript segment
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public String generatePartialSummary(String transcriptChunk, String segmentLabel,
+                                         String patientName, String doctorName) {
+        if (transcriptChunk == null || transcriptChunk.trim().isEmpty()) {
+            return "Aucune parole détectée dans ce segment.";
+        }
+        log.info("━━━ Partial summary ({}) — Groq model={}", segmentLabel, model);
+        try {
+            String prompt = buildPartialSummaryPrompt(transcriptChunk, segmentLabel, patientName, doctorName);
+            HttpHeaders headers = buildHeaders();
+            Map<String, Object> body = buildRequestBody(prompt, 512);
+
+            ResponseEntity<Map> resp = restTemplate.exchange(
+                    apiUrl, HttpMethod.POST,
+                    new HttpEntity<>(body, headers), Map.class);
+
+            String text = extractText(resp.getBody());
+            if (text != null && !text.isBlank()) {
+                log.info("✅ Partial summary generated ({} chars)", text.length());
+                return text.trim();
+            }
+            return "Résumé partiel non disponible.";
+        } catch (Exception e) {
+            log.warn("⚠️ Partial summary failed ({}): {}", segmentLabel, e.getMessage());
+            return "Résumé partiel non disponible — API indisponible.";
+        }
+    }
+
+    private String buildPartialSummaryPrompt(String chunk, String segmentLabel,
+                                              String patientName, String doctorName) {
+        return "Tu es un assistant médical. Génère un résumé court (3-5 lignes) en français \n"
+             + "de ce segment de réunion médicale entre Dr. " + doctorName
+             + " et le patient " + patientName + ".\n\n"
+             + "Segment : " + segmentLabel + "\n"
+             + "Transcription :\n" + chunk + "\n\n"
+             + "Résumé concis des points clés (pas de titres, juste du texte) :";
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // ─────────────────────────────────────────────────────────────────────────
 
     private HttpHeaders buildHeaders() {

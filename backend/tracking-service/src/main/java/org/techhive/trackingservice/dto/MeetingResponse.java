@@ -18,6 +18,8 @@ public class MeetingResponse {
     private String doctorName;
     private String notes;
     private String aiSummary;
+    private String transcript;
+    private String transcriptSummaries;
     private LocalDateTime scheduledAt;
     private LocalDateTime startedAt;
     private LocalDateTime endedAt;

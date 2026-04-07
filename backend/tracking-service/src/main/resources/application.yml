@@ -70,12 +70,11 @@ daily:
   api-key: "296f35c5b0a3624ccbc58966d8840752b08291e3a0b378964eb661b31caacb8c"
   api-url: "https://api.daily.co/v1"
 
-# Claude AI API (meeting summaries) — CREDITS DEPLETED
-# Switched to Groq API (free, 14400 req/day, Llama 3.3)
+# Groq API (free tier: 14400 req/day) — used for AI meeting summaries & live transcript
 claude:
   api-key: "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"
   api-url: "https://api.groq.com/openai/v1/chat/completions"
-  model: "llama-3.3-70b-versatile"
+  model: "llama-3.1-8b-instant"
 
 # Meeting room settings
 meeting:

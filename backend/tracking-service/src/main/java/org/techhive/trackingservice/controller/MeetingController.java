@@ -4,7 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.techhive.trackingservice.dto.*;
 import org.techhive.trackingservice.service.MeetingService;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -77,6 +79,26 @@ public class MeetingController {
     }
 
     /**
+     * PUT /api/meetings/{id}/transcript — Save live transcript + optional partial summary
+     */
+    @PutMapping("/{id}/transcript")
+    public ResponseEntity<PartialSummaryResponse> saveTranscript(
+            @PathVariable Long id,
+            @RequestBody SaveTranscriptRequest request) {
+        try {
+            PartialSummaryResponse result = meetingService.saveTranscript(
+                    id,
+                    request.getTranscript(),
+                    request.isRequestPartialSummary(),
+                    request.getSegmentLabel());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error saving transcript for meeting {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
      * PUT /api/meetings/{id}/notes — Update meeting notes (auto-save)
      */
     @PutMapping("/{id}/notes")
@@ -117,6 +139,26 @@ public class MeetingController {
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             log.error("Error deleting meeting {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * GET /api/meetings/{id}/pdf — Download full meeting report as PDF
+     * Includes notes, live transcript, segment summaries, and final AI summary.
+     */
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<byte[]> downloadPdf(@PathVariable Long id) {
+        try {
+            byte[] pdf = meetingService.generatePdf(id);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment",
+                    "rapport-reunion-" + id + ".pdf");
+            headers.setContentLength(pdf.length);
+            return ResponseEntity.ok().headers(headers).body(pdf);
+        } catch (Exception e) {
+            log.error("Error generating PDF for meeting {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
