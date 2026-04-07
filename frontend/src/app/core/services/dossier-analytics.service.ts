@@ -40,10 +40,13 @@ export interface ClinicalSafetyStats {
   chronicMonitoringAlerts: number;
   potentialConflicts: {
     patientId: string;
+    patientDisplayName?: string | null;
     medicationName: string;
     conflictingCondition: string;
     severity: string;
   }[];
+  /** Backend filled illustrative KPIs when tracking has no prescription data (presentation-demo). */
+  illustrationData?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })

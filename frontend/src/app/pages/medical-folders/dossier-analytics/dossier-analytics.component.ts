@@ -141,6 +141,13 @@ const CHART_PALETTE = [
               LIVE RISK MONITOR
             </div>
           </div>
+          @if (data()?.safety?.illustrationData) {
+            <p class="text-xs text-amber-700 dark:text-amber-500/90 mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+              Presentation mode: illustrative KPIs and sample conflict rows are enabled on medical-service (
+              <code class="text-[10px] px-1 rounded bg-muted">SAFETY_AUDIT_PRESENTATION_DEMO=false</code>
+              in <code class="text-[10px] px-1 rounded bg-muted">backend/medical-service/.env</code> for production).
+            </p>
+          }
 
           <div class="grid gap-4 md:grid-cols-3 mb-8">
             <div class="p-4 rounded-xl border border-border/50 bg-background/50 backdrop-blur-sm">
@@ -203,7 +210,7 @@ const CHART_PALETTE = [
                 <tbody z-table-body>
                   @for (c of data()?.safety?.potentialConflicts; track $index) {
                     <tr z-table-row class="hover:bg-destructive/5 transition-colors">
-                      <td z-table-cell class="font-bold py-2">{{ c.patientId }}</td>
+                      <td z-table-cell class="font-bold py-2">{{ c.patientDisplayName || '—' }}</td>
                       <td z-table-cell class="py-2"><span class="px-2 py-0.5 rounded bg-muted text-xs font-mono">{{ c.medicationName }}</span></td>
                       <td z-table-cell class="py-2 text-destructive font-medium">{{ c.conflictingCondition }}</td>
                       <td z-table-cell class="py-2">

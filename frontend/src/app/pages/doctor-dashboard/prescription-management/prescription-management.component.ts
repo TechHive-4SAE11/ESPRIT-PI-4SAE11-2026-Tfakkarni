@@ -353,7 +353,7 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
     }
 
     this.isLoadingPrescriptions.set(true);
-    const patientDbId = this.patient.keycloakId;
+    const patientDbId = String(this.patient.id);
 
     this.prescriptionService.getPrescriptionsByPatient(patientDbId)
       .pipe(
@@ -384,8 +384,8 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
     }
 
     this.isLoadingSessions.set(true);
-    const currentDoctorDbId = this.doctor.keycloakId;
-    const patientDbId = this.patient.keycloakId;
+    const currentDoctorDbId = String(this.doctor.id);
+    const patientDbId = String(this.patient.id);
 
     console.log('[PrescriptionManagement] Loading sessions for patient:', patientDbId, 'doctor:', currentDoctorDbId);
 

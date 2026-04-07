@@ -1,0 +1,452 @@
+<div class="min-h-screen space-y-6 pb-10">
+
+    <!-- ── Notification ── -->
+    @if (notification()) {
+    <div [class]="'fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-xl text-sm font-semibold flex items-center gap-3 animate-in slide-in-from-top-2 ' +
+      (notification()?.type === 'success' ? 'bg-emerald-500 text-white' :
+       notification()?.type === 'error'   ? 'bg-red-500 text-white'     : 'bg-blue-500 text-white')">
+        <span>{{ notification()?.type === 'success' ? '✅' : notification()?.type === 'error' ? '❌' : 'ℹ️' }}</span>
+        {{ notification()?.message }}
+    </div>
+    }
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!--               VUE: QUIZ LIST                    -->
+    <!-- ══════════════════════════════════════════════ -->
+    @if (view() === 'list') {
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white">📝 My Quizzes</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Adaptive cognitive assessment — always starts at Level 1
+            </p>
+        </div>
+        <button (click)="view.set('history')"
+            class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
+            🕐 History
+        </button>
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div
+            class="rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 p-4 text-white shadow-lg shadow-blue-200 dark:shadow-none">
+            <p class="text-blue-100 text-xs font-medium mb-1">Total Quizzes</p>
+            <p class="text-3xl font-bold">{{ quizCount() || quizzes().length }}</p>
+        </div>
+        <div
+            class="rounded-2xl bg-gradient-to-br from-violet-500 to-violet-600 p-4 text-white shadow-lg shadow-violet-200 dark:shadow-none">
+            <p class="text-violet-100 text-xs font-medium mb-1">Average Risk Score</p>
+            <p class="text-3xl font-bold">{{ avgScore() | number:'1.0-0' }}%</p>
+        </div>
+        <div
+            class="rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-4 text-white shadow-lg shadow-emerald-200 dark:shadow-none">
+            <p class="text-emerald-100 text-xs font-medium mb-1">Available</p>
+            <p class="text-3xl font-bold">{{ availableQuizzes().length }}</p>
+        </div>
+        <div
+            class="rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 p-4 text-white shadow-lg shadow-amber-200 dark:shadow-none">
+            <p class="text-amber-100 text-xs font-medium mb-1">Weak points</p>
+            <p class="text-xl font-bold truncate">{{ weakTopics().length > 0 ? weakTopics().join(', ') : 'None' }}</p>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    @if (isLoading()) {
+    <div class="text-center py-20">
+        <p class="text-5xl mb-4 animate-pulse">⏳</p>
+        <p class="text-slate-500 dark:text-slate-400 text-lg">Loading quizzes...</p>
+    </div>
+    } @else {
+
+    <!-- Quiz Cards -->
+    @if (availableQuizzes().length > 0) {
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (quiz of availableQuizzes(); track quiz.id) {
+        <div
+            class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all overflow-hidden flex flex-col">
+            <!-- Color header -->
+            <div class="h-2 bg-gradient-to-r from-blue-500 to-violet-500"></div>
+            <div class="p-5 flex-1 flex flex-col">
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1 line-clamp-2">{{ quiz.topic }}</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">{{ quiz.questions?.length ?? 0 }} questions
+                    </p>
+                    @if (quiz.totalScore !== undefined && quiz.totalScore !== null) {
+                    <div class="mt-2 flex items-center gap-1.5">
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Last risk score:</span>
+                        <span
+                            [class]="'text-xs font-bold ' + (quiz.totalScore >= 60 ? 'text-red-500' : 'text-emerald-600')">
+                            {{ quiz.totalScore }}%
+                        </span>
+                    </div>
+                    }
+                    @if (quiz.levelReached) {
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                        Last level reached: <strong>{{ getDifficultyLabel(quiz.levelReached) }}</strong>
+                    </p>
+                    }
+                    @if (quiz.dateTaken) {
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ quiz.dateTaken | date:'dd/MM/yyyy' }}
+                    </p>
+                    }
+                </div>
+                <button (click)="startQuiz(quiz)"
+                    class="mt-4 w-full py-3 rounded-xl bg-blue-500 hover:bg-blue-600 active:scale-[0.98] text-white font-bold text-sm shadow-md shadow-blue-200 dark:shadow-none transition-all flex items-center justify-center gap-2">
+                    <span>▶️</span> Start Quiz
+                </button>
+            </div>
+        </div>
+        }
+    </div>
+    } @else {
+    <div class="text-center py-20">
+        <p class="text-6xl mb-4">😊</p>
+        <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">No quiz available</h2>
+        <p class="text-slate-500 dark:text-slate-400">Ask your caregiver to create quizzes for you!</p>
+    </div>
+    }
+    }
+    }
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!--               VUE: PLAY A QUIZ                 -->
+    <!-- ══════════════════════════════════════════════ -->
+    @if (view() === 'playing') {
+    <div class="space-y-5">
+        <!-- Header -->
+        <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold text-slate-800 dark:text-white truncate max-w-[70%]">{{ currentQuiz()?.topic }}
+            </h2>
+            <button (click)="cancelQuiz()"
+                class="px-4 py-2 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 text-sm font-semibold transition-all">
+                ✕ Abandon
+            </button>
+        </div>
+
+        @if (currentQuestion(); as question) {
+        <div
+            class="rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 p-6 sm:p-8 shadow-xl">
+
+            <!-- Progress bar with level indicator -->
+            <div class="mb-6">
+                <!-- Level badges -->
+                <div class="flex items-center gap-2 mb-3">
+                    @for (lvl of [1,2,3]; track lvl) {
+                    <span
+                        [class]="'px-3 py-0.5 rounded-full text-xs font-bold border-2 transition-all ' +
+                        (currentLevel() === lvl
+                          ? 'bg-blue-600 border-blue-600 text-white shadow-md'
+                          : currentLevel() > lvl
+                            ? 'bg-emerald-100 border-emerald-400 text-emerald-700'
+                            : 'bg-slate-100 border-slate-300 text-slate-400 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-400')">
+                        {{ lvl === 1 ? '1 - Easy' : lvl === 2 ? '2 - Medium' : '3 - Hard' }}
+                    </span>
+                    @if (lvl < 3) { <span class="text-slate-300 dark:text-slate-600">→</span> }
+                        }
+                </div>
+                <div class="flex justify-between text-sm text-slate-500 dark:text-slate-400 mb-2 font-medium">
+                    <span>Level {{ currentLevel() }} — Question {{ currentQuestionIndex() + 1 }} / {{
+                        levelTotalQuestions() }}</span>
+                    <span class="text-xs text-slate-400">⚠️ Risk: <strong
+                            [class]="levelRiskPercent() >= 60 ? 'text-red-500' : 'text-emerald-600'">{{
+                            levelRiskPercent() }}%</strong></span>
+                </div>
+                <div class="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-blue-500 to-violet-500 rounded-full transition-all duration-500"
+                        [style.width.%]="((currentQuestionIndex() + 1) / levelTotalQuestions()) * 100"></div>
+                </div>
+            </div>
+
+            <!-- Difficulty -->
+            <span
+                [class]="'inline-block px-3 py-1 rounded-full text-xs font-bold mb-4 ' + getDifficultyColor(question.difficultyLevel)">
+                {{ getDifficultyLabel(question.difficultyLevel) }}
+            </span>
+
+            <!-- Question text -->
+            <h3 class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white mb-6 leading-snug">
+                {{ question.text }}
+            </h3>
+
+            <!-- Media attachment -->
+            @if (question.mediaAttachment) {
+            <a [href]="question.mediaAttachment" target="_blank"
+                class="inline-flex items-center gap-1.5 text-sm text-blue-500 hover:underline mb-4">
+                🔗 View attachment
+            </a>
+            }
+
+            <!-- Answers -->
+            @if (isLoadingAnswers()) {
+            <div class="space-y-3">
+                @for (i of [1,2,3,4]; track i) {
+                <div class="h-14 bg-slate-200 dark:bg-slate-700 rounded-xl animate-pulse"></div>
+                }
+            </div>
+            } @else {
+            <div class="space-y-3">
+                @for (answer of questionAnswers(); track answer.id) {
+                <button (click)="selectAnswer(answer)" [disabled]="answerSubmitted()" [class]="getAnswerClass(answer)">
+                    {{ answer.text }}
+                    @if (answerSubmitted() && answer.id === selectedAnswer()?.id) {
+                    <span class="ml-2">{{ answer.isCorrect ? '✅' : '❌' }}</span>
+                    }
+                    @if (answerSubmitted() && answer.isCorrect && answer.id !== selectedAnswer()?.id) {
+                    <span class="ml-2 text-emerald-600">✅ Correct answer</span>
+                    }
+                </button>
+                }
+            </div>
+
+            <!-- Validation feedback -->
+            @if (answerSubmitted() && lastValidation()) {
+            <div
+                [class]="'mt-4 p-4 rounded-xl font-medium text-sm flex items-start gap-3 ' +
+          (lastValidation()?.isCorrect ? 'bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 text-emerald-800 dark:text-emerald-300' :
+                                         'bg-red-50 dark:bg-red-900/30 border border-red-200 text-red-800 dark:text-red-300')">
+                <span class="text-xl mt-0.5">{{ lastValidation()?.isCorrect ? '✅' : '❌' }}</span>
+                <div>
+                    <p class="font-bold">{{ lastValidation()?.isCorrect ? 'Correct answer!' : 'Wrong answer' }}</p>
+                    @if (lastValidation()?.explanation) {
+                    <p class="mt-1 opacity-80">{{ lastValidation()?.explanation }}</p>
+                    }
+                </div>
+            </div>
+            }
+
+            <!-- Submit -->
+            @if (!answerSubmitted()) {
+            <button (click)="submitAnswer()" [disabled]="!selectedAnswer() || isSubmitting()"
+                class="mt-6 w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-lg shadow-lg shadow-emerald-200 dark:shadow-none transition-all">
+                {{ isSubmitting() ? 'Validating...' : 'Submit my answer' }}
+            </button>
+            }
+
+            <!-- Next -->
+            @if (answerSubmitted()) {
+            <button (click)="nextQuestion()"
+                class="mt-4 w-full py-4 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-bold text-lg transition-all">
+                {{ currentQuestionIndex() + 1 >= levelTotalQuestions() ? '📊 Evaluate level' : 'Next question →' }}
+            </button>
+            }
+            }
+        </div>
+        }
+    </div>
+    }
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!--               VUE: RESULTS                    -->
+    <!-- ══════════════════════════════════════════════ -->
+    @if (view() === 'result') {
+    <div class="flex flex-col items-center justify-center py-8 space-y-6 max-w-lg mx-auto">
+
+        <!-- Saving indicator -->
+        @if (isSaving()) {
+        <div class="text-center text-slate-500 dark:text-slate-400 animate-pulse">⏳ Saving results...</div>
+        }
+
+        <!-- ── HIGH RISK (Alzheimer's warning) ── -->
+        @if (quizEndReason() === 'alzheimer-risk') {
+
+        <!-- Warning icon + heading -->
+        <div class="text-center">
+            <p class="text-6xl mb-3">⚠️</p>
+            <h2 class="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">Possible Alzheimer's Risk Detected</h2>
+            <p class="text-slate-500 dark:text-slate-400 text-sm">
+                You reached <strong>Level {{ levelReached() }} ({{ getDifficultyLabel(levelReached()) }})</strong>
+            </p>
+        </div>
+
+        <!-- Risk score circle -->
+        <div class="relative w-36 h-36">
+            <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
+                    stroke="#FEE2E2" stroke-width="3" />
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
+                    stroke="#ef4444" stroke-width="3" stroke-linecap="round"
+                    [attr.stroke-dasharray]="finalRiskPercent() + ', 100'" class="transition-all duration-1000" />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span class="text-3xl font-bold text-red-500">{{ finalRiskPercent() }}%</span>
+                <span class="text-xs text-slate-500">risk score</span>
+            </div>
+        </div>
+
+        <!-- Explanation card -->
+        <div class="w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-5">
+            <p class="text-sm font-bold text-red-700 dark:text-red-300 mb-2">⚠️ What this means</p>
+            <p class="text-sm text-red-700 dark:text-red-300 mb-3">
+                Your results suggest significant difficulty with cognitive tasks, which may indicate possible
+                early signs of <strong>Alzheimer's disease</strong>.
+                We strongly recommend consulting a healthcare professional as soon as possible.
+            </p>
+            <p class="text-xs text-red-600 dark:text-red-400 font-medium">
+                💡 A higher risk score means more incorrect answers were detected.
+            </p>
+        </div>
+
+        <!-- Register CTA -->
+        <div
+            class="w-full bg-gradient-to-br from-blue-50 to-violet-50 dark:from-blue-900/20 dark:to-violet-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-5">
+            <p class="text-sm font-bold text-blue-800 dark:text-blue-300 mb-1">📊 Your results have been saved</p>
+            <p class="text-sm text-blue-700 dark:text-blue-400">
+                Your doctor can now monitor your cognitive evolution in real time through their dashboard.
+                Make sure to take this quiz regularly to track your progress.
+            </p>
+        </div>
+
+        <!-- Back button -->
+        <button (click)="backToList()"
+            class="w-full py-4 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white font-bold text-lg shadow-lg shadow-blue-200 dark:shadow-none transition-all">
+            Back to quizzes
+        </button>
+
+        }
+
+        <!-- ── LOW RISK ── -->
+        @if (quizEndReason() === 'low-risk') {
+
+        <!-- Good news icon + heading -->
+        <div class="text-center">
+            <p class="text-6xl mb-3">✅</p>
+            <h2 class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-1">No Significant Risk Detected</h2>
+            <p class="text-slate-500 dark:text-slate-400 text-sm">
+                You reached <strong>Level {{ levelReached() }} ({{ getDifficultyLabel(levelReached()) }})</strong>
+            </p>
+        </div>
+
+        <!-- Risk score circle -->
+        <div class="relative w-36 h-36">
+            <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
+                    stroke="#D1FAE5" stroke-width="3" />
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
+                    stroke="#10b981" stroke-width="3" stroke-linecap="round"
+                    [attr.stroke-dasharray]="finalRiskPercent() + ', 100'" class="transition-all duration-1000" />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span class="text-3xl font-bold text-emerald-500">{{ finalRiskPercent() }}%</span>
+                <span class="text-xs text-slate-500">risk score</span>
+            </div>
+        </div>
+
+        <!-- Explanation card -->
+        <div
+            class="w-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-5">
+            <p class="text-sm font-bold text-emerald-700 dark:text-emerald-300 mb-2">✅ Good news</p>
+            <p class="text-sm text-emerald-700 dark:text-emerald-300 mb-3">
+                Your cognitive assessment shows <strong>no significant risk</strong> of Alzheimer's disease at this
+                time.
+                Keep up with brain exercises and a healthy lifestyle!
+            </p>
+            <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                💡 If you have any doubts or concerns, we still recommend consulting your doctor.
+            </p>
+        </div>
+
+        <!-- Saved notice -->
+        <div
+            class="w-full bg-gradient-to-br from-blue-50 to-violet-50 dark:from-blue-900/20 dark:to-violet-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-5">
+            <p class="text-sm font-bold text-blue-800 dark:text-blue-300 mb-1">📊 Your results have been saved</p>
+            <p class="text-sm text-blue-700 dark:text-blue-400">
+                Your doctor can monitor your evolution over time. Regular assessments help detect any changes early.
+            </p>
+        </div>
+
+        <!-- Back button -->
+        <button (click)="backToList()"
+            class="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg shadow-lg shadow-emerald-200 dark:shadow-none transition-all">
+            Back to quizzes
+        </button>
+
+        }
+
+    </div>
+    }
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!--               VUE: HISTORY                    -->
+    <!-- ══════════════════════════════════════════════ -->
+    @if (view() === 'history') {
+    <div class="space-y-5">
+        <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-bold text-slate-800 dark:text-white">🕐 Recent Quizzes</h2>
+            <button (click)="view.set('list')"
+                class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
+                ← Back
+            </button>
+        </div>
+
+        <!-- Summary stats -->
+        <div class="grid grid-cols-2 gap-3">
+            <div class="rounded-2xl bg-gradient-to-br from-violet-500 to-violet-600 p-4 text-white">
+                <p class="text-violet-100 text-xs mb-1">Average risk score</p>
+                <p class="text-3xl font-bold">{{ avgScore() | number:'1.0-0' }}%</p>
+                <p class="text-violet-200 text-xs mt-1">Higher = more risk</p>
+            </div>
+            <div class="rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 p-4 text-white">
+                <p class="text-blue-100 text-xs mb-1">Total quizzes taken</p>
+                <p class="text-3xl font-bold">{{ quizCount() }}</p>
+            </div>
+        </div>
+
+        <!-- What the score means -->
+        <div class="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4">
+            <p class="text-xs font-bold text-amber-800 dark:text-amber-300 mb-1">📖 How risk score works</p>
+            <p class="text-xs text-amber-700 dark:text-amber-400">
+                The <strong>risk score</strong> = percentage of <em>incorrect</em> answers.
+                A lower score means better cognitive performance.
+                <strong class="text-red-600">≥ 60% risk</strong> → doctor is notified.
+                <strong class="text-emerald-600">&lt; 60%</strong> → no significant risk.
+            </p>
+        </div>
+
+        <!-- Recent quizzes -->
+        @if (recentQuizzes().length > 0) {
+        <div class="space-y-3">
+            @for (quiz of recentQuizzes(); track quiz.id) {
+            <div
+                class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 shadow-sm">
+                <!-- Risk indicator circle -->
+                <div [class]="'w-14 h-14 rounded-xl flex flex-col items-center justify-center text-white font-bold text-sm flex-shrink-0 ' +
+                    ((quiz.totalScore ?? 0) >= 60
+                      ? 'bg-gradient-to-br from-red-500 to-red-600'
+                      : 'bg-gradient-to-br from-emerald-500 to-emerald-600')">
+                    <span class="text-lg font-black">{{ (quiz.totalScore ?? 0) }}%</span>
+                    <span class="text-xs opacity-80">risk</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-slate-800 dark:text-white truncate">{{ quiz.topic }}</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {{ quiz.dateTaken ? (quiz.dateTaken | date:'dd/MM/yyyy \'at\' HH:mm') : 'Not taken' }}
+                    </p>
+                    @if (quiz.levelReached) {
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                        Level reached: <strong>{{ getDifficultyLabel(quiz.levelReached) }}</strong>
+                    </p>
+                    }
+                </div>
+                <div class="text-right flex-shrink-0">
+                    <p [class]="'font-bold ' + ((quiz.totalScore ?? 0) >= 60 ? 'text-red-500' : 'text-emerald-600')">
+                        {{ (quiz.totalScore ?? 0) >= 60 ? '⚠️ High risk' : '✅ Low risk' }}
+                    </p>
+                    <button (click)="startQuiz(quiz)" class="text-xs text-blue-500 hover:underline mt-1 block">
+                        Retry ▶️
+                    </button>
+                </div>
+            </div>
+            }
+        </div>
+        } @else {
+        <div class="text-center py-12 text-slate-500 dark:text-slate-400">
+            <p class="text-5xl mb-4">📭</p>
+            <p>No recent quizzes found.</p>
+        </div>
+        }
+    </div>
+    }
+
+</div>

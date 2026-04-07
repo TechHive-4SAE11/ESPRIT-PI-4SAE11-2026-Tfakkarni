@@ -10,6 +10,7 @@ import { AuthService } from '@/core/auth';
 import { ZardButtonComponent } from '@/shared/components/button/button.component';
 import { ZardCardComponent } from '@/shared/components/card/card.component';
 import { ZardInputDirective } from '@/shared/components/input/input.directive';
+import { MockRecaptchaComponent } from '@/shared/components/mock-recaptcha/mock-recaptcha.component';
 
 @Component({
   selector: 'app-login',
@@ -21,6 +22,7 @@ import { ZardInputDirective } from '@/shared/components/input/input.directive';
     ZardButtonComponent,
     ZardCardComponent,
     ZardInputDirective,
+    MockRecaptchaComponent,
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css'],
@@ -31,6 +33,7 @@ export class LoginComponent implements OnInit {
   password = '';
   errorMessage = '';
   isLoading = false;
+  recaptchaToken: string | null = null;
   private readonly platformId = inject(PLATFORM_ID);
 
   constructor(
@@ -60,6 +63,11 @@ export class LoginComponent implements OnInit {
 
     if (!this.username || !this.password) {
       this.errorMessage = 'Please enter both username and password';
+      return;
+    }
+
+    if (!this.recaptchaToken) {
+      this.errorMessage = 'Please confirm you are not a robot';
       return;
     }
 

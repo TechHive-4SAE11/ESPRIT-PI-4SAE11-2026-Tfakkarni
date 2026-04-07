@@ -4,6 +4,14 @@ server:
 spring:
   application:
     name: tracking-service
+
+  # config service/client — values below are fallbacks used when config-server is not running
+  cloud:
+    config:
+      enabled: true
+  config:
+    import: optional:configserver:http://localhost:8888
+
   servlet:
     multipart:
       max-file-size: 25MB
@@ -55,3 +63,13 @@ telegram:
 elevenlabs:
   api:
     key: 73c14898e29696c0436967f175924d3902aa45ab609a206221c5275a0d4db84c
+
+# actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always

@@ -1,0 +1,29 @@
+server:
+  port: 18085
+
+spring:
+  datasource:
+    url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
+    username: neondb_owner
+    password: npg_3uElGswIc7gk
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+
+# Set GEMINI_API_KEY in environment or repo-root .env (loaded by ml-service at startup)
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  model: gemini-2.5-flash
