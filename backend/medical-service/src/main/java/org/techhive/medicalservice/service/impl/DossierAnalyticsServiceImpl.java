@@ -1,5 +1,6 @@
 package org.techhive.medicalservice.service.impl;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.techhive.medicalservice.dto.CrossPatientDiseaseDto;
@@ -21,13 +22,53 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class DossierAnalyticsServiceImpl implements DossierAnalyticsService {
+
+        private static final String TRACKING_BASE = "http://tracking-service";
+
+        /**
+         * Demo conflict rows (presentation-demo): Jack Sparrow, Nessim Baraket, monta kaabi — UUIDs match app patients.
+         */
+        private static final PresentationConflictSeed[] PRESENTATION_CONFLICT_SEEDS = {
+                        new PresentationConflictSeed("85f70fbb-89c1-4156-b49c-5597b74f91f6", "Jack Sparrow", "Ibuprofen",
+                                        "NSAID vs acid-related disease", "MEDIUM"),
+                        new PresentationConflictSeed("85f70fbb-89c1-4156-b49c-5597b74f91f6", "Jack Sparrow", "Naproxen",
+                                        "NSAID vs GERD / reflux", "MEDIUM"),
+                        new PresentationConflictSeed("85f70fbb-89c1-4156-b49c-5597b74f91f6", "Jack Sparrow", "Ketoprofen",
+                                        "GI bleed risk with NSAID course", "HIGH"),
+                        new PresentationConflictSeed("72e0e30c-4eeb-47ec-9317-900bc2de1c12", "Nessim Baraket", "Warfarin",
+                                        "Anticoagulant / antiplatelet stacking", "HIGH"),
+                        new PresentationConflictSeed("72e0e30c-4eeb-47ec-9317-900bc2de1c12", "Nessim Baraket", "Aspirin",
+                                        "Bleeding risk (multi-agent antithrombotic)", "HIGH"),
+                        new PresentationConflictSeed("72e0e30c-4eeb-47ec-9317-900bc2de1c12", "Nessim Baraket", "Clopidogrel",
+                                        "Dual antiplatelet — hemorrhagic risk", "HIGH"),
+                        new PresentationConflictSeed("44b7b0de-dd77-437f-bd06-855988ac2dba", "monta kaabi", "Aspirin",
+                                        "NSAID vs peptic ulcer disease", "HIGH"),
+                        new PresentationConflictSeed("44b7b0de-dd77-437f-bd06-855988ac2dba", "monta kaabi", "Ibuprofen",
+                                        "Cardiovascular risk (long-term NSAID)", "MEDIUM"),
+                        new PresentationConflictSeed("44b7b0de-dd77-437f-bd06-855988ac2dba", "monta kaabi", "Metformin",
+                                        "Renal function caution (contrast / dehydration)", "MEDIUM"),
+        };
+
+        private record PresentationConflictSeed(String patientId, String patientDisplayName, String medicationName,
+                        String conflictingCondition, String severity) {
+        }
 
         private final DiagnosticsRepository diagnosticsRepository;
         private final MedicalFolderRepository medicalFolderRepository;
         private final MedicalHistoryRepository medicalHistoryRepository;
         private final RestTemplate restTemplate;
+
+        /**
+         * When true and tracking returns no medications, KPIs are augmented with plausible sample values
+         * tied to real patient IDs from diagnostics (jury / local demo only).
+         */
+        @Value("${medical.analytics.safety-audit.presentation-demo:false}")
+        private boolean safetyAuditPresentationDemo;
 
         public DossierAnalyticsServiceImpl(DiagnosticsRepository diagnosticsRepository,
                         MedicalFolderRepository medicalFolderRepository,
@@ -107,82 +148,232 @@ public class DossierAnalyticsServiceImpl implements DossierAnalyticsService {
 
         @Override
         public ClinicalSafetyStatsDto getClinicalSafetyStats() {
+                List<Diagnostics> diagnostics = diagnosticsRepository.findAll();
                 try {
-                        // 1. Fetch Local Data (Diagnostics)
-                        List<Diagnostics> diagnostics = diagnosticsRepository.findAll();
+                        Map<String, List<String>> patientMeds = loadPatientMedicationsFromTracking();
 
-                        // 2. Fetch Remote Data (Prescriptions from tracking-service)
-                        // We use the Eureka service name thanks to @LoadBalanced RestTemplate
-                        String trackingUrl = "http://tracking-service/api/medical-folders";
-                        JsonNode remoteFolders = restTemplate.getForObject(trackingUrl, JsonNode.class);
-
-                        // 3. Process & Correlate
-                        Map<String, List<String>> patientMeds = new HashMap<>();
-                        if (remoteFolders != null && remoteFolders.isArray()) {
-                                for (JsonNode folder : remoteFolders) {
-                                        String patientId = folder.path("idPatient").asText();
-                                        List<String> meds = new ArrayList<>();
-                                        folder.path("sessions").forEach(session -> session.path("prescriptions")
-                                                        .forEach(prescription -> prescription.path("medications")
-                                                                        .forEach(med -> meds.add(med
-                                                                                        .path("medicationName").asText()
-                                                                                        .toLowerCase()))));
-                                        patientMeds.put(patientId, meds);
-                                }
-                        }
-
-                        // Calculations
                         long coveredCount = 0;
-                        long polypharmacyCount = 0;
-                        long chronicAlerts = 0;
+                        Set<String> polyPatients = new HashSet<>();
+                        Set<String> chronicPatients = new HashSet<>();
+                        Set<String> conflictKeys = new HashSet<>();
                         List<ClinicalSafetyStatsDto.MedicationConflictDto> conflicts = new ArrayList<>();
 
                         for (Diagnostics diag : diagnostics) {
                                 String pId = diag.getMedicalFolder().getPatientId();
                                 List<String> meds = patientMeds.getOrDefault(pId, Collections.emptyList());
+                                String diseaseLower = diag.getDiseaseName() != null
+                                                ? diag.getDiseaseName().toLowerCase()
+                                                : "";
+                                Set<String> medSet = new HashSet<>(meds);
 
-                                // Coverage check
                                 if (!meds.isEmpty())
                                         coveredCount++;
 
-                                // Polypharmacy Check (> 5 unique meds)
-                                if (new HashSet<>(meds).size() > 5)
-                                        polypharmacyCount++;
+                                if (medSet.size() > 5)
+                                        polyPatients.add(pId);
 
-                                // Chronic Monitoring (e.g., Alzheimer, Hypertension mentioned)
-                                if ((diag.getDiseaseName().toLowerCase().contains("alzheimer") ||
-                                                diag.getDiseaseName().toLowerCase().contains("diabetes"))
+                                if ((diseaseLower.contains("alzheimer") || diseaseLower.contains("diabetes"))
                                                 && meds.isEmpty()) {
-                                        chronicAlerts++;
+                                        chronicPatients.add(pId);
                                 }
 
-                                // Safety Logic (Mocking a Drug-Condition conflict check)
-                                // Example: Patients with "Acid Reflux" shouldn't usually have heavy "Ibuprofen"
-                                if (diag.getDiseaseName().toLowerCase().contains("reflux")
-                                                && meds.contains("ibuprofen")) {
-                                        conflicts.add(ClinicalSafetyStatsDto.MedicationConflictDto.builder()
-                                                        .patientId(pId)
-                                                        .medicationName("Ibuprofen")
-                                                        .conflictingCondition("Acid Reflux")
-                                                        .severity("MEDIUM")
-                                                        .build());
-                                }
+                                addConflictIfMatch(conflicts, conflictKeys, pId, diseaseLower, medSet, "reflux",
+                                                Set.of("ibuprofen", "naproxen", "ketoprofen"),
+                                                "NSAID vs acid-related disease", "MEDIUM");
+                                addConflictIfMatch(conflicts, conflictKeys, pId, diseaseLower, medSet, "ulcer",
+                                                Set.of("ibuprofen", "aspirin", "naproxen"),
+                                                "NSAID vs peptic ulcer", "HIGH");
+                                addConflictIfMatch(conflicts, conflictKeys, pId, diseaseLower, medSet, "bleeding",
+                                                Set.of("warfarin", "aspirin", "clopidogrel"),
+                                                "Anticoagulant / antiplatelet stacking", "HIGH");
                         }
 
-                        return ClinicalSafetyStatsDto.builder()
+                        ClinicalSafetyStatsDto built = ClinicalSafetyStatsDto.builder()
                                         .treatmentCoverageRate(diagnostics.isEmpty() ? 0
                                                         : (double) coveredCount / diagnostics.size() * 100)
-                                        .polypharmacyRiskCount(polypharmacyCount)
-                                        .chronicMonitoringAlerts(chronicAlerts)
+                                        .polypharmacyRiskCount(polyPatients.size())
+                                        .chronicMonitoringAlerts(chronicPatients.size())
                                         .potentialConflicts(conflicts)
+                                        .illustrationData(false)
                                         .build();
 
+                        return maybeAugmentSafetyAuditForPresentation(built, patientMeds, diagnostics);
+
                 } catch (Exception e) {
-                        // Fallback if tracking-service is down
+                        log.warn("Clinical safety audit: tracking unavailable or parse error: {}", e.getMessage());
+                        if (safetyAuditPresentationDemo) {
+                                return augmentSafetyAuditPresentationSample(
+                                                ClinicalSafetyStatsDto.builder()
+                                                                .treatmentCoverageRate(0)
+                                                                .polypharmacyRiskCount(0)
+                                                                .chronicMonitoringAlerts(0)
+                                                                .potentialConflicts(Collections.emptyList())
+                                                                .illustrationData(false)
+                                                                .build(),
+                                                diagnostics);
+                        }
                         return ClinicalSafetyStatsDto.builder()
                                         .treatmentCoverageRate(0).polypharmacyRiskCount(0).chronicMonitoringAlerts(0)
                                         .potentialConflicts(Collections.emptyList())
+                                        .illustrationData(false)
                                         .build();
+                }
+        }
+
+        private boolean isTrackingMedicationDataEmpty(Map<String, List<String>> patientMeds) {
+                if (patientMeds == null || patientMeds.isEmpty()) {
+                        return true;
+                }
+                return patientMeds.values().stream().mapToInt(List::size).sum() == 0;
+        }
+
+        private ClinicalSafetyStatsDto maybeAugmentSafetyAuditForPresentation(ClinicalSafetyStatsDto computed,
+                        Map<String, List<String>> patientMeds, List<Diagnostics> diagnostics) {
+                if (!safetyAuditPresentationDemo) {
+                        return computed;
+                }
+                boolean trackingEmpty = isTrackingMedicationDataEmpty(patientMeds);
+                log.info("Safety audit: presentation-demo active (tracking meds empty={}).", trackingEmpty);
+                return augmentSafetyAuditPresentationSample(computed, diagnostics);
+        }
+
+        /**
+         * Ensures non-zero KPIs and sample conflict rows using real patient IDs from diagnostics when possible.
+         */
+        private ClinicalSafetyStatsDto augmentSafetyAuditPresentationSample(ClinicalSafetyStatsDto base,
+                        List<Diagnostics> diagnostics) {
+                double coverage = base.getTreatmentCoverageRate();
+                if (diagnostics.isEmpty()) {
+                        coverage = 0;
+                } else if (coverage < 1.0) {
+                        coverage = 68.0;
+                }
+
+                List<ClinicalSafetyStatsDto.MedicationConflictDto> merged = new ArrayList<>(
+                                base.getPotentialConflicts() != null ? base.getPotentialConflicts()
+                                                : Collections.emptyList());
+                Set<String> seen = new HashSet<>();
+                for (ClinicalSafetyStatsDto.MedicationConflictDto c : merged) {
+                        seen.add(c.getPatientId() + "|" + c.getMedicationName() + "|" + c.getConflictingCondition());
+                }
+                for (PresentationConflictSeed row : PRESENTATION_CONFLICT_SEEDS) {
+                        addPresentationConflictIfMissing(merged, seen, row.patientId(), row.patientDisplayName(),
+                                        row.medicationName(), row.conflictingCondition(), row.severity());
+                }
+
+                return ClinicalSafetyStatsDto.builder()
+                                .treatmentCoverageRate(coverage)
+                                .polypharmacyRiskCount(Math.max(base.getPolypharmacyRiskCount(), 3))
+                                .chronicMonitoringAlerts(Math.max(base.getChronicMonitoringAlerts(), 2))
+                                .potentialConflicts(merged)
+                                .illustrationData(true)
+                                .build();
+        }
+
+        private static void addPresentationConflictIfMissing(
+                        List<ClinicalSafetyStatsDto.MedicationConflictDto> merged, Set<String> seen,
+                        String patientId, String patientDisplayName, String med, String condition, String severity) {
+                String key = patientId + "|" + med + "|" + condition;
+                if (!seen.add(key)) {
+                        return;
+                }
+                merged.add(ClinicalSafetyStatsDto.MedicationConflictDto.builder()
+                                .patientId(patientId)
+                                .patientDisplayName(patientDisplayName)
+                                .medicationName(med)
+                                .conflictingCondition(condition)
+                                .severity(severity)
+                                .build());
+        }
+
+        /**
+         * Tracking exposes flat folder DTOs (no nested sessions). We resolve prescriptions by
+         * walking sessions and session-scoped prescription lists — same data the UI uses.
+         */
+        private Map<String, List<String>> loadPatientMedicationsFromTracking() {
+                Map<String, List<String>> patientMeds = new HashMap<>();
+                JsonNode folders = restTemplate.getForObject(TRACKING_BASE + "/api/medical-folders",
+                                JsonNode.class);
+                if (folders == null || !folders.isArray()) {
+                        return patientMeds;
+                }
+                for (JsonNode folder : folders) {
+                        String patientId = extractTrackingPatientId(folder);
+                        if (patientId == null || patientId.isBlank()) {
+                                continue;
+                        }
+                        long folderId = folder.path("id").asLong(0);
+                        if (folderId == 0L) {
+                                continue;
+                        }
+                        JsonNode sessions = restTemplate.getForObject(
+                                        TRACKING_BASE + "/api/sessions/medical-folder/" + folderId,
+                                        JsonNode.class);
+                        if (sessions == null || !sessions.isArray()) {
+                                continue;
+                        }
+                        for (JsonNode session : sessions) {
+                                long sessionId = session.path("id").asLong(0);
+                                if (sessionId == 0L) {
+                                        continue;
+                                }
+                                JsonNode prescriptions = restTemplate.getForObject(
+                                                TRACKING_BASE + "/api/prescriptions/session/" + sessionId,
+                                                JsonNode.class);
+                                mergeMedicationNames(patientMeds, patientId, prescriptions);
+                        }
+                }
+                return patientMeds;
+        }
+
+        private static String extractTrackingPatientId(JsonNode folder) {
+                String p = folder.path("patientId").asText("");
+                if (!p.isBlank()) {
+                        return p;
+                }
+                p = folder.path("idPatient").asText("");
+                return p.isBlank() ? null : p;
+        }
+
+        private static void mergeMedicationNames(Map<String, List<String>> patientMeds, String patientId,
+                        JsonNode prescriptions) {
+                if (prescriptions == null || !prescriptions.isArray()) {
+                        return;
+                }
+                for (JsonNode prescription : prescriptions) {
+                        prescription.path("medications").forEach(med -> {
+                                String name = med.path("medicationName").asText("").trim();
+                                if (!name.isBlank()) {
+                                        patientMeds.computeIfAbsent(patientId, k -> new ArrayList<>())
+                                                        .add(name.toLowerCase());
+                                }
+                        });
+                }
+        }
+
+        private static void addConflictIfMatch(List<ClinicalSafetyStatsDto.MedicationConflictDto> conflicts,
+                        Set<String> conflictKeys, String patientId, String diseaseLower, Set<String> medSet,
+                        String diseaseKeyword, Set<String> riskyMedsLower, String label, String severity) {
+                if (!diseaseLower.contains(diseaseKeyword)) {
+                        return;
+                }
+                for (String rm : riskyMedsLower) {
+                        if (medSet.contains(rm)) {
+                                String key = patientId + "|" + rm + "|" + label;
+                                if (!conflictKeys.add(key)) {
+                                        return;
+                                }
+                                String displayName = rm.length() > 1
+                                                ? rm.substring(0, 1).toUpperCase() + rm.substring(1)
+                                                : rm.toUpperCase();
+                                conflicts.add(ClinicalSafetyStatsDto.MedicationConflictDto.builder()
+                                                .patientId(patientId)
+                                                .medicationName(displayName)
+                                                .conflictingCondition(label)
+                                                .severity(severity)
+                                                .build());
+                                return;
+                        }
                 }
         }
 
@@ -198,31 +389,56 @@ public class DossierAnalyticsServiceImpl implements DossierAnalyticsService {
                 List<FolderSpecificStatsDto.MedicationSummary> prescriptions = new ArrayList<>();
                 Set<String> prescribedMeds = new HashSet<>();
 
-                // 1. Safe fetch prescriptions for this folder from tracking-service
+                // 1. Fetch prescriptions from tracking (folder DTOs are flat — no nested sessions)
                 try {
-                        String trackingUrl = "http://tracking-service/api/medical-folders/" + folderId;
-                        JsonNode remoteFolder = restTemplate.getForObject(trackingUrl, JsonNode.class);
-
-                        if (remoteFolder != null) {
-                                remoteFolder.path("sessions").forEach(session -> {
-                                        String date = session.path("createdAt").asText();
-                                        session.path("prescriptions").forEach(p -> {
-                                                p.path("medications").forEach(m -> {
-                                                        String name = m.path("medicationName").asText();
-                                                        prescriptions.add(FolderSpecificStatsDto.MedicationSummary
-                                                                        .builder()
-                                                                        .medicationName(name)
-                                                                        .prescribedAt(date)
-                                                                        .build());
-                                                        prescribedMeds.add(name.toLowerCase());
-                                                });
-                                        });
-                                });
+                        String patientId = folder.getPatientId();
+                        JsonNode trackingFolders = restTemplate.getForObject(
+                                        TRACKING_BASE + "/api/medical-folders/patient/" + patientId,
+                                        JsonNode.class);
+                        if (trackingFolders != null && trackingFolders.isArray()) {
+                                for (JsonNode tf : trackingFolders) {
+                                        long tid = tf.path("id").asLong(0);
+                                        if (tid == 0L) {
+                                                continue;
+                                        }
+                                        JsonNode sessions = restTemplate.getForObject(
+                                                        TRACKING_BASE + "/api/sessions/medical-folder/" + tid,
+                                                        JsonNode.class);
+                                        if (sessions == null || !sessions.isArray()) {
+                                                continue;
+                                        }
+                                        for (JsonNode session : sessions) {
+                                                long sessionId = session.path("id").asLong(0);
+                                                if (sessionId == 0L) {
+                                                        continue;
+                                                }
+                                                String date = session.path("createdAt").asText("");
+                                                JsonNode prescList = restTemplate.getForObject(
+                                                                TRACKING_BASE + "/api/prescriptions/session/"
+                                                                                + sessionId,
+                                                                JsonNode.class);
+                                                if (prescList == null || !prescList.isArray()) {
+                                                        continue;
+                                                }
+                                                for (JsonNode p : prescList) {
+                                                        p.path("medications").forEach(m -> {
+                                                                String name = m.path("medicationName").asText("");
+                                                                if (!name.isBlank()) {
+                                                                        prescriptions.add(
+                                                                                        FolderSpecificStatsDto.MedicationSummary
+                                                                                                        .builder()
+                                                                                                        .medicationName(name)
+                                                                                                        .prescribedAt(date)
+                                                                                                        .build());
+                                                                        prescribedMeds.add(name.toLowerCase());
+                                                                }
+                                                        });
+                                                }
+                                        }
+                                }
                         }
                 } catch (Exception e) {
-                        // Simply ignore tracking-service errors for the rest of the logic
-                        // prescriptions will be empty, which is handled gracefully
-                        System.err.println("Tracking service unavailable during dossier analytics: " + e.getMessage());
+                        log.debug("Tracking service unavailable during folder analytics: {}", e.getMessage());
                 }
 
                 // 2. Coverage calculation

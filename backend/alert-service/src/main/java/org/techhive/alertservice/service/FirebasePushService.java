@@ -115,6 +115,39 @@ public class FirebasePushService {
         }
     }
 
+    /**
+     * Generic coaching / non-medication push (Tfakkarni coaching goals).
+     */
+    public boolean sendCoachingPush(String fcmToken, String title, String body, long goalId, String subType) {
+        if (firebaseMessaging == null) {
+            log.warn("Firebase Messaging not configured — skipping coaching push");
+            return false;
+        }
+        if (fcmToken == null || fcmToken.isBlank()) {
+            log.warn("No FCM token — skipping coaching push for goal {}", goalId);
+            return false;
+        }
+        try {
+            String st = subType != null ? subType : "GENERAL";
+            Message message = Message.builder()
+                    .setToken(fcmToken)
+                    .setNotification(Notification.builder()
+                            .setTitle(title != null ? title : "Tfakkarni — Coaching")
+                            .setBody(body != null ? body : "")
+                            .build())
+                    .putData("type", "COACHING")
+                    .putData("goalId", String.valueOf(goalId))
+                    .putData("subType", st)
+                    .build();
+            String messageId = firebaseMessaging.send(message);
+            log.info("✅ Coaching push sent goalId={} messageId={}", goalId, messageId);
+            return true;
+        } catch (Exception e) {
+            log.error("❌ Coaching push failed: {}", e.getMessage());
+            return false;
+        }
+    }
+
     private String buildNotificationBody(MedicationNotificationDTO n) {
         StringBuilder body = new StringBuilder();
         if (n.getDosage() != null && !n.getDosage().isBlank()) {

@@ -30,6 +30,7 @@ import { MedicalFolderListComponent } from '@/pages/medical-folders/medical-fold
 import { PatientDossierViewComponent } from '@/pages/patient-dashboard/patient-dossier-view/patient-dossier-view.component';
 import { QuizManagementComponent } from '../quiz-management/quiz-management.component';
 import { EquipmentManagementComponent } from '../equipment-management/equipment-management.component';
+import { HelperCoachingComponent } from './helper-coaching/helper-coaching.component';
 
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
@@ -64,6 +65,7 @@ import { UserApiService, type UserInfo } from '@/core/services/user-api.service'
     PatientDossierViewComponent,
     QuizManagementComponent,
     EquipmentManagementComponent,
+    HelperCoachingComponent,
   ],
 })
 export class HelperViewComponent implements OnInit {

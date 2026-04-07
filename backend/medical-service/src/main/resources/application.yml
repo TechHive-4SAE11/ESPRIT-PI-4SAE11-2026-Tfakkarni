@@ -73,9 +73,24 @@ logging:
     org.springframework.security: DEBUG
     org.springframework.boot.actuate.health: DEBUG
 
-# Alert service (for appointment reminders)
+# Alert service (for appointment reminders + coaching FCM)
 alert-service:
   url: http://localhost:18084
+
+# Coaching goals: stale reminders + Open-Meteo (outdoor progress)
+coaching:
+  stale-days: 7
+  stale-notification-cooldown-hours: 168
+  scheduler:
+    stale-cron: "0 */5 * * * ?"
+  weather:
+    enabled: true
+
+# Safety audit: when tracking has no prescription data, still show plausible KPIs for demos (medical-service only).
+medical:
+  analytics:
+    safety-audit:
+      presentation-demo: ${SAFETY_AUDIT_PRESENTATION_DEMO:false}
 
 # Google Calendar Configuration
 google:

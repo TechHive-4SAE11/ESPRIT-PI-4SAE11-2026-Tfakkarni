@@ -1,5 +1,5 @@
-import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, inject, input, OnInit, output, PLATFORM_ID, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { catchError, finalize, of } from 'rxjs';
 import { forkJoin } from 'rxjs';
 import { ZardButtonComponent } from '@/shared/components/button';
@@ -20,6 +20,9 @@ import { MedicalFolderFormComponent, type MedicalFolderDialogData } from '../med
 import { MedicalFolderDetailComponent } from '../medical-folder-detail/medical-folder-detail.component';
 
 const PAGE_SIZE = 10;
+
+/** Survives F5: reopen same dossier detail after refresh (doctor medical folders). */
+const OPEN_FOLDER_SESSION_KEY = 'tfk_medical_folder_detail_open_id';
 
 @Component({
   selector: 'app-medical-folder-list',
@@ -71,6 +74,7 @@ export class MedicalFolderListComponent implements OnInit {
   private readonly userApiService = inject(UserApiService);
   private readonly alertDialog = inject(ZardAlertDialogService);
   private readonly dialog = inject(ZardDialogService);
+  private readonly platformId = inject(PLATFORM_ID);
 
   folders = signal<MedicalFolder[]>([]);
   loading = signal(true);
@@ -119,14 +123,43 @@ export class MedicalFolderListComponent implements OnInit {
   ngOnInit(): void {
     this.loadPatientNames();
     this.loadFolders();
-    const id = this.initialFolderId();
-    if (id != null) {
-      this.medicalFolderService.getById(id).subscribe({
+    const fromParent = this.initialFolderId();
+    const fromSession = fromParent == null ? this.readOpenFolderIdFromSession() : null;
+    const idToOpen = fromParent ?? fromSession;
+    if (idToOpen != null) {
+      this.medicalFolderService.getById(idToOpen).subscribe({
         next: (folder) => {
           this.folderToView.set(folder);
           this.showDetail.set(true);
+          this.persistOpenFolderId(folder.id);
         },
+        error: () => this.persistOpenFolderId(null),
       });
+    }
+  }
+
+  private persistOpenFolderId(id: number | null): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      if (id != null) {
+        sessionStorage.setItem(OPEN_FOLDER_SESSION_KEY, String(id));
+      } else {
+        sessionStorage.removeItem(OPEN_FOLDER_SESSION_KEY);
+      }
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }
+
+  private readOpenFolderIdFromSession(): number | null {
+    if (!isPlatformBrowser(this.platformId)) return null;
+    try {
+      const raw = sessionStorage.getItem(OPEN_FOLDER_SESSION_KEY);
+      if (raw == null || raw === '') return null;
+      const n = Number.parseInt(raw, 10);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    } catch {
+      return null;
     }
   }
 
@@ -290,11 +323,13 @@ export class MedicalFolderListComponent implements OnInit {
   viewDetail(folder: MedicalFolder): void {
     this.folderToView.set(folder);
     this.showDetail.set(true);
+    this.persistOpenFolderId(folder.id);
   }
 
   closeDetail(): void {
     this.showDetail.set(false);
     this.folderToView.set(null);
+    this.persistOpenFolderId(null);
     this.detailClosed.emit();
     this.loadFolders();
   }

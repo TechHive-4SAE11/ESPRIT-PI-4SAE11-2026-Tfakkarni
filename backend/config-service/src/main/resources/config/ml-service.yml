@@ -23,7 +23,7 @@ eureka:
     fetch-registry: true
     register-with-eureka: true
 
-# Override with GEMINI_API_KEY env in production; do not commit real keys to git
+# Set GEMINI_API_KEY in environment or repo-root .env (loaded by ml-service at startup)
 gemini:
-  api-key: ${GEMINI_API_KEY:XXXXXXXXXXXXXXXXXXXXXXXXXXX}
+  api-key: ${GEMINI_API_KEY:}
   model: gemini-2.5-flash

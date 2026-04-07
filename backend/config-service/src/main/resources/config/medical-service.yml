@@ -76,9 +76,23 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
-# Alert service (for appointment reminders)
+# Set SAFETY_AUDIT_PRESENTATION_DEMO=true when tracking prescriptions are unavailable (demo / jury).
+medical:
+  analytics:
+    safety-audit:
+      presentation-demo: ${SAFETY_AUDIT_PRESENTATION_DEMO:false}
+
+# Alert service (for appointment reminders + coaching FCM)
 alert-service:
   url: http://localhost:18084
+
+coaching:
+  stale-days: 7
+  stale-notification-cooldown-hours: 168
+  scheduler:
+    stale-cron: "0 */5 * * * ?"
+  weather:
+    enabled: true
 
 # Google Calendar Configuration
 google:

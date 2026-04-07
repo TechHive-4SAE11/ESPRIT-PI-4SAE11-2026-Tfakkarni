@@ -535,6 +535,10 @@
     </div>
     }
   </z-card>
+
+  <div class="mt-8 pt-4 border-t border-border/60">
+    <app-coaching-panel [folderId]="folderId()" [mode]="readOnly() ? 'patient' : 'doctor'" />
+  </div>
   }
   }
 </div>
