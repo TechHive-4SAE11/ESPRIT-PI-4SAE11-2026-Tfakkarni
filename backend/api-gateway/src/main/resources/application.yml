@@ -157,7 +157,3 @@ logging:
   level:
     org.springframework.cloud.gateway: DEBUG
     org.springframework.security: DEBUG
-
-recaptcha:
-  secret:
-    key: "6LfSr30sAAAAAO3Nu-3tXILWfm0IBZezbpMAQG1I"

@@ -54,7 +54,8 @@
   <!-- ══ NOTIFICATION PANEL (slide-out overlay) ══ -->
   @if (isNotifPanelOpen()) {
   <!-- Backdrop -->
-  <div (click)="closeNotifPanel()" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity"></div>
+  <div (click)="closeNotifPanel()"
+    class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity"></div>
 
   <!-- Panel -->
   <div
@@ -113,8 +114,7 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm opacity-80">Aujourd'hui</p>
-            <p class="text-2xl font-bold">{{ notifications().length }} médicament{{notifications().length > 1 ? 's' :
-              ''}}</p>
+            <p class="text-2xl font-bold">{{ notifications().length }} médicament{{notifications().length > 1 ? 's' : ''}}</p>
           </div>
           <span class="text-4xl">💊</span>
         </div>
@@ -126,7 +126,8 @@
       <!-- Notification cards -->
       @for (notif of notifications(); track notif.id) {
       <div (click)="markNotifAsRead(notif)"
-        class="rounded-xl border-2 p-4 transition-all duration-200 cursor-pointer hover:shadow-md" [class]="notif.read
+        class="rounded-xl border-2 p-4 transition-all duration-200 cursor-pointer hover:shadow-md"
+        [class]="notif.read
           ? 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 opacity-70'
           : 'bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-700 shadow-sm'">
 
@@ -180,7 +181,9 @@
 
             <!-- Status badge -->
             <div class="flex items-center gap-2 mt-2">
-              <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold" [class]="notif.status === 'ACTIVE'
+              <span
+                class="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                [class]="notif.status === 'ACTIVE'
                   ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
                   : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'">
                 {{ notif.status === 'ACTIVE' ? '● Actif' : '● En cours' }}
@@ -375,24 +378,6 @@
         <div class="text-left">
           <p class="text-xl sm:text-2xl font-bold">Mon Dossier Médical</p>
           <p class="text-red-100 text-sm sm:text-base">Diagnostiques, historique & documents</p>
-        </div>
-      </button>
-
-      <button (click)="setPage('Quizzes')"
-        class="w-full flex items-center gap-5 p-6 sm:p-7 rounded-2xl bg-indigo-500 hover:bg-indigo-600 active:scale-[0.98] text-white shadow-lg shadow-indigo-500/25 transition-all">
-        <span class="text-4xl sm:text-5xl shrink-0">🧠</span>
-        <div class="text-left">
-          <p class="text-xl sm:text-2xl font-bold">Quizzes</p>
-          <p class="text-indigo-100 text-sm sm:text-base">Testez votre mémoire</p>
-        </div>
-      </button>
-
-      <button (click)="setPage('Equipment')"
-        class="w-full flex items-center gap-5 p-6 sm:p-7 rounded-2xl bg-teal-500 hover:bg-teal-600 active:scale-[0.98] text-white shadow-lg shadow-teal-500/25 transition-all">
-        <span class="text-4xl sm:text-5xl shrink-0">🩺</span>
-        <div class="text-left">
-          <p class="text-xl sm:text-2xl font-bold">Équipement</p>
-          <p class="text-teal-100 text-sm sm:text-base">Équipement médical</p>
         </div>
       </button>
     </div>
@@ -736,24 +721,6 @@
       <!-- ─────────────────── MY MEDICAL FOLDER ─────────────────── -->
       @case ('My Medical Folder') {
       <app-patient-dossier-view [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
-      }
-
-      <!-- ─────────────────── QUIZZES ─────────────────── -->
-      @case ('Quizzes') {
-      <button (click)="setPage('Home')"
-        class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
-        <span class="text-2xl">⬅</span><span>Retour</span>
-      </button>
-      <app-patient-quiz [keycloakId]="keycloakId" />
-      }
-
-      <!-- ─────────────────── EQUIPMENT ─────────────────── -->
-      @case ('Equipment') {
-      <button (click)="setPage('Home')"
-        class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white mb-6 text-lg transition-colors">
-        <span class="text-2xl">⬅</span><span>Retour</span>
-      </button>
-      <app-patient-equipment [keycloakId]="keycloakId" />
       }
 
       } <!-- /switch -->

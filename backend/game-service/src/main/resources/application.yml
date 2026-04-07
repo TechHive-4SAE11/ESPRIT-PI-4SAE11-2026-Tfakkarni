@@ -4,14 +4,6 @@ server:
 spring:
   application:
     name: game-service
-
-  # config service/client — values below are fallbacks used when config-server is not running
-  cloud:
-    config:
-      enabled: true
-  config:
-    import: optional:configserver:http://localhost:8888
-
   datasource:
     url: jdbc:postgresql://ep-damp-bar-agi72bgl-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
     username: neondb_owner
@@ -50,13 +42,3 @@ elevenlabs:
   voice-id-en: 2qfp6zPuviqeCOZIE9RZ
   voice-id-tn: GLRyn2pNxpZ4FAjmlY3z
   model-id: eleven_multilingual_v2
-
-# actuator
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
-    health:
-      show-details: always

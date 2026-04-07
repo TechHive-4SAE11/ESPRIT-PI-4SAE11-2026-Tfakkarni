@@ -4,14 +4,6 @@ server:
 spring:
   application:
     name: medicament-validation-service
-
-  # config service/client — values below are fallbacks used when config-server is not running
-  cloud:
-    config:
-      enabled: true
-  config:
-    import: optional:configserver:http://localhost:8888
-
   datasource:
     url: jdbc:h2:mem:medicamentdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     username: sa
@@ -54,13 +46,3 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
-
-# actuator
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
-    health:
-      show-details: always

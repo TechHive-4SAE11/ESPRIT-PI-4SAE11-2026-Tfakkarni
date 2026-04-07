@@ -40,19 +40,19 @@ public class GoogleCalendarService {
     private final DoctorCalendarRepository doctorCalendarRepository;
     private final AppointmentRepository appointmentRepository;
 
-    @Value("${google.calendar.client-id:}")
+    @Value("${google.calendar.client-id}")
     private String clientId;
 
-    @Value("${google.calendar.client-secret:}")
+    @Value("${google.calendar.client-secret}")
     private String clientSecret;
 
-    @Value("${google.calendar.redirect-uri:http://localhost:18086/api/medical/calendar/callback}")
+    @Value("${google.calendar.redirect-uri}")
     private String redirectUri;
 
-    @Value("${google.calendar.application-name:Tfakkarni Medical}")
+    @Value("${google.calendar.application-name}")
     private String applicationName;
 
-    @Value("${google.calendar.credentials-path:classpath:/credentials.json}")
+    @Value("${google.calendar.credentials-path}")
     private String credentialsPath;
 
     private static final List<String> SCOPES = Collections.singletonList("https://www.googleapis.com/auth/calendar");
