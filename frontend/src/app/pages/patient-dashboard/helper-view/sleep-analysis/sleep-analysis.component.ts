@@ -431,13 +431,15 @@ export class SleepAnalysisComponent implements OnInit, OnDestroy {
             return updated.length > 30 ? updated.slice(-30) : updated;
           });
 
-          // Check for alerts
+          // Check for alerts — report to backend (triggers Telegram alert)
           if (bpm > this.HIGH_BPM_THRESHOLD && !this.alertCooldown) {
             this.liveAlert.set(`ELEVATED heart rate: ${bpm} BPM (>${this.HIGH_BPM_THRESHOLD})`);
             this.triggerAlertCooldown();
+            this.reportBpmToBackend(bpm);
           } else if (bpm < this.LOW_BPM_THRESHOLD && !this.alertCooldown) {
             this.liveAlert.set(`LOW heart rate: ${bpm} BPM (<${this.LOW_BPM_THRESHOLD})`);
             this.triggerAlertCooldown();
+            this.reportBpmToBackend(bpm);
           } else if (bpm >= this.LOW_BPM_THRESHOLD && bpm <= this.HIGH_BPM_THRESHOLD) {
             this.liveAlert.set(null);
           }
@@ -454,6 +456,16 @@ export class SleepAnalysisComponent implements OnInit, OnDestroy {
   private triggerAlertCooldown(): void {
     this.alertCooldown = true;
     setTimeout(() => { this.alertCooldown = false; }, 60_000); // 1 min cooldown on UI side
+  }
+
+  /** Post abnormal BPM to backend so HeartbeatAlertService sends a Telegram alert. */
+  private reportBpmToBackend(bpm: number): void {
+    this.iotService
+      .recordHeartbeat({ patientId: this.keycloakId, bpm })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        error: (err) => console.error('Failed to report BPM to backend', err),
+      });
   }
 
   liveBpmClass(): string {

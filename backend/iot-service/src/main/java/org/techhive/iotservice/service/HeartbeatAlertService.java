@@ -3,7 +3,6 @@ package org.techhive.iotservice.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -59,8 +58,7 @@ public class HeartbeatAlertService {
         lastAlertTimes.put(patientId, LocalDateTime.now());
     }
 
-    @Async
-    protected void sendTelegramAlert(String patientId, int bpm, String alertType) {
+    private void sendTelegramAlert(String patientId, int bpm, String alertType) {
         if (botToken == null || botToken.isBlank() || defaultChatId == null || defaultChatId.isBlank()) {
             log.warn("Telegram not configured — skipping heartbeat alert");
             return;
@@ -110,7 +108,42 @@ public class HeartbeatAlertService {
     }
 
     private String esc(String s) {
-        if (s == null) return "";
+        if (s == null)
+            return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+
+    /**
+     * Send an arbitrary HTML message via Telegram bot.
+     * Used by HeartbeatAlertService internally and by SleepReportScheduler.
+     */
+    public void sendTelegramMessage(String htmlMessage) {
+        if (botToken == null || botToken.isBlank() || defaultChatId == null || defaultChatId.isBlank()) {
+            log.warn("Telegram not configured — skipping message");
+            return;
+        }
+
+        try {
+            String url = "https://api.telegram.org/bot" + botToken + "/sendMessage";
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("chat_id", defaultChatId);
+            body.put("text", htmlMessage);
+            body.put("parse_mode", "HTML");
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    url, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+
+            if (Boolean.TRUE.equals(response.getBody() != null ? response.getBody().get("ok") : null)) {
+                log.info("✅ Telegram message sent");
+            } else {
+                log.warn("⚠️ Telegram response: {}", response.getBody());
+            }
+        } catch (Exception e) {
+            log.error("❌ Telegram message failed: {}", e.getMessage(), e);
+        }
     }
 }

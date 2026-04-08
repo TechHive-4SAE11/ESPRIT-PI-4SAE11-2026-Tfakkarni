@@ -1,6 +1,7 @@
 package org.techhive.iotservice.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.techhive.iotservice.entity.HeartbeatReading;
 
 import java.time.LocalDateTime;
@@ -15,4 +16,7 @@ public interface HeartbeatReadingRepository extends JpaRepository<HeartbeatReadi
     Optional<HeartbeatReading> findFirstByPatientIdOrderByTimestampDesc(String patientId);
 
     long countByPatientId(String patientId);
+
+    @Query("SELECT DISTINCT h.patientId FROM HeartbeatReading h")
+    List<String> findDistinctPatientIds();
 }
