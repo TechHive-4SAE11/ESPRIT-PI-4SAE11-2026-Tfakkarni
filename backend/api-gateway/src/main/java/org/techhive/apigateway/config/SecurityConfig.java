@@ -63,6 +63,8 @@ public class SecurityConfig {
             .pathMatchers("/api/games/movies/play/**").permitAll()
             // Admin health check endpoint (for monitoring/testing)
             .pathMatchers("/api/admin/medication-status/health").permitAll()
+            // IoT endpoints (heartbeat ingestion + sleep analysis)
+            .pathMatchers("/api/iot/**").permitAll()
             // Public quiz endpoints
             .pathMatchers(HttpMethod.GET, "/api/games/quiz/1").permitAll()
             .pathMatchers(HttpMethod.GET, "/api/games/quiz/**").permitAll()
