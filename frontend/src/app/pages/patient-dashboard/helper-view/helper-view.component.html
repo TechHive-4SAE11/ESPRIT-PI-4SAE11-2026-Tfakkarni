@@ -261,6 +261,15 @@
             </div>
         </div>
     </z-card>
+    <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Sleep Analysis')">
+        <div class="flex items-center gap-3">
+            <z-icon zType="activity" class="text-primary h-10 w-10" />
+            <div>
+                <h3 class="font-semibold">Sleep Analysis</h3>
+                <p class="text-sm text-muted-foreground">Heartbeat monitoring & sleep habits</p>
+            </div>
+        </div>
+    </z-card>
     <z-card class="p-6 cursor-pointer hover:border-emerald-500/40 transition-colors" (click)="setPage('Coaching')">
         <div class="flex items-center gap-3">
             <span class="text-3xl" aria-hidden="true">🎯</span>
@@ -368,6 +377,9 @@
     <h2 class="text-2xl font-bold">Equipment Management</h2>
 </div>
 <app-equipment-management [keycloakId]="keycloakId" />
+}
+@case ('Sleep Analysis') {
+<app-sleep-analysis [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
 }
 @case ('Coaching') {
 <app-helper-coaching [keycloakId]="keycloakId" (goBack)="setPage('Home')" />

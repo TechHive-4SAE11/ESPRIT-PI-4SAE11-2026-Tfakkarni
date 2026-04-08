@@ -139,6 +139,10 @@ spring:
           uri: lb://tracking-service
           predicates:
             - Path=/api/notifications/**
+        - id: iot-service
+          uri: lb://iot-service
+          predicates:
+            - Path=/api/iot/**
   security:
     oauth2:
       resourceserver:

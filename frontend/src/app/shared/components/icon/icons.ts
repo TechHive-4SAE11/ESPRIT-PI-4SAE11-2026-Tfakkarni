@@ -75,6 +75,7 @@ import {
   Plus,
   Popcorn,
   Puzzle,
+  RefreshCw,
   RotateCcw,
   Save,
   Search,
@@ -239,6 +240,7 @@ export const ZARD_ICONS = {
   unlock: Unlock,
   'alert-triangle': TriangleAlert,
   bookmark: Bookmark,
+  'refresh-cw': RefreshCw,
 } as const satisfies Record<string, LucideIconData>;
 
 export declare type ZardIcon = keyof typeof ZARD_ICONS | LucideIconData;

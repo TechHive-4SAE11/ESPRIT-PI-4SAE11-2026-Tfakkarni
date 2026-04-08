@@ -30,6 +30,7 @@ import { MedicalFolderListComponent } from '@/pages/medical-folders/medical-fold
 import { PatientDossierViewComponent } from '@/pages/patient-dashboard/patient-dossier-view/patient-dossier-view.component';
 import { QuizManagementComponent } from '../quiz-management/quiz-management.component';
 import { EquipmentManagementComponent } from '../equipment-management/equipment-management.component';
+import { SleepAnalysisComponent } from './sleep-analysis/sleep-analysis.component';
 import { HelperCoachingComponent } from './helper-coaching/helper-coaching.component';
 
 import { PrescriptionService } from '@/core/services/prescription.service';
@@ -65,6 +66,7 @@ import { UserApiService, type UserInfo } from '@/core/services/user-api.service'
     PatientDossierViewComponent,
     QuizManagementComponent,
     EquipmentManagementComponent,
+    SleepAnalysisComponent,
     HelperCoachingComponent,
   ],
 })
