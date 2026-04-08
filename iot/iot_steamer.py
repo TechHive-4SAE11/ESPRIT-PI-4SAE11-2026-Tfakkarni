@@ -30,11 +30,21 @@ SEND_INTERVAL = 2
 
 # --- MOCK DATA ---
 
+# Mutable state for smooth GPS wandering
+_mock_lat = MOCK_BASE_LAT
+_mock_lng = MOCK_BASE_LNG
+
+
 def get_mock_gps() -> tuple[str, str]:
-    """Generate mock GPS data with small random drift around the base coordinates."""
-    lat = MOCK_BASE_LAT + random.uniform(-0.001, 0.001)
-    lng = MOCK_BASE_LNG + random.uniform(-0.001, 0.001)
-    return f"{lat:.6f}", f"{lng:.6f}"
+    """Generate mock GPS data that walks smoothly from the previous position."""
+    global _mock_lat, _mock_lng
+    # Small step each tick (≈1-2 m) instead of teleporting
+    _mock_lat += random.uniform(-0.00005, 0.00005)
+    _mock_lng += random.uniform(-0.00005, 0.00005)
+    # Gently pull back toward base so the path doesn't drift too far
+    _mock_lat += (MOCK_BASE_LAT - _mock_lat) * 0.01
+    _mock_lng += (MOCK_BASE_LNG - _mock_lng) * 0.01
+    return f"{_mock_lat:.6f}", f"{_mock_lng:.6f}"
 
 
 def get_mock_bpm() -> int:
