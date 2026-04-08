@@ -13,4 +13,10 @@ public class RestTemplateConfig {
 	public RestTemplate restTemplate() {
 		return new RestTemplate();
 	}
+
+	/** Plain client for external HTTPS (Open-Meteo, etc.) — not service-discovery. */
+	@Bean
+	public RestTemplate externalRestTemplate() {
+		return new RestTemplate();
+	}
 }

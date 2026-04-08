@@ -270,6 +270,15 @@
             </div>
         </div>
     </z-card>
+    <z-card class="p-6 cursor-pointer hover:border-emerald-500/40 transition-colors" (click)="setPage('Coaching')">
+        <div class="flex items-center gap-3">
+            <span class="text-3xl" aria-hidden="true">🎯</span>
+            <div>
+                <h3 class="font-semibold">Coaching goals</h3>
+                <p class="text-sm text-muted-foreground">Log progress on doctor-defined goals</p>
+            </div>
+        </div>
+    </z-card>
 </div>
 }
 
@@ -371,5 +380,8 @@
 }
 @case ('Sleep Analysis') {
 <app-sleep-analysis [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
+}
+@case ('Coaching') {
+<app-helper-coaching [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
 }
 }

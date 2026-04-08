@@ -25,6 +25,7 @@ import { DiagnosticsFormComponent } from '@/pages/diagnostics/diagnostics-form/d
 import { MedicalHistoryFormComponent } from '@/pages/medical-history/medical-history-form/medical-history-form.component';
 // @ts-ignore - used for dynamic component instantiation
 import { DossierCompareComponent } from '../dossier-compare/dossier-compare.component';
+import { CoachingPanelComponent } from '../coaching-panel/coaching-panel.component';
 
 const TABLE_PAGE_SIZE = 5;
 
@@ -43,6 +44,7 @@ const TABLE_PAGE_SIZE = 5;
     MedicalHistoryFormComponent,
     MedicalHistoryFormComponent,
     DossierCompareComponent,
+    CoachingPanelComponent,
     NgApexchartsModule,
   ],
   templateUrl: './medical-folder-detail.component.html',

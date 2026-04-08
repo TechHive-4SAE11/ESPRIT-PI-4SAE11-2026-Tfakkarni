@@ -31,6 +31,7 @@ import { PatientDossierViewComponent } from '@/pages/patient-dashboard/patient-d
 import { QuizManagementComponent } from '../quiz-management/quiz-management.component';
 import { EquipmentManagementComponent } from '../equipment-management/equipment-management.component';
 import { SleepAnalysisComponent } from './sleep-analysis/sleep-analysis.component';
+import { HelperCoachingComponent } from './helper-coaching/helper-coaching.component';
 
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
@@ -66,6 +67,7 @@ import { UserApiService, type UserInfo } from '@/core/services/user-api.service'
     QuizManagementComponent,
     EquipmentManagementComponent,
     SleepAnalysisComponent,
+    HelperCoachingComponent,
   ],
 })
 export class HelperViewComponent implements OnInit {
