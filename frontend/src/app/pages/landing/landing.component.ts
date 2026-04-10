@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, inject, PLATFORM_ID, ViewChild } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '@/core/auth';
@@ -30,9 +30,7 @@ import { PublicQuizComponent } from './public-quiz/public-quiz.component';
             <a routerLink="/login">
               <button z-button zType="outline">Sign In</button>
             </a>
-            <a routerLink="/quiz">
-              <button z-button>Take the Test</button>
-            </a>
+            <button z-button (click)="startQuiz()">Take the Test</button>
           </div>
         </div>
       </header>
@@ -55,12 +53,10 @@ import { PublicQuizComponent } from './public-quiz/public-quiz.component';
             all in one place.
           </p>
           <div class="flex flex-wrap items-center justify-center gap-4">
-            <a routerLink="/quiz">
-              <button z-button zSize="lg" class="text-lg px-8 py-6">
+            <button z-button zSize="lg" class="text-lg px-8 py-6" (click)="startQuiz()">
                 Take the Alzheimer's Test
                 <z-icon zType="arrow-right" class="ml-2" />
-              </button>
-            </a>
+            </button>
             <a routerLink="/login">
               <button z-button zType="outline" zSize="lg" class="text-lg px-8 py-6">
                 Sign In
@@ -106,12 +102,10 @@ import { PublicQuizComponent } from './public-quiz/public-quiz.component';
                     <span class="text-muted-foreground">Free, no account needed to get started</span>
                   </li>
                 </ul>
-                <a routerLink="/quiz">
-                  <button z-button zSize="lg">
+                <button z-button zSize="lg" (click)="startQuiz()">
                     Start the Quiz
                     <z-icon zType="arrow-right" class="ml-2" />
-                  </button>
-                </a>
+                </button>
               </div>
               <!-- Score visual -->
               <div class="flex justify-center">
@@ -125,7 +119,9 @@ import { PublicQuizComponent } from './public-quiz/public-quiz.component';
               </div>
             </div>
           </div>
-          <app-public-quiz />
+          <div id="quiz-widget" class="mt-12">
+            <app-public-quiz [hideIntro]="true" />
+          </div>
         </section>
 
         <!-- ─── How It Works ─── -->
@@ -428,12 +424,10 @@ import { PublicQuizComponent } from './public-quiz/public-quiz.component';
               It takes only a few minutes and could make all the difference.
             </p>
             <div class="flex flex-wrap items-center justify-center gap-4">
-              <a routerLink="/quiz">
-                <button z-button zType="outline" zSize="lg" class="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6 border-white">
+              <button z-button zType="outline" zSize="lg" class="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6 border-white" (click)="startQuiz()">
                   Take the Alzheimer's Quiz
                   <z-icon zType="arrow-right" class="ml-2" />
-                </button>
-              </a>
+              </button>
               <a routerLink="/login">
                 <button z-button zSize="lg" class="bg-primary-foreground/10 text-primary-foreground border border-primary-foreground/30 hover:bg-primary-foreground/20 text-lg px-8 py-6">
                   Sign In
@@ -468,6 +462,8 @@ export class LandingComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly authService = inject(AuthService);
 
+  @ViewChild(PublicQuizComponent) publicQuiz!: PublicQuizComponent;
+
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
 
@@ -477,6 +473,16 @@ export class LandingComponent implements OnInit {
       if (role) {
         this.authService.routeByRole();
       }
+    }
+  }
+
+  startQuiz(): void {
+    if (this.publicQuiz) {
+      this.publicQuiz.startGlobalQuiz();
+      // Scroll to the quiz widget
+      setTimeout(() => {
+        document.getElementById('quiz-widget')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
   }
 }

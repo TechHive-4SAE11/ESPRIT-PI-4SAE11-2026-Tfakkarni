@@ -2,6 +2,13 @@ server:
   port: 18085
 
 spring:
+
+  ai:
+    huggingface:
+      api-key: ${HUGGINGFACE_API_KEY}
+      chat:
+        options:
+          model: meta-llama/Llama-2-7b-chat-hf
   application:
     name: ml-service
 

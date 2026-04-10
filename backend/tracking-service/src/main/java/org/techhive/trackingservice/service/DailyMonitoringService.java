@@ -192,11 +192,21 @@ public class DailyMonitoringService {
         copyIncident(dto, e);
         IncidentEntry saved = incidentRepo.save(e);
 
-        // Trigger alert email + notification for MODERE or GRAVE incidents
-        String severity = saved.getSeverity();
+        // Trigger alert — extract all data NOW inside transaction before it closes
+        String severity     = saved.getSeverity();
         if ("MODERE".equalsIgnoreCase(severity) || "GRAVE".equalsIgnoreCase(severity)) {
-            String logDate = log.getLogDate() != null ? log.getLogDate().toString() : "";
-            incidentAlertService.handleIncidentAlert(saved, log.getPatientKeycloakId(), logDate);
+            String logDate      = log.getLogDate() != null ? log.getLogDate().toString() : "";
+            String patientId    = log.getPatientKeycloakId();
+            String incidentType = saved.getIncidentType();
+            String description  = saved.getDescription();
+            String location     = saved.getLocation();
+            String actionTaken  = saved.getActionTaken();
+            String injuryDet    = saved.getInjuryDetails();
+            String occurredAt   = saved.getOccurredAt();
+            // Call async AFTER transaction commits — passes only Strings, no Hibernate entities
+            incidentAlertService.handleIncidentAlert(
+                    patientId, severity, incidentType, description,
+                    location, actionTaken, injuryDet, occurredAt, logDate);
         }
 
         return saved;
