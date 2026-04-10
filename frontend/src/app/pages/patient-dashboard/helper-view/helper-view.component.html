@@ -145,6 +145,51 @@
 <!-- ══ FOLLOW-UP REMINDER ALERTS ══ -->
 <app-follow-up-reminder-alert [keycloakId]="keycloakId" />
 
+<!-- ══ PATIENT COMPOSITE SCORE ══ -->
+@if (patientScore()) {
+<div class="mb-6 p-5 rounded-xl border bg-gradient-to-r from-violet-50 to-blue-50 dark:from-violet-900/20 dark:to-blue-900/20 dark:border-violet-800/30">
+    <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-semibold flex items-center gap-2">
+            <span>🧠</span> Score composite du patient
+        </h3>
+        <span class="text-xs px-2.5 py-1 rounded-full font-semibold"
+            [class]="patientScore()!.stage === 'LOW_RISK' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+            : patientScore()!.stage === 'EARLY' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+            : patientScore()!.stage === 'MODERATE' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+            : patientScore()!.stage === 'SEVERE' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+            : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'">
+            {{ patientScore()!.stage === 'LOW_RISK' ? 'Risque faible'
+             : patientScore()!.stage === 'EARLY' ? 'Stade précoce'
+             : patientScore()!.stage === 'MODERATE' ? 'Stade modéré'
+             : patientScore()!.stage === 'SEVERE' ? 'Stade sévère'
+             : 'Inconnu' }}
+        </span>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+        <div class="bg-white/80 dark:bg-slate-800/60 rounded-lg p-3">
+            <p class="text-xs text-muted-foreground">Cognitif</p>
+            <p class="text-xl font-bold">{{ patientScore()!.cognitiveScore | number:'1.0-0' }}</p>
+        </div>
+        <div class="bg-white/80 dark:bg-slate-800/60 rounded-lg p-3">
+            <p class="text-xs text-muted-foreground">Quotidien</p>
+            <p class="text-xl font-bold">{{ patientScore()!.dailyFunctioningScore | number:'1.0-0' }}</p>
+        </div>
+        <div class="bg-white/80 dark:bg-slate-800/60 rounded-lg p-3">
+            <p class="text-xs text-muted-foreground">Médical</p>
+            <p class="text-xl font-bold">{{ patientScore()!.medicalStabilityScore | number:'1.0-0' }}</p>
+        </div>
+        <div class="bg-white/80 dark:bg-slate-800/60 rounded-lg p-3">
+            <p class="text-xs text-muted-foreground">IoT</p>
+            <p class="text-xl font-bold">{{ patientScore()!.iotRiskScore | number:'1.0-0' }}</p>
+        </div>
+        <div class="bg-white/80 dark:bg-slate-800/60 rounded-lg p-3">
+            <p class="text-xs text-muted-foreground">Global</p>
+            <p class="text-2xl font-bold text-primary">{{ patientScore()!.overallScore | number:'1.0-0' }}</p>
+        </div>
+    </div>
+</div>
+}
+
 <div class="grid gap-4 md:grid-cols-2">
     <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Data Library')">
         <div class="flex items-center gap-3">

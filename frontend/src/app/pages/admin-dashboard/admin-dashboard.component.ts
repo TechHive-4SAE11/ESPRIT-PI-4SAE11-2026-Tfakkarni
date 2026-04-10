@@ -13,6 +13,8 @@ import { ZardInputDirective } from '@/shared/components/input';
 import { ZardDividerComponent } from '@/shared/components/divider';
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 import { GameService, type GameResponse, type OverviewStatsResponse } from '@/core/services/game.service';
+import { AnalyticsService } from '@/core/services/analytics.service';
+import type { PlatformOverviewResponse, DoctorEffectivenessResponse, BatchJobResult } from '@/core/models/analytics.model';
 import { ProfileComponent } from '@/pages/patient-dashboard/helper-view/profile/profile.component';
 import { KeycloakService } from 'keycloak-angular';
 import { finalize } from 'rxjs';
@@ -393,7 +395,7 @@ import { finalize } from 'rxjs';
                       </tr>
                     </thead>
                     <tbody z-table-body>
-                      @for (game of games(); track game.id) {
+                      @for (game of pagedGames(); track game.id) {
                         <tr z-table-row>
                           <td z-table-cell class="pl-6 font-mono text-muted-foreground">#{{ game.id }}</td>
                           <td z-table-cell class="font-medium">{{ game.title }}</td>
@@ -406,6 +408,40 @@ import { finalize } from 'rxjs';
                       }
                     </tbody>
                   </table>
+
+                  <!-- ── Game Pagination ── -->
+                  @if (games().length > gamePerPage) {
+                    <div class="flex items-center justify-between px-6 py-4 border-t">
+                      <p class="text-sm text-muted-foreground">
+                        Affichage
+                        {{ (gamePage() - 1) * gamePerPage + 1 }}–{{ gamePage() * gamePerPage < games().length ? gamePage() * gamePerPage : games().length }}
+                        sur {{ games().length }}
+                      </p>
+                      <div class="flex items-center gap-1">
+                        <button z-button zType="outline" zSize="sm"
+                          class="h-8 w-8 p-0"
+                          [disabled]="gamePage() === 1"
+                          (click)="setGamePage(gamePage() - 1)">
+                          <z-icon zType="chevron-left" class="h-4 w-4" />
+                        </button>
+                        @for (p of gamePagesArray(); track p) {
+                          <button z-button
+                            [zType]="p === gamePage() ? 'default' : 'outline'"
+                            zSize="sm"
+                            class="h-8 w-8 p-0 text-xs"
+                            (click)="setGamePage(p)">
+                            {{ p }}
+                          </button>
+                        }
+                        <button z-button zType="outline" zSize="sm"
+                          class="h-8 w-8 p-0"
+                          [disabled]="gamePage() === totalGamePages()"
+                          (click)="setGamePage(gamePage() + 1)">
+                          <z-icon zType="chevron-right" class="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  }
                 } @else {
                   <div class="flex flex-col items-center justify-center py-16 text-muted-foreground">
                     <z-icon zType="gamepad-2" class="h-12 w-12 mb-3 opacity-30" />
@@ -423,78 +459,277 @@ import { finalize } from 'rxjs';
         @case ('Statistiques') {
           <div class="space-y-6">
             <div>
-              <h2 class="text-2xl font-bold tracking-tight">Statistiques de la plateforme</h2>
-              <p class="text-muted-foreground mt-1">Analyse des performances et de l'activité</p>
+              <h2 class="text-2xl font-bold tracking-tight">Analytique de la plateforme</h2>
+              <p class="text-muted-foreground mt-1">Scores patients, stades Alzheimer et efficacité médicale</p>
             </div>
 
+            <!-- Platform Overview Cards -->
             <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <z-card class="p-6">
-                <p class="text-sm font-medium text-muted-foreground">Total Jeux</p>
-                <p class="text-3xl font-bold mt-1">{{ stats()?.totalGames ?? 0 }}</p>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-medium text-muted-foreground">Score moyen</p>
+                    <p class="text-3xl font-bold mt-1">{{ (platformOverview()?.platformAvgScore ?? 0) | number:'1.0-0' }}</p>
+                  </div>
+                  <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                    <z-icon zType="activity" class="h-5 w-5" />
+                  </div>
+                </div>
               </z-card>
               <z-card class="p-6">
-                <p class="text-sm font-medium text-muted-foreground">Total Tentatives</p>
-                <p class="text-3xl font-bold mt-1">{{ stats()?.totalAttempts ?? 0 }}</p>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-medium text-muted-foreground">Tentatives de jeu</p>
+                    <p class="text-3xl font-bold mt-1">{{ platformOverview()?.totalGameAttempts ?? 0 }}</p>
+                  </div>
+                  <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
+                    <z-icon zType="gamepad-2" class="h-5 w-5" />
+                  </div>
+                </div>
               </z-card>
               <z-card class="p-6">
-                <p class="text-sm font-medium text-muted-foreground">Joueurs uniques</p>
-                <p class="text-3xl font-bold mt-1">{{ stats()?.totalPlayers ?? 0 }}</p>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-medium text-muted-foreground">Incidents IoT</p>
+                    <p class="text-3xl font-bold mt-1">{{ platformOverview()?.totalIncidents ?? 0 }}</p>
+                  </div>
+                  <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                    <z-icon zType="alert-triangle" class="h-5 w-5" />
+                  </div>
+                </div>
               </z-card>
               <z-card class="p-6">
-                <p class="text-sm font-medium text-muted-foreground">Score moyen</p>
-                <p class="text-3xl font-bold mt-1">{{ (stats()?.averageScorePercentage ?? 0) | number:'1.0-0' }}%</p>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-medium text-muted-foreground">Médecins signalés</p>
+                    <p class="text-3xl font-bold mt-1 {{ (platformOverview()?.redFlagDoctorCount ?? 0) > 0 ? 'text-red-600' : '' }}">{{ platformOverview()?.redFlagDoctorCount ?? 0 }}</p>
+                  </div>
+                  <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                    <z-icon zType="shield" class="h-5 w-5" />
+                  </div>
+                </div>
               </z-card>
             </div>
 
+            <!-- Stage Distribution + Domain Weakness -->
             <div class="grid gap-6 md:grid-cols-2">
               <z-card>
                 <div class="p-6">
-                  <h3 class="text-lg font-semibold mb-4">Utilisateurs par rôle</h3>
-                  <div class="space-y-4">
-                    @for (entry of roleDistribution(); track entry.role) {
-                      <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                          <div class="h-3 w-3 rounded-full" [class]="entry.dotClass"></div>
-                          <span>{{ entry.label }}</span>
+                  <h3 class="text-lg font-semibold mb-4">Répartition des stades</h3>
+                  @if (platformOverview()?.stageDistribution) {
+                    <div class="space-y-3">
+                      @for (entry of stageEntries(); track entry.stage) {
+                        <div>
+                          <div class="flex items-center justify-between mb-1.5">
+                            <div class="flex items-center gap-2">
+                              <div class="h-3 w-3 rounded-full" [class]="getStageColor(entry.stage)"></div>
+                              <span class="text-sm font-medium">{{ getStageLabel(entry.stage) }}</span>
+                            </div>
+                            <span class="text-sm font-bold">{{ entry.count }}</span>
+                          </div>
+                          <div class="w-full bg-muted rounded-full h-2">
+                            <div class="h-2 rounded-full transition-all duration-500"
+                                 [class]="getStageBarColor(entry.stage)"
+                                 [style.width.%]="stageTotal() > 0 ? (entry.count / stageTotal() * 100) : 0">
+                            </div>
+                          </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                          <span class="font-bold">{{ entry.count }}</span>
-                          <span class="text-xs text-muted-foreground">
-                            ({{ nonAdminUsers().length ? (entry.count / nonAdminUsers().length * 100 | number:'1.0-0') : 0 }}%)
-                          </span>
-                        </div>
-                      </div>
-                    }
-                  </div>
+                      }
+                    </div>
+                  } @else {
+                    <p class="text-sm text-muted-foreground">Aucune donnée disponible</p>
+                  }
                 </div>
               </z-card>
 
               <z-card>
                 <div class="p-6">
-                  <h3 class="text-lg font-semibold mb-4">Santé de la plateforme</h3>
-                  <div class="space-y-4">
-                    <div class="flex items-center justify-between">
-                      <span class="text-muted-foreground">Jeux / Joueur</span>
-                      <span class="font-bold">
-                        {{ stats()?.totalPlayers ? ((stats()?.totalGames ?? 0) / (stats()?.totalPlayers ?? 1) | number:'1.0-1') : '0' }}
-                      </span>
+                  <h3 class="text-lg font-semibold mb-4">Faiblesses cognitives</h3>
+                  @if (domainWeaknessEntries().length) {
+                    <div class="space-y-3">
+                      @for (entry of domainWeaknessEntries(); track entry.domain) {
+                        <div class="flex items-center justify-between">
+                          <span class="text-sm">{{ entry.domain }}</span>
+                          <div class="flex items-center gap-2">
+                            <div class="w-24 bg-muted rounded-full h-2">
+                              <div class="h-2 rounded-full bg-orange-500 transition-all duration-500"
+                                   [style.width.%]="entry.pct">
+                              </div>
+                            </div>
+                            <span class="text-sm font-bold w-10 text-right">{{ entry.pct | number:'1.0-0' }}%</span>
+                          </div>
+                        </div>
+                      }
                     </div>
-                    <div class="flex items-center justify-between">
-                      <span class="text-muted-foreground">Tentatives / Jeu</span>
-                      <span class="font-bold">
-                        {{ stats()?.totalGames ? ((stats()?.totalAttempts ?? 0) / (stats()?.totalGames ?? 1) | number:'1.0-1') : '0' }}
-                      </span>
+                  } @else {
+                    <p class="text-sm text-muted-foreground">Aucune donnée disponible</p>
+                  }
+                </div>
+              </z-card>
+            </div>
+
+            <!-- Doctor Ranking Table -->
+            <z-card>
+              <div class="p-6">
+                <h3 class="text-lg font-semibold mb-4">Classement des médecins</h3>
+                @if (doctorRanking().length) {
+                  <table z-table>
+                    <thead z-table-header>
+                      <tr z-table-row>
+                        <th z-table-head>Médecin</th>
+                        <th z-table-head>Patients</th>
+                        <th z-table-head>Stabilisation</th>
+                        <th z-table-head>Déclin</th>
+                        <th z-table-head>Présence RDV</th>
+                        <th z-table-head>Signalements</th>
+                      </tr>
+                    </thead>
+                    <tbody z-table-body>
+                      @for (doc of doctorRanking(); track doc.doctorKeycloakId) {
+                        <tr z-table-row>
+                          <td z-table-cell class="font-medium">{{ doc.doctorName || doc.doctorKeycloakId }}</td>
+                          <td z-table-cell>{{ doc.patientCount }}</td>
+                          <td z-table-cell>
+                            <span class="text-emerald-600 font-medium">{{ (doc.stabilizationRate * 100) | number:'1.0-0' }}%</span>
+                          </td>
+                          <td z-table-cell>
+                            <span [class]="doc.declineRate > 0.3 ? 'text-red-600 font-medium' : 'text-muted-foreground'">
+                              {{ (doc.declineRate * 100) | number:'1.0-0' }}%
+                            </span>
+                          </td>
+                          <td z-table-cell>{{ (doc.appointmentShowRate * 100) | number:'1.0-0' }}%</td>
+                          <td z-table-cell>
+                            @if (doc.riskFlags.length > 0) {
+                              <div class="flex flex-wrap gap-1">
+                                @for (flag of doc.riskFlags; track flag) {
+                                  <z-badge zType="destructive" class="text-xs">{{ flag }}</z-badge>
+                                }
+                              </div>
+                            } @else {
+                              <z-badge zType="outline" class="text-xs">Aucun</z-badge>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="text-sm text-muted-foreground">Aucune donnée de classement disponible</p>
+                }
+              </div>
+            </z-card>
+          </div>
+        }
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- BATCH JOBS                                                -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        @case ('Tâches') {
+          <div class="space-y-6">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight">Tâches planifiées</h2>
+              <p class="text-muted-foreground mt-1">Déclencher manuellement les calculs d'analytique</p>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-3">
+              <!-- Run All -->
+              <z-card>
+                <div class="p-6 space-y-4">
+                  <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                      <z-icon zType="zap" class="h-5 w-5" />
                     </div>
-                    <div class="flex items-center justify-between">
-                      <span class="text-muted-foreground">Comptes actifs</span>
-                      <span class="font-bold">
-                        {{ enabledCount() }} / {{ nonAdminUsers().length }}
-                      </span>
+                    <div>
+                      <h4 class="font-semibold">Tout recalculer</h4>
+                      <p class="text-xs text-muted-foreground">Scores patients + efficacité médecins</p>
+                    </div>
+                  </div>
+                  <button z-button class="w-full" [disabled]="jobRunning()" (click)="runJob('all')">
+                    @if (jobRunning() === 'all') {
+                      <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      En cours...
+                    } @else {
+                      Lancer
+                    }
+                  </button>
+                </div>
+              </z-card>
+
+              <!-- Patient Scores -->
+              <z-card>
+                <div class="p-6 space-y-4">
+                  <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                      <z-icon zType="brain" class="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 class="font-semibold">Scores patients</h4>
+                      <p class="text-xs text-muted-foreground">Recalculer tous les scores + feature gates</p>
+                    </div>
+                  </div>
+                  <button z-button class="w-full" zType="outline" [disabled]="jobRunning()" (click)="runJob('patients')">
+                    @if (jobRunning() === 'patients') {
+                      <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-foreground mr-2"></div>
+                      En cours...
+                    } @else {
+                      Lancer
+                    }
+                  </button>
+                </div>
+              </z-card>
+
+              <!-- Doctor Effectiveness -->
+              <z-card>
+                <div class="p-6 space-y-4">
+                  <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
+                      <z-icon zType="heart" class="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 class="font-semibold">Efficacité médecins</h4>
+                      <p class="text-xs text-muted-foreground">Recalculer les métriques de qualité</p>
+                    </div>
+                  </div>
+                  <button z-button class="w-full" zType="outline" [disabled]="jobRunning()" (click)="runJob('doctors')">
+                    @if (jobRunning() === 'doctors') {
+                      <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-foreground mr-2"></div>
+                      En cours...
+                    } @else {
+                      Lancer
+                    }
+                  </button>
+                </div>
+              </z-card>
+            </div>
+
+            <!-- Last Job Result -->
+            @if (lastJobResult()) {
+              <z-card>
+                <div class="p-6">
+                  <h3 class="text-lg font-semibold mb-3">Dernier résultat</h3>
+                  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <p class="text-xs text-muted-foreground">Tâche</p>
+                      <p class="font-medium">{{ lastJobResult()!.jobName }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-muted-foreground">Statut</p>
+                      <z-badge [zType]="lastJobResult()!.status === 'SUCCESS' ? 'default' : 'destructive'">
+                        {{ lastJobResult()!.status }}
+                      </z-badge>
+                    </div>
+                    <div>
+                      <p class="text-xs text-muted-foreground">Traités</p>
+                      <p class="font-medium">{{ lastJobResult()!.processedCount }} ({{ lastJobResult()!.errorCount }} erreurs)</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-muted-foreground">Durée</p>
+                      <p class="font-medium">{{ lastJobResult()!.durationMs }}ms</p>
                     </div>
                   </div>
                 </div>
               </z-card>
-            </div>
+            }
           </div>
         }
       }
@@ -667,6 +902,12 @@ export class AdminDashboardComponent implements OnInit {
   games = signal<GameResponse[]>([]);
   stats = signal<OverviewStatsResponse | null>(null);
 
+  // Analytics state
+  platformOverview = signal<PlatformOverviewResponse | null>(null);
+  doctorRanking = signal<DoctorEffectivenessResponse[]>([]);
+  lastJobResult = signal<BatchJobResult | null>(null);
+  jobRunning = signal<string | null>(null);
+
   // Search / Filter — both signals for reactivity
   searchQuery = signal('');
   roleFilter = signal<string>('all');
@@ -674,6 +915,10 @@ export class AdminDashboardComponent implements OnInit {
   // Pagination utilisateurs
   userPage    = signal(1);
   userPerPage = 8;
+
+  // Pagination jeux
+  gamePage    = signal(1);
+  gamePerPage = 8;
 
   // Modal state
   showEditModal = signal(false);
@@ -694,7 +939,8 @@ export class AdminDashboardComponent implements OnInit {
         { icon: 'house', label: 'Accueil', action: () => this.setPage('Home') },
         { icon: 'users', label: 'Utilisateurs', action: () => this.setPage('Utilisateurs') },
         { icon: 'gamepad-2', label: 'Jeux', action: () => this.setPage('Jeux') },
-        { icon: 'bar-chart-3', label: 'Statistiques', action: () => this.setPage('Statistiques') },
+        { icon: 'bar-chart-3', label: 'Analytique', action: () => this.setPage('Statistiques') },
+        { icon: 'zap', label: 'Tâches', action: () => this.setPage('Tâches') },
       ],
     },
     {
@@ -748,6 +994,31 @@ export class AdminDashboardComponent implements OnInit {
     return Array.from({ length: total }, (_, i) => i + 1);
   });
 
+  // Game pagination computed
+  pagedGames = computed(() => {
+    const page = this.gamePage();
+    const start = (page - 1) * this.gamePerPage;
+    return this.games().slice(start, start + this.gamePerPage);
+  });
+  totalGamePages = computed(() => Math.max(1, Math.ceil(this.games().length / this.gamePerPage)));
+  gamePagesArray = computed(() => Array.from({ length: this.totalGamePages() }, (_, i) => i + 1));
+
+  // Analytics computed
+  stageEntries = computed(() => {
+    const dist = this.platformOverview()?.stageDistribution;
+    if (!dist) return [];
+    return Object.entries(dist).map(([stage, count]) => ({ stage, count }));
+  });
+  stageTotal = computed(() => this.stageEntries().reduce((sum, e) => sum + e.count, 0));
+
+  domainWeaknessEntries = computed(() => {
+    const weakness = this.platformOverview()?.cognitiveDomainWeakness;
+    if (!weakness) return [];
+    return Object.entries(weakness)
+      .map(([domain, pct]) => ({ domain, pct }))
+      .sort((a, b) => b.pct - a.pct);
+  });
+
   adminKeycloakId = '';
 
   private readonly platformId = inject(PLATFORM_ID);
@@ -757,6 +1028,7 @@ export class AdminDashboardComponent implements OnInit {
     private readonly userApiService: UserApiService,
     private readonly gameService: GameService,
     private readonly keycloakService: KeycloakService,
+    private readonly analyticsService: AnalyticsService,
   ) {}
 
   ngOnInit(): void {
@@ -773,6 +1045,10 @@ export class AdminDashboardComponent implements OnInit {
 
   setUserPage(p: number): void {
     if (p >= 1 && p <= this.totalUserPages()) this.userPage.set(p);
+  }
+
+  setGamePage(p: number): void {
+    if (p >= 1 && p <= this.totalGamePages()) this.gamePage.set(p);
   }
 
   countByRole(role: string): number {
@@ -803,6 +1079,50 @@ export class AdminDashboardComponent implements OnInit {
       case 'doctor': return 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400';
       default: return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
     }
+  }
+
+  // ─── Stage Helpers ───────────────────────────────────────
+  getStageLabel(stage: string): string {
+    const map: Record<string, string> = {
+      LOW_RISK: 'Risque faible', EARLY: 'Stade précoce',
+      MODERATE: 'Stade modéré', SEVERE: 'Stade sévère', UNKNOWN: 'Inconnu',
+    };
+    return map[stage] ?? stage;
+  }
+  getStageColor(stage: string): string {
+    const map: Record<string, string> = {
+      LOW_RISK: 'bg-emerald-500', EARLY: 'bg-amber-500',
+      MODERATE: 'bg-orange-500', SEVERE: 'bg-red-500', UNKNOWN: 'bg-gray-400',
+    };
+    return map[stage] ?? 'bg-gray-400';
+  }
+  getStageBarColor(stage: string): string {
+    return this.getStageColor(stage);
+  }
+
+  // ─── Batch Jobs ─────────────────────────────────────────
+  runJob(type: string): void {
+    this.jobRunning.set(type);
+    const obs = type === 'all'
+      ? this.analyticsService.runAllJobs()
+      : type === 'patients'
+        ? this.analyticsService.runPatientScores()
+        : this.analyticsService.runDoctorEffectiveness();
+
+    obs.pipe(finalize(() => this.jobRunning.set(null))).subscribe({
+      next: result => {
+        this.lastJobResult.set(result);
+        this.loadAnalytics();
+      },
+      error: err => {
+        console.error('Job failed', err);
+        this.lastJobResult.set({
+          jobName: type, status: 'FAILED', processedCount: 0, errorCount: 1,
+          startedAt: new Date().toISOString(), completedAt: new Date().toISOString(),
+          durationMs: 0, message: err?.error?.message || 'Job execution failed',
+        });
+      },
+    });
   }
 
   // ─── Enable/Disable User ────────────────────────────────
@@ -955,6 +1275,18 @@ export class AdminDashboardComponent implements OnInit {
     this.gameService.getOverviewStats().subscribe({
       next: stats => this.stats.set(stats),
       error: err => console.error('Failed to load stats', err),
+    });
+    this.loadAnalytics();
+  }
+
+  private loadAnalytics(): void {
+    this.analyticsService.getPlatformOverview().subscribe({
+      next: data => this.platformOverview.set(data),
+      error: () => {},
+    });
+    this.analyticsService.getDoctorRanking().subscribe({
+      next: data => this.doctorRanking.set(data),
+      error: () => {},
     });
   }
 

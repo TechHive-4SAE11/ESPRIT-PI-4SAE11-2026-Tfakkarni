@@ -32,6 +32,7 @@
 		<module>medicament-validation-service</module>
 		<module>iot-service</module>
 		<module>assistant-service</module>
+		<module>analytics-service</module>
 	</modules>
 	<dependencyManagement>
 		<dependencies>

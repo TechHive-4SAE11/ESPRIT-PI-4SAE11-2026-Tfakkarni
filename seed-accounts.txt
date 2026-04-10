@@ -1,0 +1,27 @@
+==========================================
+  Tfakkarni Seed Accounts
+  Generated: 2026-04-10 16:25:39
+==========================================
+
+Login URL:  http://localhost:4200
+Keycloak:   https://lemur-12.cloud-iam.com/auth/admin/master/console/
+
+──────────────────────────────────────────
+EMAIL                          PASSWORD        ROLE            NAME
+──────────────────────────────────────────
+admin@admin.com                123456          admin           Admin Tfakkarni
+doc@doc.com                    123456          doctor          Dr. Amine Ben Salem
+doc2@doc.com                   123456          doctor          Dr. Sarra Mansouri
+patient@patient.com            123456          patient         Mohamed Trabelsi
+patient2@patient.com           123456          patient         Fatma Bouazizi
+patient3@patient.com           123456          patient         Youssef Gharbi
+
+──────────────────────────────────────────
+Keycloak IDs:
+──────────────────────────────────────────
+admin@admin.com                d4fa8d48-d2ca-4567-82d0-672d52d95103
+doc@doc.com                    e0db87aa-0d8c-4788-bac7-51b4c6cd0393
+doc2@doc.com                   38c57d8b-2fac-48ba-85e2-edb2dcab4954
+patient@patient.com            1547778c-bdd5-44b5-8823-022e3e89453d
+patient2@patient.com           0b00343d-3edd-4686-bc2b-d34b719471e9
+patient3@patient.com           bbd3dd1e-b4e4-4488-86c2-65ce0089a4b3

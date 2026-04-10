@@ -35,6 +35,8 @@ import { MeetingListComponent } from './meeting-list/meeting-list.component';
 import { Meeting } from '@/core/services/meeting.service';
 import { KeycloakService } from 'keycloak-angular';
 import type { SessionResponseDTO } from '@/core/services/session.service';
+import { AnalyticsService } from '@/core/services/analytics.service';
+import type { DoctorEffectivenessResponse, PatientScoreResponse } from '@/core/models/analytics.model';
 
 @Component({
   selector: 'app-doctor-dashboard',
@@ -318,6 +320,35 @@ import type { SessionResponseDTO } from '@/core/services/session.service';
               </div>
             </z-card>
           </div>
+
+          <!-- Doctor Self-Effectiveness -->
+          @if (doctorEffectiveness()) {
+            <z-card class="mb-8">
+              <div class="p-6">
+                <h3 class="text-lg font-semibold mb-4">Mes performances</h3>
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div>
+                    <p class="text-xs text-muted-foreground">Taux de stabilisation</p>
+                    <p class="text-2xl font-bold text-emerald-600">{{ (doctorEffectiveness()!.stabilizationRate * 100) | number:'1.0-0' }}%</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-muted-foreground">Taux de déclin</p>
+                    <p class="text-2xl font-bold" [class]="doctorEffectiveness()!.declineRate > 0.3 ? 'text-red-600' : 'text-muted-foreground'">
+                      {{ (doctorEffectiveness()!.declineRate * 100) | number:'1.0-0' }}%
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-muted-foreground">Présence aux RDV</p>
+                    <p class="text-2xl font-bold">{{ (doctorEffectiveness()!.appointmentShowRate * 100) | number:'1.0-0' }}%</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-muted-foreground">Coaching complété</p>
+                    <p class="text-2xl font-bold">{{ (doctorEffectiveness()!.coachingCompletionRate * 100) | number:'1.0-0' }}%</p>
+                  </div>
+                </div>
+              </div>
+            </z-card>
+          }
 
           <z-card>
             <div class="p-6">
@@ -912,6 +943,10 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   selectedNotif = signal<DoctorNotification | null>(null);
   private notifInterval: ReturnType<typeof setInterval> | null = null;
 
+  // Doctor self-effectiveness
+  doctorEffectiveness = signal<DoctorEffectivenessResponse | null>(null);
+  patientScores = signal<Map<string, PatientScoreResponse>>(new Map());
+
   // KYC state
   kycStatus = signal<string>('none');
   kycChecking = signal(true);
@@ -987,6 +1022,7 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
     private readonly keycloakService: KeycloakService,
     public readonly notifService: DoctorNotificationService,
     private readonly quizService: QuizService,
+    private readonly analyticsService: AnalyticsService,
   ) {
   }
 
@@ -1066,6 +1102,12 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
         this.notifInterval = setInterval(() => {
           this.loadNotificationsForDoctor(this.doctorKeycloakId);
         }, 10_000); // Poll toutes les 10s pour réactivité maximale
+
+        // Load self-effectiveness metrics
+        this.analyticsService.getDoctorEffectiveness(this.doctorKeycloakId).subscribe({
+          next: data => this.doctorEffectiveness.set(data),
+          error: () => {},
+        });
       }
     }
   }

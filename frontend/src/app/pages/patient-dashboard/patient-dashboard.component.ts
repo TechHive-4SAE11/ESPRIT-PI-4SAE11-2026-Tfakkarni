@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { KeycloakService } from 'keycloak-angular';
 import { AuthService } from '@/core/auth';
+import { FeatureGateService } from '@/core/services/feature-gate.service';
 import { DashboardLayoutComponent, type SidebarMenuGroup } from '@/shared/components/dashboard-layout';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardButtonComponent } from '@/shared/components/button';
@@ -81,6 +82,7 @@ export class PatientDashboardComponent implements OnInit {
     private readonly authService: AuthService,
     private readonly keycloakService: KeycloakService,
     private readonly router: Router,
+    private readonly featureGateService: FeatureGateService,
   ) {
     // Restore saved view mode AFTER hydration to avoid SSR mismatch
     afterNextRender(() => {
@@ -98,6 +100,11 @@ export class PatientDashboardComponent implements OnInit {
     const kc = this.keycloakService.getKeycloakInstance();
     this.keycloakId = kc?.subject ?? kc?.tokenParsed?.['sub'] ?? '';
     this.buildMenuGroups();
+
+    // Load feature gates for this patient
+    if (this.keycloakId) {
+      this.featureGateService.loadGates(this.keycloakId);
+    }
   }
 
   switchView(mode: ViewMode): void {

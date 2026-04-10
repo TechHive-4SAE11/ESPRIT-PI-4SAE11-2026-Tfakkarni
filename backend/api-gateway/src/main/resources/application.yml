@@ -159,6 +159,10 @@ spring:
           uri: lb://tracking-service
           predicates:
             - Path=/api/follow-up-reminders/**
+        - id: analytics-service
+          uri: lb://analytics-service
+          predicates:
+            - Path=/api/analytics/**
   security:
     oauth2:
       resourceserver:
