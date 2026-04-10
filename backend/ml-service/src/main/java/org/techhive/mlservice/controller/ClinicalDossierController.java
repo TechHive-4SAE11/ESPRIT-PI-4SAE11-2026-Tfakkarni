@@ -15,7 +15,7 @@ import org.techhive.mlservice.service.SymptomPilotService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@RestController
+//@RestController
 @RequestMapping("/api/ml")
 @RequiredArgsConstructor
 @Slf4j

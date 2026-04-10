@@ -585,7 +585,7 @@ import type { SessionResponseDTO } from '@/core/services/session.service';
                 Back to List
               </button>
             </div>
-            
+
             <app-prescription-management [patient]="patient" [doctor]="currentDoctor()"></app-prescription-management>
           } @else {
              <div class="space-y-4">
@@ -612,7 +612,7 @@ import type { SessionResponseDTO } from '@/core/services/session.service';
                 Back to List
               </button>
             </div>
-            
+
             <app-care-plan-management [patient]="patient" [doctor]="currentDoctor()"></app-care-plan-management>
           } @else {
              <div class="space-y-4">
@@ -663,7 +663,7 @@ import type { SessionResponseDTO } from '@/core/services/session.service';
                     <div class="flex items-center gap-4 p-4 border rounded-xl bg-card hover:shadow-md transition-shadow cursor-pointer group"
                          (click)="manageSessions(patient)">
                       <div class="shrink-0 w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                        {{ patient.firstName?.charAt(0) || '?' }}{{ patient.lastName?.charAt(0) || '?' }}
+                        {{ patient.firstName.charAt(0) || '?' }}{{ patient.lastName.charAt(0) || '?' }}
                       </div>
                       <div class="flex-1 min-w-0">
                         <p class="font-semibold text-sm truncate">{{ patient.firstName }} {{ patient.lastName }}</p>
@@ -675,6 +675,7 @@ import type { SessionResponseDTO } from '@/core/services/session.service';
                         Manage Sessions
                       </button>
                     </div>
+
                   }
                 </div>
               } @else {
@@ -706,7 +707,7 @@ import type { SessionResponseDTO } from '@/core/services/session.service';
                 Back to List
               </button>
             </div>
-            
+
             <app-medication-management [patient]="patient" [doctor]="currentDoctor()" viewMode="patient"></app-medication-management>
           } @else {
              <div class="space-y-4">
@@ -970,7 +971,7 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
     console.log('[doctor-dashboard] ngOnInit started');
     this.restoreCurrentPage();
     console.log('[doctor-dashboard] After restore, currentPage:', this.currentPage());
-    
+
     this.searchSubject
       .pipe(
         debounceTime(300),

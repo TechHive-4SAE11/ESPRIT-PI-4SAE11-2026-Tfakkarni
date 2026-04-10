@@ -80,6 +80,17 @@ export class HelperViewComponent implements OnInit {
   userNeonDbId = signal<number | null>(null);
   currentUser = signal<UserInfo | null>(null);
 
+  menuGroups = [
+    {
+      label: 'FORMATION & IA',
+      items: [
+        { icon: 'message-circle', label: '💬 Assistant IA', action: () => this.router.navigate(['/training/chat']) },
+        { icon: 'book-open', label: '📚 Modules de formation', action: () => this.router.navigate(['/training/modules']) },
+        { icon: 'heart', label: '📊 Analyse mon stress', action: () => this.router.navigate(['/training/stress']) }
+      ]
+    }
+  ];
+
   // ── Notifications ──────────────────────────────────────────────────────────
   private readonly notificationService = inject(NotificationService);
   notifications = signal<MedicationNotification[]>([]);
