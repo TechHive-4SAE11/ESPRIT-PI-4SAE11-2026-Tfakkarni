@@ -137,6 +137,33 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
   },
 
+  // ===== ROUTES POUR TRAINING & CHATBOT =====
+  {
+    path: 'training/chat',
+    loadComponent: () => import('@/pages/training/chatbot/chatbot.component').then(m => m.ChatbotComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'training/modules',
+    loadComponent: () => import('@/pages/training/modules/modules.component').then(m => m.ModulesComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'training/modules/:id',
+    loadComponent: () => import('@/pages/training/module-detail/module-detail.component').then(m => m.ModuleDetailComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'training/stress',
+    loadComponent: () => import('@/pages/training/stress-dashboard/stress-dashboard.component').then(m => m.StressDashboardComponent),
+    canActivate: [AuthGuard]
+  },
+  //{
+    //path: 'admin/modules',
+    //loadComponent: () => import('@/pages/admin/module-admin/module-admin.component').then(m => m.ModuleAdminComponent),
+    //canActivate: [AuthGuard]
+  //},
+
   // ===== ROUTES POUR LES RAPPELS =====
   {
     path: 'appointments/:appointmentId/reminders/new',
