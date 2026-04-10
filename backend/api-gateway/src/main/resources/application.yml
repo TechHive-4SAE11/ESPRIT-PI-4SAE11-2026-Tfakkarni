@@ -143,6 +143,14 @@ spring:
           uri: lb://iot-service
           predicates:
             - Path=/api/iot/**
+        - id: assistant-service-ai
+          uri: lb://assistant-service
+          predicates:
+            - Path=/api/ai/**
+        - id: assistant-service-ws
+          uri: lb://assistant-service
+          predicates:
+            - Path=/ws/**
   security:
     oauth2:
       resourceserver:

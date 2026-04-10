@@ -1,0 +1,9 @@
+d:\MergeTfakkarni\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\config-service\src\main\java\org\techhive\configservice\ConfigServiceApplication.java
+d:\MergeTfakkarni\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\config-service\src\main\resources\application.yml
+d:\MergeTfakkarni\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\config-service\src\main\resources\config\alert-service.yml
+d:\MergeTfakkarni\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\config-service\src\main\resources\config\game-service.yml
+d:\MergeTfakkarni\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\config-service\src\main\resources\config\medical-service.yml
+d:\MergeTfakkarni\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\config-service\src\main\resources\config\medicament-validation-service.yml
+d:\MergeTfakkarni\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\config-service\src\main\resources\config\ml-service.yml
+d:\MergeTfakkarni\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\config-service\src\main\resources\config\tracking-service.yml
+d:\MergeTfakkarni\ESPRIT-PI-4SAE11-2026-Tfakkarni\backend\config-service\src\main\resources\config\user-service.yml
