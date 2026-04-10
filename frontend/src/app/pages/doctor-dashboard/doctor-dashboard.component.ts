@@ -30,6 +30,9 @@ import { DossierAnalyticsComponent } from '@/pages/medical-folders/dossier-analy
 import { MedicationManagementComponent } from '../medications/medications.component';
 import { PatientAnalyticsComponent } from './patient-analytics/patient-analytics.component';
 import { ProfileComponent } from '@/pages/patient-dashboard/helper-view/profile/profile.component';
+import { MeetingRoomComponent } from './meeting-room/meeting-room.component';
+import { MeetingListComponent } from './meeting-list/meeting-list.component';
+import { Meeting } from '@/core/services/meeting.service';
 import { KeycloakService } from 'keycloak-angular';
 import type { SessionResponseDTO } from '@/core/services/session.service';
 
@@ -54,6 +57,8 @@ import type { SessionResponseDTO } from '@/core/services/session.service';
     MedicationManagementComponent,
     PatientAnalyticsComponent,
     ProfileComponent,
+    MeetingRoomComponent,
+    MeetingListComponent,
   ],
   template: `
     @if (kycChecking()) {
@@ -857,6 +862,19 @@ import type { SessionResponseDTO } from '@/core/services/session.service';
           }
         }
 
+      @case ('Meetings') {
+        @if (meetingRoomOpen()) {
+          <app-meeting-room
+            [meeting]="activeMeeting()!"
+            [currentUser]="currentUserForMeeting()"
+            (meetingEnded)="onMeetingEnded($event)"
+            (close)="closeMeetingRoom()" />
+        } @else {
+          <app-meeting-list
+            [doctorKeycloakId]="doctorKeycloakId"
+            (openMeeting)="openMeetingRoom($event)" />
+        }
+      }
       }
       </div>
     </app-dashboard-layout>
@@ -936,6 +954,7 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
         { icon: 'pill', label: 'Prescriptions', action: () => this.setPage('Prescriptions') },
         { icon: 'activity', label: 'Care Plans', action: () => this.setPage('CarePlans') },
         { icon: 'heart', label: 'Medications', action: () => this.setPage('Medications') },
+        { icon: 'play-circle', label: 'Réunions', action: () => this.setPage('Meetings') },
       ],
     },
     {
@@ -956,6 +975,10 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   ];
 
   doctorKeycloakId = '';
+
+  // ── Meeting state ──
+  meetingRoomOpen = signal(false);
+  activeMeeting = signal<Meeting | null>(null);
 
   constructor(
     private readonly authService: AuthService,
@@ -1019,6 +1042,12 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
             if (status === 'pending') {
               this.refreshKycStatus();
             }
+
+            // Recharger les notifications avec l'ID correct de la DB
+            // (en cas de changement Keycloak, l'ID token peut différer de l'ID DB)
+            if (doctor.keycloakId) {
+              this.notifService.loadNotifications(doctor.keycloakId).subscribe();
+            }
           },
           error: err => {
             console.error('Failed to load doctor info', err);
@@ -1030,12 +1059,13 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
       }
       this.loadPatients();
 
-      // Load notifications and poll every 30s
+      // Load notifications — use Keycloak ID from token
+      // Will also reload after currentDoctor() is set (see loadNotificationsForDoctor)
       if (this.doctorKeycloakId) {
-        this.notifService.loadNotifications(this.doctorKeycloakId).subscribe();
+        this.loadNotificationsForDoctor(this.doctorKeycloakId);
         this.notifInterval = setInterval(() => {
-          this.notifService.loadNotifications(this.doctorKeycloakId).subscribe();
-        }, 30_000);
+          this.loadNotificationsForDoctor(this.doctorKeycloakId);
+        }, 10_000); // Poll toutes les 10s pour réactivité maximale
       }
     }
   }
@@ -1107,6 +1137,7 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
       'Medications',
       'Daily Log',
       'Mon Profil',
+      'Meetings',
     ]);
 
     if (validPages.has(savedPage)) {
@@ -1142,6 +1173,8 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
         return 'daily-log';
       case 'Mon Profil':
         return 'profile';
+      case 'Meetings':
+        return 'meetings';
       case 'Home':
       default:
         return null;
@@ -1168,6 +1201,8 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
         return 'Daily Log';
       case 'profile':
         return 'Mon Profil';
+      case 'meetings':
+        return 'Meetings';
       case 'home':
         return 'Home';
       default:
@@ -1262,11 +1297,63 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
     console.log('[DoctorDashboard] Sessions changed — prescription/care plan dropdowns will reflect new sessions');
   }
 
+  // ── Meeting methods ─────────────────────────────────────────────────────
+
+  openMeetingRoom(meeting: Meeting): void {
+    this.activeMeeting.set(meeting);
+    this.meetingRoomOpen.set(true);
+  }
+
+  onMeetingEnded(result: { summary: string; durationMinutes: number }): void {
+    console.log('Meeting ended:', result);
+  }
+
+  closeMeetingRoom(): void {
+    this.meetingRoomOpen.set(false);
+    this.activeMeeting.set(null);
+  }
+
+  currentUserForMeeting(): { keycloakId: string; name: string; role: string } {
+    const doctor = this.currentDoctor();
+    return {
+      keycloakId: this.doctorKeycloakId,
+      name: doctor ? `${doctor.firstName} ${doctor.lastName}` : 'Médecin',
+      role: 'doctor'
+    };
+  }
+  }
+
   retryLoadPatients(): void {
     this.loadPatients();
   }
 
   // ── Notification methods ─────────────────────────────────────────────────
+
+  /**
+   * Charge les notifications en essayant d'abord l'ID Keycloak du token,
+   * puis l'ID stocké dans currentDoctor() si disponible.
+   * Après les changements Keycloak, ces deux IDs peuvent différer.
+   */
+  /**
+   * Charge les notifications en essayant intelligemment tous les IDs disponibles.
+   * Résoudre le mismatch d'ID Keycloak après reconfiguration.
+   */
+  loadNotificationsForDoctor(keycloakIdFromToken: string): void {
+    const doctorFromDb = this.currentDoctor();
+    const fallbackIds: string[] = [];
+    if (doctorFromDb?.keycloakId && doctorFromDb.keycloakId !== keycloakIdFromToken) {
+      fallbackIds.push(doctorFromDb.keycloakId);
+    }
+    this.notifService.loadNotificationsSmartly(keycloakIdFromToken, fallbackIds).subscribe();
+  }
+
+  /** Appelé depuis suivi-quotidien après ajout d'un incident — recharge immédiatement */
+  refreshNotifications(): void {
+    // Attendre 2s que le backend async sauvegarde la notification
+    setTimeout(() => {
+      this.loadNotificationsForDoctor(this.doctorKeycloakId);
+    }, 2000);
+  }
 
   toggleNotificationPanel(): void {
     this.showNotifications.update(v => !v);
@@ -1284,8 +1371,10 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   }
 
   markAllRead(): void {
-    if (this.doctorKeycloakId) {
-      this.notifService.markAllAsRead(this.doctorKeycloakId).subscribe();
+    // Utiliser l'ID de la DB en priorité (plus fiable après changement Keycloak)
+    const id = this.currentDoctor()?.keycloakId || this.doctorKeycloakId;
+    if (id) {
+      this.notifService.markAllAsRead(id).subscribe();
     }
   }
 

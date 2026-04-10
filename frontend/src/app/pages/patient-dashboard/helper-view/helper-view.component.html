@@ -142,6 +142,9 @@
 </div>
 }
 
+<!-- ══ FOLLOW-UP REMINDER ALERTS ══ -->
+<app-follow-up-reminder-alert [keycloakId]="keycloakId" />
+
 <div class="grid gap-4 md:grid-cols-2">
     <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Data Library')">
         <div class="flex items-center gap-3">
@@ -279,6 +282,15 @@
             </div>
         </div>
     </z-card>
+    <z-card class="p-6 cursor-pointer hover:border-primary transition-colors" (click)="setPage('Meetings')">
+        <div class="flex items-center gap-3">
+            <z-icon zType="play-circle" class="text-primary h-10 w-10" />
+            <div>
+                <h3 class="font-semibold">Réunions vidéo</h3>
+                <p class="text-sm text-muted-foreground">Visioconférences avec le médecin</p>
+            </div>
+        </div>
+    </z-card>
 </div>
 }
 
@@ -359,6 +371,29 @@
 
 @case ('Safe Zone') {
 <app-safe-zone [keycloakId]="keycloakId" (goBack)="setPage('Home')" />
+}
+
+@case ('Meetings') {
+  @if (meetingRoomOpen()) {
+    <app-meeting-room
+      [meeting]="activeMeeting()!"
+      [currentUser]="currentUserForMeeting()"
+      (meetingEnded)="onMeetingEnded($event)"
+      (close)="closeMeetingRoom()" />
+  } @else {
+    <div class="flex items-center gap-2 mb-6">
+      <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
+        <z-icon zType="arrow-left" class="mr-1" />
+        Retour
+      </button>
+    </div>
+    <app-helper-meeting-list
+      [patientKeycloakId]="keycloakId"
+      [currentUserKeycloakId]="keycloakId"
+      [currentUserName]="currentUser() ? (currentUser()!.firstName + ' ' + currentUser()!.lastName) : 'Aidant'"
+      (joinMeeting)="openMeetingRoom($event)" />
+  }
+}
 }
 @case ('Quizzes') {
 <div class="flex items-center gap-2 mb-6">

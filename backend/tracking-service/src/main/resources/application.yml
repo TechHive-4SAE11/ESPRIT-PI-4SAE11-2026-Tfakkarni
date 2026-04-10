@@ -41,6 +41,11 @@ medication:
     daily-update-cron: "0 0 0 * * *"          # Midnight daily
     periodic-update-cron: "0 0 */6 * * *"     # Every 6 hours
 
+# Daily follow-up reminder scheduler
+followup:
+  scheduler:
+    cron: "0 0 22 * * *"                       # Every day at 22:00
+
 eureka:
   client:
     service-url:
@@ -54,10 +59,14 @@ mailtrap:
   inbox-id: 4413425
   from: noreply@tfakkarni.com
 
-# Telegram Bot — alerts on GRAVE incidents
+# Telegram Bot — @tfakkarni_alert_bot (alerts on GRAVE incidents)
 telegram:
   bot-token: "8761174713:AAEG23SiwUmSEDTFTlMm-7GLzUZQpqDJzzg"
   default-chat-id: "5674590232"
+
+# Alert fallback — email utilisé si user-service ne répond pas
+alert:
+  fallback-email: "doctor@gmail.com"
 
 # ElevenLabs Speech-to-Text API
 elevenlabs:
@@ -73,3 +82,18 @@ management:
   endpoint:
     health:
       show-details: always
+
+# Daily.co Video Conferencing API
+daily:
+  api-key: "296f35c5b0a3624ccbc58966d8840752b08291e3a0b378964eb661b31caacb8c"
+  api-url: "https://api.daily.co/v1"
+
+# Groq API (free tier: 14400 req/day) — used for AI meeting summaries & live transcript
+claude:
+  api-key: "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"
+  api-url: "https://api.groq.com/openai/v1/chat/completions"
+  model: "llama-3.1-8b-instant"
+
+# Meeting room settings
+meeting:
+  room-expiry-minutes: 60
