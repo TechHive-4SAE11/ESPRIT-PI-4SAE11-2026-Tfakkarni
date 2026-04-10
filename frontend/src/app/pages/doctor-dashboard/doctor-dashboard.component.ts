@@ -1321,7 +1321,6 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
       role: 'doctor'
     };
   }
-  }
 
   retryLoadPatients(): void {
     this.loadPatients();
