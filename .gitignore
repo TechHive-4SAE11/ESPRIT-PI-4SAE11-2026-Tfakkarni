@@ -25,5 +25,3 @@ backend/medical-service/src/main/resources/credentials.json
 
 # Cursor AI Instructions (local development reference)
 CURSOR_AI_INSTRUCTIONS.md
-.env
-.env
