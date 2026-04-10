@@ -132,8 +132,8 @@ import type { DoctorEffectivenessResponse, PatientScoreResponse } from '@/core/m
       <div class="space-y-4">
       @switch (currentPage()) {
         @case ('Home') {
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-bold">Doctor Dashboard</h2>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold">Tableau de bord</h2>
             <!-- 🔔 Notification Bell -->
             <div class="relative">
               <button z-button zType="ghost" zSize="sm"
@@ -291,68 +291,44 @@ import type { DoctorEffectivenessResponse, PatientScoreResponse } from '@/core/m
             </div>
           }
 
-          <div class="grid gap-4 md:grid-cols-3 mb-8">
-            <z-card class="p-6">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm text-muted-foreground">My Patients</p>
-                  <p class="text-3xl font-bold">{{ patients().length }}</p>
-                </div>
-                <z-icon zType="user" class="text-primary h-8 w-8" />
-              </div>
+          <div class="grid gap-3 grid-cols-3 lg:grid-cols-7 mb-6">
+            <z-card class="p-4">
+              <p class="text-xs text-muted-foreground">Patients</p>
+              <p class="text-2xl font-bold">{{ patients().length }}</p>
             </z-card>
-            <z-card class="p-6">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm text-muted-foreground">Games Played</p>
-                  <p class="text-3xl font-bold">{{ totalPatientGames }}</p>
-                </div>
-                <z-icon zType="gamepad-2" class="text-primary h-8 w-8" />
-              </div>
+            <z-card class="p-4">
+              <p class="text-xs text-muted-foreground">Parties jouées</p>
+              <p class="text-2xl font-bold">{{ totalPatientGames }}</p>
             </z-card>
-            <z-card class="p-6">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm text-muted-foreground">Avg Patient Score</p>
-                  <p class="text-3xl font-bold">{{ avgPatientScore | number:'1.0-0' }}%</p>
-                </div>
-                <z-icon zType="bar-chart-3" class="text-primary h-8 w-8" />
-              </div>
+            <z-card class="p-4">
+              <p class="text-xs text-muted-foreground">Score moyen</p>
+              <p class="text-2xl font-bold">{{ avgPatientScore | number:'1.0-0' }}%</p>
             </z-card>
+            @if (doctorEffectiveness()) {
+            <z-card class="p-4">
+              <p class="text-xs text-muted-foreground">Stabilisation</p>
+              <p class="text-2xl font-bold text-emerald-600">{{ (doctorEffectiveness()!.stabilizationRate * 100) | number:'1.0-0' }}%</p>
+            </z-card>
+            <z-card class="p-4">
+              <p class="text-xs text-muted-foreground">Déclin</p>
+              <p class="text-2xl font-bold" [class]="doctorEffectiveness()!.declineRate > 0.3 ? 'text-red-600' : 'text-muted-foreground'">
+                {{ (doctorEffectiveness()!.declineRate * 100) | number:'1.0-0' }}%
+              </p>
+            </z-card>
+            <z-card class="p-4">
+              <p class="text-xs text-muted-foreground">Présence RDV</p>
+              <p class="text-2xl font-bold">{{ (doctorEffectiveness()!.appointmentShowRate * 100) | number:'1.0-0' }}%</p>
+            </z-card>
+            <z-card class="p-4">
+              <p class="text-xs text-muted-foreground">Coaching</p>
+              <p class="text-2xl font-bold">{{ (doctorEffectiveness()!.coachingCompletionRate * 100) | number:'1.0-0' }}%</p>
+            </z-card>
+            }
           </div>
-
-          <!-- Doctor Self-Effectiveness -->
-          @if (doctorEffectiveness()) {
-            <z-card class="mb-8">
-              <div class="p-6">
-                <h3 class="text-lg font-semibold mb-4">Mes performances</h3>
-                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div>
-                    <p class="text-xs text-muted-foreground">Taux de stabilisation</p>
-                    <p class="text-2xl font-bold text-emerald-600">{{ (doctorEffectiveness()!.stabilizationRate * 100) | number:'1.0-0' }}%</p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-muted-foreground">Taux de déclin</p>
-                    <p class="text-2xl font-bold" [class]="doctorEffectiveness()!.declineRate > 0.3 ? 'text-red-600' : 'text-muted-foreground'">
-                      {{ (doctorEffectiveness()!.declineRate * 100) | number:'1.0-0' }}%
-                    </p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-muted-foreground">Présence aux RDV</p>
-                    <p class="text-2xl font-bold">{{ (doctorEffectiveness()!.appointmentShowRate * 100) | number:'1.0-0' }}%</p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-muted-foreground">Coaching complété</p>
-                    <p class="text-2xl font-bold">{{ (doctorEffectiveness()!.coachingCompletionRate * 100) | number:'1.0-0' }}%</p>
-                  </div>
-                </div>
-              </div>
-            </z-card>
-          }
 
           <z-card>
             <div class="p-6">
-              <h3 class="text-lg font-semibold mb-4">Patients Overview</h3>
+              <h3 class="text-lg font-semibold mb-4">Mes patients</h3>
               @if (isLoading()) {
                 <z-skeleton class="h-32 w-full" />
               } @else if (error()) {
@@ -366,97 +342,66 @@ import type { DoctorEffectivenessResponse, PatientScoreResponse } from '@/core/m
                   <thead z-table-header>
                     <tr z-table-row>
                       <th z-table-head>Patient</th>
-                      <th z-table-head>Email</th>
-                      <th z-table-head>Games Created</th>
-                      <th z-table-head>Games Played</th>
-                      <th z-table-head>Avg Score</th>
-                      <th z-table-head>
-                        <span class="flex items-center gap-1">
-                          🧠 Alzheimer's Risk
-                          <span class="text-xs text-muted-foreground font-normal ml-1">(avg quiz)</span>
-                        </span>
-                      </th>
-                      <th z-table-head>Risk Level</th>
-                      <th z-table-head>Actions</th>
+                      <th z-table-head>Score</th>
+                      <th z-table-head>Risque Alzheimer</th>
+                      <th z-table-head class="text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody z-table-body>
                     @for (patient of patients(); track patient.keycloakId) {
-                      <tr z-table-row>
-                        <td z-table-cell class="font-medium">{{ patient.firstName }} {{ patient.lastName }}</td>
-                        <td z-table-cell class="text-muted-foreground">{{ patient.email }}</td>
-                        <td z-table-cell>{{ getPatientStat(patient.keycloakId)?.totalGamesCreated ?? '-' }}</td>
-                        <td z-table-cell>{{ getPatientStat(patient.keycloakId)?.totalGamesPlayed ?? '-' }}</td>
+                      <tr z-table-row class="group">
+                        <td z-table-cell>
+                          <div>
+                            <p class="font-medium">{{ patient.firstName }} {{ patient.lastName }}</p>
+                            <p class="text-xs text-muted-foreground">{{ patient.email }}</p>
+                          </div>
+                        </td>
                         <td z-table-cell>
                           @if (getPatientStat(patient.keycloakId); as stat) {
                             <div class="flex items-center gap-2">
-                              <z-progress-bar [progress]="stat.averageScore" class="w-16 h-2" />
-                              <span class="text-sm">{{ stat.averageScore | number:'1.0-0' }}%</span>
+                              <z-progress-bar [progress]="stat.averageScore" class="w-14 h-1.5" />
+                              <span class="text-sm font-medium">{{ stat.averageScore | number:'1.0-0' }}%</span>
                             </div>
+                            <p class="text-[11px] text-muted-foreground">{{ stat.totalGamesPlayed }} parties</p>
                           } @else {
-                            <span class="text-muted-foreground">-</span>
+                            <span class="text-muted-foreground text-sm">—</span>
                           }
                         </td>
-                        <!-- Alzheimer's risk score (avg quiz = % wrong) -->
                         <td z-table-cell>
                           @if (getQuizScore(patient.keycloakId); as qs) {
-                            <div class="flex items-center gap-2">
-                              <div class="w-full max-w-[80px] h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                                <div class="h-full rounded-full transition-all"
-                                  [style.width.%]="qs"
-                                  [class]="qs >= 60 ? 'bg-red-500' : qs >= 30 ? 'bg-amber-400' : 'bg-emerald-500'">
-                                </div>
-                              </div>
-                              <span class="text-sm font-semibold"
-                                [class]="qs >= 60 ? 'text-red-600' : qs >= 30 ? 'text-amber-600' : 'text-emerald-600'">
-                                {{ qs | number:'1.0-0' }}%
-                              </span>
-                            </div>
-                          } @else {
-                            <span class="text-xs text-muted-foreground italic">No quiz yet</span>
-                          }
-                        </td>
-                        <!-- Risk level badge -->
-                        <td z-table-cell>
-                          @if (getQuizScore(patient.keycloakId); as qs) {
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold"
                               [class]="qs >= 60
                                 ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
                                 : qs >= 30
                                   ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
                                   : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'">
-                              {{ qs >= 60 ? '🔴 High Risk' : qs >= 30 ? '🟡 Moderate' : '🟢 Low Risk' }}
+                              {{ qs >= 60 ? '🔴' : qs >= 30 ? '🟡' : '🟢' }}
+                              {{ qs | number:'1.0-0' }}%
                             </span>
                           } @else {
-                            <span class="text-xs text-muted-foreground">—</span>
+                            <span class="text-xs text-muted-foreground italic">Pas de quiz</span>
                           }
                         </td>
-                        <td z-table-cell>
-                          <div class="flex gap-2 flex-wrap">
-                             <button z-button zType="ghost" zSize="sm" (click)="manageSessions(patient)">
-                               <z-icon zType="calendar" class="mr-1" />
-                               Sessions
-                             </button>
-                             <button z-button zType="ghost" zSize="sm" (click)="viewPatientProgress(patient)">
-                               <z-icon zType="bar-chart-3" class="mr-1" />
-                               Progress
-                             </button>
-                             <button z-button zType="ghost" zSize="sm" (click)="viewMedications(patient)">
-                               <z-icon zType="pill" class="mr-1" />
-                               Meds
-                             </button>
-                             <button z-button zType="ghost" zSize="sm" (click)="managePrescriptions(patient)">
-                               <z-icon zType="file-text" class="mr-1" />
-                               Rx
-                             </button>
-                             <button z-button zType="ghost" zSize="sm" (click)="viewDailyLog(patient)">
-                               <z-icon zType="file" class="mr-1" />
-                               Journal
-                             </button>
-                             <button z-button zType="ghost" zSize="sm" (click)="manageCarePlans(patient)">
-                               <z-icon zType="activity" class="mr-1" />
-                               Plan
-                             </button>
+                        <td z-table-cell class="text-right">
+                          <div class="flex items-center justify-end gap-1">
+                            <button z-button zType="ghost" zSize="sm" (click)="viewPatientProgress(patient)" title="Progrès">
+                              <z-icon zType="bar-chart-3" class="h-4 w-4" />
+                            </button>
+                            <button z-button zType="ghost" zSize="sm" (click)="manageSessions(patient)" title="Sessions">
+                              <z-icon zType="calendar" class="h-4 w-4" />
+                            </button>
+                            <button z-button zType="ghost" zSize="sm" (click)="viewMedications(patient)" title="Médicaments">
+                              <z-icon zType="pill" class="h-4 w-4" />
+                            </button>
+                            <button z-button zType="ghost" zSize="sm" (click)="managePrescriptions(patient)" title="Ordonnances">
+                              <z-icon zType="file" class="h-4 w-4" />
+                            </button>
+                            <button z-button zType="ghost" zSize="sm" (click)="viewDailyLog(patient)" title="Journal">
+                              <z-icon zType="edit" class="h-4 w-4" />
+                            </button>
+                            <button z-button zType="ghost" zSize="sm" (click)="manageCarePlans(patient)" title="Plan de soins">
+                              <z-icon zType="activity" class="h-4 w-4" />
+                            </button>
                           </div>
                         </td>
                       </tr>

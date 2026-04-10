@@ -48,73 +48,34 @@ import { finalize } from 'rxjs';
         <!-- HOME OVERVIEW                                             -->
         <!-- ══════════════════════════════════════════════════════════ -->
         @case ('Home') {
-          <div class="space-y-8">
-            <div>
-              <h2 class="text-2xl font-bold tracking-tight">Tableau de bord</h2>
-              <p class="text-muted-foreground mt-1">Vue d'ensemble de la plateforme Tfakkarni</p>
-            </div>
+          <div class="space-y-6">
+            <h2 class="text-xl font-bold tracking-tight">Tableau de bord</h2>
 
             <!-- Stats Cards -->
-            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <z-card class="relative overflow-hidden">
-                <div class="p-6">
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <p class="text-sm font-medium text-muted-foreground">Utilisateurs</p>
-                      <p class="text-3xl font-bold mt-1">{{ nonAdminUsers().length }}</p>
-                      <p class="text-xs text-muted-foreground mt-1">
-                        {{ countByRole('patient') }} patients · {{ countByRole('doctor') }} médecins
-                      </p>
-                    </div>
-                    <div class="flex items-center justify-center h-12 w-12 rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                      <z-icon zType="users" class="h-6 w-6" />
-                    </div>
-                  </div>
+            <div class="grid gap-3 grid-cols-2 lg:grid-cols-4">
+              <z-card>
+                <div class="p-4">
+                  <p class="text-xs text-muted-foreground">Utilisateurs</p>
+                  <p class="text-2xl font-bold mt-1">{{ nonAdminUsers().length }}</p>
+                  <p class="text-[11px] text-muted-foreground">{{ countByRole('patient') }} patients · {{ countByRole('doctor') }} médecins</p>
                 </div>
               </z-card>
-
-              <z-card class="relative overflow-hidden">
-                <div class="p-6">
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <p class="text-sm font-medium text-muted-foreground">Jeux créés</p>
-                      <p class="text-3xl font-bold mt-1">{{ stats()?.totalGames ?? 0 }}</p>
-                      <p class="text-xs text-muted-foreground mt-1">Jeux de mémoire actifs</p>
-                    </div>
-                    <div class="flex items-center justify-center h-12 w-12 rounded-xl bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
-                      <z-icon zType="gamepad-2" class="h-6 w-6" />
-                    </div>
-                  </div>
+              <z-card>
+                <div class="p-4">
+                  <p class="text-xs text-muted-foreground">Jeux créés</p>
+                  <p class="text-2xl font-bold mt-1">{{ stats()?.totalGames ?? 0 }}</p>
                 </div>
               </z-card>
-
-              <z-card class="relative overflow-hidden">
-                <div class="p-6">
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <p class="text-sm font-medium text-muted-foreground">Tentatives</p>
-                      <p class="text-3xl font-bold mt-1">{{ stats()?.totalAttempts ?? 0 }}</p>
-                      <p class="text-xs text-muted-foreground mt-1">Sessions de jeu totales</p>
-                    </div>
-                    <div class="flex items-center justify-center h-12 w-12 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-                      <z-icon zType="target" class="h-6 w-6" />
-                    </div>
-                  </div>
+              <z-card>
+                <div class="p-4">
+                  <p class="text-xs text-muted-foreground">Tentatives</p>
+                  <p class="text-2xl font-bold mt-1">{{ stats()?.totalAttempts ?? 0 }}</p>
                 </div>
               </z-card>
-
-              <z-card class="relative overflow-hidden">
-                <div class="p-6">
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <p class="text-sm font-medium text-muted-foreground">Score moyen</p>
-                      <p class="text-3xl font-bold mt-1">{{ (stats()?.averageScorePercentage ?? 0) | number:'1.0-0' }}%</p>
-                      <p class="text-xs text-muted-foreground mt-1">Performance globale</p>
-                    </div>
-                    <div class="flex items-center justify-center h-12 w-12 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                      <z-icon zType="trending-up" class="h-6 w-6" />
-                    </div>
-                  </div>
+              <z-card>
+                <div class="p-4">
+                  <p class="text-xs text-muted-foreground">Score moyen</p>
+                  <p class="text-2xl font-bold mt-1">{{ (stats()?.averageScorePercentage ?? 0) | number:'1.0-0' }}%</p>
                 </div>
               </z-card>
             </div>
@@ -458,56 +419,25 @@ import { finalize } from 'rxjs';
         <!-- ══════════════════════════════════════════════════════════ -->
         @case ('Statistiques') {
           <div class="space-y-6">
-            <div>
-              <h2 class="text-2xl font-bold tracking-tight">Analytique de la plateforme</h2>
-              <p class="text-muted-foreground mt-1">Scores patients, stades Alzheimer et efficacité médicale</p>
-            </div>
+            <h2 class="text-xl font-bold tracking-tight">Analytique</h2>
 
             <!-- Platform Overview Cards -->
-            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <z-card class="p-6">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <p class="text-sm font-medium text-muted-foreground">Score moyen</p>
-                    <p class="text-3xl font-bold mt-1">{{ (platformOverview()?.platformAvgScore ?? 0) | number:'1.0-0' }}</p>
-                  </div>
-                  <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                    <z-icon zType="activity" class="h-5 w-5" />
-                  </div>
-                </div>
+            <div class="grid gap-3 grid-cols-2 lg:grid-cols-4">
+              <z-card class="p-4">
+                <p class="text-xs text-muted-foreground">Score moyen</p>
+                <p class="text-2xl font-bold mt-1">{{ (platformOverview()?.platformAvgScore ?? 0) | number:'1.0-0' }}</p>
               </z-card>
-              <z-card class="p-6">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <p class="text-sm font-medium text-muted-foreground">Tentatives de jeu</p>
-                    <p class="text-3xl font-bold mt-1">{{ platformOverview()?.totalGameAttempts ?? 0 }}</p>
-                  </div>
-                  <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
-                    <z-icon zType="gamepad-2" class="h-5 w-5" />
-                  </div>
-                </div>
+              <z-card class="p-4">
+                <p class="text-xs text-muted-foreground">Tentatives de jeu</p>
+                <p class="text-2xl font-bold mt-1">{{ platformOverview()?.totalGameAttempts ?? 0 }}</p>
               </z-card>
-              <z-card class="p-6">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <p class="text-sm font-medium text-muted-foreground">Incidents IoT</p>
-                    <p class="text-3xl font-bold mt-1">{{ platformOverview()?.totalIncidents ?? 0 }}</p>
-                  </div>
-                  <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-                    <z-icon zType="alert-triangle" class="h-5 w-5" />
-                  </div>
-                </div>
+              <z-card class="p-4">
+                <p class="text-xs text-muted-foreground">Incidents IoT</p>
+                <p class="text-2xl font-bold mt-1">{{ platformOverview()?.totalIncidents ?? 0 }}</p>
               </z-card>
-              <z-card class="p-6">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <p class="text-sm font-medium text-muted-foreground">Médecins signalés</p>
-                    <p class="text-3xl font-bold mt-1 {{ (platformOverview()?.redFlagDoctorCount ?? 0) > 0 ? 'text-red-600' : '' }}">{{ platformOverview()?.redFlagDoctorCount ?? 0 }}</p>
-                  </div>
-                  <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">
-                    <z-icon zType="shield" class="h-5 w-5" />
-                  </div>
-                </div>
+              <z-card class="p-4">
+                <p class="text-xs text-muted-foreground">Médecins signalés</p>
+                <p class="text-2xl font-bold mt-1" [class]="(platformOverview()?.redFlagDoctorCount ?? 0) > 0 ? 'text-red-600' : ''">{{ platformOverview()?.redFlagDoctorCount ?? 0 }}</p>
               </z-card>
             </div>
 
@@ -626,10 +556,7 @@ import { finalize } from 'rxjs';
         <!-- ══════════════════════════════════════════════════════════ -->
         @case ('Tâches') {
           <div class="space-y-6">
-            <div>
-              <h2 class="text-2xl font-bold tracking-tight">Tâches planifiées</h2>
-              <p class="text-muted-foreground mt-1">Déclencher manuellement les calculs d'analytique</p>
-            </div>
+            <h2 class="text-xl font-bold tracking-tight">Tâches planifiées</h2>
 
             <div class="grid gap-4 md:grid-cols-3">
               <!-- Run All -->
@@ -732,13 +659,10 @@ import { finalize } from 'rxjs';
             }
           </div>
         }
-      }
 
-      <!-- ══════════════════════════════════════════════════════════ -->
-      <!-- PROFILE                                                     -->
-      <!-- ══════════════════════════════════════════════════════════ -->
-      @if (currentPage() === 'Mon Profil') {
-        <app-profile [keycloakId]="adminKeycloakId" (goBack)="setPage('Home')" />
+        @case ('Mon Profil') {
+          <app-profile [keycloakId]="adminKeycloakId" (goBack)="setPage('Home')" />
+        }
       }
 
       <!-- ══════════════════════════════════════════════════════════ -->
