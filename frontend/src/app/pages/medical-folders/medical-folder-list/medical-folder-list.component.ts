@@ -335,32 +335,24 @@ export class MedicalFolderListComponent implements OnInit {
   }
 
   exportFolderPdf(folder: MedicalFolder): void {
-    forkJoin({
-      diagnostics: this.diagnosticsService.getByFolder(folder.id).pipe(catchError(() => of([]))),
-      history: this.medicalHistoryService.getByFolder(folder.id).pipe(catchError(() => of([]))),
-    }).subscribe({
-      next: ({ diagnostics, history }) => {
-        const blob = this.pdfService.exportDossier(
-          folder,
-          diagnostics,
-          history,
-          this.getPatientName(folder.patientId)
-        );
+    this.medicalFolderService.getConsolidatedPdf(folder.id).subscribe({
+      next: (blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `dossier-medical-${folder.patientId}-${folder.id}.pdf`;
+        const filename = `medical-record-${folder.patientId}-${new Date().getTime()}.pdf`;
+        a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
         this.alertDialog.info({
-          zTitle: 'Export PDF',
-          zContent: 'Dossier médical téléchargé.',
+          zTitle: 'Consolidated Record',
+          zContent: 'Consolidated medical record generated and downloaded.',
         });
       },
       error: (err) => {
         this.alertDialog.warning({
-          zTitle: 'Erreur',
-          zContent: err?.error?.message || 'Impossible de générer le PDF.',
+          zTitle: 'Error',
+          zContent: err?.error?.message || 'Failed to generate consolidated PDF.',
         });
       },
     });
