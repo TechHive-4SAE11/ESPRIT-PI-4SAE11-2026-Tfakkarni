@@ -42,4 +42,8 @@ export class SessionService {
   createSession(session: SessionRequestDTO): Observable<SessionResponseDTO> {
     return this.http.post<SessionResponseDTO>(this.baseUrl, session);
   }
+
+  getSessionsByPatient(patientId: string): Observable<SessionResponseDTO[]> {
+    return this.http.get<SessionResponseDTO[]>(`${this.baseUrl}/patient/${patientId}`);
+  }
 }

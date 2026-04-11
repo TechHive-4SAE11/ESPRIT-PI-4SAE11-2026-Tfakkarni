@@ -93,6 +93,14 @@ public class MedicalFolderServiceImpl implements MedicalFolderService {
 	}
 
 	@Override
+	public List<MedicalFolderResponse> getMedicalFoldersByPatientIdAndDoctorId(String patientId, String doctorId) {
+		log.debug("Fetching medical folders for patient: {} and doctor: {}", patientId, doctorId);
+		return medicalFolderRepository.findByPatientIdAndDoctorId(patientId, doctorId).stream()
+				.map(medicalFolderMapper::toResponse)
+				.toList();
+	}
+
+	@Override
 	public MedicalFolderResponse createMedicalFolder(CreateMedicalFolderRequest request) {
 		log.debug("Creating new medical folder for patient: {} and doctor: {}", request.getPatientId(),
 				request.getDoctorId());

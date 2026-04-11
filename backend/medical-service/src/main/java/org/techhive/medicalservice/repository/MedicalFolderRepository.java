@@ -17,6 +17,8 @@ public interface MedicalFolderRepository extends JpaRepository<MedicalFolder, Lo
 
     List<MedicalFolder> findByPatientId(String patientId);
 
+    List<MedicalFolder> findByPatientIdAndDoctorId(String patientId, String doctorId);
+
     Page<MedicalFolder> findByDoctorId(String doctorId, Pageable pageable);
 
     Page<MedicalFolder> findByPatientIdContainingIgnoreCase(String patientId, Pageable pageable);

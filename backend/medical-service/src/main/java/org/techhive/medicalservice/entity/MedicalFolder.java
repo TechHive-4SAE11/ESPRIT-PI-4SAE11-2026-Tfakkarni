@@ -68,6 +68,29 @@ public class MedicalFolder implements Serializable {
 	@Column(nullable = false)
 	private LocalDateTime updatedAt;
 
+	public Long getId() { return id; }
+	public void setId(Long id) { this.id = id; }
+	public String getPatientId() { return patientId; }
+	public void setPatientId(String patientId) { this.patientId = patientId; }
+	public String getDoctorId() { return doctorId; }
+	public void setDoctorId(String doctorId) { this.doctorId = doctorId; }
+	public String getBloodType() { return bloodType; }
+	public void setBloodType(String bloodType) { this.bloodType = bloodType; }
+	public Double getHeight() { return height; }
+	public void setHeight(Double height) { this.height = height; }
+	public Double getWeight() { return weight; }
+	public void setWeight(Double weight) { this.weight = weight; }
+	public LocalDateTime getCreatedAt() { return createdAt; }
+	public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+	public LocalDateTime getUpdatedAt() { return updatedAt; }
+	public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+	public List<AIReport> getAiReports() { return aiReports; }
+	public void setAiReports(List<AIReport> aiReports) { this.aiReports = aiReports; }
+	public List<Diagnostics> getDiagnostics() { return diagnostics; }
+	public void setDiagnostics(List<Diagnostics> diagnostics) { this.diagnostics = diagnostics; }
+	public List<MedicalHistory> getMedicalHistories() { return medicalHistories; }
+	public void setMedicalHistories(List<MedicalHistory> medicalHistories) { this.medicalHistories = medicalHistories; }
+
 	/** Inverse relationship with AIReport for cascade delete */
 	@OneToMany(mappedBy = "medicalFolder", cascade = CascadeType.ALL, orphanRemoval = true)
 	@ToString.Exclude

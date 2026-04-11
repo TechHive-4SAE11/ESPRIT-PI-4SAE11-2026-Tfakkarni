@@ -67,6 +67,10 @@ spring:
           uri: lb://medical-service
           predicates:
             - Path=/api/medical-folders/**
+        - id: medical-folders-tracking
+          uri: lb://tracking-service
+          predicates:
+            - Path=/api/tracking/medical-folders/**
         - id: diagnostics
           uri: lb://medical-service
           predicates:

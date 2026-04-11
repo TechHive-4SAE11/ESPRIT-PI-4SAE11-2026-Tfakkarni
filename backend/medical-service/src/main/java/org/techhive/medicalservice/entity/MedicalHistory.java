@@ -73,4 +73,25 @@ public class MedicalHistory implements Serializable {
 	@UpdateTimestamp
 	@Column(nullable = false)
 	private LocalDateTime updatedAt;
+
+	public Long getId() { return id; }
+	public void setId(Long id) { this.id = id; }
+	public MedicalFolder getMedicalFolder() { return medicalFolder; }
+	public void setMedicalFolder(MedicalFolder medicalFolder) { this.medicalFolder = medicalFolder; }
+	public String getAllergies() { return allergies; }
+	public void setAllergies(String allergies) { this.allergies = allergies; }
+	public String getConditions() { return conditions; }
+	public void setConditions(String conditions) { this.conditions = conditions; }
+	public String getSurgeries() { return surgeries; }
+	public void setSurgeries(String surgeries) { this.surgeries = surgeries; }
+	public String getSymptoms() { return symptoms; }
+	public void setSymptoms(String symptoms) { this.symptoms = symptoms; }
+	public String getRecommendedTreatment() { return recommendedTreatment; }
+	public void setRecommendedTreatment(String recommendedTreatment) { this.recommendedTreatment = recommendedTreatment; }
+	public String getFamilyHistory() { return familyHistory; }
+	public void setFamilyHistory(String familyHistory) { this.familyHistory = familyHistory; }
+	public LocalDateTime getCreatedAt() { return createdAt; }
+	public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+	public LocalDateTime getUpdatedAt() { return updatedAt; }
+	public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

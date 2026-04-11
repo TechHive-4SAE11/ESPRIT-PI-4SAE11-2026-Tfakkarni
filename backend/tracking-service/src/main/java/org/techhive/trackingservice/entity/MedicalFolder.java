@@ -32,6 +32,19 @@ public class MedicalFolder {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getIdPatient() { return idPatient; }
+    public void setIdPatient(String idPatient) { this.idPatient = idPatient; }
+    public String getIdDoctor() { return idDoctor; }
+    public void setIdDoctor(String idDoctor) { this.idDoctor = idDoctor; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public List<Session> getSessions() { return sessions; }
+    public void setSessions(List<Session> sessions) { this.sessions = sessions; }
+
     @OneToMany(mappedBy = "medicalFolder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Session> sessions = new ArrayList<>();
 

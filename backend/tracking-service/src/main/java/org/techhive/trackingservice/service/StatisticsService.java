@@ -98,7 +98,42 @@ public class StatisticsService {
                     missed++;
             }
         }
-        return MedicationComplianceResponse.builder().taken(taken).missed(missed).build();
+        return MedicationComplianceResponse.builder()
+                .startDate(start.toString())
+                .endDate(end.toString())
+                .taken(taken)
+                .missed(missed)
+                .build();
+    }
+
+    public List<MedicationComplianceResponse> getMedicationComplianceByDrug(String patientId,
+            LocalDate start, LocalDate end) {
+        List<DailyLog> logs = logRepo
+                .findByPatientKeycloakIdAndLogDateBetweenOrderByLogDateAsc(patientId, start, end);
+        
+        Map<String, MedicationComplianceResponse> statsByDrug = new HashMap<>();
+
+        for (DailyLog log : logs) {
+            for (MedicationIntakeLog m : log.getMedicationIntakes()) {
+                String drugName = m.getMedication().getMedicationName();
+                MedicationComplianceResponse stats = statsByDrug.computeIfAbsent(drugName, k -> 
+                    MedicationComplianceResponse.builder()
+                        .medicationName(drugName)
+                        .startDate(m.getMedication().getStartDate() != null ? m.getMedication().getStartDate().toString() : start.toString())
+                        .endDate(m.getMedication().getEndDate() != null ? m.getMedication().getEndDate().toString() : end.toString())
+                        .taken(0)
+                        .missed(0)
+                        .build()
+                );
+                
+                if ("PRIS".equals(m.getStatus())) {
+                    stats.setTaken(stats.getTaken() + 1);
+                } else {
+                    stats.setMissed(stats.getMissed() + 1);
+                }
+            }
+        }
+        return new ArrayList<>(statsByDrug.values());
     }
 
     // ─────────────────────────────────────────────────────────────────────────

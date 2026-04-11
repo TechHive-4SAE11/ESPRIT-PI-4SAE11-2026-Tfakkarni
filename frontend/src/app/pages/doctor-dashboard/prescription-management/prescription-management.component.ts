@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { DomPortalOutlet, TemplatePortal } from '@angular/cdk/portal';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormArray, AbstractControl, Validators } from '@angular/forms';
-import { catchError, finalize, of, tap } from 'rxjs';
+import { catchError, finalize, of, tap, switchMap } from 'rxjs';
 import { z } from 'zod';
 
 import { createZodValidator } from '@/core/utils/zod-validator';
@@ -30,6 +30,9 @@ import {
   PrescriptionTemplateResponseDTO,
   PrescriptionTemplateRequestDTO
 } from '@/core/models/prescription-template.model';
+
+import { HttpClient } from '@angular/common/http';
+import { environment } from '@/environments/environment';
 
 @Component({
   selector: 'app-prescription-management',
@@ -63,6 +66,7 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
   private viewDialogPortal: DomPortalOutlet | null = null;
   private readonly medicalFolderService = inject(MedicalFolderService);
   private readonly sessionService = inject(SessionService);
+  private readonly http = inject(HttpClient);
 
   @Input({ required: true }) patient!: UserInfo;
   @Input() doctor: UserInfo | null = null;
@@ -353,7 +357,8 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
     }
 
     this.isLoadingPrescriptions.set(true);
-    const patientDbId = String(this.patient.id);
+    // Use keycloakId if available, fallback to id
+    const patientDbId = this.patient.keycloakId || String(this.patient.id);
 
     this.prescriptionService.getPrescriptionsByPatient(patientDbId)
       .pipe(
@@ -384,31 +389,38 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
     }
 
     this.isLoadingSessions.set(true);
-    const currentDoctorDbId = String(this.doctor.id);
-    const patientDbId = String(this.patient.id);
+    // Use keycloakId if available, fallback to id
+    const currentDoctorDbId = this.doctor.keycloakId || String(this.doctor.id);
+    const patientDbId = this.patient.keycloakId || String(this.patient.id);
 
     console.log('[PrescriptionManagement] Loading sessions for patient:', patientDbId, 'doctor:', currentDoctorDbId);
 
-    this.medicalFolderService.getMedicalFoldersByPatient(patientDbId)
+    // Try to find the medical folder in tracking-service first (synced version)
+    // We can use the patient ID to find common folders
+    this.sessionService.getSessionsByPatient(patientDbId)
       .pipe(
+        switchMap(allPatientSessions => {
+          // Fetch from tracking-service via the new gateway route
+          return this.http.get<any[]>(`${environment.apiBaseUrl}/api/tracking/medical-folders/patient/${patientDbId}/doctor/${currentDoctorDbId}`);
+        }),
         tap(folders => {
-          console.log('[PrescriptionManagement] Medical folders:', folders);
+          console.log('[PrescriptionManagement] Tracking-service medical folders:', folders);
 
-          const matchingFolder = folders.find(f => f.doctorId === currentDoctorDbId);
+          const matchingFolder = folders[0]; // The endpoint /patient/{pId}/doctor/{dId} returns a list
 
           if (matchingFolder) {
-            console.log('[PrescriptionManagement] Found matching folder:', matchingFolder);
+            console.log('[PrescriptionManagement] Found matching folder in tracking-service:', matchingFolder);
             this.matchingFolderId.set(matchingFolder.id);
             this.loadSessionsForFolder(matchingFolder.id);
           } else {
-            console.warn('[PrescriptionManagement] No matching folder found');
+            console.warn('[PrescriptionManagement] No matching folder found in tracking-service');
             this.sessions.set([]);
             this.matchingFolderId.set(null);
             this.isLoadingSessions.set(false);
           }
         }),
         catchError(error => {
-          console.error('[PrescriptionManagement] Error loading medical folders:', error);
+          console.error('[PrescriptionManagement] Error loading tracking folders:', error);
           this.sessions.set([]);
           this.isLoadingSessions.set(false);
           return of([]);

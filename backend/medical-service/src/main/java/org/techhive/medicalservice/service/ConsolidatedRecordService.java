@@ -11,6 +11,10 @@ import org.techhive.medicalservice.entity.MedicalHistory;
 import org.techhive.medicalservice.entity.Diagnostics;
 import org.techhive.medicalservice.client.GameServiceClient;
 import org.techhive.medicalservice.client.TrackingServiceClient;
+import org.techhive.medicalservice.dto.game.GameStatsDTO;
+import org.techhive.medicalservice.dto.game.GameAttemptDTO;
+import org.techhive.medicalservice.dto.tracking.TrackingSummaryDTO;
+import org.techhive.medicalservice.dto.tracking.IncidentDTO;
 import org.techhive.medicalservice.repository.MedicalFolderRepository;
 import org.techhive.medicalservice.exception.ResourceNotFoundException;
 
@@ -75,8 +79,10 @@ public class ConsolidatedRecordService {
                     hPara.add(new Chunk(history.getConditions() + "\n", bodyFont));
                     hPara.add(new Chunk("Allergies: ", labelFont));
                     hPara.add(new Chunk(history.getAllergies() + "\n", bodyFont));
-                    hPara.add(new Chunk("Daily Medications: ", labelFont));
-                    hPara.add(new Chunk(history.getMedications() + "\n", bodyFont));
+                    hPara.add(new Chunk("Symptoms: ", labelFont));
+                    hPara.add(new Chunk(history.getSymptoms() + "\n", bodyFont));
+                    hPara.add(new Chunk("Recommended Treatment: ", labelFont));
+                    hPara.add(new Chunk(history.getRecommendedTreatment() + "\n", bodyFont));
                     hPara.setSpacingAfter(10);
                     document.add(hPara);
                 }
@@ -85,7 +91,7 @@ public class ConsolidatedRecordService {
             // Game Performance (from Game Service)
             try {
                 addSectionTitle(document, "Cognitive Performance (Memory Games)", sectionFont);
-                GameServiceClient.GameStatsDTO gameStats = gameServiceClient.getPatientGameStats(folder.getPatientId());
+                GameStatsDTO gameStats = gameServiceClient.getPatientGameStats(folder.getPatientId());
                 if (gameStats != null) {
                     Paragraph gPara = new Paragraph();
                     gPara.add(new Chunk("Total Games Played: ", labelFont));
@@ -101,7 +107,7 @@ public class ConsolidatedRecordService {
                         addTableCell(gameTable, "Game", labelFont);
                         addTableCell(gameTable, "Score", labelFont);
                         addTableCell(gameTable, "Date", labelFont);
-                        for (GameServiceClient.GameAttemptDTO attempt : gameStats.getRecentAttempts()) {
+                        for (GameAttemptDTO attempt : gameStats.getRecentAttempts()) {
                             addTableCell(gameTable, attempt.getGameName(), bodyFont);
                             addTableCell(gameTable, attempt.getScore().toString(), bodyFont);
                             addTableCell(gameTable, attempt.getPlayedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")), bodyFont);
@@ -116,7 +122,7 @@ public class ConsolidatedRecordService {
             // Tracking Data (from Tracking Service)
             try {
                 addSectionTitle(document, "Daily Tracking & Compliance", sectionFont);
-                TrackingServiceClient.TrackingSummaryDTO trackingData = trackingServiceClient.getPatientTrackingSummary(folder.getPatientId());
+                TrackingSummaryDTO trackingData = trackingServiceClient.getPatientTrackingSummary(folder.getPatientId());
                 if (trackingData != null) {
                     Paragraph tPara = new Paragraph();
                     tPara.add(new Chunk("Medication Compliance: ", labelFont));
@@ -125,7 +131,7 @@ public class ConsolidatedRecordService {
 
                     if (trackingData.getRecentIncidents() != null && !trackingData.getRecentIncidents().isEmpty()) {
                         document.add(new Paragraph("Recent Incidents/Alerts:", labelFont));
-                        for (TrackingServiceClient.IncidentDTO incident : trackingData.getRecentIncidents()) {
+                        for (IncidentDTO incident : trackingData.getRecentIncidents()) {
                             document.add(new Paragraph("- [" + incident.getType() + "]: " + incident.getDescription(), bodyFont));
                         }
                     }
