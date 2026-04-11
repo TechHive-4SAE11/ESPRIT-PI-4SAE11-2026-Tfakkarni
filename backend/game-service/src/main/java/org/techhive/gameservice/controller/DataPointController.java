@@ -4,7 +4,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.techhive.gameservice.dto.*;
+import org.techhive.gameservice.entity.DataPointPerformance;
 import org.techhive.gameservice.entity.DataPointType;
+import org.techhive.gameservice.repository.DataPointPerformanceRepository;
 import org.techhive.gameservice.service.DataPointService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,7 @@ import java.util.Map;
 public class DataPointController {
 
   private final DataPointService dataPointService;
+  private final DataPointPerformanceRepository performanceRepository;
 
   // ===================== PHOTO =====================
 
@@ -121,5 +124,11 @@ public class DataPointController {
   @GetMapping("/{keycloakId}/counts")
   public ResponseEntity<Map<String, Long>> getCounts(@PathVariable String keycloakId) {
     return ResponseEntity.ok(dataPointService.getCounts(keycloakId));
+  }
+
+  @GetMapping("/performance/{keycloakId}")
+  public ResponseEntity<List<DataPointPerformance>> getPerformanceData(
+      @PathVariable String keycloakId) {
+    return ResponseEntity.ok(performanceRepository.findByPatientKeycloakId(keycloakId));
   }
 }

@@ -1,0 +1,34 @@
+==========================================
+  Tfakkarni Seed Accounts
+  Generated: 2026-04-10 19:21:48
+==========================================
+
+Login:  http://localhost:4200
+Keycloak: https://lemur-12.cloud-iam.com/auth/admin/master/console/
+
+EMAIL                          PWD             ROLE            NAME
+--------------------------------------------------------------
+admin@admin.com                123456          admin           Admin Tfakkarni
+doc@doc.com                    123456          doctor          Dr. Amine Ben Salem
+doc2@doc.com                   123456          doctor          Dr. Sarra Mansouri
+patient@patient.com            123456          patient         Mohamed Trabelsi
+patient2@patient.com           123456          patient         Fatma Bouazizi
+patient3@patient.com           123456          patient         Youssef Gharbi
+
+Keycloak IDs:
+admin@admin.com                e7e89578-4658-47de-bb1c-00099556fa54
+doc@doc.com                    c63de0fc-f8be-40a4-9095-be262a53bba7
+doc2@doc.com                   a962ff22-47d1-4406-a02c-377e106a7729
+patient@patient.com            955f3d4e-488f-4022-8496-52717ebdf836
+patient2@patient.com           fec80b9c-6b27-45a3-8cf2-511103bdbec2
+patient3@patient.com           5d2457f4-716e-4a14-9554-264b64def9f0
+
+DATA PER PATIENT:
+  folder+diagnostics+history, 2 coaching goals (5d progress each),
+  5 appointments, 5 sessions+prescriptions+meds+care plans,
+  5 daily logs (nutrition+activities+incidents+med intake),
+  2 meetings, 5 tags+5 question memories+3 place memories,
+  2 custom games (5d attempts), 5 quizzes, data performance,
+  safe zone+2 geofence alerts, 30 heartbeat readings,
+  composite score+5d history+feature gate+5 cognitive domains,
+  doctor notifications+follow-up reminders+appointment reminders

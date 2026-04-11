@@ -45,6 +45,8 @@ import { MeetingRoomComponent } from '@/pages/doctor-dashboard/meeting-room/meet
 import { HelperMeetingListComponent } from './helper-meeting-list/helper-meeting-list.component';
 import { FollowUpReminderAlertComponent } from '@/shared/components/follow-up-reminder-alert/follow-up-reminder-alert.component';
 import { Meeting } from '@/core/services/meeting.service';
+import { AnalyticsService } from '@/core/services/analytics.service';
+import type { PatientScoreResponse } from '@/core/models/analytics.model';
 
 @Component({
   selector: 'app-helper-view',
@@ -82,6 +84,7 @@ export class HelperViewComponent implements OnInit {
   private readonly keycloakService = inject(KeycloakService);
   private readonly userApiService = inject(UserApiService);
   private readonly router = inject(Router);
+  private readonly analyticsService = inject(AnalyticsService);
 
   @Input() keycloakId = '';
   @Output() pageChange = new EventEmitter<string>();
@@ -113,9 +116,16 @@ export class HelperViewComponent implements OnInit {
   meetingRoomOpen = signal(false);
   activeMeeting = signal<Meeting | null>(null);
 
+  // ── Patient Analytics ──
+  patientScore = signal<PatientScoreResponse | null>(null);
+
   ngOnInit(): void {
     if (this.keycloakId) {
       this.loadUserNeonDbId();
+      this.analyticsService.getPatientScore(this.keycloakId).subscribe({
+        next: score => this.patientScore.set(score),
+        error: () => {},
+      });
     }
   }
 
