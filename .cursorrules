@@ -1,0 +1,48 @@
+# Tfakkarni Project - Cursor Rules
+
+## Tech Stack
+- **Backend:** Spring Boot 3.3.6, Spring Cloud, Java 17, Maven (Multi-module).
+- **Frontend:** Angular 18 (SSR), Tailwind CSS, Zard UI (zardui.com).
+- **Infrastructure:** Eureka (Discovery), Spring Cloud Gateway, Keycloak (Auth), PostgreSQL (Neon Cloud).
+
+## General Instructions
+- Always prioritize **Clean Code**, **SOLID** principles, and **DRY**.
+- Use descriptive naming for variables, methods, and classes.
+- Ensure all code is well-documented with Javadoc for backend and TypeDoc for frontend where necessary.
+- Follow the project's established microservice patterns.
+
+## Backend Rules (Java/Spring Boot)
+- Use **Lombok** to reduce boilerplate (e.g., `@Data`, `@NoArgsConstructor`, `@AllArgsConstructor`, `@Builder`).
+- Follow the Controller -> Service -> Repository architecture.
+- Use `ResponseEntity` for API responses.
+- Implement proper Exception Handling using `@RestControllerAdvice`.
+- Ensure each microservice is independent and communicates via standard REST or feign clients.
+- Use `ddl-auto: update` for database schema changes during development.
+
+## Frontend Rules (Angular 18)
+- **MANDATORY:** Use [Zard UI](https://zardui.com) components (`z-card`, `z-button`, `z-icon`, etc.).
+- Use **Tailwind CSS** for layouts, spacing, and responsive design.
+- Components should be modular and reusable.
+- Prefer **Signals** (Angular 18+) for state management where applicable.
+- Ensure all components are imported correctly from `@/shared/components/<component-name>`.
+- Use **pnpm** for package management.
+
+## MCP Tools & Capabilities
+- **Memory:** Use the `memory` MCP to store and retrieve persistent project-wide knowledge, entity relationships, and architectural decisions.
+- **GitHub:** Use the `github` MCP for repository management, creating branches, pull requests, and searching code across the organization.
+- **Brave Search:** Use `brave-search` for real-time documentation technical research, or finding external library best practices.
+
+## LLM Interaction Rules
+- When asked to create a new feature, first analyze the existing microservices to see where it fits.
+- Use **Memory MCP** to search for relevant knowledge items or past implementation patterns before proposing changes.
+- Use **Brave Search** if you need information on specific library versions (e.g., Zard UI updates or Spring Cloud nuances).
+- Use **GitHub MCP** to manage changes via PRs if the user requests a formalized workflow.
+- If a new service is needed, propose its architecture and ports first.
+- Always check the `readme.md` and `COMPLETE_CRUD_GUIDE.md` (in `backend/`) for development patterns.
+- When modifying code, explain the reasoning behind the changes.
+
+## Project Structure Reference
+- `backend/`: Microservices (Maven modules).
+- `frontend/`: Angular application.
+- `keycloak/`: Local Keycloak configuration/server.
+- `_agent/`: AI agent instructions and workflows.
