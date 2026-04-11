@@ -115,4 +115,10 @@ export class MedicalFolderService {
   getByDoctorId(doctorId: string): Observable<MedicalFolder[]> {
     return this.http.get<MedicalFolder[]>(`${this.baseUrl}/doctor/${doctorId}`);
   }
+
+  getConsolidatedPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/pdf`, {
+      responseType: 'blob'
+    });
+  }
 }
