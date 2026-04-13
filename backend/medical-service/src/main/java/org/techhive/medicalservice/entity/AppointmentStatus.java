@@ -4,6 +4,8 @@ public enum AppointmentStatus {
     SCHEDULED,
     CONFIRMED,
     CANCELLED,
-    COMPLETED
+    COMPLETED,
+    /** Patient did not attend (past slot); drives attendance monitoring on the medical folder. */
+    NO_SHOW
 }
 

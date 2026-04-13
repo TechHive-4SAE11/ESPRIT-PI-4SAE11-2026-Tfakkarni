@@ -14,7 +14,7 @@ import { Subject, takeUntil } from 'rxjs';
 
 import { AppointmentService } from '@/services/appointment.service';
 import { Appointment } from '@/models/appointment.model';
-import { IdMappingService } from '@/services/id-mapping.service';
+import { UserApiService, UserInfo } from '@/core/services/user-api.service';
 
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardButtonComponent } from '@/shared/components/button';
@@ -68,7 +68,6 @@ export class AppointmentEditComponent implements OnInit, OnDestroy {
   errorMessage = '';
   successMessage = '';
   readonly typeOptions = TYPES;
-  patientSuggestions: { name: string; id: string }[] = [];
   doctorSuggestions: { name: string; id: string }[] = [];
 
   private readonly destroy$ = new Subject<void>();
@@ -76,7 +75,7 @@ export class AppointmentEditComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private appointmentService: AppointmentService,
-    private idMappingService: IdMappingService,
+    private userApiService: UserApiService,
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -84,9 +83,7 @@ export class AppointmentEditComponent implements OnInit, OnDestroy {
       {
         title: ['', [Validators.required, Validators.minLength(3)]],
         description: [''],
-        patientName: ['', Validators.required],
-        patientId: [''],
-        doctorName: [''],
+        patientId: ['', Validators.required],
         doctorId: [''],
         startTime: ['', Validators.required],
         endTime: ['', Validators.required],
@@ -102,38 +99,30 @@ export class AppointmentEditComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.patientSuggestions = this.idMappingService.getAllNames('patient');
-    this.doctorSuggestions = this.idMappingService.getAllNames('doctor');
-
-    this.form.get('patientName')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(name => {
-      if (name) {
-        const id = this.idMappingService.getIdForName(name, 'patient');
-        this.form.get('patientId')?.setValue(id, { emitEvent: false });
-      } else {
-        this.form.get('patientId')?.setValue('', { emitEvent: false });
-      }
-    });
-
-    this.form.get('doctorName')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(name => {
-      if (name) {
-        const id = this.idMappingService.getIdForName(name, 'doctor');
-        this.form.get('doctorId')?.setValue(id, { emitEvent: false });
-      } else {
-        this.form.get('doctorId')?.setValue('', { emitEvent: false });
-      }
-    });
+    // Obtenir la liste des vrais médecins
+    this.userApiService.getUsersByRole('DOCTOR')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (users) => {
+          this.doctorSuggestions = users.map(u => ({
+            id: u.keycloakId,
+            name: `Dr. ${u.lastName} ${u.firstName}`
+          }));
+        },
+        error: (err) => console.error('Failed to load doctors', err)
+      });
 
     this.form
       .get('type')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe((type) => {
-        const doctorName = this.form.get('doctorName');
+        const doctorId = this.form.get('doctorId');
         if (type === 'CONSULTATION') {
-          doctorName?.setValidators([Validators.required]);
+          doctorId?.setValidators([Validators.required]);
         } else {
-          doctorName?.clearValidators();
+          doctorId?.clearValidators();
         }
-        doctorName?.updateValueAndValidity();
+        doctorId?.updateValueAndValidity();
       });
 
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe((params) => {
@@ -173,22 +162,10 @@ export class AppointmentEditComponent implements OnInit, OnDestroy {
     const end =
       typeof a.endTime === 'string' ? (a.endTime as string).slice(0, 16) : toDatetimeLocal(a.endTime);
 
-    let pName = '';
-    if (a.patientId) {
-      pName = this.idMappingService.getNameFromId(a.patientId) || a.patientId;
-    }
-
-    let dName = '';
-    if (a.doctorId) {
-      dName = this.idMappingService.getNameFromId(a.doctorId) || a.doctorId;
-    }
-
     this.form.patchValue({
       title: a.title,
       description: a.description ?? '',
-      patientName: pName,
       patientId: a.patientId,
-      doctorName: dName,
       doctorId: a.doctorId ?? '',
       startTime: start,
       endTime: end,

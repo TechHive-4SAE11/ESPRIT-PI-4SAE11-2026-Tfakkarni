@@ -10,12 +10,13 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, takeUntil, Observable } from 'rxjs';
 
 import { AppointmentService } from '@/services/appointment.service';
 import { Appointment } from '@/models/appointment.model';
 import { AuthService } from '@/core/auth';
-import { IdMappingService } from '@/services/id-mapping.service';
+import { UserApiService, UserInfo } from '@/core/services/user-api.service';
 
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardButtonComponent } from '@/shared/components/button';
@@ -58,7 +59,6 @@ export class AppointmentAddComponent implements OnDestroy, OnInit {
   successMessage = '';
   previewDates: string[] = [];
   readonly typeOptions = TYPES;
-  patientSuggestions: { name: string; id: string }[] = [];
   doctorSuggestions: { name: string; id: string }[] = [];
 
   readonly isCaregiver = true;
@@ -69,16 +69,14 @@ export class AppointmentAddComponent implements OnDestroy, OnInit {
     private fb: FormBuilder,
     private appointmentService: AppointmentService,
     public authService: AuthService,
-    private idMappingService: IdMappingService,
+    private userApiService: UserApiService,
     private router: Router
   ) {
     this.form = this.fb.group(
       {
         title: ['', [Validators.required, Validators.minLength(3)]],
         description: [''],
-        patientName: ['', Validators.required],
-        patientId: [''],
-        doctorName: [''],
+        patientId: ['', Validators.required],
         doctorId: [''],
         startTime: ['', Validators.required],
         endTime: ['', Validators.required],
@@ -97,87 +95,48 @@ export class AppointmentAddComponent implements OnDestroy, OnInit {
   }
 
   ngOnInit(): void {
-    this.patientSuggestions = this.idMappingService.getAllNames('patient');
-    this.doctorSuggestions = this.idMappingService.getAllNames('doctor');
+    // Obtenir la liste des vrais médecins depuis l'API
+    this.userApiService.getUsersByRole('DOCTOR')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (users) => {
+          this.doctorSuggestions = users.map(u => ({
+            id: u.keycloakId,
+            name: `Dr. ${u.lastName} ${u.firstName}`
+          }));
+        },
+        error: (err) => console.error('Failed to load doctors', err)
+      });
 
-    // ✅ Récupérer les rôles de l'utilisateur
+    // Récupérer les rôles de l'utilisateur
     const userRoles = this.authService.getUserRoles();
     const isDoctor = userRoles.includes('doctor');
+    
+    // Récupérer le user courant (pour le patient ou le médecin)
+    const currentUserId = this.authService.getKeycloakId();
 
-    // ✅ SI C'EST UN DOCTEUR, PRÉ-REMPLIR LE CHAMP MÉDECIN
     if (isDoctor) {
-      // ✅ GESTION DE L'ERREUR TOKEN NULL
-      const token = localStorage.getItem('access_token');
-
-      if (token) {
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-
-          const doctorName = payload.name || payload.preferred_username || 'Dr. Martin';
-          const doctorId = payload.sub; // C'est l'ID Keycloak !
-
-          this.form.patchValue({
-            doctorName: doctorName,
-            doctorId: doctorId
-          });
-
-          this.form.get('doctorName')?.disable();
-
-          console.log('✅ Médecin pré-rempli avec ID:', doctorId);
-        } catch (e) {
-          console.error('❌ Erreur parsing token:', e);
-          // Fallback
-          this.form.patchValue({
-            doctorName: 'Dr. Martin',
-            doctorId: 'doctor456'
-          });
-          this.form.get('doctorName')?.disable();
-        }
-      } else {
-        console.warn('⚠️ Token non trouvé, utilisation des valeurs par défaut');
-        // Fallback
-        this.form.patchValue({
-          doctorName: 'Dr. Martin',
-          doctorId: 'doctor456'
-        });
-        this.form.get('doctorName')?.disable();
-      }
+      this.form.patchValue({ doctorId: currentUserId || 'doctor456' });
+      this.form.get('doctorId')?.disable();
+    } else {
+      // C'est un patient (ou helper), on définit son ID comme patientId
+      this.form.patchValue({ patientId: currentUserId || 'patient123' });
     }
 
-    // Surveiller les changements du patient
-    this.form.get('patientName')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(name => {
-      if (name) {
-        const id = this.idMappingService.getIdForName(name, 'patient');
-        this.form.get('patientId')?.setValue(id, {emitEvent: false});
-      } else {
-        this.form.get('patientId')?.setValue('', {emitEvent: false});
-      }
-    });
 
-    // Surveiller les changements du médecin (seulement si ce n'est pas un docteur)
-    if (!isDoctor) {
-      this.form.get('doctorName')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(name => {
-        if (name) {
-          const id = this.idMappingService.getIdForName(name, 'doctor');
-          this.form.get('doctorId')?.setValue(id, {emitEvent: false});
-        } else {
-          this.form.get('doctorId')?.setValue('', {emitEvent: false});
-        }
-      });
-    }
 
     // Le reste du code inchangé...
     this.form
       .get('type')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe((type) => {
-        const doctorName = this.form.get('doctorName');
+        const doctorId = this.form.get('doctorId');
         if (type === 'CONSULTATION') {
-          doctorName?.setValidators([Validators.required]);
+          doctorId?.setValidators([Validators.required]);
         } else {
-          doctorName?.clearValidators();
+          doctorId?.clearValidators();
         }
-        doctorName?.updateValueAndValidity();
+        doctorId?.updateValueAndValidity();
       });
 
     this.form
@@ -282,9 +241,8 @@ export class AppointmentAddComponent implements OnDestroy, OnInit {
         this.isSubmitting = false;
         setTimeout(() => this.router.navigate(['/appointments']), 800);
       },
-      error: (err: any) => {
-        const msg = err?.error ?? err?.message;
-        this.errorMessage = typeof msg === 'string' ? msg : 'Une erreur est survenue. Réessayez.';
+      error: (err: unknown) => {
+        this.errorMessage = this.formatHttpError(err);
         this.isSubmitting = false;
       },
     });
@@ -292,6 +250,18 @@ export class AppointmentAddComponent implements OnDestroy, OnInit {
 
   onCancel(): void {
     this.router.navigate(['/appointments']);
+  }
+
+  /** Surfaces plain-text 403 bodies from the API (e.g. booking restricted). */
+  private formatHttpError(err: unknown): string {
+    if (err instanceof HttpErrorResponse) {
+      if (typeof err.error === 'string' && err.error.trim()) {
+        return err.error.trim();
+      }
+      const msg = (err.error as { message?: string } | null)?.message;
+      if (typeof msg === 'string' && msg.trim()) return msg.trim();
+    }
+    return 'Une erreur est survenue. Réessayez.';
   }
 
   getControlError(name: string): string {

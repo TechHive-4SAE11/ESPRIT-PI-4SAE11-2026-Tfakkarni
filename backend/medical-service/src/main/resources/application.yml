@@ -15,10 +15,15 @@ spring:
     import: optional:configserver:http://localhost:8888
 
   datasource:
-    url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require
+    # prepareThreshold=0: avoid "cached plan must not change result type" when Hibernate ddl-auto runs ALTERs
+    # and then re-reads metadata on the same connection (common with Neon/PgBouncer + PG JDBC).
+    url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&prepareThreshold=0
     username: neondb_owner
     password: npg_3uElGswIc7gk
     driver-class-name: org.postgresql.Driver
+    hikari:
+      data-source-properties:
+        prepareThreshold: 0
 
   jpa:
     hibernate:
@@ -90,7 +95,12 @@ coaching:
 medical:
   analytics:
     safety-audit:
-      presentation-demo: ${SAFETY_AUDIT_PRESENTATION_DEMO:false}
+      presentation-demo: false
+      gemini:
+        enabled: true
+        api-key: ${GEMINI_API_KEY:}
+        model: gemini-2.5-flash
+        max-patients-per-request: 48
 
 # Google Calendar Configuration
 google:

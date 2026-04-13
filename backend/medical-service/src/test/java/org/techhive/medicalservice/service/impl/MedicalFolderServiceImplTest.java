@@ -17,6 +17,7 @@ import org.techhive.medicalservice.repository.AIReportRepository;
 import org.techhive.medicalservice.repository.DiagnosticsRepository;
 import org.techhive.medicalservice.repository.MedicalFolderRepository;
 import org.techhive.medicalservice.repository.MedicalHistoryRepository;
+import org.techhive.medicalservice.service.AttendanceMonitoringService;
 
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +38,9 @@ class MedicalFolderServiceImplTest {
     private AIReportRepository aiReportRepository;
     @Mock
     private MedicalFolderMapper medicalFolderMapper;
+
+    @Mock
+    private AttendanceMonitoringService attendanceMonitoringService;
 
     @InjectMocks
     private MedicalFolderServiceImpl medicalFolderService;
