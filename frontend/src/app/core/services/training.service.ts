@@ -20,10 +20,24 @@ export interface Progress {
   percentage: number;
 }
 
+export interface ModuleImpact {
+  moduleId: number;
+  moduleTitle: string;
+  moduleCategory: string;
+  completedDate: string;
+  stressBefore: number;
+  stressAfter: number;
+  stressImprovement: number;
+  observanceBefore: number;
+  observanceAfter: number;
+  observanceImprovement: number;
+  impactMessage: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TrainingService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiBaseUrl}/api/ml/training`;  // ← URL ABSOLUE
+  private apiUrl = `${environment.apiBaseUrl}/api/ml/training`;
 
   private getAuthHeaders() {
     const username = 'user';
@@ -31,6 +45,8 @@ export class TrainingService {
     const base64 = btoa(`${username}:${password}`);
     return { headers: { 'Authorization': `Basic ${base64}` } };
   }
+
+  // ==================== MODULES ====================
 
   getModules(): Observable<Module[]> {
     return this.http.get<Module[]>(`${this.apiUrl}/modules`, this.getAuthHeaders());
@@ -40,6 +56,8 @@ export class TrainingService {
     return this.http.get<Module>(`${this.apiUrl}/modules/${id}`, this.getAuthHeaders());
   }
 
+  // ==================== PROGRESSION ====================
+
   getProgress(userId: number): Observable<Progress> {
     return this.http.get<Progress>(`${this.apiUrl}/progress/${userId}`, this.getAuthHeaders());
   }
@@ -48,11 +66,20 @@ export class TrainingService {
     return this.http.post<void>(`${this.apiUrl}/complete`, { userId, moduleId, score }, this.getAuthHeaders());
   }
 
+  // ==================== RECOMMANDATIONS ====================
+
   getRecommendations(userId: number): Observable<Module[]> {
     return this.http.get<Module[]>(`${this.apiUrl}/recommendations/${userId}`, this.getAuthHeaders());
   }
 
-  // --- ADMIN METHODS ---
+  // ==================== IMPACT DES MODULES  ====================
+
+  getModuleImpacts(userId: number): Observable<ModuleImpact[]> {
+    return this.http.get<ModuleImpact[]>(`${this.apiUrl}/impact/${userId}`, this.getAuthHeaders());
+  }
+
+  // ==================== ADMIN METHODS ====================
+
   getAllModulesAdmin(): Observable<Module[]> {
     return this.http.get<Module[]>(`${environment.apiBaseUrl}/api/ml/admin/training/modules`, this.getAuthHeaders());
   }

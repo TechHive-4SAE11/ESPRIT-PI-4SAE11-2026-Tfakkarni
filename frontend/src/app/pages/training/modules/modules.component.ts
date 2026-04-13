@@ -5,11 +5,26 @@ import { FormsModule } from '@angular/forms';
 import { TrainingService, Module } from '@/core/services/training.service';
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardButtonComponent } from '@/shared/components/button';
+import { ZardIconComponent } from '@/shared/components/icon';
+
+interface ModuleImpact {
+  moduleId: number;
+  moduleTitle: string;
+  moduleCategory: string;
+  completedDate: string;
+  stressBefore: number;
+  stressAfter: number;
+  stressImprovement: number;
+  observanceBefore: number;
+  observanceAfter: number;
+  observanceImprovement: number;
+  impactMessage: string;
+}
 
 @Component({
   selector: 'app-modules',
   standalone: true,
-  imports: [CommonModule, FormsModule, ZardCardComponent, ZardButtonComponent],
+  imports: [CommonModule, FormsModule, ZardCardComponent, ZardButtonComponent, ZardIconComponent],
   template: `
     <div class="p-6 max-w-6xl mx-auto">
       <div class="flex items-center justify-between mb-8">
@@ -19,6 +34,52 @@ import { ZardButtonComponent } from '@/shared/components/button';
         </div>
       </div>
 
+      <!-- SECTION IMPACT DES MODULES COMPLÉTÉS -->
+      @if (moduleImpacts().length > 0) {
+        <div class="mb-8">
+          <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+            📊 Impact de vos modules complétés
+            <span class="text-sm text-gray-500 font-normal">({{ moduleImpacts().length }} module(s))</span>
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            @for (impact of moduleImpacts(); track impact.moduleId) {
+              <z-card class="p-4 border-l-4" [class.border-l-green-500]="impact.stressImprovement > 0 || impact.observanceImprovement > 0"
+                      [class.border-l-gray-300]="impact.stressImprovement <= 0 && impact.observanceImprovement <= 0">
+                <div class="flex justify-between items-start">
+                  <div class="flex-1">
+                    <h3 class="font-bold text-lg">{{ impact.moduleTitle }}</h3>
+                    <p class="text-xs text-gray-500">Complété le {{ impact.completedDate | date:'dd/MM/yyyy' }}</p>
+                    <div class="mt-2 space-y-1">
+                      @if (impact.stressImprovement) {
+                        <p class="text-sm" [ngClass]="impact.stressImprovement > 0 ? 'text-green-600' : 'text-gray-500'">
+                          📉 Stress :
+                          @if (impact.stressBefore && impact.stressAfter) {
+                            {{ impact.stressBefore }} → {{ impact.stressAfter }}
+                          }
+                          <span class="font-bold">({{ impact.stressImprovement > 0 ? '-' : '' }}{{ impact.stressImprovement }} pts)</span>
+                        </p>
+                      }
+                      @if (impact.observanceImprovement) {
+                        <p class="text-sm" [ngClass]="impact.observanceImprovement > 0 ? 'text-green-600' : 'text-gray-500'">
+                          📅 Observance :
+                          @if (impact.observanceBefore && impact.observanceAfter) {
+                            {{ impact.observanceBefore }}% → {{ impact.observanceAfter }}%
+                          }
+                          <span class="font-bold">(+{{ impact.observanceImprovement }}%)</span>
+                        </p>
+                      }
+                      <p class="text-sm text-violet-600 mt-2">{{ impact.impactMessage }}</p>
+                    </div>
+                  </div>
+                  <z-button size="sm" (click)="viewStressEvolution(impact)">📈 Évolution</z-button>
+                </div>
+              </z-card>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- FILTRES -->
       <div class="flex gap-4 mb-6">
         <select [(ngModel)]="selectedCategory" class="p-2 border rounded-md">
           <option value="">Toutes les catégories</option>
@@ -35,32 +96,39 @@ import { ZardButtonComponent } from '@/shared/components/button';
         </select>
       </div>
 
-      <div *ngIf="isLoading()" class="flex justify-center p-8">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
+      <!-- LISTE DES MODULES -->
+      @if (isLoading()) {
+        <div class="flex justify-center p-8">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      } @else {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          @for (mod of filteredModules(); track mod.id) {
+            <z-card class="flex flex-col h-full hover:shadow-lg transition-shadow">
+              <div class="p-5 flex flex-col h-full">
+                <div class="flex justify-between items-start mb-2">
+                  <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full uppercase font-semibold">{{ mod.category }}</span>
+                  <span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full uppercase font-semibold">{{ mod.difficulty }}</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">{{ mod.title }}</h3>
+                <p class="text-gray-600 mb-4 flex-1 line-clamp-3">{{ mod.description }}</p>
+                <div class="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
+                  <span class="text-sm text-gray-500 flex items-center">
+                    <span class="mr-1">⏱️</span> {{ mod.duration }} min
+                  </span>
+                  <z-button (click)="viewDetail(mod.id)">Voir détail</z-button>
+                </div>
+              </div>
+            </z-card>
+          }
+        </div>
+      }
 
-      <div *ngIf="!isLoading()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <z-card *ngFor="let mod of filteredModules()" class="flex flex-col h-full hover:shadow-lg transition-shadow">
-          <div class="p-5 flex flex-col h-full">
-            <div class="flex justify-between items-start mb-2">
-              <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full uppercase font-semibold">{{ mod.category }}</span>
-              <span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full uppercase font-semibold">{{ mod.difficulty }}</span>
-            </div>
-            <h3 class="text-xl font-bold mb-2">{{ mod.title }}</h3>
-            <p class="text-gray-600 mb-4 flex-1 line-clamp-3">{{ mod.description }}</p>
-            <div class="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
-              <span class="text-sm text-gray-500 flex items-center">
-                <span class="mr-1">⏱️</span> {{ mod.duration }} min
-              </span>
-              <z-button (click)="viewDetail(mod.id)">Voir détail</z-button>
-            </div>
-          </div>
-        </z-card>
-      </div>
-
-      <div *ngIf="!isLoading() && filteredModules().length === 0" class="text-center p-12 bg-gray-50 rounded-lg">
-        <p class="text-gray-500 text-lg">Aucun module trouvé pour ces critères.</p>
-      </div>
+      @if (!isLoading() && filteredModules().length === 0) {
+        <div class="text-center p-12 bg-gray-50 rounded-lg">
+          <p class="text-gray-500 text-lg">Aucun module trouvé pour ces critères.</p>
+        </div>
+      }
     </div>
   `
 })
@@ -70,6 +138,7 @@ export class ModulesComponent implements OnInit {
   private location = inject(Location);
 
   modules = signal<Module[]>([]);
+  moduleImpacts = signal<ModuleImpact[]>([]);
   isLoading = signal<boolean>(true);
 
   selectedCategory = signal<string>('');
@@ -85,6 +154,7 @@ export class ModulesComponent implements OnInit {
 
   ngOnInit() {
     this.loadModules();
+    this.loadModuleImpacts();
   }
 
   loadModules() {
@@ -100,11 +170,35 @@ export class ModulesComponent implements OnInit {
     });
   }
 
+  loadModuleImpacts() {
+    const userId = 1;
+    this.trainingService.getModuleImpacts(userId).subscribe({
+      next: (data) => {
+        this.moduleImpacts.set(data);
+      },
+      error: (err) => console.error('Erreur chargement impacts:', err)
+    });
+  }
+
   goBack() {
     this.location.back();
   }
 
   viewDetail(id: number) {
     this.router.navigate(['/training/modules', id]);
+  }
+
+  viewStressEvolution(impact: ModuleImpact) {
+    this.router.navigate(['/training/stress-evolution'], {
+      queryParams: {
+        moduleId: impact.moduleId,
+        moduleTitle: impact.moduleTitle,
+        completedDate: impact.completedDate,
+        stressBefore: impact.stressBefore || 0,
+        stressAfter: impact.stressAfter || 0,
+        stressImprovement: impact.stressImprovement || 0,
+        impactMessage: impact.impactMessage
+      }
+    });
   }
 }

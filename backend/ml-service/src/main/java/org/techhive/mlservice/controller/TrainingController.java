@@ -4,8 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.techhive.mlservice.dto.ModuleDTO;
 import org.techhive.mlservice.dto.ProgressDTO;
+import org.techhive.mlservice.dto.ModuleImpactDTO;
 import org.techhive.mlservice.service.TrainingService;
 import org.techhive.mlservice.service.RecommendationService;
+import org.techhive.mlservice.service.ModuleImpactService;
 
 import java.util.List;
 
@@ -17,6 +19,7 @@ public class TrainingController {
 
     private final TrainingService trainingService;
     private final RecommendationService recommendationService;
+    private final ModuleImpactService moduleImpactService;  // ← NOUVEAU
 
     @GetMapping("/modules")
     public List<ModuleDTO> getModules() {
@@ -46,5 +49,11 @@ public class TrainingController {
         return recommendedIds.stream()
                 .map(trainingService::getModuleById)
                 .toList();
+    }
+
+    // NOUVEAU : Récupérer l'impact des modules complétés
+    @GetMapping("/impact/{userId}")
+    public List<ModuleImpactDTO> getModuleImpacts(@PathVariable Long userId) {
+        return moduleImpactService.getModuleImpacts(userId);
     }
 }

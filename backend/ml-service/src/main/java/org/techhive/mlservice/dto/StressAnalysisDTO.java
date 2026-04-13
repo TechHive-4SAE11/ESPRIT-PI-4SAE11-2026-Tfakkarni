@@ -1,5 +1,4 @@
-
-        package org.techhive.mlservice.dto;
+package org.techhive.mlservice.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
