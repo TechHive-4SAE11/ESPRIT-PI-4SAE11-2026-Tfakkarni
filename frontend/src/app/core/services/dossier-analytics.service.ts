@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '@/environments/environment';
 
 const BASE = `${environment.apiBaseUrl}/api/medical-folders/analytics`;
@@ -28,7 +29,9 @@ export interface CrossPatientDisease {
   diagnosticsId: number;
   medicalFolderId: number;
   patientId: string;
+  patientDisplayName?: string | null;
   doctorId: string;
+  doctorDisplayName?: string | null;
   diseaseName: string;
   stage: string | null;
   diagnosisDate: string;
@@ -47,6 +50,21 @@ export interface ClinicalSafetyStats {
   }[];
   /** Backend filled illustrative KPIs when tracking has no prescription data (presentation-demo). */
   illustrationData?: boolean;
+  /** Google Gemini augmented chronic alerts / conflicts. */
+  geminiEnriched?: boolean;
+  /** Short status from backend (API key, errors). */
+  geminiNote?: string | null;
+}
+
+export interface FlaggedPatient {
+  medicalFolderId: number;
+  patientId: string;
+  patientDisplayName?: string | null;
+  consecutiveNoShows: number;
+  attendanceRiskLevel: string;
+  bookingRestricted: boolean;
+  manualReviewRequired: boolean;
+  restrictionReason?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -76,6 +94,12 @@ export class DossierAnalyticsService {
 
   getSafetyAudit(): Observable<ClinicalSafetyStats> {
     return this.http.get<ClinicalSafetyStats>(`${BASE}/safety-audit`);
+  }
+
+  getFlaggedPatients(): Observable<FlaggedPatient[]> {
+    return this.http.get<FlaggedPatient[]>(`${BASE}/flagged-patients`).pipe(
+      catchError(() => of([]))
+    );
   }
 
   getFolderInsights(folderId: number): Observable<FolderInsights> {

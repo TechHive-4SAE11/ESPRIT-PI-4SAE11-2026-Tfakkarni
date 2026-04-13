@@ -83,6 +83,10 @@ spring:
           uri: lb://medical-service
           predicates:
             - Path=/api/ai-reports/**
+        - id: patient-badges
+          uri: lb://medical-service
+          predicates:
+            - Path=/api/patient-badges/**
         - id: care-plans
           uri: lb://tracking-service
           predicates:

@@ -20,6 +20,13 @@ public class ClinicalSafetyStatsDto {
     @Builder.Default
     private boolean illustrationData = false;
 
+    /** True when Google Gemini augmented chronic alerts and/or conflicts for this response. */
+    @Builder.Default
+    private boolean geminiEnriched = false;
+
+    /** Short status for the dashboard (AI on/off, errors). */
+    private String geminiNote;
+
     @Data
     @Builder
     @NoArgsConstructor

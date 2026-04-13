@@ -63,41 +63,19 @@
       </div>
 
       <div class="space-y-2">
-        <label for="patientName" class="text-sm font-medium text-gray-700 dark:text-gray-300">👤 Patient</label>
-        <div
-          class="relative rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400">
-          <input z-input id="patientName" type="text" formControlName="patientName" list="edit-patient-suggestions"
-            placeholder="Nom du patient"
-            class="w-full rounded-xl bg-transparent px-4 py-3 text-gray-900 dark:text-white placeholder:text-muted-foreground border-0 focus:ring-0" />
-          <datalist id="edit-patient-suggestions">
-            @for (s of patientSuggestions; track s.id) {
-            <option [value]="s.name"></option>
-            }
-          </datalist>
-        </div>
-        @if (getControlError('patientName')) {
-        <p class="text-sm text-red-600 dark:text-red-400">{{ getControlError('patientName') }}</p>
+        <label for="doctorId" class="text-sm font-medium text-gray-700 dark:text-gray-300">👨‍⚕️ Médecin</label>
+        <select
+          id="doctorId"
+          formControlName="doctorId"
+          class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 px-4 py-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed">
+          <option value="">Sélectionnez un médecin (optionnel pour suivi)</option>
+          @for (s of doctorSuggestions; track s.id) {
+            <option [value]="s.id">{{ s.name }}</option>
+          }
+        </select>
+        @if (getControlError('doctorId') || (form.get('doctorId')?.invalid && form.get('doctorId')?.touched)) {
+          <p class="text-sm text-red-600 dark:text-red-400">Veuillez sélectionner un médecin.</p>
         }
-        <input type="hidden" formControlName="patientId" />
-      </div>
-
-      <div class="space-y-2">
-        <label for="doctorName" class="text-sm font-medium text-gray-700 dark:text-gray-300">👨‍⚕️ Médecin</label>
-        <div
-          class="relative rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400">
-          <input z-input id="doctorName" type="text" formControlName="doctorName" list="edit-doctor-suggestions"
-            placeholder="Nom du médecin" [disabled]="!isConsultation"
-            class="w-full rounded-xl bg-transparent px-4 py-3 text-gray-900 dark:text-white placeholder:text-muted-foreground border-0 focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed" />
-          <datalist id="edit-doctor-suggestions">
-            @for (s of doctorSuggestions; track s.id) {
-            <option [value]="s.name"></option>
-            }
-          </datalist>
-        </div>
-        @if (getControlError('doctorName')) {
-        <p class="text-sm text-red-600 dark:text-red-400">{{ getControlError('doctorName') }}</p>
-        }
-        <input type="hidden" formControlName="doctorId" />
       </div>
 
       <div class="grid gap-4 sm:grid-cols-2">

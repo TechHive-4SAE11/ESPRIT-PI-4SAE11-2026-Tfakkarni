@@ -21,4 +21,6 @@ public interface DossierAnalyticsService {
     ClinicalSafetyStatsDto getClinicalSafetyStats();
 
     org.techhive.medicalservice.dto.FolderSpecificStatsDto getFolderStats(Long folderId);
+
+    List<org.techhive.medicalservice.dto.FlaggedPatientDto> getFlaggedPatients();
 }

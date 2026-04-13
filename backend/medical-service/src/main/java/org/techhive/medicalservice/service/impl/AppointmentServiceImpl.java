@@ -5,11 +5,15 @@ import org.techhive.medicalservice.dto.AppointmentResponseDTO;
 import org.techhive.medicalservice.entity.Appointment;
 import org.techhive.medicalservice.entity.AppointmentStatus;
 import org.techhive.medicalservice.entity.AppointmentType;
+import org.techhive.medicalservice.entity.MedicalFolder;
 import org.techhive.medicalservice.exception.AppointmentNotFoundException;
 import org.techhive.medicalservice.exception.AppointmentOverlapException;
+import org.techhive.medicalservice.exception.BookingRestrictedException;
 import org.techhive.medicalservice.exception.InvalidAppointmentException;
 import org.techhive.medicalservice.repository.AppointmentRepository;
+import org.techhive.medicalservice.repository.MedicalFolderRepository;
 import org.techhive.medicalservice.service.AppointmentService;
+import org.techhive.medicalservice.service.AttendanceMonitoringService;
 import org.techhive.medicalservice.service.GoogleCalendarService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,16 +28,24 @@ import java.util.stream.Collectors;
 public class AppointmentServiceImpl implements AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
+    private final MedicalFolderRepository medicalFolderRepository;
+    private final AttendanceMonitoringService attendanceMonitoringService;
     private final GoogleCalendarService googleCalendarService;
 
     public AppointmentServiceImpl(AppointmentRepository appointmentRepository,
+            MedicalFolderRepository medicalFolderRepository,
+            AttendanceMonitoringService attendanceMonitoringService,
             GoogleCalendarService googleCalendarService) {
         this.appointmentRepository = appointmentRepository;
+        this.medicalFolderRepository = medicalFolderRepository;
+        this.attendanceMonitoringService = attendanceMonitoringService;
         this.googleCalendarService = googleCalendarService;
     }
 
     @Override
     public AppointmentResponseDTO createAppointment(AppointmentRequestDTO requestDTO) {
+        assertPatientMayBook(requestDTO.getPatientId());
+
         // Contrôle de saisie 1: endTime après startTime
         if (requestDTO.getEndTime().isBefore(requestDTO.getStartTime()) ||
                 requestDTO.getEndTime().isEqual(requestDTO.getStartTime())) {
@@ -87,7 +99,8 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         // Vérifier que le rendez-vous n'est pas déjà complété ou annulé
         if (appointment.getStatus() == AppointmentStatus.COMPLETED ||
-                appointment.getStatus() == AppointmentStatus.CANCELLED) {
+                appointment.getStatus() == AppointmentStatus.CANCELLED ||
+                appointment.getStatus() == AppointmentStatus.NO_SHOW) {
             throw new InvalidAppointmentException("Impossible de modifier un rendez-vous " + appointment.getStatus());
         }
 
@@ -179,6 +192,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     public List<AppointmentResponseDTO> createRecurringAppointments(AppointmentRequestDTO requestDTO,
             String frequency,
             int numberOfOccurrences) {
+        assertPatientMayBook(requestDTO.getPatientId());
+
         if (numberOfOccurrences < 1) {
             throw new InvalidAppointmentException("Le nombre d'occurrences doit être au moins 1");
         }
@@ -250,6 +265,45 @@ public class AppointmentServiceImpl implements AppointmentService {
         return savedAppointments.stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public AppointmentResponseDTO markAppointmentNoShow(Long appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new AppointmentNotFoundException("Rendez-vous non trouvé avec l'id: " + appointmentId));
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            throw new InvalidAppointmentException("Impossible de marquer no-show un rendez-vous annulé");
+        }
+        appointment.setStatus(AppointmentStatus.NO_SHOW);
+        Appointment saved = appointmentRepository.save(appointment);
+        attendanceMonitoringService.recalculateForPatient(appointment.getPatientId());
+        return mapToResponseDTO(saved);
+    }
+
+    @Override
+    public AppointmentResponseDTO markAppointmentCompleted(Long appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new AppointmentNotFoundException("Rendez-vous non trouvé avec l'id: " + appointmentId));
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            throw new InvalidAppointmentException("Impossible de compléter un rendez-vous annulé");
+        }
+        appointment.setStatus(AppointmentStatus.COMPLETED);
+        Appointment saved = appointmentRepository.save(appointment);
+        attendanceMonitoringService.recalculateForPatient(appointment.getPatientId());
+        return mapToResponseDTO(saved);
+    }
+
+    private void assertPatientMayBook(String patientId) {
+        if (patientId == null || patientId.isBlank()) {
+            return;
+        }
+        for (MedicalFolder folder : medicalFolderRepository.findByPatientId(patientId)) {
+            if (folder.isBookingRestricted()) {
+                String reason = folder.getRestrictionReason() != null ? folder.getRestrictionReason()
+                        : "Réservation temporairement restreinte (absences répétées).";
+                throw new BookingRestrictedException(reason);
+            }
+        }
     }
 
     private AppointmentResponseDTO mapToResponseDTO(Appointment appointment) {

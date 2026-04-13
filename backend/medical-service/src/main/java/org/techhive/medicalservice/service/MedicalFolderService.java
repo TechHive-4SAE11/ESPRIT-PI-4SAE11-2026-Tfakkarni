@@ -30,4 +30,14 @@ public interface MedicalFolderService {
 	MedicalFolderResponse partialUpdateMedicalFolder(Long id, UpdateMedicalFolderRequest request);
 
 	void deleteMedicalFolder(Long id);
+
+	/**
+	 * Clears temporary booking restriction after manual review (attendance monitoring).
+	 */
+	MedicalFolderResponse clearBookingRestrictionAfterReview(Long medicalFolderId);
+
+	/**
+	 * Manually restricts a patient from booking appointments (by an admin/doctor).
+	 */
+	MedicalFolderResponse manualRestrictPatientBooking(Long medicalFolderId, String reason);
 }

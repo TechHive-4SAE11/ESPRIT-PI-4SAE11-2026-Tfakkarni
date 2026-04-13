@@ -2,6 +2,7 @@ package org.techhive.medicalservice.dto;
 
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import org.techhive.medicalservice.entity.AttendanceRiskLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,4 +31,12 @@ public class MedicalFolderResponse {
 
 	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime updatedAt;
+
+	private int consecutiveNoShows;
+	private int totalNoShows;
+	private boolean bookingRestricted;
+	private String restrictionReason;
+	private boolean manualReviewRequired;
+	private AttendanceRiskLevel attendanceRiskLevel;
+	private boolean attendanceRestrictionOverridden;
 }

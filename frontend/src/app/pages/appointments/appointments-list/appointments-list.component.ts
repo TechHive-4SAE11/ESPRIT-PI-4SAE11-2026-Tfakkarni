@@ -145,6 +145,8 @@ export class AppointmentsListComponent implements OnInit, OnDestroy {
         return 'bg-gray-100 text-gray-800';
       case 'CANCELLED':
         return 'bg-red-100 text-red-800';
+      case 'NO_SHOW':
+        return 'bg-amber-100 text-amber-900';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -181,6 +183,44 @@ export class AppointmentsListComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.errorMessage = "L'annulation a échoué. Réessayez plus tard.";
+      },
+    });
+  }
+
+  markAsCompleted(id: number): void {
+    const confirmed = window.confirm('Marquer ce rendez-vous comme terminé ?');
+    if (!confirmed) {
+      return;
+    }
+
+    this.errorMessage = '';
+    this.appointmentService.markCompleted(id).subscribe({
+      next: () => {
+        this.successMessage = 'Rendez-vous marqué comme terminé.';
+        this.loadAppointments();
+        setTimeout(() => this.clearSuccessMessage(), 4000);
+      },
+      error: () => {
+        this.errorMessage = "L'opération a échoué. Réessayez plus tard.";
+      },
+    });
+  }
+
+  markAsNoShow(id: number): void {
+    const confirmed = window.confirm('Marquer ce rendez-vous comme non présent (NO_SHOW) ?');
+    if (!confirmed) {
+      return;
+    }
+
+    this.errorMessage = '';
+    this.appointmentService.markNoShow(id).subscribe({
+      next: () => {
+        this.successMessage = 'Rendez-vous marqué comme non présent.';
+        this.loadAppointments();
+        setTimeout(() => this.clearSuccessMessage(), 4000);
+      },
+      error: () => {
+        this.errorMessage = "L'opération a échoué. Réessayez plus tard.";
       },
     });
   }
