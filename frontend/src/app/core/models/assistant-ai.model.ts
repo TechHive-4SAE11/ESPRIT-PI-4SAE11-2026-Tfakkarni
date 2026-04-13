@@ -99,7 +99,7 @@ export interface VideoGenerateResponse {
   topic: string;
   memoryType: string;
   duration: number;
-  status: 'GENERATING' | 'READY' | 'FAILED';
+  status: 'GENERATING' | 'READY' | 'FAILED' | 'SCRIPT_ONLY';
   videoUrl?: string;
   thumbnailUrl?: string;
   script: string;

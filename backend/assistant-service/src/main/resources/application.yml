@@ -62,22 +62,13 @@ feign:
         readTimeout: 10000
         loggerLevel: BASIC
 
-# ── External Video API (D-ID enabled) ──
+# ── External Video API (Pexels) ──
 assistant:
   video:
-    provider: D_ID
-    d-id:
-      api-key: "cmFuaW1hamxhbmkyMkBnbWFpbC5jb20:sHkcMAnFIB-8R53-Epku5"
-      api-url: https://api.d-id.com
-    heygen:
-      api-key: ${HEYGEN_API_KEY:}
-      api-url: https://api.heygen.com
-    luma:
-      api-key: ${LUMA_API_KEY:}
-      api-url: https://api.lumalabs.ai
-    runway:
-      api-key: ${RUNWAY_API_KEY:}
-      api-url: https://api.runwayml.com
+    provider: PEXELS
+    pexels:
+      api-key: "VaN3nyY1QpMdhBuY3ChDloAn06JUCO3oARELtzSVUQoy9WPPu8nQHeUq"
+      api-url: "https://api.pexels.com"
 
 # ── Actuator ──
 management:

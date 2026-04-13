@@ -55,9 +55,9 @@ interface ChatMessage {
             }
 
             <div class="pt-3 border-t border-border">
-              <h4 class="text-xs font-semibold text-muted-foreground mb-2">Sélection du Patient</h4>
+              <h4 class="text-xs font-semibold text-muted-foreground mb-2">Patient Selection</h4>
               @if (isLoadingPatients) {
-                <div class="text-xs text-muted-foreground animate-pulse">Chargement des patients...</div>
+                <div class="text-xs text-muted-foreground animate-pulse">Loading patients...</div>
               } @else {
                 <select [(ngModel)]="userId"
                   class="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40">
@@ -65,10 +65,19 @@ interface ChatMessage {
                     <option [value]="patient.id">{{ patient.firstName }} {{ patient.lastName }}</option>
                   }
                   @if (patients.length === 0) {
-                    <option [value]="1">Utilisateur par défaut</option>
+                    <option [value]="1">Default User</option>
                   }
                 </select>
               }
+            </div>
+
+            <div class="pt-3 border-t border-border">
+              <h4 class="text-xs font-semibold text-muted-foreground mb-2">🌐 Language</h4>
+              <select [(ngModel)]="selectedLang" (ngModelChange)="onLanguageChange()"
+                class="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40">
+                <option value="en-US">🇬🇧 English</option>
+                <option value="fr-FR">🇫🇷 Français</option>
+              </select>
             </div>
           </div>
         </div>
@@ -144,7 +153,7 @@ interface ChatMessage {
                   [class]="isListening() 
                     ? 'p-3 rounded-xl bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/50' 
                     : 'p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors'"
-                  title="Activer la reconnaissance vocale">
+                  title="Activate voice recognition">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                   </svg>
@@ -153,7 +162,7 @@ interface ChatMessage {
                   (click)="stopAssistantVoice()"
                   type="button"
                   class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                  title="Faire taire l'assistant">
+                  title="Mute the assistant">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
@@ -163,7 +172,7 @@ interface ChatMessage {
                   [(ngModel)]="commandInput"
                   (keyup.enter)="sendCommand()"
                   [disabled]="isSending()"
-                  placeholder="Tapez ou dictez une commande... (ex: 'quiz sur la géographie')"
+                  placeholder="Type or dictate a command... (e.g. 'quiz about geography')"
                   class="flex-1 px-4 py-3 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-shadow" />
                 <button
                   (click)="sendCommand()"
@@ -189,19 +198,21 @@ export class AiVoiceAssistantComponent implements AfterViewChecked {
   isSending = signal(false);
   isListening = signal(false);
 
+  selectedLang = 'en-US';
+
   quickCommands = [
-    { command: 'statut', label: 'Status', emoji: '📊', description: 'View quiz scores & active loans' },
-    { command: 'quiz sur la mémoire', label: 'Memory Quiz', emoji: '🧠', description: 'Generate a memory quiz' },
-    { command: 'emprunter fauteuil roulant', label: 'Borrow', emoji: '🦽', description: 'Borrow a wheelchair' },
-    { command: 'rendre fauteuil roulant', label: 'Return', emoji: '↩️', description: 'Return equipment' },
-    { command: 'vidéo sur les souvenirs', label: 'Video', emoji: '🎬', description: 'Generate a memory video' },
+    { command: 'status', label: 'Status', emoji: '📊', description: 'View quiz scores & active loans' },
+    { command: 'quiz about memory', label: 'Memory Quiz', emoji: '🧠', description: 'Generate a memory quiz' },
+    { command: 'borrow wheelchair', label: 'Borrow', emoji: '🦽', description: 'Borrow a wheelchair' },
+    { command: 'return wheelchair', label: 'Return', emoji: '↩️', description: 'Return equipment' },
+    { command: 'video about memories', label: 'Video', emoji: '🎬', description: 'Generate a memory video' },
   ];
 
   exampleCommands = [
-    'statut',
-    'quiz sur les couleurs',
-    'emprunter stéthoscope',
-    'créer vidéo de paris'
+    'status',
+    'quiz about colors',
+    'borrow stethoscope',
+    'create video about paris'
   ];
 
   private recognition: any;
@@ -246,7 +257,7 @@ export class AiVoiceAssistantComponent implements AfterViewChecked {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
       this.recognition = new SpeechRecognition();
-      this.recognition.lang = 'fr-FR';
+      this.recognition.lang = this.selectedLang;
       this.recognition.continuous = false;
       this.recognition.interimResults = true;
 
@@ -276,7 +287,7 @@ export class AiVoiceAssistantComponent implements AfterViewChecked {
 
   toggleListening(): void {
     if (!this.recognition) {
-       alert("Votre navigateur ne supporte pas la reconnaissance vocale.");
+       alert("Your browser does not support voice recognition.");
        return;
     }
     
@@ -288,6 +299,7 @@ export class AiVoiceAssistantComponent implements AfterViewChecked {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
+      this.recognition.lang = this.selectedLang;
       this.commandInput = '';
       this.recognition.start();
       this.isListening.set(true);
@@ -351,10 +363,18 @@ export class AiVoiceAssistantComponent implements AfterViewChecked {
           timestamp: new Date(),
         });
         
-        // Text-to-Speech (Optional, but adds to the voice assistant feel)
+        // Text-to-Speech — clean emojis & markdown before speaking
         if ('speechSynthesis' in window) {
-           const utterance = new SpeechSynthesisUtterance(res.message);
-           utterance.lang = 'fr-FR';
+           const cleanText = res.message
+             .replace(/[\u{1F600}-\u{1F9FF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F000}-\u{1FAFF}\u{200D}\u{20E3}]/gu, '') // Remove emojis
+             .replace(/\*\*/g, '')   // Remove **bold**
+             .replace(/\*/g, '')     // Remove *italic*
+             .replace(/#/g, '')      // Remove ### headings
+             .replace(/- /g, '')     // Remove bullet points
+             .replace(/\n+/g, '. ')  // Replace newlines with pauses
+             .trim();
+           const utterance = new SpeechSynthesisUtterance(cleanText);
+           utterance.lang = this.selectedLang;
            window.speechSynthesis.speak(utterance);
         }
 
@@ -363,7 +383,7 @@ export class AiVoiceAssistantComponent implements AfterViewChecked {
       error: (err) => {
         this.messages.push({
           role: 'assistant',
-          content: err.error?.message || 'Erreur de connexion. L\'assistant-service est-il lancé ?',
+          content: err.error?.message || 'Connection error. Is the assistant-service running?',
           type: 'ERROR',
           timestamp: new Date(),
         });
@@ -379,5 +399,11 @@ export class AiVoiceAssistantComponent implements AfterViewChecked {
         behavior: 'smooth',
       });
     } catch (_) {}
+  }
+
+  onLanguageChange(): void {
+    if (this.recognition) {
+      this.recognition.lang = this.selectedLang;
+    }
   }
 }

@@ -210,7 +210,7 @@ import {
             @if (isLoadingPatients) {
                <div class="px-4 py-2.5 rounded-xl border border-input text-sm text-muted-foreground">Chargement des patients...</div>
             } @else {
-               <select [(ngModel)]="libraryPatientId"
+               <select [(ngModel)]="libraryPatientId" (ngModelChange)="loadPatientVideos()"
                   class="px-4 py-2.5 rounded-xl border border-input bg-background text-sm w-56 focus:outline-none focus:ring-2 focus:ring-rose-500/40">
                   <option [value]="0" disabled>-- Sélectionnez un patient --</option>
                   @for (patient of patients; track patient.id) {
@@ -282,18 +282,40 @@ import {
               <div class="flex gap-2 text-xs">
                 <span class="px-2 py-1 rounded-full bg-rose-100 text-rose-700 font-semibold">{{ v.memoryType }}</span>
                 <span class="px-2 py-1 rounded-full bg-muted font-medium">{{ v.duration }}s</span>
-                <span class="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 font-semibold">{{ v.status }}</span>
+                <span class="px-2 py-1 rounded-full font-semibold"
+                  [class]="v.status === 'READY' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'">{{ v.status }}</span>
               </div>
               @if (v.videoUrl && v.status === 'READY') {
-                <video 
-                  [src]="v.videoUrl" 
-                  controls 
-                  class="w-full rounded-xl shadow-sm border border-border">
-                </video>
+                <div class="relative w-full rounded-xl overflow-hidden shadow-sm border border-border mt-4 bg-black group">
+                  @if (v.videoUrl.startsWith('data:image')) {
+                    <img [src]="v.videoUrl" [alt]="v.topic" class="w-full h-full object-cover">
+                  } @else {
+                    <video [src]="v.videoUrl" controls autoplay loop class="w-full h-full object-cover"></video>
+                  }
+                  
+                  <!-- Voice Overlay Buttons -->
+                  <div class="absolute bottom-4 right-4 flex gap-2">
+                    <button (click)="toggleVoice(v.script); $event.stopPropagation()" 
+                            class="bg-background/90 text-foreground px-4 py-2 rounded-full shadow-lg font-medium hover:bg-rose-500 hover:text-white transition-all flex items-center gap-2">
+                      <span>{{ isPaused ? '▶️' : isSpeaking ? '⏸️' : '🔊' }}</span> {{ isPaused ? 'Reprendre' : isSpeaking ? 'Pause' : 'Écouter' }}
+                    </button>
+                    @if (isSpeaking || isPaused) {
+                      <button (click)="stopVoice(); $event.stopPropagation()" 
+                              class="bg-red-500/90 text-white px-4 py-2 rounded-full shadow-lg font-medium hover:bg-red-600 transition-all flex items-center gap-2">
+                        ⏹️ Stop
+                      </button>
+                    }
+                  </div>
+                </div>
               } @else if (v.status === 'FAILED') {
                 <div class="p-4 rounded-xl bg-red-50 text-red-700 text-sm flex items-center justify-between border border-red-100">
                   <span>⚠️ Video generation failed. Please retry.</span>
                   <button (click)="retryVideo(v.videoId)" class="px-3 py-1.5 bg-red-100 font-semibold rounded-lg hover:bg-red-200">Retry</button>
+                </div>
+              } @else if (v.status === 'SCRIPT_ONLY') {
+                <div class="p-4 rounded-xl bg-slate-50 text-slate-700 text-sm flex items-center justify-between border border-slate-200">
+                  <span>ℹ️ Storyboard generated but video not yet rendered.</span>
+                  <button (click)="retryVideo(v.videoId)" class="px-4 py-2 bg-gradient-to-r from-rose-500 to-orange-500 text-white font-semibold rounded-lg hover:from-rose-600 hover:to-orange-600 transition-all shadow-md">🎬 Générer la vidéo (API)</button>
                 </div>
               } @else {
                 <div class="p-12 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center text-center">
@@ -383,6 +405,7 @@ export class AiMemoryVideosComponent implements OnInit {
             this.patientId = this.patients[0].id;
             this.libraryPatientId = this.patients[0].id;
             this.onPatientSelectionChange();
+            this.loadPatientVideos(); // Auto-load library for the first patient
         }
       },
       error: (err) => {
@@ -446,13 +469,80 @@ export class AiMemoryVideosComponent implements OnInit {
     this.selectedVideo.set(video);
   }
 
+  isSpeaking = false;
+  isPaused = false;
+
+  toggleVoice(text: string): void {
+    if (!('speechSynthesis' in window)) {
+      alert("La synthèse vocale n'est pas supportée par votre navigateur.");
+      return;
+    }
+
+    // If paused, resume from where we left off
+    if (this.isPaused) {
+      window.speechSynthesis.resume();
+      this.isSpeaking = true;
+      this.isPaused = false;
+      return;
+    }
+
+    // If currently speaking, pause it
+    if (this.isSpeaking) {
+      window.speechSynthesis.pause();
+      this.isSpeaking = false;
+      this.isPaused = true;
+      return;
+    }
+
+    // Start fresh
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.onend = () => { this.isSpeaking = false; this.isPaused = false; };
+    utterance.onerror = () => { this.isSpeaking = false; this.isPaused = false; };
+    this.isSpeaking = true;
+    this.isPaused = false;
+    window.speechSynthesis.speak(utterance);
+  }
+
+  stopVoice(): void {
+    window.speechSynthesis.cancel();
+    this.isSpeaking = false;
+    this.isPaused = false;
+  }
+
   retryVideo(videoId: number): void {
+    // Optionally update local list to show generating
+    this.patientVideos.update(videos => 
+      videos.map(v => v.videoId === videoId ? { ...v, status: 'GENERATING' } : v)
+    );
+    if (this.selectedVideo()?.videoId === videoId) {
+      this.selectedVideo.update(v => v ? { ...v, status: 'GENERATING' } : null);
+    }
+    this.errorMessage.set('');
+
     this.aiService.renderVideo(videoId).subscribe({
       next: () => {
-        this.loadPatientVideos(); // Recharger la liste
+        this.loadPatientVideos(); // Recharger la liste pour voir READY
+        // Automatically close modal or update modal
+        if (this.selectedVideo()?.videoId === videoId) {
+          this.loadPatientVideos(); // Will update main grid, let's also clear modal to force refresh
+          this.selectedVideo.set(null); 
+        }
       },
       error: (err) => {
-        this.errorMessage.set('Failed to generate video: ' + (err.error?.message || err.message));
+        const errorMsg = 'Failed to generate video/image: ' + (err.error?.message || err.message);
+        this.errorMessage.set(errorMsg);
+        
+        // Revert to FAILED so UI allows retry
+        this.patientVideos.update(videos => 
+          videos.map(v => v.videoId === videoId ? { ...v, status: 'FAILED' } : v)
+        );
+        if (this.selectedVideo()?.videoId === videoId) {
+          this.selectedVideo.update(v => v ? { ...v, status: 'FAILED' } : null);
+        }
       }
     });
   }

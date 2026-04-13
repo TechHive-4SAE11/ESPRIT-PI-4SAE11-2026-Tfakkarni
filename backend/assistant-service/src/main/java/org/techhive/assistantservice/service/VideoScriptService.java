@@ -185,6 +185,7 @@ public class VideoScriptService {
                 - Include sensory descriptions (colors, sounds, textures)
                 - Pace the content appropriately for the target duration
                 - If the patient has weak cognitive areas, subtly incorporate exercises for those areas
+                - IMPORTANT: You MUST generate a complete 'storyboard' array regardless of the Video Type (PHOTO, STORY, or EXERCISE). It must never be empty.
                 
                 IMPORTANT: Respond ONLY with valid JSON, no additional text.
                 Format:
@@ -326,6 +327,7 @@ public class VideoScriptService {
                 .thumbnailUrl(video.getThumbnailUrl())
                 .script(video.getScript())
                 .storyboard(storyboard)
+                .sceneCount(storyboard.size())
                 .createdAt(video.getCreatedAt())
                 .build();
     }

@@ -29,8 +29,8 @@ public class VideoController {
 
     /**
      * POST /api/ai/video/generate
-     * Generate a personalized memory video script, storyboard, AND render via D-ID.
-     * The response includes the video URL if D-ID rendering succeeds.
+     * Generate a personalized memory video script, storyboard, AND render via configured provider.
+     * The response includes the video/image URL if rendering succeeds.
      */
     @PostMapping("/generate")
     public ResponseEntity<?> generateVideo(@Valid @RequestBody VideoGenerateRequest request) {
@@ -42,7 +42,7 @@ public class VideoController {
             VideoGenerateResponse response = videoScriptService.generateVideoScript(request);
             log.info("Script generated: videoId={}, status={}", response.getVideoId(), response.getStatus());
 
-            // 2. Si le provider est D_ID, déclencher automatiquement le rendu
+            // 2. Si un provider externe est configuré, déclencher automatiquement le rendu
             if ("SCRIPT_ONLY".equals(response.getStatus()) && videoApiIntegrationService.isExternalProviderConfigured()) {
                 log.info("Auto-rendering video {} with external provider", response.getVideoId());
                 try {
@@ -50,10 +50,10 @@ public class VideoController {
                     
                     // Mettre à jour la réponse avec l'URL
                     response.setVideoUrl(videoUrl);
-                    response.setStatus(videoUrl != null ? "READY" : "FAILED");
+                    response.setStatus(videoUrl != null ? "READY" : "SCRIPT_ONLY");
                 } catch (Exception apiEx) {
                     log.error("External video API error, but script was saved. VideoId={}", response.getVideoId(), apiEx);
-                    response.setStatus("FAILED");
+                    response.setStatus("SCRIPT_ONLY");
                 }
             }
 
