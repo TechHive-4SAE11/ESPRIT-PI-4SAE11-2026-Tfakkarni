@@ -27,8 +27,10 @@ public class VideoScriptService {
 
     private final ChatClient.Builder chatClientBuilder;
     private final GameServiceClient gameServiceClient;
+    private final org.techhive.assistantservice.client.MedicalServiceClient medicalServiceClient;
     private final GeneratedVideoRepository videoRepository;
     private final ObjectMapper objectMapper;
+    private final VideoApiIntegrationService videoApiIntegrationService;
 
     /**
      * Generate a personalized video script and storyboard for memory stimulation.
@@ -37,11 +39,12 @@ public class VideoScriptService {
         log.info("Generating video script: patient={}, topic={}, type={}, duration={}s",
                 request.getPatientId(), request.getTopic(), request.getMemoryType(), request.getDuration());
 
-        // 1. Gather patient context (weak topics from quiz history)
+        // 1. Gather patient context (weak topics from quiz history + medical folder)
         List<String> weakTopics = fetchWeakTopics(request.getPatientId());
+        String medicalContext = fetchMedicalContext(request.getPatientId());
 
         // 2. Generate script + storyboard via OpenAI
-        String aiResponse = callOpenAIForVideoScript(request, weakTopics);
+        String aiResponse = callOpenAIForVideoScript(request, weakTopics, medicalContext);
         log.debug("OpenAI video script response: {}", aiResponse);
 
         // 3. Parse the response
@@ -50,14 +53,21 @@ public class VideoScriptService {
         // 4. Build storyboard scenes
         List<StoryboardScene> storyboard = buildStoryboard(parsed);
 
-        // 5. Persist the video record
+        // 5. Persist the video record (initially as SCRIPT_ONLY)
+        String scriptText = (String) parsed.getOrDefault("script", "");
+        String aiTitle = (String) parsed.getOrDefault("title", "Topic Auto-généré");
+        
+        String finalTopic = (request.getTopic() != null && !request.getTopic().trim().isEmpty()) 
+                ? request.getTopic() 
+                : aiTitle;
+
         GeneratedVideo video = GeneratedVideo.builder()
                 .patientId(request.getPatientId())
-                .topic(request.getTopic())
+                .topic(finalTopic)
                 .memoryType(MemoryType.valueOf(request.getMemoryType()))
                 .duration(request.getDuration())
-                .status(VideoStatus.READY)
-                .script((String) parsed.getOrDefault("script", ""))
+                .status(VideoStatus.SCRIPT_ONLY)
+                .script(scriptText)
                 .storyboardJson(toJson(storyboard))
                 .patientName(request.getPatientName())
                 .patientAge(request.getPatientAge())
@@ -74,6 +84,7 @@ public class VideoScriptService {
                 .memoryType(saved.getMemoryType().name())
                 .duration(saved.getDuration())
                 .status(saved.getStatus().name())
+                .videoUrl(saved.getVideoUrl())
                 .script(saved.getScript())
                 .storyboard(storyboard)
                 .createdAt(saved.getCreatedAt())
@@ -105,8 +116,27 @@ public class VideoScriptService {
             return new ArrayList<>();
         }
     }
+    
+    private String fetchMedicalContext(Long patientId) {
+        try {
+            List<org.techhive.assistantservice.dto.MedicalFolderDTO> folders = medicalServiceClient.getMedicalFolderByPatient(String.valueOf(patientId));
+            if (folders == null || folders.isEmpty()) return "";
+            
+            org.techhive.assistantservice.dto.MedicalFolderDTO folder = folders.get(0);
+            
+            StringBuilder sb = new StringBuilder();
+            if (folder.getDiagnosis() != null) sb.append("Diagnosis: ").append(folder.getDiagnosis()).append("\n");
+            if (folder.getEvolution() != null) sb.append("Evolution: ").append(folder.getEvolution()).append("\n");
+            if (folder.getTreatments() != null) sb.append("Treatments: ").append(folder.getTreatments()).append("\n");
+            if (folder.getRecommendations() != null) sb.append("Recommendations: ").append(folder.getRecommendations()).append("\n");
+            return sb.toString();
+        } catch (Exception e) {
+            log.warn("Could not fetch medical folder for patient {}: {}", patientId, e.getMessage());
+            return "";
+        }
+    }
 
-    private String callOpenAIForVideoScript(VideoGenerateRequest request, List<String> weakTopics) {
+    private String callOpenAIForVideoScript(VideoGenerateRequest request, List<String> weakTopics, String medicalContext) {
         String memoryTypeDescription = switch (request.getMemoryType()) {
             case "PHOTO" -> """
                     A PHOTO-type video: Create a narrated slideshow script.
@@ -129,13 +159,19 @@ public class VideoScriptService {
         String patientContext = "";
         if (request.getPatientName() != null) patientContext += "Patient name: " + request.getPatientName() + "\n";
         if (request.getPatientAge() != null) patientContext += "Patient age: " + request.getPatientAge() + "\n";
-        if (request.getInterests() != null) patientContext += "Interests: " + request.getInterests() + "\n";
-        if (!weakTopics.isEmpty()) patientContext += "Weak cognitive areas: " + String.join(", ", weakTopics) + "\n";
+        if (request.getInterests() != null && !request.getInterests().trim().isEmpty()) patientContext += "Interests: " + request.getInterests() + "\n";
+        if (!weakTopics.isEmpty()) patientContext += "Weak cognitive areas from Quiz history: " + String.join(", ", weakTopics) + "\n";
+        if (!medicalContext.isEmpty()) patientContext += "Medical Context:\n" + medicalContext + "\n";
+
+        String targetTopic = (request.getTopic() != null && !request.getTopic().trim().isEmpty()) 
+                ? request.getTopic() 
+                : "Auto-determined optimal therapeutic topic based on the patient's medical and cognitive profile";
 
         String prompt = String.format("""
                 You are an expert in creating therapeutic video content for Alzheimer's and dementia patients.
                 
                 Create a video script about "%s" that is %d seconds long.
+                If the topic is "Auto-determined...", you MUST heavily rely on the patient context below to invent a soothing, therapeutic journey (e.g. if they like cooking or have cognitive issues with short-term recall).
                 
                 Video Type:
                 %s
@@ -167,7 +203,7 @@ public class VideoScriptService {
                   "emotionalTone": "warm and encouraging",
                   "cognitiveGoals": ["goal1", "goal2"]
                 }
-                """, request.getTopic(), request.getDuration(), memoryTypeDescription,
+                """, targetTopic, request.getDuration(), memoryTypeDescription,
                 patientContext.isEmpty() ? "No specific patient context available." : patientContext);
 
         try {
@@ -300,11 +336,31 @@ public class VideoScriptService {
     }
 
     private String cleanJson(String response) {
-        String cleaned = response.trim();
-        if (cleaned.startsWith("```json")) cleaned = cleaned.substring(7);
-        else if (cleaned.startsWith("```")) cleaned = cleaned.substring(3);
-        if (cleaned.endsWith("```")) cleaned = cleaned.substring(0, cleaned.length() - 3);
-        return cleaned.trim();
+        try {
+            int startInd = response.indexOf("```json");
+            if (startInd != -1) {
+                int endInd = response.lastIndexOf("```");
+                if (endInd > startInd) {
+                    return response.substring(startInd + 7, endInd).trim();
+                }
+            } else {
+                startInd = response.indexOf("```");
+                if (startInd != -1) {
+                    int endInd = response.lastIndexOf("```");
+                    if (endInd > startInd) {
+                        return response.substring(startInd + 3, endInd).trim();
+                    }
+                }
+            }
+            int firstBrace = response.indexOf("{");
+            int lastBrace = response.lastIndexOf("}");
+            if (firstBrace != -1 && lastBrace > firstBrace) {
+                return response.substring(firstBrace, lastBrace + 1).trim();
+            }
+        } catch (Exception e) {
+            log.warn("Error cleaning JSON: {}", e.getMessage());
+        }
+        return response.trim();
     }
 
     private int toInt(Object value) {

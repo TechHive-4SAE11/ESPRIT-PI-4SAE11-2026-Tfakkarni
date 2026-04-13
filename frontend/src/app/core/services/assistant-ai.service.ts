@@ -18,7 +18,7 @@ import {
   providedIn: 'root',
 })
 export class AssistantAIService {
-  private readonly baseUrl = 'http://localhost:18088/api/ai';
+  private readonly baseUrl = 'http://localhost:18089/api/ai';
 
   constructor(private readonly http: HttpClient) {}
 
@@ -27,9 +27,22 @@ export class AssistantAIService {
     return this.http.post<GeneratedQuiz>(`${this.baseUrl}/quiz/generate`, request);
   }
 
+  generateQuizFromPatientName(request: {
+    patientName: string;
+    numberOfQuestions: number;
+    difficultyLevel?: number;
+    caregiverId: number;
+  }): Observable<GeneratedQuiz> {
+    return this.http.post<GeneratedQuiz>(`${this.baseUrl}/quiz/generate-from-patient-name`, request);
+  }
+
   // ── Equipment Recommendation ─────────────────────────────────────────
   recommendEquipment(request: EquipmentRecommendRequest): Observable<EquipmentRecommendResponse> {
     return this.http.post<EquipmentRecommendResponse>(`${this.baseUrl}/equipment/recommend`, request);
+  }
+
+  recommendEquipmentFromPatientName(patientName: string): Observable<EquipmentRecommendResponse> {
+    return this.http.post<EquipmentRecommendResponse>(`${this.baseUrl}/equipment/recommend-from-patient-name`, { patientName });
   }
 
   // ── Voice Assistant (REST fallback) ──────────────────────────────────

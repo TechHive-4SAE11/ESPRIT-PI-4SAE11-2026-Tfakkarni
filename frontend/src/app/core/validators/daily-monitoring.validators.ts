@@ -29,12 +29,12 @@ const requiredTime = (fieldLabel: string) =>
 
 export const NutritionSchema = z.object({
   mealType:     z.enum(['BREAKFAST','LUNCH','DINNER','SNACK'], {
-    errorMap: () => ({ message: 'Type de repas invalide' }),
+    message: 'Type de repas invalide'
   }),
   entryTime:    requiredTime('Heure du repas'),
   description:  requiredText('Aliments consommés'),
   quantity:     z.enum(['COMPLET','DEMI','PEU','RIEN'], {
-    errorMap: () => ({ message: 'Quantité invalide' }),
+    message: 'Quantité invalide'
   }),
   appetite:     z.enum(['BON','MOYEN','FAIBLE']).optional(),
   hydrationRaw: positiveIntStr('Hydratation (ml)', 10000),
@@ -47,12 +47,11 @@ export type NutritionFormData = z.infer<typeof NutritionSchema>;
 
 export const MedicationSchema = z.object({
   medicationId: z.number({
-    required_error:    'Veuillez sélectionner un médicament',
-    invalid_type_error:'Veuillez sélectionner un médicament',
+    message: 'Veuillez sélectionner un médicament',
   }).min(1, 'Veuillez sélectionner un médicament'),
   takenAt: requiredTime('Heure de prise'),
   status:  z.enum(['PRIS','OUBLIE','REFUSE','EN_RETARD'], {
-    errorMap: () => ({ message: 'Statut invalide' }),
+    message: 'Statut invalide'
   }),
   notes: z.string().optional(),
 });
@@ -63,7 +62,7 @@ export type MedicationFormData = z.infer<typeof MedicationSchema>;
 
 export const ActivitySchema = z.object({
   activityType: z.enum(['PHYSIQUE','COGNITIVE','SOCIALE','HYGIENE','PROMENADE','AUTRE'], {
-    errorMap: () => ({ message: "Type d'activité invalide" }),
+    message: "Type d'activité invalide"
   }),
   description:  requiredText('Description'),
   durationRaw:  positiveIntStr('Durée (minutes)', 1440),
@@ -78,11 +77,11 @@ export type ActivityFormData = z.infer<typeof ActivitySchema>;
 
 export const IncidentSchema = z.object({
   incidentType:  z.enum(['CHUTE','CONFUSION','AGITATION','DEAMBULATION','CRISE','AUTRE'], {
-    errorMap: () => ({ message: "Type d'incident invalide" }),
+    message: "Type d'incident invalide"
   }),
   description:   requiredText('Description'),
   severity:      z.enum(['LEGER','MODERE','GRAVE'], {
-    errorMap: () => ({ message: 'Gravité invalide' }),
+    message: 'Gravité invalide'
   }),
   occurredAt:    requiredTime('Heure'),
   location:      requiredText('Lieu'),

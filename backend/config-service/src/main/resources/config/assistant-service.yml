@@ -3,7 +3,7 @@
 # ═══════════════════════════════════════════════════════════════════════
 
 server:
-  port: 18088
+  port: 18089
 
 spring:
   # ── Database (PostgreSQL) ──
@@ -29,10 +29,11 @@ spring:
   # ── Spring AI - OpenAI ──
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY: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}
+      api-key: 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
+      base-url: https://api.groq.com/openai
       chat:
         options:
-          model: gpt-4o-mini
+          model: llama-3.3-70b-versatile
           temperature: 0.7
           max-tokens: 2000
 
@@ -58,9 +59,9 @@ feign:
 # ── External Video API (optional) ──
 assistant:
   video:
-    provider: SCRIPT_ONLY
+    provider: D_ID
     d-id:
-      api-key: ${DID_API_KEY:}
+      api-key: "cmFuaW1hamxhbmkyMkBnbWFpbC5jb20:sHkcMAnFIB-8R53-Epku5"
       api-url: https://api.d-id.com
     heygen:
       api-key: ${HEYGEN_API_KEY:}

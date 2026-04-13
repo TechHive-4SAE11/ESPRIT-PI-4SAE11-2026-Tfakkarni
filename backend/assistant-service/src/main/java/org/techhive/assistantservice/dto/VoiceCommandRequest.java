@@ -12,5 +12,6 @@ import lombok.NoArgsConstructor;
 public class VoiceCommandRequest {
     private String command;
     private Long userId;
+    private String patientName;
     private String sessionId;
 }

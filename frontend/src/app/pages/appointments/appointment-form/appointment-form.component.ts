@@ -201,11 +201,11 @@ export class AppointmentFormComponent implements OnInit, OnDestroy {
 
     if (this.isEditMode && this.appointmentId) {
       this.appointmentService
-        .updateAppointment(this.appointmentId, payload as Appointment)
+        .updateAppointment(this.appointmentId, payload as unknown as Appointment)
         .subscribe({ next: onSuccess, error: onError });
     } else {
       this.appointmentService
-        .createAppointment(payload as Appointment)
+        .createAppointment(payload as unknown as Appointment)
         .subscribe({ next: onSuccess, error: onError });
     }
   }

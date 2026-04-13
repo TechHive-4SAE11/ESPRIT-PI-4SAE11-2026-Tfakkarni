@@ -4,10 +4,12 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import org.techhive.assistantservice.client.dto.EquipmentDTO;
 import org.techhive.assistantservice.client.dto.EquipmentLoanDTO;
+import org.techhive.assistantservice.dto.MedicalFolderDTO;
+import org.techhive.assistantservice.dto.PatientDTO;
 
 import java.util.List;
 
-@FeignClient(name = "medical-service", url = "${feign.medical-service.url:http://localhost:18083}")
+@FeignClient(name = "medical-service", url = "${feign.medical-service.url:http://localhost:18086}")
 public interface MedicalServiceClient {
 
     // ── Equipment endpoints ──
@@ -16,6 +18,9 @@ public interface MedicalServiceClient {
 
     @GetMapping("/api/medical/equipment/{id}")
     EquipmentDTO getEquipmentById(@PathVariable("id") Long id);
+
+    @PostMapping("/api/medical/equipment")
+    EquipmentDTO createEquipment(@RequestBody EquipmentDTO equipmentDTO);
 
     @GetMapping("/api/medical/equipment/available")
     List<EquipmentDTO> getAvailableEquipment();
@@ -41,4 +46,17 @@ public interface MedicalServiceClient {
 
     @GetMapping("/api/medical/loans")
     List<EquipmentLoanDTO> getAllLoans();
+
+    // ── Patient and Medical Folder endpoints ──
+    @GetMapping("/api/medical/patients/search")
+    PatientDTO findPatientByName(@RequestParam("name") String name);
+
+    @GetMapping("/api/medical-folders/patient/{patientId}")
+    List<MedicalFolderDTO> getMedicalFolderByPatient(@PathVariable("patientId") String patientId);
+
+    @GetMapping(value = "/api/medical-folders/patient/{patientId}", consumes = "application/json")
+    String getMedicalFolderRaw(@PathVariable("patientId") String patientId);
+
+    @GetMapping("/api/ai-reports/latest")
+    org.techhive.assistantservice.dto.AIReportDTO getLatestAIReport(@RequestParam("folderId") Long folderId);
 }

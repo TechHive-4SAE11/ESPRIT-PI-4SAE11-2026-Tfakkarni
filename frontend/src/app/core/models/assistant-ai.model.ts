@@ -4,8 +4,8 @@
 export interface QuizGenerateRequest {
   topic: string;
   numberOfQuestions: number;
-  difficultyLevel: number; // 1-3
-  caregiverId: number;
+  difficultyLevel?: number | null; // 1-3, optional: AI decides if not provided
+  caregiverId?: number; // optional, internal usage
 }
 
 export interface GeneratedAnswer {
@@ -63,6 +63,7 @@ export interface EquipmentRecommendResponse {
 export interface VoiceCommandRequest {
   command: string;
   userId: number;
+  patientName?: string;
   sessionId?: string;
 }
 

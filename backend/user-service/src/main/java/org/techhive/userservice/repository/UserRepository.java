@@ -18,4 +18,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   @Query("SELECT u FROM User u WHERE LOWER(u.role) = LOWER(:role)")
   List<User> findByRole(@Param("role") String role);
+
+  List<User> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(String firstName, String lastName);
 }

@@ -1,7 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AssistantAIService } from '@/core/services/assistant-ai.service';
+import { UserApiService, UserInfo } from '@/core/services/user-api.service';
 import { QuizGenerateRequest, GeneratedQuiz } from '@/core/models/assistant-ai.model';
 
 @Component({
@@ -31,13 +32,21 @@ import { QuizGenerateRequest, GeneratedQuiz } from '@/core/models/assistant-ai.m
               <span class="text-xl">⚙️</span> Configuration
             </h3>
 
-            <!-- Topic -->
+            <!-- Patient Name Selection -->
             <div class="space-y-2">
-              <label class="text-sm font-medium text-foreground">Topic</label>
-              <input type="text"
-                [(ngModel)]="topic"
-                placeholder="e.g. Fruits et légumes, Animaux, Géographie..."
-                class="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow" />
+              <label class="text-sm font-medium text-foreground">Select Patient</label>
+              @if (isLoadingPatients) {
+                <div class="w-full px-4 py-2.5 rounded-xl border border-input bg-muted text-sm text-muted-foreground animate-pulse">Loading patients...</div>
+              } @else {
+                <select
+                  [(ngModel)]="patientName"
+                  class="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow">
+                  <option value="" disabled selected>Select a patient...</option>
+                  @for (p of patients; track p.id) {
+                    <option [value]="p.firstName + ' ' + p.lastName">{{ p.firstName }} {{ p.lastName }}</option>
+                  }
+                </select>
+              }
             </div>
 
             <!-- Questions Count -->
@@ -56,35 +65,13 @@ import { QuizGenerateRequest, GeneratedQuiz } from '@/core/models/assistant-ai.m
               </div>
             </div>
 
-            <!-- Difficulty -->
-            <div class="space-y-2">
-              <label class="text-sm font-medium text-foreground">Difficulty Level</label>
-              <div class="flex gap-2">
-                @for (d of difficulties; track d.value) {
-                  <button
-                    (click)="difficultyLevel = d.value"
-                    [class]="difficultyLevel === d.value
-                      ? 'flex-1 py-2.5 rounded-xl text-sm font-bold text-white shadow-md transition-all ' + d.activeClass
-                      : 'flex-1 py-2.5 rounded-xl text-sm font-medium border border-input bg-background hover:bg-accent transition-colors'">
-                    {{ d.emoji }} {{ d.label }}
-                  </button>
-                }
-              </div>
-            </div>
+            <!-- Difficulty is hidden (AI detected) -->
 
-            <!-- Caregiver ID -->
-            <div class="space-y-2">
-              <label class="text-sm font-medium text-foreground">Caregiver ID</label>
-              <input type="number"
-                [(ngModel)]="caregiverId"
-                placeholder="Patient/Caregiver ID"
-                class="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow" />
-            </div>
+            <!-- Caregiver ID is hidden -->
 
-            <!-- Generate Button -->
             <button
-              (click)="generateQuiz()"
-              [disabled]="isGenerating() || !topic.trim()"
+              (click)="generateQuizForPatient()"
+              [disabled]="isGenerating() || !patientName.trim()"
               class="w-full py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/25 transition-all flex items-center justify-center gap-2">
               @if (isGenerating()) {
                 <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -114,8 +101,15 @@ import { QuizGenerateRequest, GeneratedQuiz } from '@/core/models/assistant-ai.m
                 <span class="text-2xl">✅</span>
                 <div>
                   <p class="font-semibold text-emerald-800 dark:text-emerald-200">Quiz Generated Successfully!</p>
-                  <p class="text-sm text-emerald-600 dark:text-emerald-400">
-                    "{{ quiz.topic }}" — {{ quiz.questions?.length || 0 }} questions • Level {{ quiz.levelReached }} • Saved to game-service (ID: {{ quiz.id }})
+                  <p class="text-sm text-emerald-600 dark:text-emerald-400 mt-1">
+                    "{{ quiz.topic }}" — {{ quiz.questions && quiz.questions.length ? quiz.questions.length : 0 }} questions • Saved to game-service (ID: {{ quiz.id }})
+                  </p>
+                  <p class="text-xs mt-2 inline-flex items-center px-2.5 py-1 rounded-full font-bold bg-white/50 dark:bg-black/20 text-emerald-800 dark:text-emerald-300">
+                    <span class="mr-1">🤖</span> AI Detected Level: 
+                    @if (quiz.levelReached === 1) { 1 (Easy) }
+                    @else if (quiz.levelReached === 2) { 2 (Medium) }
+                    @else if (quiz.levelReached === 3) { 3 (Hard) }
+                    @else { {{ quiz.levelReached }} }
                   </p>
                 </div>
               </div>
@@ -186,49 +180,69 @@ import { QuizGenerateRequest, GeneratedQuiz } from '@/core/models/assistant-ai.m
     </div>
   `,
 })
-export class AiQuizGeneratorComponent {
+export class AiQuizGeneratorComponent implements OnInit {
   private readonly aiService: AssistantAIService;
+  private readonly userService: UserApiService;
 
-  topic = '';
+  mode: 'patient' = 'patient';
+  patientName = '';
   numberOfQuestions = 5;
-  difficultyLevel = 1;
+  difficultyLevel: number | null = null;
   caregiverId = 1;
+
+  patients: UserInfo[] = [];
+  isLoadingPatients = false;
 
   isGenerating = signal(false);
   generatedQuiz = signal<GeneratedQuiz | null>(null);
   errorMessage = signal<string | null>(null);
 
-  difficulties = [
-    { value: 1, label: 'Easy', emoji: '🟢', activeClass: 'bg-emerald-500 shadow-emerald-500/25' },
-    { value: 2, label: 'Med', emoji: '🟡', activeClass: 'bg-amber-500 shadow-amber-500/25' },
-    { value: 3, label: 'Hard', emoji: '🔴', activeClass: 'bg-red-500 shadow-red-500/25' },
-  ];
+  // Difficulties array removed since it is AI-detected
 
-  constructor(aiService: AssistantAIService) {
+  constructor(aiService: AssistantAIService, userService: UserApiService) {
     this.aiService = aiService;
+    this.userService = userService;
   }
 
-  generateQuiz(): void {
-    if (!this.topic.trim() || this.isGenerating()) return;
+  ngOnInit(): void {
+    this.loadPatients();
+  }
+
+  loadPatients(): void {
+    this.isLoadingPatients = true;
+    this.userService.getUsersByRole('PATIENT').subscribe({
+      next: (users) => {
+        this.patients = users;
+        this.isLoadingPatients = false;
+      },
+      error: (err) => {
+        console.error('Failed to load patients', err);
+        this.isLoadingPatients = false;
+      }
+    });
+  }
+
+  // Method completely removed since we only generate for patients now
+
+  generateQuizForPatient(): void {
+    if (!this.patientName.trim() || this.isGenerating()) return;
 
     this.isGenerating.set(true);
     this.errorMessage.set(null);
     this.generatedQuiz.set(null);
 
-    const request: QuizGenerateRequest = {
-      topic: this.topic.trim(),
+    this.aiService.generateQuizFromPatientName({
+      patientName: this.patientName.trim(),
       numberOfQuestions: this.numberOfQuestions,
-      difficultyLevel: this.difficultyLevel,
+      difficultyLevel: this.difficultyLevel ?? undefined,
       caregiverId: this.caregiverId,
-    };
-
-    this.aiService.generateQuiz(request).subscribe({
+    }).subscribe({
       next: (quiz) => {
         this.generatedQuiz.set(quiz);
         this.isGenerating.set(false);
       },
       error: (err) => {
-        this.errorMessage.set(err.error?.message || err.message || 'Failed to generate quiz');
+        this.errorMessage.set(err.error?.message || 'Failed to generate patient quiz. Verify the patient name.');
         this.isGenerating.set(false);
       },
     });

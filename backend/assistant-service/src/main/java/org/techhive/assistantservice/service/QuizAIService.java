@@ -42,35 +42,35 @@ public class QuizAIService {
         // 2. Parse the AI response
         List<Map<String, Object>> parsedQuestions = parseAIQuizResponse(aiResponse);
 
-        // 3. Create the quiz in game-service
-        QuizDTO quizDTO = QuizDTO.builder()
+        // 3. Save the main Quiz entity using GameService
+        QuizDTO initialQuiz = QuizDTO.builder()
                 .topic(request.getTopic())
                 .totalScore(0)
                 .dateTaken(LocalDateTime.now())
                 .caregiverId(request.getCaregiverId())
                 .levelReached(request.getDifficultyLevel())
                 .build();
+        
+        QuizDTO createdQuiz = gameServiceClient.createQuiz(initialQuiz);
+        log.info("Quiz created in DB with ID: {}", createdQuiz.getId());
 
-        QuizDTO createdQuiz = gameServiceClient.createQuiz(quizDTO);
-        log.info("Created quiz with ID: {}", createdQuiz.getId());
-
-        // 4. Create questions and answers
+        // 4. Save Questions and Answers matching the AI response
         List<QuestionDTO> createdQuestions = new ArrayList<>();
+
         for (Map<String, Object> q : parsedQuestions) {
             QuestionDTO questionDTO = QuestionDTO.builder()
                     .text((String) q.get("question"))
                     .difficultyLevel(request.getDifficultyLevel())
                     .quizId(createdQuiz.getId())
                     .build();
-
+            
             QuestionDTO createdQuestion = gameServiceClient.createQuestion(questionDTO);
-            log.info("Created question ID: {}", createdQuestion.getId());
 
             // Create answers for this question
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> answers = (List<Map<String, Object>>) q.get("answers");
-            if (answers != null) {
-                List<AnswerDTO> answerDTOs = new ArrayList<>();
+            if (answers != null && !answers.isEmpty()) {
+                List<AnswerDTO> answersToCreate = new ArrayList<>();
                 for (Map<String, Object> a : answers) {
                     AnswerDTO answerDTO = AnswerDTO.builder()
                             .text((String) a.get("text"))
@@ -78,18 +78,16 @@ public class QuizAIService {
                             .explanation((String) a.get("explanation"))
                             .questionId(createdQuestion.getId())
                             .build();
-                    answerDTOs.add(answerDTO);
+                    answersToCreate.add(answerDTO);
                 }
-
-                List<AnswerDTO> createdAnswers = gameServiceClient.createAnswersBatch(answerDTOs);
-                createdQuestion.setAnswers(createdAnswers);
+                List<AnswerDTO> savedAnswers = gameServiceClient.createAnswersBatch(answersToCreate);
+                createdQuestion.setAnswers(savedAnswers);
             }
-
             createdQuestions.add(createdQuestion);
         }
 
         createdQuiz.setQuestions(createdQuestions);
-        log.info("Quiz generation complete: {} questions created", createdQuestions.size());
+        log.info("Quiz generation complete: {} questions saved to game-service database", createdQuestions.size());
         return createdQuiz;
     }
 
@@ -101,13 +99,22 @@ public class QuizAIService {
             default -> "medium";
         };
 
-        String prompt = String.format("""
+        StringBuilder promptBuilder = new StringBuilder();
+        promptBuilder.append(String.format("""
                 You are an expert in creating cognitive assessment quizzes for Alzheimer's patients.
                 Generate a quiz about "%s" with exactly %d questions at %s difficulty level.
+                """, request.getTopic(), request.getNumberOfQuestions(), difficultyLabel));
+
+        if (request.getCustomContext() != null && !request.getCustomContext().isBlank()) {
+            promptBuilder.append("\nPATIENT CONTEXT (Crucial Data):\n")
+                         .append(request.getCustomContext()).append("\n");
+        }
+
+        promptBuilder.append("""
                 
                 Context: This quiz is designed to assess memory and cognitive function in patients
                 with potential Alzheimer's disease. Questions should be clear, unambiguous, and
-                appropriate for the target difficulty.
+                appropriate for the target difficulty. Use the PATIENT CONTEXT above (if provided) to personalize the formulation of questions.
                 
                 For each question, provide exactly 4 answer choices with:
                 - Exactly ONE correct answer
@@ -127,7 +134,9 @@ public class QuizAIService {
                     ]
                   }
                 ]
-                """, request.getTopic(), request.getNumberOfQuestions(), difficultyLabel);
+                """);
+        
+        String prompt = promptBuilder.toString();
 
         try {
             ChatClient chatClient = chatClientBuilder.build();
@@ -136,50 +145,9 @@ public class QuizAIService {
                     .call()
                     .content();
         } catch (Exception e) {
-            log.warn("OpenAI API call failed ({}), using fallback quiz generation", e.getMessage());
-            return generateFallbackQuiz(request);
+            log.error("OpenAI API call failed: {}", e.getMessage(), e);
+            throw new RuntimeException("OpenAI API communication failed: " + e.getMessage(), e);
         }
-    }
-
-    /**
-     * Fallback: generates realistic quiz JSON without calling OpenAI.
-     */
-    private String generateFallbackQuiz(QuizGenerateRequest request) {
-        String topic = request.getTopic();
-        int count = request.getNumberOfQuestions();
-
-        // Pre-built question templates for cognitive assessment
-        String[][] templates = {
-            {"What is the name of the red fruit often used in cakes?", "Strawberry", "Banana", "Apple", "Orange", "Strawberries are red and commonly used in desserts and pastries."},
-            {"Which domestic animal meows?", "Cat", "Dog", "Rabbit", "Fish", "The cat is the only common domestic animal that meows."},
-            {"What is the capital of France?", "Paris", "Lyon", "Marseille", "Toulouse", "Paris has been the capital of France for centuries."},
-            {"What color is the sky on a clear day?", "Blue", "Green", "Red", "Yellow", "The sky appears blue due to the scattering of sunlight by the atmosphere."},
-            {"How many days are there in a week?", "7", "5", "6", "10", "A week always contains exactly 7 days."},
-            {"Which month comes after January?", "February", "March", "April", "December", "February is the second month of the year."},
-            {"What is the opposite of 'hot'?", "Cold", "Warm", "Burning", "Mild", "Cold is the direct antonym of hot."},
-            {"What is 2 + 2?", "4", "3", "5", "6", "The addition of 2 and 2 equals 4."},
-            {"What do you use to write on paper?", "A pen", "A hammer", "A spoon", "A glass", "A pen is the most common writing instrument."},
-            {"Which season comes after winter?", "Spring", "Summer", "Autumn", "Winter", "Spring always follows winter in the seasonal cycle."},
-        };
-
-        StringBuilder json = new StringBuilder("[");
-        for (int i = 0; i < Math.min(count, templates.length); i++) {
-            String[] t = templates[i];
-            if (i > 0) json.append(",");
-            json.append(String.format("""
-                {
-                  "question": "%s (Topic: %s)",
-                  "answers": [
-                    {"text": "%s", "isCorrect": true, "explanation": "%s"},
-                    {"text": "%s", "isCorrect": false, "explanation": "This is not the correct answer."},
-                    {"text": "%s", "isCorrect": false, "explanation": "This is not the correct answer."},
-                    {"text": "%s", "isCorrect": false, "explanation": "This is not the correct answer."}
-                  ]
-                }
-                """, t[0], topic, t[1], t[5], t[2], t[3], t[4]));
-        }
-        json.append("]");
-        return json.toString();
     }
 
     @SuppressWarnings("unchecked")

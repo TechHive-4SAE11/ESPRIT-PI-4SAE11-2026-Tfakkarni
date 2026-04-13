@@ -19,7 +19,6 @@ public class VideoGenerateRequest {
     @NotNull(message = "Patient ID is required")
     private Long patientId;
 
-    @NotBlank(message = "Topic is required")
     private String topic;
 
     @NotBlank(message = "Memory type is required")

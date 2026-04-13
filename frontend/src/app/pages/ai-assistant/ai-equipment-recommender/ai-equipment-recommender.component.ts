@@ -1,7 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AssistantAIService } from '@/core/services/assistant-ai.service';
+import { UserApiService, UserInfo } from '@/core/services/user-api.service';
 import {
   EquipmentRecommendRequest,
   EquipmentRecommendResponse,
@@ -37,44 +38,24 @@ import {
               <span class="text-xl">🏥</span> Patient Info
             </h3>
 
-            <!-- Patient ID -->
+            <!-- Patient Selection -->
             <div class="space-y-2">
-              <label class="text-sm font-medium">Patient ID</label>
-              <input type="number" [(ngModel)]="patientId"
-                class="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40 transition-shadow" />
+              <label class="text-sm font-medium">Select Patient</label>
+              @if (isLoadingPatients) {
+                <div class="w-full px-4 py-2.5 rounded-xl border border-input bg-muted text-sm text-muted-foreground animate-pulse">Loading patients...</div>
+              } @else {
+                <select
+                  [(ngModel)]="patientName"
+                  class="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/40 transition-shadow">
+                  <option value="" disabled selected>Select a patient...</option>
+                  @for (p of patients; track p.id) {
+                    <option [value]="p.firstName + ' ' + p.lastName">{{ p.firstName }} {{ p.lastName }}</option>
+                  }
+                </select>
+              }
             </div>
 
-            <!-- Condition -->
-            <div class="space-y-2">
-              <label class="text-sm font-medium">Medical Condition</label>
-              <div class="grid grid-cols-2 gap-2">
-                @for (c of conditions; track c.value) {
-                  <button
-                    (click)="condition = c.value"
-                    [class]="condition === c.value
-                      ? 'py-2.5 px-3 rounded-xl text-xs font-bold bg-cyan-500 text-white shadow-md shadow-cyan-500/25'
-                      : 'py-2.5 px-3 rounded-xl text-xs font-medium border border-input bg-background hover:bg-accent transition-colors'">
-                    {{ c.emoji }} {{ c.label }}
-                  </button>
-                }
-              </div>
-            </div>
-
-            <!-- Severity -->
-            <div class="space-y-2">
-              <label class="text-sm font-medium">Severity</label>
-              <div class="flex gap-2">
-                @for (s of severities; track s.value) {
-                  <button
-                    (click)="severity = s.value"
-                    [class]="severity === s.value
-                      ? 'flex-1 py-2.5 rounded-xl text-sm font-bold text-white shadow-md transition-all ' + s.activeClass
-                      : 'flex-1 py-2.5 rounded-xl text-sm font-medium border border-input bg-background hover:bg-accent transition-colors'">
-                    {{ s.label }}
-                  </button>
-                }
-              </div>
-            </div>
+            <!-- AI automatically determines condition and severity from Medical Folder -->
 
             <button
               (click)="recommend()"
@@ -162,7 +143,7 @@ import {
               <div class="text-5xl mb-4">🏥</div>
               <h3 class="text-lg font-semibold mb-2 text-foreground">No recommendations yet</h3>
               <p class="text-sm text-muted-foreground max-w-sm mx-auto">
-                Select a patient condition and severity, then click "Get Recommendations" for AI-powered suggestions.
+                Select a patient, then click "Get Recommendations" to automatically analyze their medical folder and suggest equipment.
               </p>
             </div>
           }
@@ -186,56 +167,55 @@ import {
     </div>
   `,
 })
-export class AiEquipmentRecommenderComponent {
+export class AiEquipmentRecommenderComponent implements OnInit {
   private readonly aiService: AssistantAIService;
+  private readonly userService: UserApiService;
 
-  patientId = 1;
-  condition = 'MOBILITY';
-  severity = 'MODERATE';
+  patientName = '';
+  patients: UserInfo[] = [];
+  isLoadingPatients = false;
 
   isLoading = signal(false);
   response = signal<EquipmentRecommendResponse | null>(null);
   errorMessage = signal<string | null>(null);
 
-  conditions = [
-    { value: 'MOBILITY', label: 'Mobility', emoji: '🦽' },
-    { value: 'RESPIRATORY', label: 'Respiratory', emoji: '🫁' },
-    { value: 'CARDIAC', label: 'Cardiac', emoji: '❤️' },
-    { value: 'NEUROLOGICAL', label: 'Neuro', emoji: '🧠' },
-    { value: 'ORTHOPEDIC', label: 'Orthopedic', emoji: '🦴' },
-    { value: 'DAILY_LIVING', label: 'Daily Living', emoji: '🏠' },
-  ];
-
-  severities = [
-    { value: 'MILD', label: 'Mild', activeClass: 'bg-emerald-500 shadow-emerald-500/25' },
-    { value: 'MODERATE', label: 'Moderate', activeClass: 'bg-amber-500 shadow-amber-500/25' },
-    { value: 'SEVERE', label: 'Severe', activeClass: 'bg-red-500 shadow-red-500/25' },
-  ];
-
-  constructor(aiService: AssistantAIService) {
+  constructor(aiService: AssistantAIService, userService: UserApiService) {
     this.aiService = aiService;
+    this.userService = userService;
+  }
+
+  ngOnInit(): void {
+    this.loadPatients();
+  }
+
+  loadPatients(): void {
+    this.isLoadingPatients = true;
+    this.userService.getUsersByRole('PATIENT').subscribe({
+      next: (users) => {
+        this.patients = users;
+        this.isLoadingPatients = false;
+      },
+      error: (err) => {
+        console.error('Failed to load patients', err);
+        this.isLoadingPatients = false;
+      }
+    });
   }
 
   recommend(): void {
-    if (this.isLoading()) return;
+    if (this.isLoading() || !this.patientName) return;
 
     this.isLoading.set(true);
     this.errorMessage.set(null);
     this.response.set(null);
 
-    const request: EquipmentRecommendRequest = {
-      patientId: this.patientId,
-      condition: this.condition,
-      severity: this.severity,
-    };
-
-    this.aiService.recommendEquipment(request).subscribe({
+    this.aiService.recommendEquipmentFromPatientName(this.patientName).subscribe({
       next: (res) => {
         this.response.set(res);
         this.isLoading.set(false);
       },
       error: (err) => {
-        this.errorMessage.set(err.error?.message || 'Failed to get recommendations');
+        this.errorMessage.set(err.error?.message || 'Failed to get recommendations for patient');
         this.isLoading.set(false);
       },
     });

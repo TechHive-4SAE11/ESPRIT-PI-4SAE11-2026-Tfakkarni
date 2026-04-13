@@ -14,6 +14,7 @@ import org.techhive.assistantservice.dto.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,28 +31,34 @@ public class VoiceAssistantService {
     private final GameServiceClient gameServiceClient;
     private final MedicalServiceClient medicalServiceClient;
     private final QuizAIService quizAIService;
+    private final VideoScriptService videoScriptService;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     /**
      * Process a voice command and return an appropriate response.
      */
     public VoiceCommandResponse processCommand(VoiceCommandRequest request) {
-        String command = request.getCommand().trim().toLowerCase();
+        String command = request.getCommand().trim();
         log.info("Processing voice command: '{}' from user: {}", command, request.getUserId());
 
         try {
-            // Pattern matching for known commands
-            if (command.startsWith("emprunter ")) {
-                return handleBorrowCommand(command, request.getUserId());
-            } else if (command.startsWith("rendre ")) {
-                return handleReturnCommand(command, request.getUserId());
-            } else if (command.startsWith("quiz sur ") || command.startsWith("quiz about ")) {
-                return handleQuizCommand(command, request.getUserId());
-            } else if (command.equals("statut") || command.equals("status")) {
-                return handleStatusCommand(request.getUserId());
-            } else {
-                // Use AI for unrecognized commands
-                return handleAICommand(command, request.getUserId());
-            }
+            // STEP 1: Use Spring AI to classify the user's intent
+            String aiClassification = classifyIntentWithAI(command);
+            log.info("AI Classification Result: {}", aiClassification);
+
+            Map<String, String> parsed = parseAIClassification(aiClassification);
+            String intent = parsed.getOrDefault("action", "UNKNOWN");
+            String parameter = parsed.getOrDefault("parameter", "");
+
+            // STEP 2: Route to the proper handler based on the exact intent
+            return switch (intent.toUpperCase()) {
+                case "BORROW" -> handleBorrowCommand(parameter, request.getUserId());
+                case "RETURN" -> handleReturnCommand(parameter, request.getUserId());
+                case "QUIZ" -> handleQuizCommand(parameter, request.getUserId());
+                case "STATUS" -> handleStatusCommand(request.getUserId());
+                case "VIDEO" -> handleVideoCommand(parameter, request.getUserId(), request.getPatientName());
+                default -> handleAICommand(command, request.getUserId()); // Fallback chat
+            };
         } catch (Exception e) {
             log.error("Error processing voice command '{}': {}", command, e.getMessage());
             return VoiceCommandResponse.builder()
@@ -62,11 +69,51 @@ public class VoiceAssistantService {
         }
     }
 
+    private String classifyIntentWithAI(String command) {
+        String prompt = String.format("""
+                You are an intent classifier for a French medical application voice assistant.
+                Classify the following user command into exactly one of these actions:
+                - BORROW: Empunter ou demander un équipement médical (fauteuil, lit, etc)
+                - RETURN: Rendre, retourner, ou rendre un équipement
+                - QUIZ: Générer, créer ou lancer un quiz sur un sujet donné
+                - STATUS: Demander son statut, ses scores, ou ses emprunts
+                - VIDEO: Créer ou générer une vidéo souvenir ou thérapeutique sur un sujet
+                - UNKNOWN: Si cela ne correspond à rien.
+                
+                Command: "%s"
+                
+                Respond ONLY with a JSON object containing "action" and "parameter" (the subject/item, empty if none).
+                Example:
+                {"action": "BORROW", "parameter": "fauteuil roulant"}
+                {"action": "QUIZ", "parameter": "la géographie"}
+                {"action": "VIDEO", "parameter": "souvenirs de jeunesse"}
+                """, command);
+
+        ChatClient chatClient = chatClientBuilder.build();
+        return chatClient.prompt()
+                .user(prompt)
+                .call()
+                .content();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, String> parseAIClassification(String response) {
+        try {
+            String cleaned = response.trim();
+            if (cleaned.startsWith("```json")) cleaned = cleaned.substring(7);
+            else if (cleaned.startsWith("```")) cleaned = cleaned.substring(3);
+            if (cleaned.endsWith("```")) cleaned = cleaned.substring(0, cleaned.length() - 3);
+            return objectMapper.readValue(cleaned.trim(), new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>() {});
+        } catch (Exception e) {
+            log.error("Failed to parse intent JSON: {}", response);
+            return Map.of("action", "UNKNOWN", "parameter", "");
+        }
+    }
+
     /**
      * Handle "emprunter [equipment]" command.
      */
-    private VoiceCommandResponse handleBorrowCommand(String command, Long userId) {
-        String equipmentName = command.replaceFirst("emprunter ", "").trim();
+    private VoiceCommandResponse handleBorrowCommand(String equipmentName, Long userId) {
         log.info("Borrow request for: '{}'", equipmentName);
 
         // Search for equipment
@@ -130,8 +177,7 @@ public class VoiceAssistantService {
     /**
      * Handle "rendre [equipment]" command.
      */
-    private VoiceCommandResponse handleReturnCommand(String command, Long userId) {
-        String equipmentName = command.replaceFirst("rendre ", "").trim();
+    private VoiceCommandResponse handleReturnCommand(String equipmentName, Long userId) {
         log.info("Return request for: '{}'", equipmentName);
 
         // Find active loans for user
@@ -188,8 +234,7 @@ public class VoiceAssistantService {
     /**
      * Handle "quiz sur [subject]" command.
      */
-    private VoiceCommandResponse handleQuizCommand(String command, Long userId) {
-        String topic = command.replaceFirst("quiz (sur|about) ", "").trim();
+    private VoiceCommandResponse handleQuizCommand(String topic, Long userId) {
         log.info("Quiz generation request on topic: '{}'", topic);
 
         QuizGenerateRequest quizRequest = QuizGenerateRequest.builder()
@@ -211,6 +256,38 @@ public class VoiceAssistantService {
             return VoiceCommandResponse.builder()
                     .type("ERROR")
                     .message("Impossible de générer le quiz: " + e.getMessage())
+                    .build();
+        }
+    }
+    
+    /**
+     * Handle video generation command.
+     */
+    private VoiceCommandResponse handleVideoCommand(String topic, Long userId, String patientName) {
+        log.info("Video generation request on topic: '{}' for patient: '{}'", topic, patientName);
+        
+        VideoGenerateRequest videoReq = VideoGenerateRequest.builder()
+                .topic(topic)
+                .patientId(userId)
+                .patientName(patientName)
+                .memoryType("PHOTO")
+                .duration(60)
+                .build();
+                
+        try {
+            VideoGenerateResponse video = videoScriptService.generateVideoScript(videoReq);
+            String nameString = (patientName != null && !patientName.trim().isEmpty()) ? " pour " + patientName : "";
+            
+            return VoiceCommandResponse.builder()
+                    .type("ACTION")
+                    .message(String.format("🎬 Vidéo personnalisée sur '%s'%s générée avec succès !",
+                            topic, nameString))
+                    .data(video)
+                    .build();
+        } catch (Exception e) {
+            return VoiceCommandResponse.builder()
+                    .type("ERROR")
+                    .message("Impossible de générer la vidéo: " + e.getMessage())
                     .build();
         }
     }

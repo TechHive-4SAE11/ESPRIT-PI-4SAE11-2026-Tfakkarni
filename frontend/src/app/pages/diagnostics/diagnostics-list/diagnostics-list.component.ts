@@ -11,7 +11,6 @@ import { ZardAlertDialogService } from '@/shared/components/alert-dialog';
 import { ZardDialogService } from '@/shared/components/dialog';
 import { DiagnosticsService, type Diagnostics } from '@/core/services/diagnostics.service';
 import { MedicalFolderService, type MedicalFolder } from '@/core/services/medical-folder.service';
-// @ts-expect-error - used for dynamic component instantiation in dialog.create()
 import { DiagnosticsFormComponent } from '../diagnostics-form/diagnostics-form.component';
 
 const PAGE_SIZE = 10;

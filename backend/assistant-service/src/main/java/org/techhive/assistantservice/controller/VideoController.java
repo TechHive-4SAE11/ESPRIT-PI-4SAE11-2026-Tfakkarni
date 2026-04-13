@@ -29,22 +29,43 @@ public class VideoController {
 
     /**
      * POST /api/ai/video/generate
-     * Generate a personalized memory video script and storyboard.
+     * Generate a personalized memory video script, storyboard, AND render via D-ID.
+     * The response includes the video URL if D-ID rendering succeeds.
      */
     @PostMapping("/generate")
     public ResponseEntity<?> generateVideo(@Valid @RequestBody VideoGenerateRequest request) {
-        log.info("Video generation request: patient={}, topic={}, type={}, duration={}",
+        log.info("=== VIDEO GENERATE REQUEST === patient={}, topic={}, type={}, duration={}",
                 request.getPatientId(), request.getTopic(), request.getMemoryType(), request.getDuration());
 
         try {
+            // 1. Générer le script et créer l'entité
             VideoGenerateResponse response = videoScriptService.generateVideoScript(request);
+            log.info("Script generated: videoId={}, status={}", response.getVideoId(), response.getStatus());
+
+            // 2. Si le provider est D_ID, déclencher automatiquement le rendu
+            if ("SCRIPT_ONLY".equals(response.getStatus()) && videoApiIntegrationService.isExternalProviderConfigured()) {
+                log.info("Auto-rendering video {} with external provider", response.getVideoId());
+                try {
+                    String videoUrl = videoApiIntegrationService.generateVideoFromScript(response.getVideoId(), response.getScript());
+                    
+                    // Mettre à jour la réponse avec l'URL
+                    response.setVideoUrl(videoUrl);
+                    response.setStatus(videoUrl != null ? "READY" : "FAILED");
+                } catch (Exception apiEx) {
+                    log.error("External video API error, but script was saved. VideoId={}", response.getVideoId(), apiEx);
+                    response.setStatus("FAILED");
+                }
+            }
+
+            log.info("=== VIDEO GENERATE RESPONSE === videoId={}, status={}, videoUrl={}",
+                    response.getVideoId(), response.getStatus(), response.getVideoUrl());
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (Exception e) {
             log.error("Video generation failed: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
                     .body(Map.of(
                             "error", "Video generation failed",
-                            "message", e.getMessage()
+                            "message", e.getMessage() != null ? e.getMessage() : "Unknown error"
                     ));
         }
     }
@@ -79,25 +100,39 @@ public class VideoController {
 
     /**
      * POST /api/ai/video/{videoId}/render
-     * Trigger external API rendering for a video script.
+     * Trigger external API rendering for an existing video script.
+     * Use this to re-render a failed video or to render a SCRIPT_ONLY video.
      */
     @PostMapping("/{videoId}/render")
     public ResponseEntity<?> renderVideo(@PathVariable Long videoId) {
-        log.info("Render video request: {}", videoId);
+        log.info("=== RENDER VIDEO REQUEST === Video ID: {}", videoId);
 
         try {
             VideoGenerateResponse video = videoScriptService.getVideoById(videoId);
+
+            if (video.getScript() == null || video.getScript().isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "No script found for video " + videoId));
+            }
+
             String videoUrl = videoApiIntegrationService.generateVideoFromScript(videoId, video.getScript());
+
+            log.info("=== RENDER VIDEO RESULT === Video ID: {} | URL: {}", videoId, videoUrl);
 
             return ResponseEntity.ok(Map.of(
                     "videoId", videoId,
-                    "videoUrl", videoUrl != null ? videoUrl : "Script-only mode: no video URL generated",
-                    "status", videoUrl != null ? "RENDERING" : "SCRIPT_ONLY"
+                    "videoUrl", videoUrl != null ? videoUrl : "No URL generated",
+                    "status", videoUrl != null ? "READY" : "SCRIPT_ONLY",
+                    "message", videoUrl != null ? "Video rendered successfully" : "Script-only mode: no external API configured"
             ));
         } catch (Exception e) {
-            log.error("Video rendering failed: {}", e.getMessage(), e);
+            log.error("Video rendering failed for video {}: {}", videoId, e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Video rendering failed", "message", e.getMessage()));
+                    .body(Map.of(
+                            "error", "Video rendering failed",
+                            "message", e.getMessage() != null ? e.getMessage() : "Unknown error",
+                            "videoId", videoId
+                    ));
         }
     }
 

@@ -1,8 +1,9 @@
-import { Component, signal, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
+import { Component, signal, ElementRef, ViewChild, AfterViewChecked, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AssistantAIService } from '@/core/services/assistant-ai.service';
 import { VoiceCommandResponse } from '@/core/models/assistant-ai.model';
+import { UserApiService } from '@/core/services/user-api.service';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -54,9 +55,20 @@ interface ChatMessage {
             }
 
             <div class="pt-3 border-t border-border">
-              <h4 class="text-xs font-semibold text-muted-foreground mb-2">USER ID</h4>
-              <input type="number" [(ngModel)]="userId"
-                class="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40" />
+              <h4 class="text-xs font-semibold text-muted-foreground mb-2">Sélection du Patient</h4>
+              @if (isLoadingPatients) {
+                <div class="text-xs text-muted-foreground animate-pulse">Chargement des patients...</div>
+              } @else {
+                <select [(ngModel)]="userId"
+                  class="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40">
+                  @for (patient of patients; track patient.id) {
+                    <option [value]="patient.id">{{ patient.firstName }} {{ patient.lastName }}</option>
+                  }
+                  @if (patients.length === 0) {
+                    <option [value]="1">Utilisateur par défaut</option>
+                  }
+                </select>
+              }
             </div>
           </div>
         </div>
@@ -126,11 +138,32 @@ interface ChatMessage {
             <!-- Input -->
             <div class="border-t border-border p-4">
               <div class="flex gap-3">
+                <button
+                  (click)="toggleListening()"
+                  type="button"
+                  [class]="isListening() 
+                    ? 'p-3 rounded-xl bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/50' 
+                    : 'p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors'"
+                  title="Activer la reconnaissance vocale">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                </button>
+                <button
+                  (click)="stopAssistantVoice()"
+                  type="button"
+                  class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  title="Faire taire l'assistant">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                  </svg>
+                </button>
                 <input type="text"
                   [(ngModel)]="commandInput"
                   (keyup.enter)="sendCommand()"
                   [disabled]="isSending()"
-                  placeholder="Type a command... (e.g. 'quiz sur la géographie' or 'statut')"
+                  placeholder="Tapez ou dictez une commande... (ex: 'quiz sur la géographie')"
                   class="flex-1 px-4 py-3 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-shadow" />
                 <button
                   (click)="sendCommand()"
@@ -154,37 +187,141 @@ export class AiVoiceAssistantComponent implements AfterViewChecked {
   userId = 1;
   messages: ChatMessage[] = [];
   isSending = signal(false);
+  isListening = signal(false);
 
   quickCommands = [
     { command: 'statut', label: 'Status', emoji: '📊', description: 'View quiz scores & active loans' },
     { command: 'quiz sur la mémoire', label: 'Memory Quiz', emoji: '🧠', description: 'Generate a memory quiz' },
     { command: 'emprunter fauteuil roulant', label: 'Borrow', emoji: '🦽', description: 'Borrow a wheelchair' },
     { command: 'rendre fauteuil roulant', label: 'Return', emoji: '↩️', description: 'Return equipment' },
+    { command: 'vidéo sur les souvenirs', label: 'Video', emoji: '🎬', description: 'Generate a memory video' },
   ];
 
   exampleCommands = [
     'statut',
     'quiz sur les couleurs',
     'emprunter stéthoscope',
+    'créer vidéo de paris'
   ];
 
-  constructor(aiService: AssistantAIService) {
+  private recognition: any;
+
+  patients: any[] = [];
+  isLoadingPatients = false;
+  private readonly userService: UserApiService;
+
+  constructor(aiService: AssistantAIService, userService: UserApiService) {
     this.aiService = aiService;
+    this.userService = userService;
+    this.initSpeechRecognition();
+  }
+
+  ngOnInit(): void {
+    this.loadPatients();
+  }
+
+  loadPatients(): void {
+    this.isLoadingPatients = true;
+    this.userService.getUsersByRole('PATIENT').subscribe({
+      next: (users) => {
+        this.patients = users;
+        // Si possible, sélectionner le premier patient par défaut pour éviter de laisser 1 si la BD a d'autres IDs
+        if (this.patients.length > 0) {
+           this.userId = this.patients[0].id;
+        }
+        this.isLoadingPatients = false;
+      },
+      error: (err) => {
+        console.error('Failed to load patients', err);
+        this.isLoadingPatients = false;
+      }
+    });
   }
 
   ngAfterViewChecked(): void {
     this.scrollToBottom();
   }
 
+  private initSpeechRecognition(): void {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      this.recognition = new SpeechRecognition();
+      this.recognition.lang = 'fr-FR';
+      this.recognition.continuous = false;
+      this.recognition.interimResults = true;
+
+      this.recognition.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        this.commandInput = transcript;
+      };
+
+      this.recognition.onend = () => {
+        this.isListening.set(false);
+        if (this.commandInput.trim()) {
+           this.sendCommand();
+        }
+      };
+
+      this.recognition.onerror = (event: any) => {
+        console.error('Speech recognition error', event.error);
+        this.isListening.set(false);
+      };
+    } else {
+      console.warn('Speech Recognition API is not supported in this browser.');
+    }
+  }
+
+  toggleListening(): void {
+    if (!this.recognition) {
+       alert("Votre navigateur ne supporte pas la reconnaissance vocale.");
+       return;
+    }
+    
+    if (this.isListening()) {
+      this.recognition.stop();
+      this.isListening.set(false);
+    } else {
+      // 🛑 Arrêter l'assistant vocal s'il est en train de parler
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      this.commandInput = '';
+      this.recognition.start();
+      this.isListening.set(true);
+    }
+  }
+
   sendCommand(): void {
     if (!this.commandInput.trim() || this.isSending()) return;
+    
+    // 🛑 Arrêter l'audio si l'utilisateur envoie une nouvelle commande
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    
     this.doSend(this.commandInput.trim());
     this.commandInput = '';
   }
 
   sendQuickCommand(command: string): void {
     if (this.isSending()) return;
+    
+    // 🛑 Arrêter l'audio en cours pour cette nouvelle commande
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    
     this.doSend(command);
+  }
+
+  // Permet à l'utilisateur de cliquer sur un bouton pour faire taire l'assistant
+  stopAssistantVoice(): void {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
   }
 
   private doSend(command: string): void {
@@ -196,7 +333,15 @@ export class AiVoiceAssistantComponent implements AfterViewChecked {
 
     this.isSending.set(true);
 
-    this.aiService.sendVoiceCommand({ command, userId: this.userId }).subscribe({
+    let patientName = '';
+    if (this.userId) {
+       const selectedPatient = this.patients.find(p => p.id === Number(this.userId));
+       if (selectedPatient) {
+           patientName = `${selectedPatient.firstName} ${selectedPatient.lastName}`;
+       }
+    }
+
+    this.aiService.sendVoiceCommand({ command, userId: this.userId, patientName }).subscribe({
       next: (res: VoiceCommandResponse) => {
         this.messages.push({
           role: 'assistant',
@@ -205,12 +350,20 @@ export class AiVoiceAssistantComponent implements AfterViewChecked {
           data: res.data,
           timestamp: new Date(),
         });
+        
+        // Text-to-Speech (Optional, but adds to the voice assistant feel)
+        if ('speechSynthesis' in window) {
+           const utterance = new SpeechSynthesisUtterance(res.message);
+           utterance.lang = 'fr-FR';
+           window.speechSynthesis.speak(utterance);
+        }
+
         this.isSending.set(false);
       },
       error: (err) => {
         this.messages.push({
           role: 'assistant',
-          content: err.error?.message || 'Connection error. Is assistant-service running?',
+          content: err.error?.message || 'Erreur de connexion. L\'assistant-service est-il lancé ?',
           type: 'ERROR',
           timestamp: new Date(),
         });

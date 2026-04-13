@@ -31,4 +31,6 @@ public class QuizGenerateRequest {
 
     @NotNull(message = "Caregiver ID is required")
     private Long caregiverId;
+
+    private String customContext;  // contexte personnalisé du patient
 }

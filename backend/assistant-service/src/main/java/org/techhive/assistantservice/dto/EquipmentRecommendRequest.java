@@ -22,4 +22,6 @@ public class EquipmentRecommendRequest {
 
     @NotBlank(message = "Severity is required")
     private String severity;   // MILD, MODERATE, SEVERE
+
+    private String customContext; // Detailed medical context
 }
