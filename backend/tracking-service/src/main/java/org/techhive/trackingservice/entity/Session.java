@@ -36,7 +36,24 @@ public class Session {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public MedicalFolder getMedicalFolder() { return medicalFolder; }
+    public void setMedicalFolder(MedicalFolder medicalFolder) { this.medicalFolder = medicalFolder; }
+    public LocalDateTime getSessionDate() { return sessionDate; }
+    public void setSessionDate(LocalDateTime sessionDate) { this.sessionDate = sessionDate; }
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public List<Prescription> getPrescriptions() { return prescriptions; }
+    public void setPrescriptions(List<Prescription> prescriptions) { this.prescriptions = prescriptions; }
+    public List<CarePlan> getCarePlans() { return carePlans; }
+    public void setCarePlans(List<CarePlan> carePlans) { this.carePlans = carePlans; }
+
+    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Prescription> prescriptions = new ArrayList<>();
 
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)

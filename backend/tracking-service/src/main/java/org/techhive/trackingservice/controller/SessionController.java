@@ -77,6 +77,18 @@ public class SessionController {
         return ResponseEntity.ok(responseDTOs);
     }
 
+    @GetMapping("/patient/{patientId}")
+    public ResponseEntity<List<SessionResponseDTO>> getSessionsByPatient(@PathVariable String patientId) {
+        // Find all sessions for any folder belonging to this patient
+        List<Session> sessions = sessionService.getAllSessions().stream()
+                .filter(s -> s.getMedicalFolder().getIdPatient().equals(patientId))
+                .collect(Collectors.toList());
+        List<SessionResponseDTO> responseDTOs = sessions.stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(responseDTOs);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<SessionResponseDTO> updateSession(
             @PathVariable Long id,

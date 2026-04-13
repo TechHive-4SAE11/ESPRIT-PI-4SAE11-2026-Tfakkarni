@@ -28,7 +28,11 @@ public class SessionService {
                     session.setMedicalFolder(folder);
                     return sessionRepository.save(session);
                 })
-                .orElseThrow(() -> new RuntimeException("MedicalFolder not found with id: " + medicalFolderId));
+                .orElseGet(() -> {
+                    // If the folder is not found by ID, it might be that the ID passed is invalid 
+                    // or we need a more robust lookup. For now, throw explicit error for the ID.
+                    throw new RuntimeException("Medical Folder not found in tracking-service with id: " + medicalFolderId);
+                });
     }
 
     @Transactional(readOnly = true)

@@ -209,7 +209,9 @@ export class CarePlanManagementComponent implements OnInit, OnDestroy {
     }
 
     this.isLoadingCarePlans.set(true);
-    this.carePlanService.getCarePlansByPatient(this.patient.id.toString())
+    const patientDbId = this.patient.keycloakId || String(this.patient.id);
+
+    this.carePlanService.getCarePlansByPatient(patientDbId)
       .pipe(
         tap(plans => this.carePlans.set(plans)),
         catchError(err => {
@@ -228,13 +230,13 @@ export class CarePlanManagementComponent implements OnInit, OnDestroy {
     if (!this.doctor) return;
 
     this.isLoadingSessions.set(true);
-    const currentDoctorDbId = String(this.doctor.id);
-    const patientDbId = String(this.patient.id);
+    const doctorDbId = this.doctor.keycloakId || String(this.doctor.id);
+    const patientDbId = this.patient.keycloakId || String(this.patient.id);
 
     this.medicalFolderService.getMedicalFoldersByPatient(patientDbId)
       .pipe(
         tap(folders => {
-          const matchingFolder = folders.find(f => f.doctorId === currentDoctorDbId);
+          const matchingFolder = folders.find(f => f.doctorId === doctorDbId);
           if (matchingFolder) {
             this.matchingFolderId.set(matchingFolder.id);
             this.loadSessionsForFolder(matchingFolder.id);

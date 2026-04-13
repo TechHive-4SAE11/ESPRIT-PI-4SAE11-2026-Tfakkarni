@@ -1,6 +1,7 @@
 package org.techhive.trackingservice.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.techhive.trackingservice.enums.CareActivityType;
@@ -8,6 +9,7 @@ import org.techhive.trackingservice.enums.CareActivityType;
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class CareActivityResponseDTO {

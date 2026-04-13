@@ -101,6 +101,22 @@ public class MedicalFolderController {
 	}
 
 	/**
+	 * Get medical folders for a specific patient and doctor
+	 *
+	 * @param patientId the patient ID
+	 * @param doctorId the doctor ID
+	 * @return list of medical folder responses with status 200
+	 */
+	@GetMapping("/patient/{patientId}/doctor/{doctorId}")
+	public ResponseEntity<List<MedicalFolderResponse>> getMedicalFoldersByPatientAndDoctor(
+			@PathVariable String patientId,
+			@PathVariable String doctorId) {
+		log.info("GET /api/medical-folders/patient/{}/doctor/{} - Fetching medical folders", patientId, doctorId);
+		List<MedicalFolderResponse> responses = medicalFolderService.getMedicalFoldersByPatientIdAndDoctorId(patientId, doctorId);
+		return ResponseEntity.ok(responses);
+	}
+
+	/**
 	 * Create a new medical folder
 	 * Doctor ID is automatically extracted from the JWT token (no need to send it in request body)
 	 * 

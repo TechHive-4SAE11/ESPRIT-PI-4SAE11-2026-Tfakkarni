@@ -10,6 +10,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MedicationComplianceResponse {
+    private String medicationName;
+    private String startDate;
+    private String endDate;
     private int taken;
     private int missed;
 }

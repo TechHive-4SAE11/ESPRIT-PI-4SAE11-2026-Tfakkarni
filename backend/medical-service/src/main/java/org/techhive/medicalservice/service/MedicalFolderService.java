@@ -21,6 +21,8 @@ public interface MedicalFolderService {
 
 	List<MedicalFolderResponse> getMedicalFoldersByPatientId(String patientId);
 
+	List<MedicalFolderResponse> getMedicalFoldersByPatientIdAndDoctorId(String patientId, String doctorId);
+
 	MedicalFolderResponse createMedicalFolder(CreateMedicalFolderRequest request);
 
 	MedicalFolderResponse getMedicalFolderById(Long id);

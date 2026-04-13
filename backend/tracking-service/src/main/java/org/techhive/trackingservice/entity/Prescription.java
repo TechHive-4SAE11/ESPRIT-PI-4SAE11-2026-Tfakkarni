@@ -24,7 +24,7 @@ public class Prescription {
     @JoinColumn(name = "session_id", nullable = false)
     private Session session;
 
-    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Medication> medications = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false)

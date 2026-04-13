@@ -59,6 +59,7 @@ public class SecurityConfig {
             .pathMatchers("/api/users/register").permitAll()
             .pathMatchers("/api/password-reset/**").permitAll()
             .pathMatchers("/api/users/kyc/**").permitAll()
+            .pathMatchers(HttpMethod.GET, "/api/users/keycloak/**").permitAll()
             .pathMatchers("/api/games/play/**").permitAll()
             .pathMatchers("/api/games/movies/play/**").permitAll()
             // Admin health check endpoint (for monitoring/testing)

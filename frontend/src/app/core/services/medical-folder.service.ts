@@ -136,4 +136,11 @@ export class MedicalFolderService {
       params: { reason }
     });
   }
+
+  /** Download consolidated PDF for medical folder */
+  getConsolidatedPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/pdf`, {
+      responseType: 'blob'
+    });
+  }
 }

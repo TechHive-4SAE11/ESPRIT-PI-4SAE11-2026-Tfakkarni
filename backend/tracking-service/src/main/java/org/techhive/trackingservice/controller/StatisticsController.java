@@ -9,6 +9,7 @@ import org.techhive.trackingservice.service.StatisticsService;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 
 /**
  * API Statistiques.
@@ -63,6 +64,18 @@ public class StatisticsController {
 
         var range = resolveRange(startDate, endDate, period, days);
         return ResponseEntity.ok(statisticsService.getMedicationCompliance(patientId, range[0], range[1]));
+    }
+
+    @GetMapping("/{patientId}/medication-compliance-by-drug")
+    public ResponseEntity<List<MedicationComplianceResponse>> getMedicationComplianceByDrug(
+            @PathVariable String patientId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        
+        LocalDate start = (startDate != null) ? LocalDate.parse(startDate) : LocalDate.now().minusDays(30);
+        LocalDate end = (endDate != null) ? LocalDate.parse(endDate) : LocalDate.now();
+        
+        return ResponseEntity.ok(statisticsService.getMedicationComplianceByDrug(patientId, start, end));
     }
 
     @GetMapping("/{patientId}/hydration-trend")
