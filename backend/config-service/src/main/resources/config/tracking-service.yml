@@ -1,8 +1,14 @@
+# ============================================================
+# tracking-service — centralized config
+# ============================================================
 server:
   port: 18083
 
 spring:
-
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 30MB
   datasource:
     url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
     username: neondb_owner
@@ -19,18 +25,42 @@ spring:
   task:
     scheduling:
       pool:
-        size: 5  # Thread pool size for scheduled tasks
+        size: 5
 
-# Medication status scheduler configuration
 medication:
   scheduler:
     enabled: true
-    daily-update-cron: "0 0 0 * * *"          # Midnight daily
-    periodic-update-cron: "0 0 */6 * * *"     # Every 6 hours
+    daily-update-cron: "0 0 0 * * *"
+    periodic-update-cron: "0 0 */6 * * *"
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
+followup:
+  scheduler:
+    cron: "0 0 22 * * *"
+
+mailtrap:
+  token: f4ed6c5f383c7fe7e305eba8d1bcaef9
+  inbox-id: 4413425
+  from: noreply@tfakkarni.com
+
+telegram:
+  bot-token: "8761174713:AAEG23SiwUmSEDTFTlMm-7GLzUZQpqDJzzg"
+  default-chat-id: "5674590232"
+
+alert:
+  fallback-email: "doctor@gmail.com"
+
+elevenlabs:
+  api:
+    key: 73c14898e29696c0436967f175924d3902aa45ab609a206221c5275a0d4db84c
+
+daily:
+  api-key: "296f35c5b0a3624ccbc58966d8840752b08291e3a0b378964eb661b31caacb8c"
+  api-url: "https://api.daily.co/v1"
+
+claude:
+  api-key: "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"
+  api-url: "https://api.groq.com/openai/v1/chat/completions"
+  model: "llama-3.1-8b-instant"
+
+meeting:
+  room-expiry-minutes: 60

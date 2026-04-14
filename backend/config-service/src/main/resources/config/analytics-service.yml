@@ -1,0 +1,34 @@
+# ============================================================
+# analytics-service — centralized config
+# ============================================================
+server:
+  port: 18090
+
+spring:
+  datasource:
+    url: jdbc:postgresql://ep-cold-credit-alglq1kq-pooler.c-3.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
+    username: neondb_owner
+    password: npg_wNa0As4fytdT
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  task:
+    scheduling:
+      pool:
+        size: 3
+
+analytics:
+  score:
+    cache-ttl-minutes: 60
+    weights:
+      cognitive: 0.30
+      daily-functioning: 0.25
+      medical-stability: 0.20
+      iot-risk: 0.15
+      engagement: 0.10

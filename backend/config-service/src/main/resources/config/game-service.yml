@@ -1,10 +1,10 @@
+# ============================================================
+# game-service — centralized config
+# ============================================================
 server:
   port: 18082
 
 spring:
-
-  profiles:
-    active: prod  # Change to 'local' for H2 database
   datasource:
     url: jdbc:postgresql://ep-damp-bar-agi72bgl-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
     username: neondb_owner
@@ -23,17 +23,9 @@ spring:
       max-file-size: 10MB
       max-request-size: 50MB
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
-
 tmdb:
   api-key: bac4726f178ccc49f4659a52479b4725
 
-# ── TTS Pipeline (Google Translate + ElevenLabs) ──────────────────────────────
 google:
   translate:
     api-key: ${GOOGLE_TRANSLATE_API_KEY:YOUR_GOOGLE_TRANSLATE_API_KEY}
@@ -43,22 +35,3 @@ elevenlabs:
   voice-id-en: 2qfp6zPuviqeCOZIE9RZ
   voice-id-tn: GLRyn2pNxpZ4FAjmlY3z
   model-id: eleven_multilingual_v2
-
----
-spring:
-  config:
-    activate:
-      on-profile: local
-  datasource:
-    url: jdbc:h2:mem:testdb
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
-        format_sql: true
