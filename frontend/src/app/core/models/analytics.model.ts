@@ -90,3 +90,36 @@ export interface BatchJobResult {
   durationMs: number;
   message: string;
 }
+
+export interface CorrelationPoint {
+  date: string;
+  avgGameScore: number;
+  medicationAdherence: number;
+  incidentCount: number;
+}
+
+export interface PrescriptionImpactPoint {
+  date: string;
+  avgScore?: number;
+  medAdherence: number;
+  hasNewPrescription: boolean;
+}
+
+export interface PrescriptionMarker {
+  date: string;
+  description: string;
+  prescriptionId: number;
+}
+
+export interface PrescriptionImpactResponse {
+  patientKeycloakId: string;
+  impactTimeline: PrescriptionImpactPoint[];
+  markers: PrescriptionMarker[];
+}
+
+export interface CorrelationStatsResponse {
+  patientKeycloakId: string;
+  correlationTimeline: CorrelationPoint[];
+  keyInsight: string;
+  adherenceCorrelation: number;
+}

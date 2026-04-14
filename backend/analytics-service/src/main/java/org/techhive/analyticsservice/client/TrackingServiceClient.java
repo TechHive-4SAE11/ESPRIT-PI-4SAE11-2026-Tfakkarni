@@ -4,11 +4,16 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.techhive.analyticsservice.dto.PrescriptionResponseDTO;
 
+import java.util.List;
 import java.util.Map;
 
 @FeignClient(name = "tracking-service", fallback = TrackingServiceClientFallback.class)
 public interface TrackingServiceClient {
+
+    @GetMapping("/api/prescriptions/patient/{idPatient}")
+    List<PrescriptionResponseDTO> getPrescriptionsByPatient(@PathVariable("idPatient") String idPatient);
 
     @GetMapping("/api/statistics/{patientId}/medication-compliance")
     Map<String, Object> getMedicationCompliance(

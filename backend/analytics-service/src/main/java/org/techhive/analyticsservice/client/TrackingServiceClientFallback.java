@@ -1,12 +1,19 @@
 package org.techhive.analyticsservice.client;
 
 import org.springframework.stereotype.Component;
+import org.techhive.analyticsservice.dto.PrescriptionResponseDTO;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 @Component
 public class TrackingServiceClientFallback implements TrackingServiceClient {
+
+    @Override
+    public List<PrescriptionResponseDTO> getPrescriptionsByPatient(String idPatient) {
+        return Collections.emptyList();
+    }
 
     @Override
     public Map<String, Object> getMedicationCompliance(String patientId, int days) {
@@ -30,6 +37,6 @@ public class TrackingServiceClientFallback implements TrackingServiceClient {
 
     @Override
     public Map<String, Object> getHealthScore(String patientId, String date) {
-        return Map.of("totalScore", 0, "adjustedMaxScore", 0);
+        return Collections.emptyMap();
     }
 }

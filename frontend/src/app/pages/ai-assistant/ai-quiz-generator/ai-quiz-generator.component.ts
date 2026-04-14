@@ -115,7 +115,7 @@ import { QuizGenerateRequest, GeneratedQuiz } from '@/core/models/assistant-ai.m
                 <div>
                   <p class="font-semibold text-emerald-800 dark:text-emerald-200">Quiz Generated Successfully!</p>
                   <p class="text-sm text-emerald-600 dark:text-emerald-400">
-                    "{{ quiz.topic }}" — {{ quiz.questions?.length || 0 }} questions • Level {{ quiz.levelReached }} • Saved to game-service (ID: {{ quiz.id }})
+                    "{{ quiz.topic }}" — {{ quiz.questions.length }} questions • Level {{ quiz.levelReached }} • Saved to game-service (ID: {{ quiz.id }})
                   </p>
                 </div>
               </div>
