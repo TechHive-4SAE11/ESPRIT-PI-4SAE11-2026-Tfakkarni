@@ -280,7 +280,7 @@ import {
               <div class="p-4 rounded-xl bg-muted/30 text-sm leading-relaxed whitespace-pre-wrap max-h-60 overflow-y-auto">
                 {{ v.script }}
               </div>
-              @if (v.storyboard?.length) {
+              @if (v.storyboard.length) {
                 <h4 class="font-semibold">Storyboard ({{ v.storyboard.length }} scenes)</h4>
                 @for (s of v.storyboard; track s.sceneNumber) {
                   <div class="flex gap-3 p-3 rounded-xl bg-muted/20 border border-border/30">
