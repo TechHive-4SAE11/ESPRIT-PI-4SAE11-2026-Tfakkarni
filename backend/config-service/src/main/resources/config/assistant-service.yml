@@ -60,6 +60,15 @@ logging:
     org.springframework.web.reactive.function.client: DEBUG
     reactor.netty.http.client: DEBUG
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
 springdoc:
   api-docs:
     path: /v3/api-docs
