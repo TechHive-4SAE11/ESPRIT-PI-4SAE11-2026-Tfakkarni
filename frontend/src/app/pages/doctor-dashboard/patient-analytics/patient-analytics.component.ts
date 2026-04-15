@@ -47,22 +47,28 @@ import { CorrelationStatsResponse, CorrelationPoint, PrescriptionImpactResponse 
                     <span class="p-2 bg-primary/10 rounded-lg">
                       <z-icon zType="activity" class="w-5 h-5 text-primary" />
                     </span>
-                    Cognitive Response to Treatment
+                    Cognitive Response vs. Medication Adherence
                   </h3>
-                  <p class="text-sm text-muted-foreground mt-1">Tracking average game scores across prescription milestones</p>
+                  <p class="text-sm text-muted-foreground mt-1">Comparing game performance with medication compliance rates</p>
                 </div>
-                <div class="flex flex-col items-end gap-2">
-                  <z-badge zType="outline" class="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border-slate-200 dark:border-slate-700 px-3 py-1">
-                    <span class="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300">
-                      <span class="w-3 h-0.5 bg-red-500 border-t border-dashed"></span>
-                      New Treatment Start
-                    </span>
-                  </z-badge>
+                <div class="flex flex-wrap items-center gap-4">
+                  <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/5 border border-primary/10">
+                    <span class="w-3 h-3 rounded-full bg-primary"></span>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-300">GAME SCORE</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/5 border border-emerald-500/10">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-300">ADHERENCE</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/5 border border-red-500/10">
+                    <span class="w-4 h-0.5 border-t-2 border-dashed border-red-500"></span>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-300">NEW TREATMENT</span>
+                  </div>
                 </div>
               </div>
 
               <div class="w-full overflow-x-auto custom-scrollbar pb-4">
-                 <svg [attr.viewBox]="'0 0 1000 350'" class="w-full min-w-[800px] drop-shadow-sm">
+                 <svg [attr.viewBox]="'-10 -40 1020 380'" class="w-full min-w-[800px] drop-shadow-sm">
                     <!-- Subtle Background Grid -->
                     @for (v of [0, 25, 50, 75, 100]; track v) {
                       <line x1="60" [attr.y1]="impactY(v)" x2="960" [attr.y1]="impactY(v)" 
@@ -78,6 +84,10 @@ import { CorrelationStatsResponse, CorrelationPoint, PrescriptionImpactResponse 
                         <stop offset="0%" stop-color="hsl(var(--primary))" stop-opacity="0.2" />
                         <stop offset="100%" stop-color="hsl(var(--primary))" stop-opacity="0" />
                       </linearGradient>
+                      <linearGradient id="adherenceGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#10b981" stop-opacity="0.1" />
+                        <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
+                      </linearGradient>
                       <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
                         <feGaussianBlur stdDeviation="3" result="blur" />
                         <feComposite in="SourceGraphic" in2="blur" operator="over" />
@@ -92,48 +102,63 @@ import { CorrelationStatsResponse, CorrelationPoint, PrescriptionImpactResponse 
                                stroke="#f43f5e" stroke-width="2" stroke-dasharray="8,4" 
                                class="opacity-30 group-hover:opacity-100 group-hover:stroke-width-3 transition-all duration-300" />
                          
-                         <!-- Tooltip Card that appears on the TOP and only one line -->
+                         <!-- Tooltip Card that appears on the TOP -->
                          <g class="opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none">
-                            <!-- Card Body at the top -->
                             <rect [attr.x]="x - 85" y="0" width="170" height="26" rx="6" fill="#f43f5e" filter="url(#glow)" />
-                            
-                            <!-- One line description -->
                             <text [attr.x]="x" y="17" text-anchor="middle" font-size="9" font-weight="bold" fill="white">
                                {{ marker.description | slice:0:30 }}{{ marker.description.length > 30 ? '...' : '' }}
                             </text>
-
-                            <!-- Arrow pointing down to the line start -->
                             <path [attr.d]="'M ' + (x-5) + ' 26 L ' + x + ' 32 L ' + (x+5) + ' 26 Z'" fill="#f43f5e" />
                          </g>
                       </g>
                     }
 
-                    <!-- The Main Area Chart -->
+                    <!-- Adherence Path (Green) -->
+                    <path [attr.d]="adherencePath(true)" fill="url(#adherenceGradient)" />
+                    <path [attr.d]="adherencePath(false)" fill="none" stroke="#10b981" 
+                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="opacity-40" />
+
+                    <!-- The Cognitive Score Path (Purple) -->
                     <path [attr.d]="impactPath(true)" fill="url(#impactGradient)" />
                     <path [attr.d]="impactPath(false)" fill="none" class="stroke-primary" 
                           stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)" />
 
-                    <!-- Interaction Points -->
+                    <!-- Interaction Interaction Regions (Rectangles for easier hovering) -->
                     @for (point of impactData()!.impactTimeline; track point.date; let i = $index) {
-                       @if (point.avgScore !== null && point.avgScore !== undefined) {
-                          <g class="group/point">
-                            <!-- Invisible larger circle for easier hover -->
-                            <circle [attr.cx]="impactX(point.date)" [attr.cy]="impactY(point.avgScore)" r="12" fill="transparent" class="cursor-pointer" />
-                            
-                            <!-- Actual point -->
-                            <circle [attr.cx]="impactX(point.date)" [attr.cy]="impactY(point.avgScore)" r="4" 
+                      @let sx = impactX(point.date);
+                      @let sy = impactY(point.avgScore || 0);
+                      @let ay = impactY((point.medAdherence || 0) * 100);
+
+                      <g class="group/point">
+                         <!-- Large invisible hover area -->
+                         <rect [attr.x]="sx - 15" y="30" width="30" height="270" fill="transparent" class="cursor-pointer" />
+
+                         <!-- Score Circle (if exists) -->
+                         @if (point.avgScore !== null && point.avgScore !== undefined) {
+                            <circle [attr.cx]="sx" [attr.cy]="sy" r="4" 
                                     class="fill-primary stroke-white dark:stroke-slate-900 group-hover/point:r-6 transition-all duration-200" stroke-width="2" />
-                            
-                            <!-- Detailed Tooltip -->
-                            <foreignObject [attr.x]="impactX(point.date) - 45" [attr.y]="impactY(point.avgScore) - 45" width="90" height="35" 
-                                           class="opacity-0 group-hover/point:opacity-100 transition-all duration-200 pointer-events-none group-hover/point:-translate-y-1">
-                              <div class="bg-slate-900/90 backdrop-blur-md text-white px-2 py-1.5 rounded-lg text-center shadow-xl border border-white/10">
-                                <p class="text-[10px] font-bold leading-none">{{ point.avgScore | number:'1.0-0' }}%</p>
-                                <p class="text-[7px] text-slate-400 mt-1 uppercase tracking-tighter">{{ formatShortDate(point.date) }}</p>
-                              </div>
-                            </foreignObject>
-                          </g>
-                       }
+                         }
+
+                         <!-- Enhanced Multi-Data Tooltip -->
+                         <foreignObject [attr.x]="sx - 65" [attr.y]="Math.min(sy, ay) - 80" width="130" height="75" 
+                                        class="opacity-0 group-hover/point:opacity-100 transition-all duration-300 pointer-events-none group-hover/point:-translate-y-2">
+                           <div class="bg-slate-900/95 backdrop-blur-md text-white p-2 rounded-xl shadow-2xl border border-white/20">
+                             <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center border-b border-white/10 pb-1 mb-1.5">
+                               {{ formatShortDate(point.date) }}
+                             </div>
+                             <div class="space-y-1 px-1">
+                               <div class="flex justify-between items-center">
+                                 <span class="text-[9px] font-medium text-primary">Score:</span>
+                                 <span class="text-xs font-bold">{{ point.avgScore !== null ? (point.avgScore | number:'1.0-0') + '%' : 'N/A' }}</span>
+                               </div>
+                               <div class="flex justify-between items-center">
+                                 <span class="text-[9px] font-medium text-emerald-400">Adher:</span>
+                                 <span class="text-xs font-bold">{{ (point.medAdherence || 0) * 100 | number:'1.0-0' }}%</span>
+                               </div>
+                             </div>
+                           </div>
+                         </foreignObject>
+                      </g>
                     }
 
                     <!-- X-Axis Date Labels -->
@@ -154,16 +179,17 @@ import { CorrelationStatsResponse, CorrelationPoint, PrescriptionImpactResponse 
                        <z-icon zType="brain" class="text-primary w-5 h-5" />
                     </div>
                     <div>
-                      <h4 class="font-bold text-slate-900 dark:text-white mb-1">Efficacy Insight</h4>
+                      <h4 class="font-bold text-slate-900 dark:text-white mb-1">Clinical Insight</h4>
                       <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                        Assess the cognitive trend following each treatment adjustment. A <span class="text-emerald-600 font-bold">positive slope</span> after a marker confirms high response to the prescribed medication.
+                        Compare the <span class="text-primary font-bold">Cognitive Response</span> trend with <span class="text-emerald-500 font-bold">Medication Adherence</span>. 
+                        Drops in score often correlate with missed medication (low adherence) or new treatment stabilization periods.
                       </p>
                     </div>
                  </div>
                  
                  <div class="space-y-4">
                     <div class="flex items-center justify-between">
-                      <h4 class="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-[0.2em]">Treatment Timeline</h4>
+                      <h4 class="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-[0.2em]">Treatment History</h4>
                       <span class="text-[10px] py-0.5 px-2 bg-slate-100 dark:bg-slate-800 rounded font-mono text-slate-500">60 DAY VIEW</span>
                     </div>
                     <div class="grid gap-3 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
@@ -198,6 +224,7 @@ export class PatientAnalyticsComponent implements OnChanges {
   loadingImpact = signal(false);
   correlation = signal<CorrelationStatsResponse | null>(null);
   impactData = signal<PrescriptionImpactResponse | null>(null);
+  protected readonly Math = Math;
 
   avgAdherence = computed(() => {
     const timeline = this.correlation()?.correlationTimeline || [];
@@ -298,6 +325,22 @@ export class PatientAnalyticsComponent implements OnChanges {
     const points = timeline
       .filter(p => p.avgScore !== null && p.avgScore !== undefined)
       .map(p => `${this.impactX(p.date)},${this.impactY(p.avgScore!)}`);
+
+    if (points.length === 0) return "";
+    
+    let path = `M ${points.join(" L ")}`;
+    if (area) {
+      const lastX = this.impactX(timeline[timeline.length-1].date);
+      const firstX = this.impactX(timeline[0].date);
+      path += ` L ${lastX},300 L ${firstX},300 Z`;
+    }
+    return path;
+  }
+
+  adherencePath(area: boolean): string {
+    const timeline = this.impactData()?.impactTimeline || [];
+    const points = timeline
+      .map(p => `${this.impactX(p.date)},${this.impactY((p.medAdherence || 0) * 100)}`);
 
     if (points.length === 0) return "";
     
