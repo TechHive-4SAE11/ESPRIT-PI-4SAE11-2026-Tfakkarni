@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.techhive.iotservice.client.AlertServiceClient;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -17,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HeartbeatAlertService {
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final AlertServiceClient alertServiceClient;
 
     @Value("${telegram.bot-token:}")
     private String botToken;
@@ -35,6 +37,10 @@ public class HeartbeatAlertService {
 
     // Cooldown tracker: patientId -> last alert timestamp
     private final ConcurrentHashMap<String, LocalDateTime> lastAlertTimes = new ConcurrentHashMap<>();
+
+    public HeartbeatAlertService(AlertServiceClient alertServiceClient) {
+        this.alertServiceClient = alertServiceClient;
+    }
 
     /**
      * Check if BPM is abnormal and send Telegram alert if needed.
@@ -55,6 +61,7 @@ public class HeartbeatAlertService {
         log.warn("⚠️ Abnormal heartbeat detected! Patient={}, BPM={}, Type={}", patientId, bpm, alertType);
 
         sendTelegramAlert(patientId, bpm, alertType);
+        postIotAlert(patientId, bpm, alertType);
         lastAlertTimes.put(patientId, LocalDateTime.now());
     }
 
@@ -105,6 +112,24 @@ public class HeartbeatAlertService {
                 + "─────────────────────────\n\n"
                 + "🔴 <b>Vérifiez immédiatement l'état du patient.</b>\n"
                 + "Connectez-vous à la plateforme <b>Tfakkarni</b> pour plus de détails.";
+    }
+
+    private void postIotAlert(String patientId, int bpm, String alertType) {
+        try {
+            String type = "ELEVATED".equals(alertType) ? "ELEVATED_BPM" : "LOW_BPM";
+            String message = String.format("Abnormal BPM detected: %d (%s)", bpm, alertType);
+
+            Map<String, Object> request = new HashMap<>();
+            request.put("patientId", patientId);
+            request.put("alertType", type);
+            request.put("value", bpm);
+            request.put("message", message);
+
+            alertServiceClient.createIotAlert(request);
+            log.info("IoT alert persisted in alert-service for patient {}", patientId);
+        } catch (Exception e) {
+            log.warn("Failed to persist IoT alert in alert-service: {}", e.getMessage());
+        }
     }
 
     private String esc(String s) {

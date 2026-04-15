@@ -2,6 +2,7 @@ package org.techhive.gameservice.dto;
 
 public class GameStatsResponse {
     private String playerKeycloakId;
+    private String playerName;
     private int totalGamesCreated;
     private int totalGamesPlayed;
     private double averageScore;
@@ -13,6 +14,8 @@ public class GameStatsResponse {
 
     public String getPlayerKeycloakId() { return playerKeycloakId; }
     public void setPlayerKeycloakId(String playerKeycloakId) { this.playerKeycloakId = playerKeycloakId; }
+    public String getPlayerName() { return playerName; }
+    public void setPlayerName(String playerName) { this.playerName = playerName; }
     public int getTotalGamesCreated() { return totalGamesCreated; }
     public void setTotalGamesCreated(int totalGamesCreated) { this.totalGamesCreated = totalGamesCreated; }
     public int getTotalGamesPlayed() { return totalGamesPlayed; }

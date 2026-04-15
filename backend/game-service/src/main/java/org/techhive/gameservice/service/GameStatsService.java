@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.techhive.gameservice.dto.GameStatsResponse;
 import org.techhive.gameservice.dto.OverviewStatsResponse;
 import org.techhive.gameservice.dto.ScoreAnalyticsResponse;
+import org.techhive.gameservice.dto.UserResponse;
 import org.techhive.gameservice.repository.*;
 
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ public class GameStatsService {
     private final CustomGameAttemptRepository customGameAttemptRepository;
     private final MovieGameAttemptRepository movieGameAttemptRepository;
     private final PersonalQuestionAttemptRepository personalQuestionAttemptRepository;
+    private final PatientContextService patientContextService;
 
     /**
      * Get stats for a specific patient/player.
@@ -39,6 +41,13 @@ public class GameStatsService {
     public GameStatsResponse getPlayerStats(String keycloakId) {
         GameStatsResponse stats = new GameStatsResponse();
         stats.setPlayerKeycloakId(keycloakId);
+
+        // Enrich with patient name from user-service
+        UserResponse user = patientContextService.getPatientInfo(keycloakId);
+        if (user != null) {
+            stats.setPlayerName(user.getFirstName() + " " + user.getLastName());
+        }
+
         // Count games created across ALL game types
         long miniGames = miniGameRepository.countByPatientKeycloakId(keycloakId);
         long customGames = customGameRepository.countByPatientKeycloakId(keycloakId);

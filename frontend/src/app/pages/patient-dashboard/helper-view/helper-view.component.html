@@ -281,10 +281,56 @@
     </div>
 </div>
 
-<!-- ══ HEALTH MONITORING ══ -->
+<!-- ══ HEALTH MONITORING & MEDICAL ══ -->
 <div class="mb-6">
-    <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Surveillance santé</h3>
+    <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Surveillance & médical</h3>
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <!-- Statistiques — prominent button -->
+        <button (click)="setPage('Statistiques')"
+            class="flex items-center gap-3 p-4 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-violet-50 to-blue-50 dark:from-violet-950/30 dark:to-blue-950/20 hover:border-primary/60 hover:shadow-md transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 text-primary shrink-0">
+                <z-icon zType="bar-chart-3" class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+                <p class="font-semibold text-sm truncate text-primary">Statistiques</p>
+                <p class="text-xs text-muted-foreground truncate">Graphiques & tendances</p>
+            </div>
+        </button>
+        <button (click)="setPage('Dossier médical')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400 shrink-0">
+                <z-icon zType="folder" class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+                <p class="font-medium text-sm truncate">Dossier médical</p>
+                <p class="text-xs text-muted-foreground truncate">Diagnostics & historique</p>
+            </div>
+        </button>
+        <button (click)="setPage('Coaching')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 shrink-0">
+                <z-icon zType="target" class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+                <p class="font-medium text-sm truncate">Coaching</p>
+                <p class="text-xs text-muted-foreground truncate">Objectifs du médecin</p>
+            </div>
+        </button>
+        <button (click)="setPage('Equipment')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 shrink-0">
+                <z-icon zType="settings" class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+                <p class="font-medium text-sm truncate">Équipement</p>
+                <p class="text-xs text-muted-foreground truncate">Matériel médical</p>
+            </div>
+        </button>
+        @if (iotEnabled()) {
         <button (click)="setPage('Safe Zone')"
             class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
             <span
@@ -307,57 +353,17 @@
                 <p class="text-xs text-muted-foreground truncate">Rythme cardiaque & habitudes</p>
             </div>
         </button>
-        <button (click)="setPage('Equipment')"
-            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span
-                class="flex items-center justify-center h-9 w-9 rounded-lg bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 shrink-0">
-                <z-icon zType="settings" class="h-5 w-5" />
+        } @else {
+        <div class="flex items-center gap-3 p-4 rounded-xl border border-dashed border-muted-foreground/30 bg-muted/20 opacity-60 col-span-2">
+            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-muted text-muted-foreground shrink-0">
+                <z-icon zType="lock" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
-                <p class="font-medium text-sm truncate">Équipement</p>
-                <p class="text-xs text-muted-foreground truncate">Matériel médical</p>
+                <p class="font-medium text-sm truncate">IoT — GPS & Sommeil</p>
+                <p class="text-xs text-muted-foreground truncate">Disponible uniquement pour les patients au stade sévère</p>
             </div>
-        </button>
-        <button (click)="setPage('Coaching')"
-            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span
-                class="flex items-center justify-center h-9 w-9 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 shrink-0">
-                <z-icon zType="target" class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-                <p class="font-medium text-sm truncate">Coaching</p>
-                <p class="text-xs text-muted-foreground truncate">Objectifs du médecin</p>
-            </div>
-        </button>
-    </div>
-</div>
-
-<!-- ══ MEDICAL & COMMUNICATION ══ -->
-<div class="mb-2">
-    <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Médical & communication</h3>
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <button (click)="setPage('Dossier médical')"
-            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span
-                class="flex items-center justify-center h-9 w-9 rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400 shrink-0">
-                <z-icon zType="folder" class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-                <p class="font-medium text-sm truncate">Dossier médical</p>
-                <p class="text-xs text-muted-foreground truncate">Diagnostics & historique</p>
-            </div>
-        </button>
-        <button (click)="setPage('Statistiques')"
-            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span
-                class="flex items-center justify-center h-9 w-9 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 shrink-0">
-                <z-icon zType="bar-chart-3" class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-                <p class="font-medium text-sm truncate">Statistiques</p>
-                <p class="text-xs text-muted-foreground truncate">Graphiques & tendances</p>
-            </div>
-        </button>
+        </div>
+        }
         <button (click)="goToAppointments()"
             class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
             <span
@@ -449,12 +455,11 @@
 }
 
 @case ('Statistiques') {
-<div class="flex items-center gap-2 mb-6">
+<div class="flex items-center gap-2 mb-4">
     <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
         <z-icon zType="arrow-left" class="mr-1" />
         Retour
     </button>
-    <h2 class="text-2xl font-bold">Statistiques & Analytics</h2>
 </div>
 <app-statistics-dashboard [keycloakId]="keycloakId" />
 }

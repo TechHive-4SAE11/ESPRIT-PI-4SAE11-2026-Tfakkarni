@@ -33,7 +33,7 @@ import {
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardButtonComponent } from '@/shared/components/button';
-import { IotService, SleepAnalysisResponse, SleepStageEntry } from '@/core/services/iot.service';
+import { IotService, SleepAnalysisResponse, SleepStageEntry, SleepHistoryResponse, DailySleepEntry } from '@/core/services/iot.service';
 
 @Component({
   selector: 'app-sleep-analysis',
@@ -136,7 +136,7 @@ import { IotService, SleepAnalysisResponse, SleepStageEntry } from '@/core/servi
       }
 
       <p class="text-xs text-muted-foreground mt-3">
-        Polling dweet.cc thing: <code class="bg-muted px-1.5 py-0.5 rounded text-xs">tfk-gps-{{ keycloakId }}</code> every 3s
+        Polling dweet.cc thing: <code class="bg-muted px-1.5 py-0.5 rounded text-xs">tfakkarni-high-1</code> every 3s
       </p>
     </z-card>
 
@@ -314,7 +314,7 @@ import { IotService, SleepAnalysisResponse, SleepStageEntry } from '@/core/servi
       </div>
 
       <!-- Insights -->
-      <z-card class="p-5">
+      <z-card class="p-5 mb-6">
         <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
           <span>💡</span> Sleep Insights
         </h3>
@@ -328,6 +328,153 @@ import { IotService, SleepAnalysisResponse, SleepStageEntry } from '@/core/servi
         </div>
       </z-card>
     }
+
+    <!-- ══ SLEEP HISTORY (7-DAY) ══ -->
+    <div class="mt-8">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold flex items-center gap-2">
+          <z-icon zType="calendar" class="h-5 w-5" /> Sleep History
+        </h3>
+        <button z-button zType="outline" zSize="sm" (click)="loadHistory()">
+          <z-icon zType="refresh-cw" class="mr-1 h-4 w-4" /> Refresh
+        </button>
+      </div>
+
+      @if (isLoadingHistory()) {
+        <div class="flex flex-col items-center justify-center py-12 gap-3">
+          <div class="w-10 h-10 rounded-full border-4 border-indigo-200 border-t-indigo-500 animate-spin"></div>
+          <p class="text-sm text-muted-foreground">Loading sleep history...</p>
+        </div>
+      } @else if (sleepHistory()) {
+        <!-- Weekly Summary Card -->
+        @if (sleepHistory()!.weeklySummary; as ws) {
+          <z-card class="p-5 mb-6">
+            <div class="flex items-center gap-4 mb-4">
+              <div class="p-3 rounded-2xl" [class]="historyQualityBadgeClass(ws.avgQualityLabel)">
+                <span class="text-3xl">{{ historyQualityEmoji(ws.avgQualityLabel) }}</span>
+              </div>
+              <div>
+                <p class="text-sm text-muted-foreground">Weekly Average</p>
+                <p class="text-2xl font-bold" [class]="historyQualityTextClass(ws.avgQualityLabel)">
+                  {{ ws.avgQualityLabel }} — {{ ws.avgQualityScore | number:'1.0-0' }}/100
+                </p>
+              </div>
+              <div class="ml-auto text-right">
+                <p class="text-xs text-muted-foreground">{{ ws.nightsWithData }} nights analyzed</p>
+                <p class="text-sm font-medium flex items-center gap-1 justify-end">
+                  @if (ws.trend === 'IMPROVING') {
+                    <span class="text-green-600">↗ Improving</span>
+                  } @else if (ws.trend === 'DECLINING') {
+                    <span class="text-red-600">↘ Declining</span>
+                  } @else {
+                    <span class="text-blue-600">→ Stable</span>
+                  }
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="p-3 rounded-lg bg-muted/50 text-center">
+                <p class="text-xs text-muted-foreground mb-1">Avg Sleep</p>
+                <p class="text-lg font-bold">{{ formatMinutes(ws.avgTotalSleepMinutes) }}</p>
+              </div>
+              <div class="p-3 rounded-lg bg-muted/50 text-center">
+                <p class="text-xs text-muted-foreground mb-1">Avg Deep %</p>
+                <p class="text-lg font-bold">{{ ws.avgDeepSleepPercent | number:'1.1-1' }}%</p>
+              </div>
+              <div class="p-3 rounded-lg bg-muted/50 text-center">
+                <p class="text-xs text-muted-foreground mb-1">Avg Efficiency</p>
+                <p class="text-lg font-bold">{{ ws.avgEfficiency | number:'1.1-1' }}%</p>
+              </div>
+              <div class="p-3 rounded-lg bg-muted/50 text-center">
+                <p class="text-xs text-muted-foreground mb-1">Total Awakenings</p>
+                <p class="text-lg font-bold">{{ ws.totalAwakenings }}</p>
+              </div>
+            </div>
+          </z-card>
+        }
+
+        <!-- Quality Trend Chart -->
+        @if (historyTrendSeries().length > 0) {
+          <z-card class="p-5 mb-6">
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+              <span>📈</span> Quality Score Trend
+            </h3>
+            <div id="history-trend-chart">
+              <apx-chart
+                [series]="historyTrendSeries()"
+                [chart]="historyTrendChartOptions"
+                [xaxis]="historyTrendXAxis()"
+                [yaxis]="historyTrendYAxis"
+                [stroke]="historyTrendStroke"
+                [fill]="historyTrendFill"
+                [dataLabels]="historyTrendDataLabels"
+                [tooltip]="historyTrendTooltip"
+              />
+            </div>
+          </z-card>
+        }
+
+        <!-- Nightly Breakdown Table -->
+        @if (sleepHistory()!.entries.length > 0) {
+          <z-card class="p-5 mb-6">
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+              <span>🗓️</span> Nightly Breakdown
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-border text-left">
+                    <th class="py-3 px-2 font-medium text-muted-foreground">Night</th>
+                    <th class="py-3 px-2 font-medium text-muted-foreground">Quality</th>
+                    <th class="py-3 px-2 font-medium text-muted-foreground">Total Sleep</th>
+                    <th class="py-3 px-2 font-medium text-muted-foreground">Deep %</th>
+                    <th class="py-3 px-2 font-medium text-muted-foreground">Efficiency</th>
+                    <th class="py-3 px-2 font-medium text-muted-foreground">Awakenings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (entry of sleepHistory()!.entries; track entry.date) {
+                    <tr class="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
+                        (click)="selectHistoryNight(entry.date)">
+                      <td class="py-3 px-2 font-medium">{{ entry.date }}</td>
+                      <td class="py-3 px-2">
+                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium"
+                          [class]="historyQualityBadgeSmallClass(entry.summary.qualityLabel)">
+                          {{ historyQualityEmoji(entry.summary.qualityLabel) }} {{ entry.summary.qualityLabel }}
+                          <span class="opacity-70">({{ entry.summary.qualityScore }})</span>
+                        </span>
+                      </td>
+                      <td class="py-3 px-2">{{ formatMinutes(entry.summary.totalSleepMinutes) }}</td>
+                      <td class="py-3 px-2">{{ entry.summary.deepSleepPercent | number:'1.1-1' }}%</td>
+                      <td class="py-3 px-2">{{ entry.summary.sleepEfficiency | number:'1.1-1' }}%</td>
+                      <td class="py-3 px-2">{{ entry.summary.awakenings }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </z-card>
+        }
+
+        <!-- Weekly Insights -->
+        @if (sleepHistory()!.weeklySummary?.weeklyInsights?.length) {
+          <z-card class="p-5">
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+              <span>🧠</span> Weekly Insights
+            </h3>
+            <div class="space-y-3">
+              @for (insight of sleepHistory()!.weeklySummary.weeklyInsights; track insight) {
+                <div class="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                  <span class="text-lg mt-0.5">📌</span>
+                  <p class="text-sm">{{ insight }}</p>
+                </div>
+              }
+            </div>
+          </z-card>
+        }
+      }
+    </div>
   `,
 })
 export class SleepAnalysisComponent implements OnInit, OnDestroy {
@@ -393,8 +540,22 @@ export class SleepAnalysisComponent implements OnInit, OnDestroy {
   donutSeries = signal<number[]>([]);
   barSeries = signal<any[]>([]);
 
+  // ── Sleep History state ──────────────────────────────────────────
+  sleepHistory = signal<SleepHistoryResponse | null>(null);
+  isLoadingHistory = signal(false);
+  historyTrendSeries = signal<any[]>([]);
+  historyTrendXAxis = signal<ApexXAxis>({ type: 'category', labels: { rotate: -45 } });
+
+  historyTrendChartOptions: ApexChart = { type: 'line', height: 250, toolbar: { show: false }, zoom: { enabled: false } };
+  historyTrendYAxis: ApexYAxis = { min: 0, max: 100, title: { text: 'Quality Score' } };
+  historyTrendStroke: ApexStroke = { curve: 'smooth', width: 3 };
+  historyTrendFill: ApexFill = { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.1 } };
+  historyTrendDataLabels: ApexDataLabels = { enabled: true, formatter: (val: number) => `${val}` };
+  historyTrendTooltip: ApexTooltip = { y: { formatter: (val: number) => `${val}/100` } };
+
   ngOnInit(): void {
     this.loadAnalysis();
+    this.loadHistory();
   }
 
   ngOnDestroy(): void {
@@ -409,7 +570,7 @@ export class SleepAnalysisComponent implements OnInit, OnDestroy {
     this.liveError.set('');
     this.liveAlert.set(null);
 
-    const thingName = `tfk-gps-${this.keycloakId}`;
+    const thingName = `tfakkarni-high-1`;
 
     this.liveSubscription = timer(0, 3000)
       .pipe(
@@ -573,6 +734,91 @@ export class SleepAnalysisComponent implements OnInit, OnDestroy {
       case 'Fair': return '😐';
       default: return '😟';
     }
+  }
+
+  // ── Sleep History ───────────────────────────────────────────────
+
+  loadHistory(): void {
+    if (!this.keycloakId) return;
+    this.isLoadingHistory.set(true);
+
+    this.iotService.getSleepHistory(this.keycloakId, 7)
+      .pipe(
+        tap(res => {
+          this.sleepHistory.set(res);
+          this.buildHistoryTrendChart(res.entries);
+        }),
+        catchError(err => {
+          console.error('[SleepHistory] Error:', err);
+          return of(null);
+        }),
+        finalize(() => this.isLoadingHistory.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  selectHistoryNight(date: string): void {
+    this.selectedDate.set(date);
+    this.loadAnalysis();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  historyQualityBadgeClass(label: string): string {
+    switch (label) {
+      case 'Excellent': return 'bg-emerald-100 dark:bg-emerald-900/30';
+      case 'Good': return 'bg-blue-100 dark:bg-blue-900/30';
+      case 'Fair': return 'bg-amber-100 dark:bg-amber-900/30';
+      default: return 'bg-red-100 dark:bg-red-900/30';
+    }
+  }
+
+  historyQualityTextClass(label: string): string {
+    switch (label) {
+      case 'Excellent': return 'text-emerald-600 dark:text-emerald-400';
+      case 'Good': return 'text-blue-600 dark:text-blue-400';
+      case 'Fair': return 'text-amber-600 dark:text-amber-400';
+      default: return 'text-red-600 dark:text-red-400';
+    }
+  }
+
+  historyQualityEmoji(label: string): string {
+    switch (label) {
+      case 'Excellent': return '🌟';
+      case 'Good': return '😊';
+      case 'Fair': return '😐';
+      default: return '😟';
+    }
+  }
+
+  historyQualityBadgeSmallClass(label: string): string {
+    switch (label) {
+      case 'Excellent': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+      case 'Good': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+      case 'Fair': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+      default: return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+    }
+  }
+
+  private buildHistoryTrendChart(entries: DailySleepEntry[]): void {
+    if (!entries || entries.length === 0) {
+      this.historyTrendSeries.set([]);
+      return;
+    }
+
+    const data = entries.map(e => e.summary.qualityScore);
+    const categories = entries.map(e => e.date);
+
+    this.historyTrendSeries.set([{
+      name: 'Quality Score',
+      data,
+      color: '#6366f1',
+    }]);
+    this.historyTrendXAxis.set({
+      type: 'category',
+      categories,
+      labels: { rotate: -45 },
+    });
   }
 
   // ── Chart builders ─────────────────────────────────────────────────

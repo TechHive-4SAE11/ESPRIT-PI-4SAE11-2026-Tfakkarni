@@ -1,13 +1,12 @@
 /**
  * Tfakkarni — Full Seed Script
  *
- * 1. Deletes all Keycloak users (except the realm admin)
- * 2. Truncates all tables across every Neon DB cluster
- * 3. Creates 1 admin, 2 doctors, 3 patients in Keycloak + user-service DB
- * 4. Fills 5 days of realistic data per patient across ALL services
- * 5. Writes seed-accounts.txt with credentials
+ * Default: Creates users + seed data (additive, no wipe).
+ * With --wipe flag: Deletes all Keycloak users and truncates all tables first.
  *
- * Usage:  node seed.js
+ * Usage:
+ *   node seed.js          # Add data only (safe to re-run)
+ *   node seed.js --wipe    # Wipe everything first, then seed
  */
 
 const { Client } = require('pg');
@@ -44,6 +43,7 @@ const ACCOUNTS = [
   { firstName: 'Mohamed',    lastName: 'Trabelsi',   email: 'patient@patient.com',    role: 'patient', gender: 'male'   },
   { firstName: 'Fatma',      lastName: 'Bouazizi',   email: 'patient2@patient.com',   role: 'patient', gender: 'female' },
   { firstName: 'Youssef',    lastName: 'Gharbi',     email: 'patient3@patient.com',   role: 'patient', gender: 'male'   },
+  { firstName: 'Hedi',       lastName: 'Hammami',    email: 'h@h.com',                role: 'patient', gender: 'male'   },
 ];
 
 // ─── Date helpers ───────────────────────────────────────────────
@@ -120,9 +120,12 @@ function kcApi(token) {
 // ═══════════════════════════════════════════════════════════════
 // MAIN
 // ═══════════════════════════════════════════════════════════════
+const WIPE = process.argv.includes('--wipe');
+
 async function main() {
   console.log('\n========================================');
   console.log('  Tfakkarni Full Seed Script');
+  console.log(`  Mode: ${WIPE ? 'WIPE + SEED' : 'ADD DATA ONLY'}`);
   console.log('========================================\n');
 
   // ── Step 1: Auth ─────────────────────────────────────────────
@@ -131,36 +134,41 @@ async function main() {
   const api = kcApi(token);
   console.log('  OK\n');
 
-  // ── Step 2: Wipe Keycloak ────────────────────────────────────
-  console.log('[2/6] Wiping Keycloak users...');
-  let deleted = 0;
-  while (true) {
-    const batch = await api.get('/users?first=0&max=10');
-    if (!batch || batch.length === 0) break;
-    let foundNonAdmin = false;
-    for (const user of batch) {
-      if (user.username === KC.admin || user.email === 'admin@email.com') continue;
-      console.log(`  del: ${user.username}`);
-      await api.del(`/users/${user.id}`);
-      deleted++; foundNonAdmin = true;
+  if (WIPE) {
+    // ── Step 2: Wipe Keycloak ────────────────────────────────────
+    console.log('[2/6] Wiping Keycloak users...');
+    let deleted = 0;
+    while (true) {
+      const batch = await api.get('/users?first=0&max=10');
+      if (!batch || batch.length === 0) break;
+      let foundNonAdmin = false;
+      for (const user of batch) {
+        if (user.username === KC.admin || user.email === 'admin@email.com') continue;
+        console.log(`  del: ${user.username}`);
+        await api.del(`/users/${user.id}`);
+        deleted++; foundNonAdmin = true;
+      }
+      if (!foundNonAdmin) break;
     }
-    if (!foundNonAdmin) break;
-  }
-  console.log(`  Deleted ${deleted} users\n`);
+    console.log(`  Deleted ${deleted} users\n`);
 
-  // ── Step 3: Wipe all DBs ────────────────────────────────────
-  console.log('[3/6] Wiping databases...');
-  for (const cluster of DB_CLUSTERS) {
-    console.log(`  ${cluster.name}`);
-    try {
-      const tables = await runSQL(cluster, "SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
-      const names = tables.map(r => r.tablename).filter(Boolean);
-      if (names.length === 0) { console.log('    (empty)'); continue; }
-      await runSQL(cluster, `TRUNCATE TABLE ${names.map(t => `"${t}"`).join(', ')} CASCADE`);
-      console.log(`    truncated: ${names.join(', ')}`);
-    } catch (err) { console.log(`    err: ${err.message}`); }
+    // ── Step 3: Wipe all DBs ────────────────────────────────────
+    console.log('[3/6] Wiping databases...');
+    for (const cluster of DB_CLUSTERS) {
+      console.log(`  ${cluster.name}`);
+      try {
+        const tables = await runSQL(cluster, "SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
+        const names = tables.map(r => r.tablename).filter(Boolean);
+        if (names.length === 0) { console.log('    (empty)'); continue; }
+        await runSQL(cluster, `TRUNCATE TABLE ${names.map(t => `"${t}"`).join(', ')} CASCADE`);
+        console.log(`    truncated: ${names.join(', ')}`);
+      } catch (err) { console.log(`    err: ${err.message}`); }
+    }
+    console.log();
+  } else {
+    console.log('[2/6] Skipped (no --wipe flag)');
+    console.log('[3/6] Skipped (no --wipe flag)\n');
   }
-  console.log();
 
   // ── Step 4: Create seed users ────────────────────────────────
   console.log('[4/6] Creating users...');
@@ -201,7 +209,15 @@ async function main() {
 
   // ────── MEDICAL SERVICE ──────
   console.log('  [medical] folders, diagnostics, coaching, appointments...');
+  const patientsToSeed = [];
   for (const patient of patients) {
+    // Skip patients who already have data (additive mode safety)
+    const existing = await runSQL(MEDICAL_DB, `SELECT id FROM medical_folders WHERE id_patient = '${patient.keycloakId}' LIMIT 1`);
+    if (existing.length > 0) {
+      console.log(`    ${patient.firstName}: already has data, skipping`);
+      continue;
+    }
+    patientsToSeed.push(patient);
     const doc = doctors[patients.indexOf(patient) % doctors.length];
 
     const folderRows = await runSQL(MEDICAL_DB, `
@@ -264,7 +280,7 @@ async function main() {
 
   // ────── TRACKING SERVICE (sessions, prescriptions, daily logs) ──────
   console.log('  [tracking] sessions, prescriptions, daily logs...');
-  for (const patient of patients) {
+  for (const patient of patientsToSeed) {
     const doc = doctors[patients.indexOf(patient) % doctors.length];
     const tfRows = await runSQL(MEDICAL_DB, `SELECT id FROM medical_folders WHERE id_patient = '${patient.keycloakId}' LIMIT 1`);
     const mfId = tfRows[0]?.id;
@@ -313,13 +329,20 @@ async function main() {
 
     // Daily logs (5 days)
     for (let day = 4; day >= 0; day--) {
-      const dlRows = await runSQL(MEDICAL_DB, `
-        INSERT INTO daily_logs (patient_keycloak_id, log_date, global_notes, mood_level, sleep_hours, created_at, updated_at)
-        VALUES ('${patient.keycloakId}', '${dateOnly(day)}',
-          '${esc(pick(["Journee calme","Confusion l''apres-midi","Tres bonne journee","Fatigue le matin","Patient anxieux"]))}',
-          '${pick(["BONNE","MOYENNE","MAUVAISE"])}', ${rand(5,9)}, '${daysAgo(day)}', '${daysAgo(day)}')
-        RETURNING id`);
-      const dlId = dlRows[0].id;
+      // Check if daily log already exists for this patient+date
+      const existingLog = await runSQL(MEDICAL_DB, `SELECT id FROM daily_logs WHERE patient_keycloak_id = '${patient.keycloakId}' AND log_date = '${dateOnly(day)}' LIMIT 1`);
+      let dlId;
+      if (existingLog.length > 0) {
+        dlId = existingLog[0].id;
+      } else {
+        const dlRows = await runSQL(MEDICAL_DB, `
+          INSERT INTO daily_logs (patient_keycloak_id, log_date, global_notes, mood_level, sleep_hours, created_at, updated_at)
+          VALUES ('${patient.keycloakId}', '${dateOnly(day)}',
+            '${esc(pick(["Journee calme","Confusion l''apres-midi","Tres bonne journee","Fatigue le matin","Patient anxieux"]))}',
+            '${pick(["BONNE","MOYENNE","MAUVAISE"])}', ${rand(5,9)}, '${daysAgo(day)}', '${daysAgo(day)}')
+          RETURNING id`);
+        dlId = dlRows[0].id;
+      }
 
       await runSQL(MEDICAL_DB, `
         INSERT INTO nutrition_entries (daily_log_id, meal_type, description, quantity, appetite, hydration_ml, entry_time) VALUES
@@ -370,7 +393,7 @@ async function main() {
 
   // ────── GAME SERVICE ──────
   console.log('  [game] memories, tags, custom games, quizzes...');
-  for (const patient of patients) {
+  for (const patient of patientsToSeed) {
     const tagColors = ['#3B82F6','#EF4444','#10B981','#F59E0B','#8B5CF6'];
     const tagNames = ['Famille','Maison','Enfance','Animaux','Voyages'];
     const tagIds = [];
@@ -440,7 +463,7 @@ async function main() {
 
   // ────── ALERT SERVICE ──────
   console.log('  [alert] safe zones, geofence alerts, reminders...');
-  for (const patient of patients) {
+  for (const patient of patientsToSeed) {
     const hLat = 36.8065 + Math.random()*0.02;
     const hLng = 10.1815 + Math.random()*0.02;
     const pts = JSON.stringify([{lat:hLat-0.002,lng:hLng-0.002},{lat:hLat-0.002,lng:hLng+0.002},{lat:hLat+0.002,lng:hLng+0.002},{lat:hLat+0.002,lng:hLng-0.002}]);
@@ -454,7 +477,9 @@ async function main() {
 
   // ────── IOT SERVICE (heartbeat) ──────
   console.log('  [iot] heartbeat readings...');
-  for (const patient of patients) {
+  for (const patient of patientsToSeed) {
+    if (patient.email === 'h@h.com') continue; // handled separately below
+    // Standard 30 readings for other patients
     const vals = [];
     for (let day = 4; day >= 0; day--) {
       for (const h of [8,10,12,14,17,21]) {
@@ -465,25 +490,103 @@ async function main() {
     console.log(`    ${patient.firstName}: ${vals.length} readings`);
   }
 
+  // ────── h@h.com sleep heartbeat (always runs, replaces old data) ──────
+  const hediAccount = created.find(a => a.email === 'h@h.com');
+  if (hediAccount) {
+    console.log('  [iot] h@h.com sleep-cycle heartbeat (refresh)...');
+    // Delete old heartbeat data so we always have fresh last-week data
+    await runSQL(IOT_DB, `DELETE FROM heartbeat_readings WHERE patient_id = '${hediAccount.keycloakId}'`);
+    const seedDays = 7;
+    const vals = [];
+    for (let day = seedDays - 1; day >= 0; day--) {
+      const nightDate = dateOnly(day + 1); // the night of this date
+      // 22:00 → 06:00 = 8 hours = 480 min / 2 min = 240 readings
+      for (let m = 0; m < 480; m += 2) {
+        const hour = 22 + Math.floor(m / 60);
+        const minute = m % 60;
+        const adjustedHour = hour >= 24 ? hour - 24 : hour;
+        const dateStr = hour >= 24
+          ? dateOnly(day) // after midnight = next day
+          : nightDate;
+        const hoursIn = m / 60;
+
+        // Realistic sleep cycle BPM simulation
+        let bpm;
+        if (hoursIn < 0.33) {
+          // Falling asleep: 75→65
+          bpm = 75 - Math.round(hoursIn * 30) + rand(-2, 2);
+        } else if (hoursIn < 1.5) {
+          // Cycle 1: light → deep
+          const phase = (hoursIn - 0.33) / 1.17;
+          if (phase < 0.4) bpm = rand(60, 68); // light
+          else bpm = rand(48, 58); // deep
+        } else if (hoursIn < 2.5) {
+          // Cycle 1 REM
+          bpm = rand(65, 78);
+        } else if (hoursIn < 3.0) {
+          // Cycle 2: light
+          bpm = rand(60, 66);
+        } else if (hoursIn < 4.0) {
+          // Cycle 2: deep (longest)
+          bpm = rand(46, 56);
+        } else if (hoursIn < 4.5) {
+          // Awakening spike
+          if (Math.random() < 0.15) bpm = rand(78, 88);
+          else bpm = rand(64, 74); // REM
+        } else if (hoursIn < 5.5) {
+          // Cycle 3: light → deep (shorter)
+          const phase = (hoursIn - 4.5) / 1.0;
+          if (phase < 0.4) bpm = rand(60, 66);
+          else bpm = rand(50, 58);
+        } else if (hoursIn < 6.5) {
+          // Cycle 4: REM (longer)
+          bpm = rand(62, 76);
+        } else if (hoursIn < 7.5) {
+          // Cycle 5: mostly REM + light
+          bpm = rand(60, 72);
+        } else {
+          // Waking up: 65→80
+          const wakePhase = (hoursIn - 7.5) / 0.5;
+          bpm = 65 + Math.round(wakePhase * 15) + rand(-2, 3);
+        }
+        // Add slight day-to-day variation
+        bpm += rand(-3, 3);
+        bpm = Math.max(42, Math.min(95, bpm));
+        vals.push(`('${hediAccount.keycloakId}', ${bpm}, '${dateStr} ${String(adjustedHour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00')`);
+      }
+    }
+    // Insert in batches of 500 to avoid query size limits
+    for (let i = 0; i < vals.length; i += 500) {
+      const batch = vals.slice(i, i + 500);
+      await runSQL(IOT_DB, `INSERT INTO heartbeat_readings (patient_id, bpm, timestamp) VALUES ${batch.join(',')}`);
+    }
+    console.log(`    Hedi: ${vals.length} readings (${seedDays} nights, sleep-cycle data)`);
+  }
+
   // ────── ANALYTICS SERVICE ──────
   console.log('  [analytics] scores, history, feature gates, domains...');
-  for (const patient of patients) {
+  for (const patient of patientsToSeed) {
     const idx = patients.indexOf(patient);
-    const cog = [72,55,40][idx], dly = [80,60,35][idx], med = [85,70,50][idx], iot = [90,65,45][idx];
-    const overall = Math.round(cog*0.35 + dly*0.25 + med*0.2 + iot*0.2);
+    const cog = [72,55,40,25][idx], dly = [80,60,35,28][idx], med = [85,70,50,35][idx];
+    // IoT score only counts for SEVERE stage patients
+    const rawOverall = Math.round(cog*0.35 + dly*0.25 + med*0.2);
+    const prelimStage = rawOverall >= 60 ? 'LOW_RISK' : rawOverall >= 45 ? 'EARLY' : rawOverall >= 30 ? 'MODERATE' : 'SEVERE';
+    const iot = prelimStage === 'SEVERE' ? [90,65,45,30][idx] : 0;
+    const overall = prelimStage === 'SEVERE' ? Math.round(cog*0.35 + dly*0.25 + med*0.2 + iot*0.2) : rawOverall;
     const stage = overall >= 75 ? 'LOW_RISK' : overall >= 55 ? 'EARLY' : overall >= 35 ? 'MODERATE' : 'SEVERE';
 
     await runSQL(IOT_DB, `INSERT INTO patient_composite_scores (patient_keycloak_id, cognitive_score, daily_functioning_score, medical_stability_score, iot_risk_score, engagement_score, overall_score, stage, score_trend, computed_at) VALUES ('${patient.keycloakId}', ${cog}, ${dly}, ${med}, ${iot}, ${rand(40,85)}, ${overall}, '${stage}', '${pick(["IMPROVING","STABLE","DECLINING"])}', NOW())`);
 
-    for (let day = 4; day >= 0; day--) {
+    const historyDays = patient.email === 'h@h.com' ? 7 : 5;
+    for (let day = historyDays - 1; day >= 0; day--) {
       const d = rand(-5,5);
       await runSQL(IOT_DB, `INSERT INTO score_history (patient_keycloak_id, cognitive_score, daily_functioning_score, medical_stability_score, iot_risk_score, overall_score, stage, recorded_at) VALUES ('${patient.keycloakId}', ${cog+d}, ${dly+rand(-3,3)}, ${med+rand(-2,2)}, ${iot+rand(-4,4)}, ${overall+d}, '${stage}', '${daysAgo(day)}')`);
     }
 
-    const iotLvl = stage==='SEVERE'?'EMERGENCY':stage==='MODERATE'?'FULL':stage==='EARLY'?'BASIC':'DISABLED';
+    const iotLvl = stage==='SEVERE'?'EMERGENCY':'DISABLED';
     const gc = stage==='SEVERE'?'MINIMAL':stage==='MODERATE'?'SIMPLIFIED':'STANDARD';
     const ui = stage==='SEVERE'?'ELDERLY_MAX':stage==='MODERATE'?'SIMPLIFIED':'STANDARD';
-    await runSQL(IOT_DB, `INSERT INTO feature_gates (patient_keycloak_id, stage, iot_enabled, iot_level, game_complexity, monitoring_level, notification_escalation, ui_mode, safe_zone_required, meeting_suggested_frequency_days, computed_at) VALUES ('${patient.keycloakId}', '${stage}', ${stage!=='LOW_RISK'}, '${iotLvl}', '${gc}', '${stage==='SEVERE'?'REQUIRED':stage==='MODERATE'?'RECOMMENDED':'OPTIONAL'}', '${stage==='SEVERE'?'CRITICAL':stage==='MODERATE'?'HIGH':'LOW'}', '${ui}', ${stage==='SEVERE'||stage==='MODERATE'}, ${stage==='SEVERE'?3:stage==='MODERATE'?7:14}, NOW())`);
+    await runSQL(IOT_DB, `INSERT INTO feature_gates (patient_keycloak_id, stage, iot_enabled, iot_level, game_complexity, monitoring_level, notification_escalation, ui_mode, safe_zone_required, meeting_suggested_frequency_days, computed_at) VALUES ('${patient.keycloakId}', '${stage}', ${stage==='SEVERE'}, '${iotLvl}', '${gc}', '${stage==='SEVERE'?'REQUIRED':stage==='MODERATE'?'RECOMMENDED':'OPTIONAL'}', '${stage==='SEVERE'?'CRITICAL':stage==='MODERATE'?'HIGH':'LOW'}', '${ui}', ${stage==='SEVERE'||stage==='MODERATE'}, ${stage==='SEVERE'?3:stage==='MODERATE'?7:14}, NOW())`);
 
     for (const dom of ['Memoire','Orientation','Langage','Attention','Calcul']) {
       await runSQL(IOT_DB, `INSERT INTO cognitive_domain_analyses (patient_keycloak_id, domain_name, correct_count, incorrect_count, accuracy_pct, trend, computed_at) VALUES ('${patient.keycloakId}', '${dom}', ${rand(5,20)}, ${rand(2,10)}, ${rand(40,90)}, '${pick(["IMPROVING","STABLE","DECLINING"])}', NOW())`);
@@ -492,21 +595,28 @@ async function main() {
   }
 
   for (const doc of doctors) {
+    const existingDoc = await runSQL(IOT_DB, `SELECT id FROM doctor_effectiveness_scores WHERE doctor_keycloak_id = '${doc.keycloakId}' LIMIT 1`);
+    if (existingDoc.length > 0) { console.log(`    ${doc.firstName}: already has effectiveness, skipping`); continue; }
     await runSQL(IOT_DB, `INSERT INTO doctor_effectiveness_scores (doctor_keycloak_id, patient_count, stabilization_rate, decline_rate, avg_compliance_improvement, session_frequency, coaching_completion_rate, appointment_show_rate, risk_flags, computed_at) VALUES ('${doc.keycloakId}', ${Math.ceil(patients.length/doctors.length)}, ${(rand(50,85)/100).toFixed(2)}, ${(rand(5,25)/100).toFixed(2)}, ${(rand(10,30)/100).toFixed(2)}, ${(rand(15,40)/10).toFixed(1)}, ${(rand(40,80)/100).toFixed(2)}, ${(rand(70,95)/100).toFixed(2)}, '', NOW())`);
     console.log(`    ${doc.firstName}: effectiveness`);
   }
 
   // ────── ML SERVICE (FAQ) ──────
   console.log('  [ml] FAQ analytics...');
-  const faqs = [
-    { q:'Premiers signes Alzheimer?', a:'Pertes memoire, difficulte planifier.', c:'Symptomes' },
-    { q:'Comment aider au quotidien?', a:'Routine, aide-memoire, patience.', c:'Soins' },
-    { q:'Quels medicaments?', a:'Donepezil, Memantine — sur prescription.', c:'Traitement' },
-  ];
-  for (const f of faqs) {
-    await runSQL(MEDICAL_DB, `INSERT INTO faq_analytics (question, answer, frequency, category, last_asked, created_at, updated_at) VALUES ('${esc(f.q)}', '${esc(f.a)}', ${rand(5,50)}, '${f.c}', '${daysAgo(0)}', '${daysAgo(10)}', NOW())`);
+  const existingFaq = await runSQL(MEDICAL_DB, `SELECT id FROM faq_analytics LIMIT 1`);
+  if (existingFaq.length > 0) {
+    console.log('    FAQ already exists, skipping');
+  } else {
+    const faqs = [
+      { q:'Premiers signes Alzheimer?', a:'Pertes memoire, difficulte planifier.', c:'Symptomes' },
+      { q:'Comment aider au quotidien?', a:'Routine, aide-memoire, patience.', c:'Soins' },
+      { q:'Quels medicaments?', a:'Donepezil, Memantine \u2014 sur prescription.', c:'Traitement' },
+    ];
+    for (const f of faqs) {
+      await runSQL(MEDICAL_DB, `INSERT INTO faq_analytics (question, answer, frequency, category, last_asked, created_at, updated_at) VALUES ('${esc(f.q)}', '${esc(f.a)}', ${rand(5,50)}, '${f.c}', '${daysAgo(0)}', '${daysAgo(10)}', NOW())`);
+    }
+    console.log('    FAQ done');
   }
-  console.log('    FAQ done\n');
 
   // ── Step 6: Accounts file ──────────────────────────────────
   console.log('[6/6] seed-accounts.txt...');
@@ -528,9 +638,14 @@ async function main() {
     '  5 daily logs (nutrition+activities+incidents+med intake),',
     '  2 meetings, 5 tags+5 question memories+3 place memories,',
     '  2 custom games (5d attempts), 5 quizzes, data performance,',
-    '  safe zone+2 geofence alerts, 30 heartbeat readings,',
-    '  composite score+5d history+feature gate+5 cognitive domains,',
+    '  safe zone+2 geofence alerts, heartbeat readings,',
+    '  composite score+history+feature gate+5 cognitive domains,',
     '  doctor notifications+follow-up reminders+appointment reminders',
+    '',
+    'HIGH-RISK PATIENT (h@h.com):',
+    '  Hedi Hammami — SEVERE stage, IoT EMERGENCY level',
+    '  7 nights × 240 heartbeat readings (sleep-cycle patterns)',
+    '  IoT bracelet thing name: tfakkarni-high-1',
   ];
   fs.writeFileSync(path.join(__dirname, 'seed-accounts.txt'), lines.join('\n'), 'utf8');
 

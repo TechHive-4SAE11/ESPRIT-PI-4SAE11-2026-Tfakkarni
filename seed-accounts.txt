@@ -1,6 +1,6 @@
 ==========================================
   Tfakkarni Seed Accounts
-  Generated: 2026-04-10 19:21:48
+  Generated: 2026-04-15 18:03:07
 ==========================================
 
 Login:  http://localhost:4200
@@ -14,6 +14,7 @@ doc2@doc.com                   123456          doctor          Dr. Sarra Mansour
 patient@patient.com            123456          patient         Mohamed Trabelsi
 patient2@patient.com           123456          patient         Fatma Bouazizi
 patient3@patient.com           123456          patient         Youssef Gharbi
+h@h.com                        123456          patient         Hedi Hammami
 
 Keycloak IDs:
 admin@admin.com                e7e89578-4658-47de-bb1c-00099556fa54
@@ -22,6 +23,7 @@ doc2@doc.com                   a962ff22-47d1-4406-a02c-377e106a7729
 patient@patient.com            955f3d4e-488f-4022-8496-52717ebdf836
 patient2@patient.com           fec80b9c-6b27-45a3-8cf2-511103bdbec2
 patient3@patient.com           5d2457f4-716e-4a14-9554-264b64def9f0
+h@h.com                        deaaff23-cddf-4c89-bf24-93d964efc13e
 
 DATA PER PATIENT:
   folder+diagnostics+history, 2 coaching goals (5d progress each),
@@ -29,6 +31,11 @@ DATA PER PATIENT:
   5 daily logs (nutrition+activities+incidents+med intake),
   2 meetings, 5 tags+5 question memories+3 place memories,
   2 custom games (5d attempts), 5 quizzes, data performance,
-  safe zone+2 geofence alerts, 30 heartbeat readings,
-  composite score+5d history+feature gate+5 cognitive domains,
+  safe zone+2 geofence alerts, heartbeat readings,
+  composite score+history+feature gate+5 cognitive domains,
   doctor notifications+follow-up reminders+appointment reminders
+
+HIGH-RISK PATIENT (h@h.com):
+  Hedi Hammami — SEVERE stage, IoT EMERGENCY level
+  7 nights × 240 heartbeat readings (sleep-cycle patterns)
+  IoT bracelet thing name: tfakkarni-high-1

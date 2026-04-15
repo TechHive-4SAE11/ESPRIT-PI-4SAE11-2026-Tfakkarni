@@ -41,6 +41,35 @@ export interface SleepAnalysisResponse {
   insights: string[];
 }
 
+export interface DailySleepEntry {
+  date: string;
+  summary: SleepSummary;
+  insights: string[];
+}
+
+export interface WeeklySummary {
+  avgQualityScore: number;
+  avgQualityLabel: string;
+  avgTotalSleepMinutes: number;
+  avgDeepSleepPercent: number;
+  avgEfficiency: number;
+  totalAwakenings: number;
+  nightsWithData: number;
+  bestNight: string | null;
+  bestNightScore: number;
+  worstNight: string | null;
+  worstNightScore: number;
+  trend: string;
+  weeklyInsights: string[];
+}
+
+export interface SleepHistoryResponse {
+  patientId: string;
+  days: number;
+  entries: DailySleepEntry[];
+  weeklySummary: WeeklySummary;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -62,6 +91,11 @@ export class IotService {
       params = params.set('date', date);
     }
     return this.http.get<SleepAnalysisResponse>(`${this.baseUrl}/${patientId}/sleep-analysis`, { params });
+  }
+
+  getSleepHistory(patientId: string, days = 7): Observable<SleepHistoryResponse> {
+    const params = new HttpParams().set('days', days.toString());
+    return this.http.get<SleepHistoryResponse>(`${this.baseUrl}/${patientId}/sleep-history`, { params });
   }
 
   recordHeartbeat(reading: Partial<HeartbeatReading>): Observable<HeartbeatReading> {

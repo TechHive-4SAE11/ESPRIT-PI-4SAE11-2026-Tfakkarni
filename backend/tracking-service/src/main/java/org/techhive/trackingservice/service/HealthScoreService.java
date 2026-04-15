@@ -37,7 +37,7 @@ public class HealthScoreService {
 
     public HealthScoreResponse computeDailyScore(String patientKeycloakId, LocalDate date) {
 
-        DailyLog log = logRepo.findByPatientKeycloakIdAndLogDate(patientKeycloakId, date)
+        DailyLog log = logRepo.findFirstByPatientKeycloakIdAndLogDate(patientKeycloakId, date)
                 .orElse(null);
 
         List<CategoryBreakdown> breakdown = new ArrayList<>();

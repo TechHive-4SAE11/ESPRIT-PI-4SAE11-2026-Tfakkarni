@@ -43,14 +43,34 @@ public class PatientScoreService {
         double cognitive = computeCognitiveScore(patientKeycloakId);
         double daily = computeDailyFunctioningScore(patientKeycloakId);
         double medical = computeMedicalStabilityScore(patientKeycloakId);
-        double iot = computeIotRiskScore(patientKeycloakId);
         double engagement = computeEngagementScore(patientKeycloakId);
 
-        double overall = (cognitive * W_COGNITIVE)
-                + (daily * W_DAILY)
-                + (medical * W_MEDICAL)
-                + (iot * W_IOT)
-                + (engagement * W_ENGAGEMENT);
+        // First pass: compute overall without IoT to determine stage
+        double nonIotTotal = W_COGNITIVE + W_DAILY + W_MEDICAL + W_ENGAGEMENT;
+        double prelimOverall = (cognitive * W_COGNITIVE + daily * W_DAILY
+                + medical * W_MEDICAL + engagement * W_ENGAGEMENT) / nonIotTotal * 1.0;
+        // Normalize: redistribute weights so they sum to 1.0
+        prelimOverall = (cognitive * (W_COGNITIVE / nonIotTotal))
+                + (daily * (W_DAILY / nonIotTotal))
+                + (medical * (W_MEDICAL / nonIotTotal))
+                + (engagement * (W_ENGAGEMENT / nonIotTotal));
+        AlzheimerStage prelimStage = classifyStage(prelimOverall, cognitive, 0);
+
+        // IoT score is only included for SEVERE stage patients
+        double iot;
+        double overall;
+        if (prelimStage == AlzheimerStage.SEVERE) {
+            iot = computeIotRiskScore(patientKeycloakId);
+            overall = (cognitive * W_COGNITIVE)
+                    + (daily * W_DAILY)
+                    + (medical * W_MEDICAL)
+                    + (iot * W_IOT)
+                    + (engagement * W_ENGAGEMENT);
+        } else {
+            iot = 0.0;
+            // Redistribute IoT weight proportionally to other components
+            overall = prelimOverall;
+        }
 
         AlzheimerStage stage = classifyStage(overall, cognitive, iot);
         ScoreTrend trend = computeTrend(patientKeycloakId, overall);
