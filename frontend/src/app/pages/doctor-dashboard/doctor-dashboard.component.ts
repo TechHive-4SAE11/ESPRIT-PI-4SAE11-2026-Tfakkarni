@@ -430,120 +430,6 @@ import type { DoctorEffectivenessResponse, PatientScoreResponse } from '@/core/m
             </div>
 
             <app-patient-analytics [patientKeycloakId]="selectedPatient()!.keycloakId"></app-patient-analytics>
-
-            <!-- ── Alzheimer's Risk Quiz Summary ──────────────── -->
-            <div class="grid gap-4 md:grid-cols-3 mt-8 mb-6">
-              <!-- Average risk score -->
-              <z-card class="p-5">
-                <p class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">🧠 Alzheimer's Risk</p>
-                @if (getQuizScore(selectedPatient()!.keycloakId); as qs) {
-                  <p class="text-4xl font-black"
-                    [class]="qs >= 60 ? 'text-red-500' : qs >= 30 ? 'text-amber-500' : 'text-emerald-500'">
-                    {{ qs | number:'1.0-0' }}%
-                  </p>
-                } @else {
-                  <p class="text-xs text-muted-foreground mt-1">No quiz taken yet</p>
-                }
-              </z-card>
-              <!-- Total quizzes taken -->
-              <z-card class="p-5">
-                <p class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">📝 Quiz Attempts</p>
-                @if (selectedPatientQuizCount() !== null) {
-                  <p class="text-4xl font-black text-blue-600">{{ selectedPatientQuizCount() }}</p>
-                } @else {
-                  <p class="text-xs text-muted-foreground mt-1">No quiz taken yet</p>
-                }
-              </z-card>
-              <!-- Highest level reached -->
-              <z-card class="p-5">
-                <p class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">🎯 Last Level Reached</p>
-                @if (selectedPatientLastLevel(); as lvl) {
-                  <p class="text-4xl font-black text-violet-600">Level {{ lvl }}</p>
-                  <p class="text-xs text-muted-foreground">{{ getLevelLabel(lvl) }}</p>
-                } @else {
-                  <p class="text-xs text-muted-foreground mt-1">No quiz taken yet</p>
-                }
-              </z-card>
-            </div>
-
-            <!-- ── Quiz History Table ────────────────────────────── -->
-            <z-card class="mt-4">
-              <div class="p-6">
-                <h3 class="text-lg font-semibold mb-4">📊 Quiz History</h3>
-                @if (isLoadingQuizHistory()) {
-                  <z-skeleton class="h-32 w-full" />
-                } @else if (selectedPatientQuizHistory().length > 0) {
-                  <table z-table>
-                    <thead z-table-header>
-                      <tr z-table-row>
-                        <th z-table-head>Quiz Topic</th>
-                        <th z-table-head>Date</th>
-                        <th z-table-head>Score</th>
-                        <th z-table-head>Level</th>
-                        <th z-table-head>Recommendation</th>
-                      </tr>
-                    </thead>
-                    <tbody z-table-body>
-                      @for (quiz of selectedPatientQuizHistory(); track quiz.id) {
-                        <tr z-table-row>
-                          <td z-table-cell class="font-medium">{{ quiz.topic }}</td>
-                          <td z-table-cell class="text-muted-foreground">
-                            {{ quiz.dateTaken ? (quiz.dateTaken | date:'dd/MM/yyyy HH:mm') : '—' }}
-                          </td>
-                          <td z-table-cell>
-                            @if (quiz.totalScore !== null && quiz.totalScore !== undefined) {
-                              <div class="flex items-center gap-2">
-                                <div class="w-full max-w-[60px] h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                                  <div class="h-full rounded-full transition-all"
-                                    [style.width.%]="quiz.totalScore"
-                                    [class]="quiz.totalScore >= 60 ? 'bg-red-500' : quiz.totalScore >= 30 ? 'bg-amber-400' : 'bg-emerald-500'">
-                                  </div>
-                                </div>
-                                <span class="text-sm font-semibold"
-                                  [class]="quiz.totalScore >= 60 ? 'text-red-600' : quiz.totalScore >= 30 ? 'text-amber-600' : 'text-emerald-600'">
-                                  {{ quiz.totalScore }}%
-                                </span>
-                              </div>
-                            } @else {
-                              <span class="text-muted-foreground">—</span>
-                            }
-                          </td>
-                          <td z-table-cell>
-                            @if (quiz.levelReached) {
-                              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold"
-                                [class]="quiz.levelReached === 3
-                                  ? 'bg-red-100 text-red-700'
-                                  : quiz.levelReached === 2
-                                    ? 'bg-amber-100 text-amber-700'
-                                    : 'bg-emerald-100 text-emerald-700'">
-                                {{ quiz.levelReached === 3 ? '🔴' : quiz.levelReached === 2 ? '🟡' : '🟢' }}
-                                Level {{ quiz.levelReached }} — {{ getLevelLabel(quiz.levelReached) }}
-                              </span>
-                            } @else {
-                              <span class="text-muted-foreground">—</span>
-                            }
-                          </td>
-                          <td z-table-cell>
-                            @if (quiz.totalScore !== null && quiz.totalScore !== undefined) {
-                              @if (quiz.totalScore >= 60 && quiz.levelReached === 3) {
-                                <span class="text-xs text-red-600 font-semibold">⚠️ Consult recommended</span>
-                              } @else if (quiz.totalScore < 60) {
-                                <span class="text-xs text-emerald-600">✅ Within normal range</span>
-                              }
-                            }
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                } @else {
-                  <div class="p-8 text-center text-muted-foreground">
-                    <p class="font-medium">No quiz history found</p>
-                    <p class="text-sm mt-1">This patient has not completed any quizzes yet.</p>
-                  </div>
-                }
-              </div>
-            </z-card>
           } @else {
             <p class="text-muted-foreground">Select a patient from the Patients list to view their progress.</p>
           }
@@ -567,7 +453,11 @@ import type { DoctorEffectivenessResponse, PatientScoreResponse } from '@/core/m
               </button>
             </div>
 
-            <app-prescription-management [patient]="patient" [doctor]="currentDoctor()"></app-prescription-management>
+            <app-prescription-management
+              [patient]="patient"
+              [doctor]="currentDoctor()"
+              [setPage]="setPage.bind(this)"
+            ></app-prescription-management>
           } @else {
              <div class="space-y-4">
                <h2 class="text-2xl font-bold">Manage Prescriptions</h2>

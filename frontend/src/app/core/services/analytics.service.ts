@@ -9,6 +9,8 @@ import type {
   DoctorEffectivenessResponse,
   PlatformOverviewResponse,
   BatchJobResult,
+  CorrelationStatsResponse,
+  PrescriptionImpactResponse,
 } from '@/core/models/analytics.model';
 
 @Injectable({ providedIn: 'root' })
@@ -43,6 +45,22 @@ export class AnalyticsService {
   getCognitiveDomains(keycloakId: string): Observable<CognitiveDomainDTO[]> {
     return this.http.get<CognitiveDomainDTO[]>(
       `${this.base}/patient/${encodeURIComponent(keycloakId)}/cognitive-domains`
+    );
+  }
+
+  getCorrelationStats(keycloakId: string, days = 30): Observable<CorrelationStatsResponse> {
+    const params = new HttpParams().set('days', String(days));
+    return this.http.get<CorrelationStatsResponse>(
+      `${this.base}/patient/${encodeURIComponent(keycloakId)}/correlation`,
+      { params }
+    );
+  }
+
+  getPrescriptionImpact(keycloakId: string, days = 60): Observable<PrescriptionImpactResponse> {
+    const params = new HttpParams().set('days', String(days));
+    return this.http.get<PrescriptionImpactResponse>(
+      `${this.base}/patient/${encodeURIComponent(keycloakId)}/prescription-impact`,
+      { params }
     );
   }
 

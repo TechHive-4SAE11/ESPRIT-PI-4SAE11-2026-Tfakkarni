@@ -252,7 +252,9 @@ export class MedicalFolderPdfService {
   exportCrossPatientReport(
     results: Array<{
       patientId: string;
+      patientDisplayName?: string | null;
       doctorId: string;
+      doctorDisplayName?: string | null;
       medicalFolderId: number;
       diseaseName: string;
       stage: string | null;
@@ -279,8 +281,8 @@ export class MedicalFolderPdfService {
     doc.setTextColor(0, 0, 0);
     y = 36;
 
-    const colW = [28, 28, 22, 40, 22, 38];
-    const headers = ['Patient ID', 'Doctor ID', 'Folder #', 'Disease', 'Stage', 'Diagnosis date'];
+    const colW = [32, 32, 18, 36, 20, 36];
+    const headers = ['Patient', 'Doctor', 'Folder #', 'Disease', 'Stage', 'Diagnosis date'];
     const toStr = (v: unknown) => (v == null || v === '' ? '—' : String(v));
     const formatD = (iso: string) => {
       try {
@@ -302,19 +304,34 @@ export class MedicalFolderPdfService {
     y += 10;
 
     doc.setFont('helvetica', 'normal');
+    const personCell = (name: string | null | undefined, id: string) => {
+      const line1 = name && String(name).trim() ? String(name).trim() : id;
+      const line2 = name && String(name).trim() ? id : '';
+      return line2 ? `${line1}\n${line2}` : line1;
+    };
     for (const r of results) {
       if (y > pageH - 22) {
         doc.addPage('landscape');
         y = M;
       }
       x = M + 2;
-      const row = [r.patientId, r.doctorId, `#${r.medicalFolderId}`, r.diseaseName, toStr(r.stage), formatD(r.diagnosisDate)];
+      const row = [
+        personCell(r.patientDisplayName, r.patientId),
+        personCell(r.doctorDisplayName, r.doctorId),
+        `#${r.medicalFolderId}`,
+        r.diseaseName,
+        toStr(r.stage),
+        formatD(r.diagnosisDate),
+      ];
+      let rowH = 6;
       row.forEach((cell, i) => {
         const text = doc.splitTextToSize(toStr(cell), colW[i] - 2);
-        doc.text(text[0] ?? '', x, y + 4);
+        doc.text(text, x, y + 4);
+        const lines = text.length;
+        rowH = Math.max(rowH, lines * 3.6 + 2);
         x += colW[i];
       });
-      y += 7;
+      y += rowH;
     }
 
     doc.setDrawColor(220, 220, 220);

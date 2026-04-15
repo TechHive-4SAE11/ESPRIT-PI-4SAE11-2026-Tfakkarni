@@ -25,6 +25,7 @@ export class AppointmentDetailComponent implements OnInit {
   appointment: Appointment | null = null;
   isLoading = true;
   errorMessage = '';
+  attendanceActionLoading = false;
 
   reminders: Reminder[] = [];
   remindersLoading = false;
@@ -73,9 +74,60 @@ export class AppointmentDetailComponent implements OnInit {
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
       case 'CANCELLED':
         return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      case 'NO_SHOW':
+        return 'bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-200';
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  }
+
+  canMarkAttendance(): boolean {
+    const s = this.appointment?.status;
+    return s === 'SCHEDULED' || s === 'CONFIRMED';
+  }
+
+  markNoShow(): void {
+    const id = this.appointment?.id;
+    if (!id || !this.canMarkAttendance() || this.attendanceActionLoading) return;
+    if (!window.confirm('Marquer ce rendez-vous comme absence (no-show) ?')) return;
+    this.attendanceActionLoading = true;
+    this.errorMessage = '';
+    this.appointmentService.markNoShow(id).subscribe({
+      next: (a) => {
+        this.appointment = a;
+        this.attendanceActionLoading = false;
+      },
+      error: (err: { error?: unknown; message?: string }) => {
+        const body = err?.error;
+        this.errorMessage =
+          typeof body === 'string'
+            ? body
+            : (body as { message?: string })?.message || err?.message || 'Action impossible.';
+        this.attendanceActionLoading = false;
+      },
+    });
+  }
+
+  markCompleted(): void {
+    const id = this.appointment?.id;
+    if (!id || !this.canMarkAttendance() || this.attendanceActionLoading) return;
+    if (!window.confirm('Marquer ce rendez-vous comme terminé (patient vu) ?')) return;
+    this.attendanceActionLoading = true;
+    this.errorMessage = '';
+    this.appointmentService.markCompleted(id).subscribe({
+      next: (a) => {
+        this.appointment = a;
+        this.attendanceActionLoading = false;
+      },
+      error: (err: { error?: unknown; message?: string }) => {
+        const body = err?.error;
+        this.errorMessage =
+          typeof body === 'string'
+            ? body
+            : (body as { message?: string })?.message || err?.message || 'Action impossible.';
+        this.attendanceActionLoading = false;
+      },
+    });
   }
 
   private loadReminders(appointmentId: number): void {

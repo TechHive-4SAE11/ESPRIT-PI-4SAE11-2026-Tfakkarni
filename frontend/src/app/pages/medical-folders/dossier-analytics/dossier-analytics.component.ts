@@ -23,8 +23,10 @@ import type {
   DiagnosticsByMonth,
   CrossPatientDisease,
   ClinicalSafetyStats,
+  FlaggedPatient,
 } from '@/core/services/dossier-analytics.service';
 import { MedicalFolderPdfService } from '@/core/services/medical-folder-pdf.service';
+import { MedicalFolderService } from '@/core/services/medical-folder.service';
 import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
@@ -90,7 +92,7 @@ const CHART_PALETTE = [
             <z-card class="p-6 rounded-xl shadow-sm border border-border/50">
               <h3 class="text-lg font-semibold mb-1 flex items-center gap-2">
                 <z-icon zType="calendar" class="h-5 w-5 text-primary" />
-                This month vs last month
+                This month vs last monthssss
               </h3>
               <p class="text-muted-foreground text-sm mb-4">Diagnostics and new folders</p>
               <div class="h-52" style="position: relative;">
@@ -148,6 +150,15 @@ const CHART_PALETTE = [
               in <code class="text-[10px] px-1 rounded bg-muted">backend/medical-service/.env</code> for production).
             </p>
           }
+          @if (data()?.safety?.geminiNote) {
+            <p class="text-xs mb-4 rounded-lg border px-3 py-2"
+              [ngClass]="data()?.safety?.geminiEnriched ? 'border-violet-500/30 bg-violet-500/10 text-violet-800 dark:text-violet-200' : 'border-border/50 bg-muted/30'">
+              @if (data()?.safety?.geminiEnriched) {
+                <span class="font-semibold">Gemini · </span>
+              }
+              {{ data()?.safety?.geminiNote }}
+            </p>
+          }
 
           <div class="grid gap-4 md:grid-cols-3 mb-8">
             <div class="p-4 rounded-xl border border-border/50 bg-background/50 backdrop-blur-sm">
@@ -175,7 +186,7 @@ const CHART_PALETTE = [
               </div>
               <div class="flex items-end gap-2">
                 <span class="text-3xl font-bold">{{ data()?.safety?.polypharmacyRiskCount }}</span>
-                <span class="text-xs text-muted-foreground mb-1">patients with >5 meds</span>
+                <span class="text-xs text-muted-foreground mb-1">patients with 5+ active med entries (tracking)</span>
               </div>
               <p class="text-[10px] text-muted-foreground mt-2 italic">Increased drug interaction probability</p>
             </div>
@@ -210,7 +221,14 @@ const CHART_PALETTE = [
                 <tbody z-table-body>
                   @for (c of data()?.safety?.potentialConflicts; track $index) {
                     <tr z-table-row class="hover:bg-destructive/5 transition-colors">
-                      <td z-table-cell class="font-bold py-2">{{ c.patientDisplayName || '—' }}</td>
+                      <td z-table-cell class="py-2">
+                        <div class="flex flex-col gap-0.5">
+                          <span class="font-semibold text-sm">{{ c.patientDisplayName || c.patientId || '—' }}</span>
+                          @if (c.patientDisplayName && c.patientId) {
+                            <span class="text-[10px] text-muted-foreground font-mono">{{ c.patientId }}</span>
+                          }
+                        </div>
+                      </td>
                       <td z-table-cell class="py-2"><span class="px-2 py-0.5 rounded bg-muted text-xs font-mono">{{ c.medicationName }}</span></td>
                       <td z-table-cell class="py-2 text-destructive font-medium">{{ c.conflictingCondition }}</td>
                       <td z-table-cell class="py-2">
@@ -266,8 +284,8 @@ const CHART_PALETTE = [
               <table z-table>
                 <thead z-table-header>
                   <tr z-table-row>
-                    <th z-table-head>Patient ID</th>
-                    <th z-table-head>Doctor ID</th>
+                    <th z-table-head>Patient</th>
+                    <th z-table-head>Doctor</th>
                     <th z-table-head>Folder</th>
                     <th z-table-head>Disease</th>
                     <th z-table-head>Stage</th>
@@ -277,8 +295,22 @@ const CHART_PALETTE = [
                 <tbody z-table-body>
                   @for (r of crossPatientResults(); track r.diagnosticsId) {
                     <tr z-table-row>
-                      <td z-table-cell class="font-medium">{{ r.patientId }}</td>
-                      <td z-table-cell>{{ r.doctorId }}</td>
+                      <td z-table-cell class="align-top">
+                        <div class="flex flex-col gap-0.5">
+                          <span class="font-semibold text-sm">{{ r.patientDisplayName || r.patientId }}</span>
+                          @if (r.patientDisplayName) {
+                            <span class="text-[10px] text-muted-foreground font-mono break-all">{{ r.patientId }}</span>
+                          }
+                        </div>
+                      </td>
+                      <td z-table-cell class="align-top">
+                        <div class="flex flex-col gap-0.5">
+                          <span class="font-semibold text-sm">{{ r.doctorDisplayName || r.doctorId }}</span>
+                          @if (r.doctorDisplayName) {
+                            <span class="text-[10px] text-muted-foreground font-mono break-all">{{ r.doctorId }}</span>
+                          }
+                        </div>
+                      </td>
                       <td z-table-cell>#{{ r.medicalFolderId }}</td>
                       <td z-table-cell>{{ r.diseaseName }}</td>
                       <td z-table-cell>{{ r.stage ?? '-' }}</td>
@@ -293,6 +325,98 @@ const CHART_PALETTE = [
             <p class="text-muted-foreground text-sm py-4">No results. Try a different disease name or stage.</p>
           }
         </z-card>
+
+        <z-card class="p-6 rounded-xl shadow-sm border border-border/50 bg-destructive/5 mt-6 mb-6">
+          <h3 class="text-lg font-semibold mb-1 flex items-center gap-2">
+            <z-icon zType="alert-triangle" class="h-5 w-5 text-destructive" />
+            Patient Attendance Monitoring & No-Show Flagging
+          </h3>
+          <p class="text-muted-foreground text-sm mb-4">Patients flagged for missed appointments or booking restrictions requiring manual review.</p>
+          
+          @if (!loading() && data()?.flagged) {
+            <div class="overflow-x-auto border border-border/50 rounded-lg bg-background">
+              <table z-table class="w-full">
+                <thead z-table-header class="bg-muted/30">
+                  <tr z-table-row>
+                    <th z-table-head>Patient</th>
+                    <th z-table-head>Folder ID</th>
+                    <th z-table-head class="text-center">Consecutive No-Shows</th>
+                    <th z-table-head>Risk Level</th>
+                    <th z-table-head>Status</th>
+                    <th z-table-head class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody z-table-body>
+                  @if (data()?.flagged?.length) {
+                    @for (p of data()?.flagged; track p.medicalFolderId) {
+                      <tr z-table-row class="hover:bg-muted/50 transition-colors">
+                        <td z-table-cell class="align-top">
+                          <div class="flex flex-col gap-0.5">
+                            <span class="font-semibold text-sm">{{ p.patientDisplayName || p.patientId }}</span>
+                            @if (p.patientDisplayName) {
+                              <span class="text-[10px] text-muted-foreground font-mono break-all">{{ p.patientId }}</span>
+                            }
+                          </div>
+                        </td>
+                        <td z-table-cell class="font-mono text-sm">#{{ p.medicalFolderId }}</td>
+                        <td z-table-cell class="font-bold text-lg text-center" [ngClass]="p.consecutiveNoShows >= 3 ? 'text-destructive' : (p.consecutiveNoShows >= 2 ? 'text-orange-500' : '')">
+                          {{ p.consecutiveNoShows }}
+                        </td>
+                        <td z-table-cell>
+                          <span class="px-2 py-0.5 rounded-full text-xs font-bold whitespace-nowrap"
+                            [ngClass]="{
+                              'bg-destructive text-destructive-foreground': p.attendanceRiskLevel === 'RESTRICTED',
+                              'bg-orange-500 text-white': p.attendanceRiskLevel === 'WARNING',
+                              'bg-muted text-muted-foreground': p.attendanceRiskLevel === 'NONE'
+                            }">
+                            {{ p.attendanceRiskLevel }}
+                          </span>
+                        </td>
+                        <td z-table-cell>
+                          <div class="flex flex-col gap-1 items-start">
+                            @if (p.bookingRestricted) {
+                              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-destructive/10 text-destructive border border-destructive/20 hidden md:inline-block">
+                                RESTRICTED
+                              </span>
+                            }
+                            @if (p.manualReviewRequired) {
+                              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 hidden md:inline-block">
+                                NEEDS REVIEW
+                              </span>
+                            }
+                            @if (!p.bookingRestricted && !p.manualReviewRequired) {
+                              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 hidden md:inline-block">
+                                NORMAL
+                              </span>
+                            }
+                          </div>
+                        </td>
+                        <td z-table-cell class="text-right">
+                          <button z-button [zType]="p.bookingRestricted ? 'outline' : 'destructive'" zSize="sm" (click)="toggleRestriction(p)">
+                            <z-icon [zType]="p.bookingRestricted ? 'unlock' : 'lock'" class="mr-1.5 h-3.5 w-3.5" />
+                            {{ p.bookingRestricted ? 'Unban' : 'Ban / Restrict' }}
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  } @else {
+                    <tr z-table-row>
+                      <td z-table-cell colspan="5" class="text-center py-8">
+                        <div class="flex flex-col items-center gap-2">
+                          <z-icon zType="check-circle" class="h-8 w-8 text-emerald-500/50" />
+                          <p class="text-muted-foreground text-sm">No patients are currently flagged for attendance risks.</p>
+                          <p class="text-xs text-muted-foreground/60 uppercase tracking-widest">All patients have good attendance records</p>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else if (loading()) {
+            <z-skeleton class="h-24 w-full" />
+          }
+        </z-card>
       }
     </div>
   `,
@@ -300,6 +424,7 @@ const CHART_PALETTE = [
 export class DossierAnalyticsComponent implements OnInit, AfterViewChecked, OnDestroy {
   private readonly analytics = inject(DossierAnalyticsService);
   private readonly pdfService = inject(MedicalFolderPdfService);
+  private readonly folderService = inject(MedicalFolderService);
 
   @ViewChild('topDiseasesCanvas') topDiseasesRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('comparisonCanvas') comparisonRef!: ElementRef<HTMLCanvasElement>;
@@ -321,6 +446,7 @@ export class DossierAnalyticsComponent implements OnInit, AfterViewChecked, OnDe
     comparison: MonthComparison;
     byMonth: DiagnosticsByMonth[];
     safety: ClinicalSafetyStats;
+    flagged: FlaggedPatient[];
   } | null>(null);
 
   diseaseLegend = computed(() => {
@@ -367,6 +493,7 @@ export class DossierAnalyticsComponent implements OnInit, AfterViewChecked, OnDe
       comparison: this.analytics.getMonthComparison(),
       byMonth: this.analytics.getDiagnosticsByMonth(year),
       safety: this.analytics.getSafetyAudit(),
+      flagged: this.analytics.getFlaggedPatients(),
     }).subscribe({
       next: (data) => {
         this.data.set(data);
@@ -409,15 +536,59 @@ export class DossierAnalyticsComponent implements OnInit, AfterViewChecked, OnDe
     });
   }
 
+  toggleRestriction(p: FlaggedPatient): void {
+    if (!p.bookingRestricted) {
+      if (confirm(`Voulez-vous vraiment bannir/restreindre la réservation de rendez-vous pour ce patient ?`)) {
+        const reason = prompt("Raison de la restriction (optionnel) :", "Annulations abusives") || "Mesure préventive";
+        this.folderService.restrictBooking(p.medicalFolderId, reason).subscribe({
+          next: () => this.ngOnInit(),
+          error: () => alert("Failed to restrict patient.")
+        });
+      }
+    } else {
+      if (confirm(`Souhaitez-vous lever la restriction pour ce patient ?`)) {
+        this.folderService.clearBookingRestriction(p.medicalFolderId).subscribe({
+          next: () => this.ngOnInit(),
+          error: () => alert("Failed to un-restrict patient.")
+        });
+      }
+    }
+  }
+
   exportCrossPatientCsv(): void {
     const rows = this.crossPatientResults();
     if (!rows.length) return;
-    const headers = ['Patient ID', 'Doctor ID', 'Folder ID', 'Disease', 'Stage', 'Diagnosis date'];
+    const headers = [
+      'Patient name',
+      'Patient ID',
+      'Doctor name',
+      'Doctor ID',
+      'Folder ID',
+      'Disease',
+      'Stage',
+      'Diagnosis date',
+    ];
     const escape = (v: string | number | null | undefined) => {
       const s = v == null ? '' : String(v);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
-    const lines = [headers.join(','), ...rows.map((r) => [r.patientId, r.doctorId, r.medicalFolderId, r.diseaseName, r.stage ?? '', r.diagnosisDate].map(escape).join(','))];
+    const lines = [
+      headers.join(','),
+      ...rows.map((r) =>
+        [
+          r.patientDisplayName ?? '',
+          r.patientId,
+          r.doctorDisplayName ?? '',
+          r.doctorId,
+          r.medicalFolderId,
+          r.diseaseName,
+          r.stage ?? '',
+          r.diagnosisDate,
+        ]
+          .map(escape)
+          .join(','),
+      ),
+    ];
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -431,7 +602,16 @@ export class DossierAnalyticsComponent implements OnInit, AfterViewChecked, OnDe
     if (!rows.length) return;
     const title = `Cross-Patient: ${this.crossDiseaseName().trim()}${this.crossStage().trim() ? ` (stage ${this.crossStage().trim()})` : ''}`;
     const blob = this.pdfService.exportCrossPatientReport(
-      rows.map((r) => ({ patientId: r.patientId, doctorId: r.doctorId, medicalFolderId: r.medicalFolderId, diseaseName: r.diseaseName, stage: r.stage, diagnosisDate: r.diagnosisDate })),
+      rows.map((r) => ({
+        patientId: r.patientId,
+        patientDisplayName: r.patientDisplayName,
+        doctorId: r.doctorId,
+        doctorDisplayName: r.doctorDisplayName,
+        medicalFolderId: r.medicalFolderId,
+        diseaseName: r.diseaseName,
+        stage: r.stage,
+        diagnosisDate: r.diagnosisDate,
+      })),
       title
     );
     const a = document.createElement('a');

@@ -70,6 +70,7 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
 
   @Input({ required: true }) patient!: UserInfo;
   @Input() doctor: UserInfo | null = null;
+  @Input() setPage!: (page: string) => void;
 
   // State signals
   prescriptions = signal<PrescriptionResponseDTO[]>([]);
@@ -395,13 +396,12 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
 
     console.log('[PrescriptionManagement] Loading sessions for patient:', patientDbId, 'doctor:', currentDoctorDbId);
 
-    // Try to find the medical folder in tracking-service first (synced version)
-    // We can use the patient ID to find common folders
+    // Try to find the medical folder in medical-service (using the correct endpoint)
     this.sessionService.getSessionsByPatient(patientDbId)
       .pipe(
-        switchMap(allPatientSessions => {
-          // Fetch from tracking-service via the new gateway route
-          return this.http.get<any[]>(`${environment.apiBaseUrl}/api/tracking/medical-folders/patient/${patientDbId}/doctor/${currentDoctorDbId}`);
+        switchMap(() => {
+          // Use medical-service endpoint which is correctly mapped and exists
+          return this.http.get<any[]>(`${environment.apiBaseUrl}/api/medical-folders/patient/${patientDbId}/doctor/${currentDoctorDbId}`);
         }),
         tap(folders => {
           console.log('[PrescriptionManagement] Tracking-service medical folders:', folders);

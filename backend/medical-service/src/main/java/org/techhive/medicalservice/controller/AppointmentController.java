@@ -8,6 +8,7 @@ import org.techhive.medicalservice.dto.ReminderRequestDTO;
 import org.techhive.medicalservice.dto.ReminderResponseDTO;
 import org.techhive.medicalservice.exception.AppointmentNotFoundException;
 import org.techhive.medicalservice.exception.AppointmentOverlapException;
+import org.techhive.medicalservice.exception.BookingRestrictedException;
 import org.techhive.medicalservice.exception.InvalidAppointmentException;
 import org.techhive.medicalservice.service.AppointmentService;
 import jakarta.validation.Valid;
@@ -93,6 +94,16 @@ public class AppointmentController {
         return ResponseEntity.ok(appointments);
     }
 
+    @PostMapping("/{id}/no-show")
+    public ResponseEntity<AppointmentResponseDTO> markNoShow(@PathVariable Long id) {
+        return ResponseEntity.ok(appointmentService.markAppointmentNoShow(id));
+    }
+
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<AppointmentResponseDTO> markCompleted(@PathVariable Long id) {
+        return ResponseEntity.ok(appointmentService.markAppointmentCompleted(id));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<AppointmentResponseDTO> getAppointmentById(@PathVariable Long id) {
         AppointmentResponseDTO appointment = appointmentService.getAppointmentById(id);
@@ -138,6 +149,11 @@ public class AppointmentController {
     @ExceptionHandler(AppointmentNotFoundException.class)
     public ResponseEntity<String> handleNotFoundException(AppointmentNotFoundException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(BookingRestrictedException.class)
+    public ResponseEntity<String> handleBookingRestricted(BookingRestrictedException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler({AppointmentOverlapException.class, InvalidAppointmentException.class})

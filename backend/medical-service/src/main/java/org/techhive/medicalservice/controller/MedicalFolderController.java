@@ -190,6 +190,26 @@ public class MedicalFolderController {
 	}
 
 	/**
+	 * After manual review, lift temporary booking restriction (does not delete the folder).
+	 */
+	@PostMapping("/{id}/clear-booking-restriction")
+	public ResponseEntity<MedicalFolderResponse> clearBookingRestriction(@PathVariable Long id) {
+		log.info("POST /api/medical-folders/{}/clear-booking-restriction", id);
+		return ResponseEntity.ok(medicalFolderService.clearBookingRestrictionAfterReview(id));
+	}
+
+	/**
+	 * Manually restrict a patient from booking appointments.
+	 */
+	@PostMapping("/{id}/restrict-booking")
+	public ResponseEntity<MedicalFolderResponse> restrictPatientBooking(
+			@PathVariable Long id,
+			@RequestParam(required = false) String reason) {
+		log.info("POST /api/medical-folders/{}/restrict-booking", id);
+		return ResponseEntity.ok(medicalFolderService.manualRestrictPatientBooking(id, reason));
+	}
+
+	/**
 	 * Update a medical folder (Full update)
 	 * 
 	 * @param id the medical folder ID

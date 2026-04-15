@@ -25,6 +25,8 @@ public interface MedicalFolderRepository extends JpaRepository<MedicalFolder, Lo
 
     long countByCreatedAtAfter(LocalDateTime date);
 
+    List<MedicalFolder> findByBookingRestrictedTrueOrManualReviewRequiredTrue();
+
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
     long countByUpdatedAtAfter(LocalDateTime date);

@@ -1,0 +1,38 @@
+<div z-card class="p-6 mb-6">
+  <div class="flex items-center gap-4 mb-4">
+    <z-icon zType="bar-chart-3" class="w-7 h-7 text-primary" />
+    <h4 class="text-lg font-semibold">Prescription History & Analytics</h4>
+  </div>
+  <div *ngIf="isLoading()" class="text-muted-foreground">Loading analytics...</div>
+  <div *ngIf="error()" class="text-destructive">{{ error() }}</div>
+  <div *ngIf="!isLoading() && !error()">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+      <div class="flex flex-col items-center">
+        <span class="text-2xl font-bold">{{ totalPrescriptions }}</span>
+        <span class="text-muted-foreground text-sm">Total Prescriptions</span>
+      </div>
+      <div class="flex flex-col items-center">
+        <span class="text-2xl font-bold">{{ uniqueMedications }}</span>
+        <span class="text-muted-foreground text-sm">Unique Medications</span>
+      </div>
+      <div class="flex flex-col items-center">
+        <span class="text-2xl font-bold">{{ adherenceRate }}%</span>
+        <span class="text-muted-foreground text-sm">Adherence Rate</span>
+      </div>
+    </div>
+    <div>
+      <!-- Timeline or table of prescription changes can be added here -->
+      <h5 class="font-semibold mb-2">Recent Prescriptions</h5>
+      <div *ngIf="prescriptions().length === 0" class="text-muted-foreground text-sm">No prescriptions found.</div>
+      <ul *ngIf="prescriptions().length > 0" class="space-y-2">
+        <li *ngFor="let p of prescriptions().slice(0,5)">
+          <div class="flex items-center gap-2">
+            <z-icon zType="file" class="w-4 h-4 text-primary" />
+            <span class="font-medium">{{ p.createdAt | date:'mediumDate' }}</span>
+            <span class="text-muted-foreground text-xs ml-2">{{ p.medications.length }} meds</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

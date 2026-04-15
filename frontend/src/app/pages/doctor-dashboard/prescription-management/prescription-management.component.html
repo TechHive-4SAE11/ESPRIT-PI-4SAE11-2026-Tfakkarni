@@ -2,6 +2,10 @@
     <div class="flex items-center justify-between">
         <h3 class="text-xl font-semibold">Prescriptions for {{ patient.firstName }} {{ patient.lastName }}</h3>
         <div class="flex gap-2">
+            <button z-button zType="outline" (click)="setPage('Patient Progress')">
+                <z-icon zType="bar-chart-3" class="mr-2 w-4 h-4" />
+                View Detailed Analytics
+            </button>
             <button z-button zType="outline" (click)="showManageTemplates.set(!showManageTemplates())">
                 <z-icon zType="bookmark" class="mr-2 w-4 h-4" />
                 {{ showManageTemplates() ? 'Hide Templates' : 'My Templates' }}
