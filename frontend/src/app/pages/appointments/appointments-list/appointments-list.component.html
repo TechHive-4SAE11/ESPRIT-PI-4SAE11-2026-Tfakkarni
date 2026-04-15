@@ -93,6 +93,24 @@
                   ✏️
                 </button>
 
+                <!-- ✅ COMPLETED BUTTON -->
+                @if (appointment.status !== 'COMPLETED') {
+                  <button z-button zSize="icon-sm" zShape="circle" type="button"
+                          class="rounded-full bg-green-600 hover:bg-green-700 text-white"
+                          (click)="markAsCompleted(appointment.id!)" title="Marquer comme terminé">
+                    ✅
+                  </button>
+                }
+
+                <!-- ❌ NO_SHOW BUTTON -->
+                @if (appointment.status !== 'NO_SHOW' && appointment.status !== 'COMPLETED') {
+                  <button z-button zSize="icon-sm" zShape="circle" type="button"
+                          class="rounded-full bg-amber-600 hover:bg-amber-700 text-white"
+                          (click)="markAsNoShow(appointment.id!)" title="Marquer comme non présent">
+                    ❌
+                  </button>
+                }
+
                 <!-- ✅ BOUTON RESCHEDULE -->
                 <button z-button zSize="icon-sm" zShape="circle" type="button"
                         class="rounded-full px-3 bg-purple-600 hover:bg-purple-700 text-white"

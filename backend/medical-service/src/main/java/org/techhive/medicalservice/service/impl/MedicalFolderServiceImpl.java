@@ -19,6 +19,7 @@ import org.techhive.medicalservice.repository.DiagnosticsRepository;
 import org.techhive.medicalservice.repository.MedicalFolderRepository;
 import org.techhive.medicalservice.repository.MedicalHistoryRepository;
 import org.techhive.medicalservice.service.MedicalFolderService;
+import org.techhive.medicalservice.service.AttendanceMonitoringService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,6 +44,9 @@ public class MedicalFolderServiceImpl implements MedicalFolderService {
 
 	@Autowired
 	private MedicalFolderMapper medicalFolderMapper;
+
+	@Autowired
+	private AttendanceMonitoringService attendanceMonitoringService;
 
 	@Override
 	public Page<MedicalFolderResponse> getMedicalFolders(Pageable pageable, String search) {
@@ -133,6 +137,22 @@ public class MedicalFolderServiceImpl implements MedicalFolderService {
 	public MedicalFolderResponse partialUpdateMedicalFolder(Long id, UpdateMedicalFolderRequest request) {
 		log.debug("Partially updating medical folder with id: {}", id);
 		return updateMedicalFolder(id, request);
+	}
+
+	@Override
+	public MedicalFolderResponse clearBookingRestrictionAfterReview(Long medicalFolderId) {
+		attendanceMonitoringService.clearBookingRestrictionAfterReview(medicalFolderId);
+		return getMedicalFolderById(medicalFolderId);
+	}
+
+	@Override
+	public MedicalFolderResponse manualRestrictPatientBooking(Long medicalFolderId, String reason) {
+		log.info("Manually restricting patient for medical folder id: {}", medicalFolderId);
+		MedicalFolder folder = medicalFolderRepository.findById(medicalFolderId)
+				.orElseThrow(() -> new ResourceNotFoundException("Medical folder not found with id: " + medicalFolderId));
+		folder.setBookingRestricted(true);
+		folder.setRestrictionReason(reason != null && !reason.isBlank() ? reason : "Manuel: Restriction de réservation fixée par le médecin.");
+		return medicalFolderMapper.toResponse(medicalFolderRepository.save(folder));
 	}
 
 	@Override

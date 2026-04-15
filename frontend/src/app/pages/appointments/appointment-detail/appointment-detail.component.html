@@ -62,6 +62,38 @@
           </div>
         }
 
+        @if (canMarkAttendance()) {
+          <div class="rounded-xl border border-dashed border-amber-200/80 dark:border-amber-800/50 bg-amber-50/30 dark:bg-amber-950/15 p-4 space-y-3">
+            <p class="text-sm font-medium text-foreground">Suivi de présence</p>
+            <p class="text-xs text-muted-foreground">
+              Indiquez si le patient s’est présenté ou s’il s’agit d’une absence (no-show). Cela met à jour le dossier médical.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <button
+                z-button
+                zType="outline"
+                zSize="lg"
+                class="rounded-full px-5"
+                type="button"
+                [disabled]="attendanceActionLoading"
+                (click)="markNoShow()"
+              >
+                Marquer no-show
+              </button>
+              <button
+                z-button
+                zSize="lg"
+                class="rounded-full px-5"
+                type="button"
+                [disabled]="attendanceActionLoading"
+                (click)="markCompleted()"
+              >
+                Marquer terminé
+              </button>
+            </div>
+          </div>
+        }
+
         <div class="grid gap-4 sm:grid-cols-2">
           <div class="rounded-xl bg-blue-50/50 dark:bg-blue-950/20 p-4 border border-blue-100/50 dark:border-blue-900/30">
             <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Patient</p>
@@ -188,7 +220,7 @@
           >
             Retour
           </button>
-          @if (appointment.status !== 'CANCELLED' && appointment.status !== 'COMPLETED') {
+          @if (appointment.status !== 'CANCELLED' && appointment.status !== 'COMPLETED' && appointment.status !== 'NO_SHOW') {
             <button
               z-button
               zSize="lg"

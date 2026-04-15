@@ -144,32 +144,37 @@
 
 <!-- ══ PATIENT COMPOSITE SCORE ══ -->
 @if (patientScore()) {
-<div class="mb-6 flex items-center gap-4 p-4 rounded-xl border bg-gradient-to-r from-violet-50 to-blue-50 dark:from-violet-900/20 dark:to-blue-900/20 dark:border-violet-800/30">
+<div
+    class="mb-6 flex items-center gap-4 p-4 rounded-xl border bg-gradient-to-r from-violet-50 to-blue-50 dark:from-violet-900/20 dark:to-blue-900/20 dark:border-violet-800/30">
     <div class="flex items-center gap-2.5 shrink-0">
         <span class="text-lg">🧠</span>
         <div>
             <p class="text-xs text-muted-foreground leading-none mb-0.5">Score global</p>
-            <p class="text-2xl font-bold text-primary leading-none">{{ patientScore()!.overallScore | number:'1.0-0' }}</p>
+            <p class="text-2xl font-bold text-primary leading-none">{{ patientScore()!.overallScore | number:'1.0-0' }}
+            </p>
         </div>
     </div>
     <div class="h-8 w-px bg-border shrink-0"></div>
     <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-        <span><span class="text-muted-foreground">Cognitif</span> <strong>{{ patientScore()!.cognitiveScore | number:'1.0-0' }}</strong></span>
-        <span><span class="text-muted-foreground">Quotidien</span> <strong>{{ patientScore()!.dailyFunctioningScore | number:'1.0-0' }}</strong></span>
-        <span><span class="text-muted-foreground">Médical</span> <strong>{{ patientScore()!.medicalStabilityScore | number:'1.0-0' }}</strong></span>
-        <span><span class="text-muted-foreground">IoT</span> <strong>{{ patientScore()!.iotRiskScore | number:'1.0-0' }}</strong></span>
+        <span><span class="text-muted-foreground">Cognitif</span> <strong>{{ patientScore()!.cognitiveScore |
+                number:'1.0-0' }}</strong></span>
+        <span><span class="text-muted-foreground">Quotidien</span> <strong>{{ patientScore()!.dailyFunctioningScore |
+                number:'1.0-0' }}</strong></span>
+        <span><span class="text-muted-foreground">Médical</span> <strong>{{ patientScore()!.medicalStabilityScore |
+                number:'1.0-0' }}</strong></span>
+        <span><span class="text-muted-foreground">IoT</span> <strong>{{ patientScore()!.iotRiskScore | number:'1.0-0'
+                }}</strong></span>
     </div>
-    <span class="ml-auto text-xs px-2.5 py-1 rounded-full font-semibold shrink-0"
-        [class]="patientScore()!.stage === 'LOW_RISK' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+    <span class="ml-auto text-xs px-2.5 py-1 rounded-full font-semibold shrink-0" [class]="patientScore()!.stage === 'LOW_RISK' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
         : patientScore()!.stage === 'EARLY' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
         : patientScore()!.stage === 'MODERATE' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
         : patientScore()!.stage === 'SEVERE' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
         : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'">
         {{ patientScore()!.stage === 'LOW_RISK' ? 'Risque faible'
-         : patientScore()!.stage === 'EARLY' ? 'Stade précoce'
-         : patientScore()!.stage === 'MODERATE' ? 'Stade modéré'
-         : patientScore()!.stage === 'SEVERE' ? 'Stade sévère'
-         : 'Inconnu' }}
+        : patientScore()!.stage === 'EARLY' ? 'Stade précoce'
+        : patientScore()!.stage === 'MODERATE' ? 'Stade modéré'
+        : patientScore()!.stage === 'SEVERE' ? 'Stade sévère'
+        : 'Inconnu' }}
     </span>
 </div>
 }
@@ -178,8 +183,10 @@
 <div class="mb-6">
     <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Soins quotidiens</h3>
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <button (click)="setPage('Suivi Quotidien')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 shrink-0">
+        <button (click)="setPage('Suivi Quotidien')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 shrink-0">
                 <z-icon zType="file" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -187,8 +194,10 @@
                 <p class="text-xs text-muted-foreground truncate">Alimentation, activités, incidents</p>
             </div>
         </button>
-        <button (click)="setPage('Medications')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400 shrink-0">
+        <button (click)="setPage('Medications')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400 shrink-0">
                 <z-icon zType="pill" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -196,8 +205,10 @@
                 <p class="text-xs text-muted-foreground truncate">Suivi des prises</p>
             </div>
         </button>
-        <button (click)="setPage('Prescriptions')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 shrink-0">
+        <button (click)="setPage('Prescriptions')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 shrink-0">
                 <z-icon zType="pill" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -205,8 +216,10 @@
                 <p class="text-xs text-muted-foreground truncate">Prescriptions du médecin</p>
             </div>
         </button>
-        <button (click)="setPage('CarePlans')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 shrink-0">
+        <button (click)="setPage('CarePlans')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 shrink-0">
                 <z-icon zType="activity" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -221,8 +234,10 @@
 <div class="mb-6">
     <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Jeux & mémoire</h3>
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <button (click)="setPage('Game Builder')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 shrink-0">
+        <button (click)="setPage('Game Builder')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 shrink-0">
                 <z-icon zType="zap" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -230,8 +245,10 @@
                 <p class="text-xs text-muted-foreground truncate">Jeux de mémoire personnalisés</p>
             </div>
         </button>
-        <button (click)="setPage('Data Library')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400 shrink-0">
+        <button (click)="setPage('Data Library')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400 shrink-0">
                 <z-icon zType="folder" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -239,8 +256,10 @@
                 <p class="text-xs text-muted-foreground truncate">Photos, lieux, films</p>
             </div>
         </button>
-        <button (click)="setPage('Tags')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400 shrink-0">
+        <button (click)="setPage('Tags')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400 shrink-0">
                 <z-icon zType="search" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -248,8 +267,10 @@
                 <p class="text-xs text-muted-foreground truncate">Organiser avec des étiquettes</p>
             </div>
         </button>
-        <button (click)="setPage('Quizzes')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 shrink-0">
+        <button (click)="setPage('Quizzes')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 shrink-0">
                 <z-icon zType="brain" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -264,8 +285,10 @@
 <div class="mb-6">
     <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Surveillance santé</h3>
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <button (click)="setPage('Safe Zone')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 shrink-0">
+        <button (click)="setPage('Safe Zone')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 shrink-0">
                 <z-icon zType="shield" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -273,8 +296,10 @@
                 <p class="text-xs text-muted-foreground truncate">GPS & géofencing</p>
             </div>
         </button>
-        <button (click)="setPage('Sleep Analysis')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400 shrink-0">
+        <button (click)="setPage('Sleep Analysis')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400 shrink-0">
                 <z-icon zType="activity" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -282,8 +307,10 @@
                 <p class="text-xs text-muted-foreground truncate">Rythme cardiaque & habitudes</p>
             </div>
         </button>
-        <button (click)="setPage('Equipment')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 shrink-0">
+        <button (click)="setPage('Equipment')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 shrink-0">
                 <z-icon zType="settings" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -291,8 +318,10 @@
                 <p class="text-xs text-muted-foreground truncate">Matériel médical</p>
             </div>
         </button>
-        <button (click)="setPage('Coaching')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 shrink-0">
+        <button (click)="setPage('Coaching')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 shrink-0">
                 <z-icon zType="target" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -307,8 +336,10 @@
 <div class="mb-2">
     <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Médical & communication</h3>
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <button (click)="setPage('Dossier médical')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400 shrink-0">
+        <button (click)="setPage('Dossier médical')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400 shrink-0">
                 <z-icon zType="folder" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -316,8 +347,10 @@
                 <p class="text-xs text-muted-foreground truncate">Diagnostics & historique</p>
             </div>
         </button>
-        <button (click)="setPage('Statistiques')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 shrink-0">
+        <button (click)="setPage('Statistiques')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 shrink-0">
                 <z-icon zType="bar-chart-3" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -325,8 +358,10 @@
                 <p class="text-xs text-muted-foreground truncate">Graphiques & tendances</p>
             </div>
         </button>
-        <button (click)="goToAppointments()" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 shrink-0">
+        <button (click)="goToAppointments()"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 shrink-0">
                 <z-icon zType="calendar" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -334,8 +369,10 @@
                 <p class="text-xs text-muted-foreground truncate">Consultations & rappels</p>
             </div>
         </button>
-        <button (click)="setPage('Meetings')" class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
-            <span class="flex items-center justify-center h-9 w-9 rounded-lg bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 shrink-0">
+        <button (click)="setPage('Meetings')"
+            class="flex items-center gap-3 p-4 rounded-xl border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left">
+            <span
+                class="flex items-center justify-center h-9 w-9 rounded-lg bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 shrink-0">
                 <z-icon zType="play-circle" class="h-5 w-5" />
             </span>
             <div class="min-w-0">
@@ -427,25 +464,20 @@
 }
 
 @case ('Meetings') {
-  @if (meetingRoomOpen()) {
-    <app-meeting-room
-      [meeting]="activeMeeting()!"
-      [currentUser]="currentUserForMeeting()"
-      (meetingEnded)="onMeetingEnded($event)"
-      (close)="closeMeetingRoom()" />
-  } @else {
-    <div class="flex items-center gap-2 mb-6">
-      <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
+@if (meetingRoomOpen()) {
+<app-meeting-room [meeting]="activeMeeting()!" [currentUser]="currentUserForMeeting()"
+    (meetingEnded)="onMeetingEnded($event)" (close)="closeMeetingRoom()" />
+} @else {
+<div class="flex items-center gap-2 mb-6">
+    <button z-button zType="ghost" zSize="sm" (click)="setPage('Home')">
         <z-icon zType="arrow-left" class="mr-1" />
         Retour
-      </button>
-    </div>
-    <app-helper-meeting-list
-      [patientKeycloakId]="keycloakId"
-      [currentUserKeycloakId]="keycloakId"
-      [currentUserName]="currentUser() ? (currentUser()!.firstName + ' ' + currentUser()!.lastName) : 'Aidant'"
-      (joinMeeting)="openMeetingRoom($event)" />
-  }
+    </button>
+</div>
+<app-helper-meeting-list [patientKeycloakId]="keycloakId" [currentUserKeycloakId]="keycloakId"
+    [currentUserName]="currentUser() ? (currentUser()!.firstName + ' ' + currentUser()!.lastName) : 'Aidant'"
+    (joinMeeting)="openMeetingRoom($event)" />
+}
 }
 @case ('Quizzes') {
 <div class="flex items-center gap-2 mb-6">

@@ -60,61 +60,30 @@
         }
       </div>
 
-      <!-- Patient -->
-      <div class="space-y-2">
-        <label for="patientName" class="text-sm font-medium text-gray-700 dark:text-gray-300">👤 Patient</label>
-        <div
-          class="relative rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400">
-          <input z-input id="patientName" type="text" formControlName="patientName" list="add-patient-suggestions"
-            placeholder="Nom du patient"
-            class="w-full rounded-xl bg-transparent px-4 py-3 text-gray-900 dark:text-white placeholder:text-muted-foreground border-0 focus:ring-0" />
-          <datalist id="add-patient-suggestions">
-            @for (s of patientSuggestions; track s.id) {
-            <option [value]="s.name"></option>
-            }
-          </datalist>
-        </div>
-        @if (getControlError('patientName')) {
-        <p class="text-sm text-red-600 dark:text-red-400">{{ getControlError('patientName') }}</p>
-        }
-        <input type="hidden" formControlName="patientId" />
-      </div>
-
-      <!-- Médecin -->
       <!-- Médecin -->
       <div class="space-y-2">
-        <label for="doctorName" class="text-sm font-medium text-gray-700 dark:text-gray-300">👨‍⚕️ Médecin</label>
-        <div
-          class="relative rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400">
-          <input
-            z-input
-            id="doctorName"
-            type="text"
-            formControlName="doctorName"
-            list="add-doctor-suggestions"
-            placeholder="Nom du médecin"
-            [attr.readonly]="authService.getUserRoles().includes('doctor') ? true : null"
-            [ngClass]="{'bg-gray-100 cursor-not-allowed': authService.getUserRoles().includes('doctor')}"
-            class="w-full rounded-xl bg-transparent px-4 py-3 text-gray-900 dark:text-white placeholder:text-muted-foreground border-0 focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-          <datalist id="add-doctor-suggestions">
-            @for (s of doctorSuggestions; track s.id) {
-              <option [value]="s.name"></option>
-            }
-          </datalist>
-        </div>
+        <label for="doctorId" class="text-sm font-medium text-gray-700 dark:text-gray-300">👨‍⚕️ Médecin</label>
+        <select
+          id="doctorId"
+          formControlName="doctorId"
+          [attr.disabled]="authService.getUserRoles().includes('doctor') ? true : null"
+          [ngClass]="{'bg-gray-100 cursor-not-allowed': authService.getUserRoles().includes('doctor')}"
+          class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 px-4 py-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed">
+          <option value="">Sélectionnez un médecin (optionnel pour suivi)</option>
+          @for (s of doctorSuggestions; track s.id) {
+            <option [value]="s.id">{{ s.name }}</option>
+          }
+        </select>
 
-        <!-- Message informatif pour les docteurs -->
         @if (authService.getUserRoles().includes('doctor')) {
           <p class="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
             <span>⚕️</span> Vous êtes le médecin traitant (champ verrouillé)
           </p>
         }
 
-        @if (getControlError('doctorName')) {
-          <p class="text-sm text-red-600 dark:text-red-400">{{ getControlError('doctorName') }}</p>
+        @if (getControlError('doctorId') || (form.get('doctorId')?.invalid && form.get('doctorId')?.touched)) {
+          <p class="text-sm text-red-600 dark:text-red-400">Veuillez sélectionner un médecin.</p>
         }
-        <input type="hidden" formControlName="doctorId" />
       </div>
 
       <!-- Dates -->

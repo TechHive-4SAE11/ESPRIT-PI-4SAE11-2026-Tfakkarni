@@ -10,10 +10,12 @@ import {
 } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { Subject, takeUntil } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Subject, takeUntil, forkJoin } from 'rxjs';
 
 import { AppointmentService } from '@/services/appointment.service';
 import { Appointment } from '@/models/appointment.model';
+import { UserApiService, UserInfo } from '@/core/services/user-api.service';
 
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardButtonComponent } from '@/shared/components/button';
@@ -58,19 +60,14 @@ export class AppointmentFormComponent implements OnInit, OnDestroy {
   successMessage = '';
   isLoading = false;
   readonly typeOptions = APPOINTMENT_TYPES;
-  readonly patientOptions = [
-    { value: 'patient123', label: 'Patient 123' },
-    { value: 'patient456', label: 'Patient 456' },
-  ];
-  readonly doctorOptions = [
-    { value: 'doctor456', label: 'Dr. Martin' },
-    { value: 'doctor789', label: 'Dr. Dupont' },
-  ];
+  patientOptions: { value: string; label: string }[] = [];
+  doctorOptions: { value: string; label: string }[] = [];
   private readonly destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
     private appointmentService: AppointmentService,
+    private userApiService: UserApiService,
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -78,8 +75,8 @@ export class AppointmentFormComponent implements OnInit, OnDestroy {
       {
         title: ['', [Validators.required, Validators.minLength(3)]],
         description: [''],
-        patientId: ['patient123', Validators.required],
-        doctorId: ['doctor456'],
+        patientId: ['', Validators.required],
+        doctorId: [''],
         startTime: ['', Validators.required],
         endTime: ['', Validators.required],
         type: ['CONSULTATION', Validators.required],
@@ -94,6 +91,8 @@ export class AppointmentFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.loadUsers();
+
     this.appointmentForm
       .get('type')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
@@ -116,9 +115,42 @@ export class AppointmentFormComponent implements OnInit, OnDestroy {
     });
   }
 
+  loadUsers(): void {
+    forkJoin({
+      patients: this.userApiService.getUsersByRole('PATIENT'),
+      doctors: this.userApiService.getUsersByRole('DOCTOR')
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res) => {
+        this.patientOptions = res.patients.map(p => ({
+          value: p.keycloakId,
+          label: `${p.firstName} ${p.lastName}`
+        }));
+        this.doctorOptions = res.doctors.map(d => ({
+          value: d.keycloakId,
+          label: `Dr. ${d.lastName} ${d.firstName}`
+        }));
+      },
+      error: (err) => {
+        console.error('Failed to load users for dropdowns', err);
+      }
+    });
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /** Surfaces plain-text 403 bodies from the API (e.g. booking restricted). */
+  private formatHttpError(err: unknown): string {
+    if (err instanceof HttpErrorResponse) {
+      if (typeof err.error === 'string' && err.error.trim()) {
+        return err.error.trim();
+      }
+      const msg = (err.error as { message?: string } | null)?.message;
+      if (typeof msg === 'string' && msg.trim()) return msg.trim();
+    }
+    return 'Une erreur est survenue. Réessayez.';
   }
 
   loadAppointment(): void {
@@ -192,10 +224,8 @@ export class AppointmentFormComponent implements OnInit, OnDestroy {
       setTimeout(() => this.router.navigate(['/appointments']), 800);
     };
 
-    const onError = (err: { error?: string; message?: string }) => {
-      const msg = err?.error ?? err?.message;
-      this.errorMessage =
-        typeof msg === 'string' ? msg : 'Une erreur est survenue. Réessayez.';
+    const onError = (err: unknown) => {
+      this.errorMessage = this.formatHttpError(err);
       this.isSubmitting = false;
     };
 

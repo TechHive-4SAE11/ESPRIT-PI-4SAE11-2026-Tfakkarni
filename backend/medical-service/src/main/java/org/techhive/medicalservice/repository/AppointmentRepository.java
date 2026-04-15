@@ -1,6 +1,7 @@
 package org.techhive.medicalservice.repository;
 
 import org.techhive.medicalservice.entity.Appointment;
+import org.techhive.medicalservice.entity.AppointmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,6 +12,11 @@ import java.util.List;
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
        List<Appointment> findByPatientId(String patientId);
+
+       List<Appointment> findByPatientIdAndStartTimeBeforeOrderByStartTimeDesc(String patientId,
+                     LocalDateTime before);
+
+       long countByPatientIdAndStatus(String patientId, AppointmentStatus status);
 
        List<Appointment> findByDoctorId(String doctorId);
 
@@ -27,7 +33,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
        // Vérifier les chevauchements (exclut les rendez-vous annulés)
        @Query("SELECT a FROM Appointment a WHERE a.patientId = :patientId " +
-                     "AND a.status != 'CANCELLED' " +
+                     "AND a.status NOT IN ('CANCELLED', 'NO_SHOW') " +
                      "AND ((a.startTime BETWEEN :start AND :end) OR (a.endTime BETWEEN :start AND :end) " +
                      "OR (:start BETWEEN a.startTime AND a.endTime))")
        List<Appointment> findOverlappingAppointments(@Param("patientId") String patientId,
@@ -35,7 +41,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
                      @Param("end") LocalDateTime end);
 
        @Query("SELECT a FROM Appointment a WHERE a.doctorId = :doctorId " +
-                     "AND a.status != 'CANCELLED' " +
+                     "AND a.status NOT IN ('CANCELLED', 'NO_SHOW') " +
                      "AND ((a.startTime BETWEEN :start AND :end) OR (a.endTime BETWEEN :start AND :end) " +
                      "OR (:start BETWEEN a.startTime AND a.endTime))")
        List<Appointment> findOverlappingAppointmentsForDoctor(

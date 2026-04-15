@@ -54,4 +54,14 @@ export class AppointmentService {
   getAppointmentsByDoctor(doctorId: string): Observable<Appointment[]> {
     return this.http.get<Appointment[]>(`${this.apiUrl}/doctor/${doctorId}`);
   }
+
+  /** Mark as no-show (updates medical folder attendance rules). */
+  markNoShow(appointmentId: number): Observable<Appointment> {
+    return this.http.post<Appointment>(`${this.apiUrl}/${appointmentId}/no-show`, {});
+  }
+
+  /** Mark as completed (breaks no-show streak). */
+  markCompleted(appointmentId: number): Observable<Appointment> {
+    return this.http.post<Appointment>(`${this.apiUrl}/${appointmentId}/complete`, {});
+  }
 }

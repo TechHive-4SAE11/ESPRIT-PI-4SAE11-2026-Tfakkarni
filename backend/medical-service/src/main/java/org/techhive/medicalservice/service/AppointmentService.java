@@ -27,5 +27,11 @@ public interface AppointmentService {
     List<AppointmentResponseDTO> createRecurringAppointments(AppointmentRequestDTO requestDTO,
                                                              String frequency,
                                                              int numberOfOccurrences);
+
+    /** Mark a past or missed slot as no-show and refresh attendance metrics on the medical folder. */
+    AppointmentResponseDTO markAppointmentNoShow(Long appointmentId);
+
+    /** Mark attendance as completed (breaks no-show streak). */
+    AppointmentResponseDTO markAppointmentCompleted(Long appointmentId);
 }
 
