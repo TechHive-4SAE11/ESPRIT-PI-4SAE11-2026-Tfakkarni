@@ -2,8 +2,9 @@ package org.techhive.medicalservice.service.impl;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.techhive.medicalservice.client.UserServiceClient;
+import org.techhive.medicalservice.client.TrackingServiceClient;
 import org.techhive.medicalservice.dto.*;
 import org.techhive.medicalservice.dto.audit.PatientMedicationAuditRequest;
 import org.techhive.medicalservice.dto.audit.PatientMedicationAuditResponse;
@@ -34,9 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DossierAnalyticsServiceImpl implements DossierAnalyticsService {
 
-    private static final String TRACKING_BASE = "http://tracking-service";
-    private static final String USER_SERVICE_BASE = "http://user-service";
-
     /**
      * Polypharmacy: ≥ this many ACTIVE medication rows in tracking (same drug
      * renewed on another session still counts).
@@ -56,7 +54,8 @@ public class DossierAnalyticsServiceImpl implements DossierAnalyticsService {
     private final DiagnosticsRepository diagnosticsRepository;
     private final MedicalFolderRepository medicalFolderRepository;
     private final MedicalHistoryRepository medicalHistoryRepository;
-    private final RestTemplate restTemplate;
+    private final UserServiceClient userServiceClient;
+    private final TrackingServiceClient trackingServiceClient;
     private final ObjectMapper objectMapper;
     private final GeminiSafetyAuditService geminiSafetyAuditService;
     private final GeminiSafetyAuditProperties geminiSafetyAuditProperties;
@@ -65,14 +64,16 @@ public class DossierAnalyticsServiceImpl implements DossierAnalyticsService {
             DiagnosticsRepository diagnosticsRepository,
             MedicalFolderRepository medicalFolderRepository,
             MedicalHistoryRepository medicalHistoryRepository,
-            @Qualifier("loadBalancedRestTemplate") RestTemplate restTemplate,
+            UserServiceClient userServiceClient,
+            TrackingServiceClient trackingServiceClient,
             ObjectMapper objectMapper,
             GeminiSafetyAuditService geminiSafetyAuditService,
             GeminiSafetyAuditProperties geminiSafetyAuditProperties) {
         this.diagnosticsRepository = diagnosticsRepository;
         this.medicalFolderRepository = medicalFolderRepository;
         this.medicalHistoryRepository = medicalHistoryRepository;
-        this.restTemplate = restTemplate;
+        this.userServiceClient = userServiceClient;
+        this.trackingServiceClient = trackingServiceClient;
         this.objectMapper = objectMapper;
         this.geminiSafetyAuditService = geminiSafetyAuditService;
         this.geminiSafetyAuditProperties = geminiSafetyAuditProperties;
@@ -286,9 +287,7 @@ public class DossierAnalyticsServiceImpl implements DossierAnalyticsService {
                 continue;
             }
             try {
-                JsonNode user = restTemplate.getForObject(
-                        USER_SERVICE_BASE + "/api/users/keycloak/" + id,
-                        JsonNode.class);
+                JsonNode user = userServiceClient.getUserByKeycloakId(id);
                 if (user == null || user.has("error")) {
                     continue;
                 }
@@ -417,10 +416,7 @@ public class DossierAnalyticsServiceImpl implements DossierAnalyticsService {
         }
         try {
             PatientMedicationAuditRequest req = new PatientMedicationAuditRequest(new ArrayList<>(patientIds));
-            PatientMedicationAuditResponse resp = restTemplate.postForObject(
-                    TRACKING_BASE + "/api/analytics/safety-audit/patient-medications",
-                    req,
-                    PatientMedicationAuditResponse.class);
+            PatientMedicationAuditResponse resp = trackingServiceClient.getPatientMedications(req);
             if (resp == null || resp.getPatients() == null) {
                 return Collections.emptyMap();
             }
@@ -589,21 +585,18 @@ public class DossierAnalyticsServiceImpl implements DossierAnalyticsService {
         Set<String> prescribedMeds = new HashSet<>();
 
         try {
-            JsonNode trackingFolders = restTemplate.getForObject(
-                    TRACKING_BASE + "/api/medical-folders/patient/" + folder.getPatientId(), JsonNode.class);
+            JsonNode trackingFolders = trackingServiceClient.getMedicalFoldersByPatientId(folder.getPatientId());
             if (trackingFolders != null && trackingFolders.isArray()) {
                 for (JsonNode tf : trackingFolders) {
                     long tid = tf.path("id").asLong(0);
                     if (tid != 0) {
-                        JsonNode sessions = restTemplate
-                                .getForObject(TRACKING_BASE + "/api/sessions/medical-folder/" + tid, JsonNode.class);
+                        JsonNode sessions = trackingServiceClient.getSessionsByFolderId(tid);
                         if (sessions != null && sessions.isArray()) {
                             for (JsonNode session : sessions) {
                                 long sid = session.path("id").asLong(0);
                                 if (sid != 0) {
                                     String date = session.path("createdAt").asText("");
-                                    JsonNode prescList = restTemplate.getForObject(
-                                            TRACKING_BASE + "/api/prescriptions/session/" + sid, JsonNode.class);
+                                    JsonNode prescList = trackingServiceClient.getPrescriptionsBySessionId(sid);
                                     if (prescList != null && prescList.isArray()) {
                                         for (JsonNode p : prescList) {
                                             p.path("medications").forEach(m -> {

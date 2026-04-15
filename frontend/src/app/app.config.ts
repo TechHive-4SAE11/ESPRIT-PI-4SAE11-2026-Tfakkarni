@@ -37,8 +37,8 @@ function initializeKeycloak(keycloak: KeycloakService, platformId: object) {
         initOptions: {
           // check-sso: silently check if the user is already logged in
           onLoad: 'check-sso',
-          silentCheckSsoRedirectUri:
-            globalThis.location.origin + '/assets/silent-check-sso.html',
+          // Set to undefined if Keycloak CSP prevents framing on localhost
+          silentCheckSsoRedirectUri: undefined,
           checkLoginIframe: false,
         },
         // Attach the Bearer token to all API calls going to the gateway

@@ -40,7 +40,7 @@ export const BADGE_COLORS: Record<string, string> = {
 export class PatientBadgeService {
   private readonly baseUrl = `${environment.apiBaseUrl}/api/patient-badges`;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) { }
 
   /** Récupère tous les badges d'un patient */
   getBadges(patientId: string): Observable<PatientBadge[]> {

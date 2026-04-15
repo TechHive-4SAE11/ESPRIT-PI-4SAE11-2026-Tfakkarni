@@ -66,7 +66,7 @@ export type MedicalFolderResponseDTO = MedicalFolder;
 export class MedicalFolderService {
   private readonly baseUrl = `${environment.apiBaseUrl}/api/medical-folders`;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) { }
 
   /**
    * Get paginated medical folders.
