@@ -1,5 +1,69 @@
+server:
+  port: 18085
+
 spring:
+
+  ai:
+    huggingface:
+      api-key: ${HUGGINGFACE_API_KEY}
+      chat:
+        options:
+          model: meta-llama/Llama-2-7b-chat-hf
   application:
     name: ml-service
+
+  # config service/client — values below are fallbacks used when config-server is not running
+  cloud:
+    config:
+      enabled: true
   config:
     import: optional:configserver:http://localhost:8888
+
+  datasource:
+    url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
+    username: neondb_owner
+    password: npg_3uElGswIc7gk
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+
+# AI Models Configuration (keys: root .env — GEMINI_API_KEY, HUGGINGFACE_API_KEY, ML_TWILIO_*)
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  model: gemini-2.5-flash
+
+huggingface:
+  api-key: ${HUGGINGFACE_API_KEY:}
+  model: facebook/bart-large-mnli
+
+# AI Guardian — Twilio (ML_TWILIO_* in repo-root .env)
+ml:
+  twilio:
+    account-sid: ${ML_TWILIO_SID:}
+    auth-token: ${ML_TWILIO_TOKEN:}
+    phone-number: ${ML_TWILIO_PHONE:}
+    whatsapp-number: ${ML_TWILIO_WHATSAPP:}
+    doctor-phone: ${ML_DOCTOR_PHONE:}
+
+# actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always

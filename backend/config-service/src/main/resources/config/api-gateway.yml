@@ -67,6 +67,10 @@ spring:
           uri: lb://medical-service
           predicates:
             - Path=/api/medical-folders/**
+        - id: medical-folders-tracking
+          uri: lb://tracking-service
+          predicates:
+            - Path=/api/tracking/medical-folders/**
         - id: diagnostics
           uri: lb://medical-service
           predicates:
@@ -83,6 +87,10 @@ spring:
           uri: lb://medical-service
           predicates:
             - Path=/api/ai-reports/**
+        - id: patient-badges
+          uri: lb://medical-service
+          predicates:
+            - Path=/api/patient-badges/**
         - id: care-plans
           uri: lb://tracking-service
           predicates:
@@ -155,6 +163,10 @@ spring:
           uri: lb://tracking-service
           predicates:
             - Path=/api/meetings/**
+        - id: doctor-ratings
+          uri: lb://tracking-service
+          predicates:
+            - Path=/api/ratings/**
         - id: follow-up-reminders
           uri: lb://tracking-service
           predicates:

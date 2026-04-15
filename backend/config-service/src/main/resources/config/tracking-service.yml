@@ -6,6 +6,7 @@ server:
 
 spring:
   servlet:
+    context-path: /api/tracking
     multipart:
       max-file-size: 25MB
       max-request-size: 30MB

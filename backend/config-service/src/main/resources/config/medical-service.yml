@@ -66,6 +66,11 @@ medical:
   analytics:
     safety-audit:
       presentation-demo: ${SAFETY_AUDIT_PRESENTATION_DEMO:false}
+      gemini:
+        enabled: true
+        api-key: ${GEMINI_API_KEY:}
+        model: gemini-2.5-flash
+        max-patients-per-request: 48
 
 google:
   calendar:
