@@ -150,7 +150,7 @@ export class MedicalFolderPdfService {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.text(patientName || folder.patientId, col1, rowY + 6);
-    
+
     // Column 1: Created date
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
@@ -159,7 +159,7 @@ export class MedicalFolderPdfService {
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(9);
     doc.text(formatDate(folder.createdAt), col1, rowY + 20);
-    
+
     // Column 1: Patient ID (bottom, gray)
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
@@ -175,7 +175,7 @@ export class MedicalFolderPdfService {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.text(`#${folder.id}`, col2, rowY + 6);
-    
+
     // Column 2: Last update
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');

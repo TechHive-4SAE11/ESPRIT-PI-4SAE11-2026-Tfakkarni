@@ -1,0 +1,70 @@
+# syntax=docker/dockerfile:1.4
+# Single image: all microservice JARs + start-all-microservices.sh
+# Build (repo root or backend/):  docker build -f Dockerfile.stack -t tfakkarni/tfakkarni-backend:local .
+#
+# First build can take 10–20+ minutes (downloads all Maven deps + compiles every module).
+# Rebuilds are faster: enable BuildKit and .m2 cache — set DOCKER_BUILDKIT=1 (default on recent Docker Desktop).
+
+FROM maven:3.9.9-eclipse-temurin-17 AS build
+WORKDIR /workspace
+
+# Layer 1: parent + module POMs only → warm Maven dependency cache without full sources
+COPY pom.xml .
+COPY discovery-service/pom.xml discovery-service/
+COPY api-gateway/pom.xml api-gateway/
+COPY config-service/pom.xml config-service/
+COPY user-service/pom.xml user-service/
+COPY game-service/pom.xml game-service/
+COPY tracking-service/pom.xml tracking-service/
+COPY alert-service/pom.xml alert-service/
+COPY ml-service/pom.xml ml-service/
+COPY medical-service/pom.xml medical-service/
+COPY medicament-validation-service/pom.xml medicament-validation-service/
+COPY iot-service/pom.xml iot-service/
+COPY assistant-service/pom.xml assistant-service/
+COPY analytics-service/pom.xml analytics-service/
+
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B -q -DskipTests dependency:go-offline || true
+
+# Layer 2: full sources + package (reuses .m2 cache mount)
+COPY . .
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B -DskipTests package
+
+# Collect runnable Spring Boot JARs only (smaller than copying whole /workspace)
+RUN mkdir -p /jars \
+    && for m in \
+        discovery-service \
+        config-service \
+        api-gateway \
+        user-service \
+        game-service \
+        tracking-service \
+        alert-service \
+        ml-service \
+        medical-service \
+        medicament-validation-service \
+        iot-service \
+        assistant-service \
+        analytics-service; do \
+      j="$(find "/workspace/${m}/target" -maxdepth 1 -name '*.jar' ! -name '*-plain.jar' | head -1)"; \
+      test -n "${j}" || (echo "Missing jar for ${m}" >&2 && exit 1); \
+      cp "${j}" "/jars/${m}.jar"; \
+      echo "Staged ${m}.jar"; \
+    done
+
+FROM eclipse-temurin:17-jre-jammy
+WORKDIR /opt/tfakkarni
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends bash findutils tini \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /jars /opt/tfakkarni/jars
+COPY scripts/start-all-microservices.sh /opt/tfakkarni/bin/start-all-microservices.sh
+RUN chmod +x /opt/tfakkarni/bin/start-all-microservices.sh
+
+ENV TFAKKARNI_JARS=/opt/tfakkarni/jars
+EXPOSE 8761 8888 9090 18081 18082 18083 18084 18085 18086 18087 18088 18089 18090
+
+ENTRYPOINT ["/usr/bin/tini", "-g", "--", "/opt/tfakkarni/bin/start-all-microservices.sh"]
