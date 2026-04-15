@@ -136,7 +136,16 @@ export const routes: Routes = [
       ),
     canActivate: [AuthGuard],
   },
-
+  // ===== ROUTES POUR ALERTES & MATCHING =====
+  {
+    path: 'alert-match-dashboard',
+    loadComponent: () => import('@/pages/alert-match-dashboard/alert-match-dashboard.component').then(m => m.AlertMatchDashboardComponent),
+    canActivate: [AuthGuard]
+  }, {
+    path: 'accompagnement',
+    loadComponent: () => import('@/pages/accompagnement/accompagnement.component').then(m => m.AccompagnementComponent),
+    canActivate: [AuthGuard]
+  },
   // ===== ROUTES POUR TRAINING & CHATBOT =====
   {
     path: 'training/chat',
@@ -156,6 +165,10 @@ export const routes: Routes = [
   {
     path: 'training/stress',
     loadComponent: () => import('@/pages/training/stress-dashboard/stress-dashboard.component').then(m => m.StressDashboardComponent),
+    canActivate: [AuthGuard]
+  }, {
+    path: 'training/stress-evolution',
+    loadComponent: () => import('@/pages/training/stress-evolution/stress-evolution.component').then(m => m.StressEvolutionComponent),
     canActivate: [AuthGuard]
   },
   //{

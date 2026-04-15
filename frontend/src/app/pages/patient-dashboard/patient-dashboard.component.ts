@@ -144,7 +144,7 @@ export class PatientDashboardComponent implements OnInit {
           { icon: 'activity', label: 'Care Plans', action: () => this.helperView?.setPage('CarePlans') },
           { icon: 'shield', label: 'Safe Zone', action: () => this.helperView?.setPage('Safe Zone') },
           { icon: 'calendar', label: 'Appointments', action: () => this.router.navigate(['/appointments']) },
-          { icon: 'brain', label: 'Quiz Management', action: () => this.helperView?.setPage('Quizzes') },
+          { icon: 'heart', label: 'Accompagnement', action: () => this.router.navigate(['/accompagnement']) },{ icon: 'bell', label: 'Alertes & Matching', action: () => this.router.navigate(['/alert-match-dashboard']) },{ icon: 'brain', label: 'Quiz Management', action: () => this.helperView?.setPage('Quizzes') },
           { icon: 'shield', label: 'Equipment', action: () => this.helperView?.setPage('Equipment') },
           { icon: 'activity', label: 'Sleep Analysis', action: () => this.helperView?.setPage('Sleep Analysis') },
           { icon: 'zap', label: 'AI Assistant', action: () => this.router.navigate(['/ai-assistant']) },

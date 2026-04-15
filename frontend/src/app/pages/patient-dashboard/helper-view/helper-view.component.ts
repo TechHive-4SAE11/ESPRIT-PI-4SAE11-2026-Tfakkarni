@@ -124,7 +124,7 @@ export class HelperViewComponent implements OnInit {
       this.loadUserNeonDbId();
       this.analyticsService.getPatientScore(this.keycloakId).subscribe({
         next: score => this.patientScore.set(score),
-        error: () => {},
+        error: () => { },
       });
     }
   }
