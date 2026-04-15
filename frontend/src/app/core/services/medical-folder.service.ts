@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@/environments/environment';
 
+export type AttendanceRiskLevel = 'NONE' | 'WARNING' | 'RESTRICTED';
+
 export interface MedicalFolder {
   id: number;
   patientId: string;
@@ -12,6 +14,13 @@ export interface MedicalFolder {
   weight?: number;
   createdAt: string;
   updatedAt: string;
+  consecutiveNoShows?: number;
+  totalNoShows?: number;
+  bookingRestricted?: boolean;
+  restrictionReason?: string | null;
+  manualReviewRequired?: boolean;
+  attendanceRiskLevel?: AttendanceRiskLevel;
+  attendanceRestrictionOverridden?: boolean;
 }
 
 export interface MedicalFolderPage {
@@ -116,6 +125,19 @@ export class MedicalFolderService {
     return this.http.get<MedicalFolder[]>(`${this.baseUrl}/doctor/${doctorId}`);
   }
 
+  /** After manual review, lift temporary booking restriction (patient can book again if rules allow). */
+  clearBookingRestriction(folderId: number): Observable<MedicalFolder> {
+    return this.http.post<MedicalFolder>(`${this.baseUrl}/${folderId}/clear-booking-restriction`, {});
+  }
+
+  /** Manually restrict a patient from booking appointments. */
+  restrictBooking(folderId: number, reason: string): Observable<MedicalFolder> {
+    return this.http.post<MedicalFolder>(`${this.baseUrl}/${folderId}/restrict-booking`, null, {
+      params: { reason }
+    });
+  }
+
+  /** Download consolidated PDF for medical folder */
   getConsolidatedPdf(id: number): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/${id}/pdf`, {
       responseType: 'blob'

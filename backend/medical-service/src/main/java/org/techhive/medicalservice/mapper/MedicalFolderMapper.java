@@ -60,6 +60,13 @@ public class MedicalFolderMapper {
 				.weight(folder.getWeight())
 				.createdAt(folder.getCreatedAt())
 				.updatedAt(folder.getUpdatedAt())
+				.consecutiveNoShows(folder.getConsecutiveNoShows())
+				.totalNoShows(folder.getTotalNoShows())
+				.bookingRestricted(folder.isBookingRestricted())
+				.restrictionReason(folder.getRestrictionReason())
+				.manualReviewRequired(folder.isManualReviewRequired())
+				.attendanceRiskLevel(folder.getAttendanceRiskLevel())
+				.attendanceRestrictionOverridden(folder.isAttendanceRestrictionOverridden())
 				.build();
 	}
 }

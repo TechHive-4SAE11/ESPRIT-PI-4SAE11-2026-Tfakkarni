@@ -9,12 +9,13 @@ import { ZardTableImports } from '@/shared/components/table/table.imports';
 import { ZardSkeletonComponent } from '@/shared/components/skeleton';
 import { ZardAlertDialogService } from '@/shared/components/alert-dialog';
 import { ZardDialogService } from '@/shared/components/dialog';
-import { MedicalFolderService } from '@/core/services/medical-folder.service';
+import { MedicalFolderService, type MedicalFolder } from '@/core/services/medical-folder.service';
 import { DiagnosticsService, type Diagnostics } from '@/core/services/diagnostics.service';
 import { MedicalHistoryService, type MedicalHistory } from '@/core/services/medical-history.service';
 import { UserApiService } from '@/core/services/user-api.service';
 import { AIReportService, type AIReport, type AIReportPayload } from '@/core/services/ai-report.service';
 import { DossierAnalyticsService, type FolderInsights } from '@/core/services/dossier-analytics.service';
+import { PatientBadgeService, type PatientBadge, BADGE_ICONS, BADGE_COLORS } from '@/core/services/patient-badge.service';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import type { ApexOptions } from 'apexcharts';
 // @ts-ignore - used for dynamic component instantiation
@@ -63,8 +64,10 @@ export class MedicalFolderDetailComponent implements OnInit {
   private readonly dialog = inject(ZardDialogService);
   private readonly aiReportService = inject(AIReportService);
   private readonly analyticsService = inject(DossierAnalyticsService);
+  private readonly patientBadgeService = inject(PatientBadgeService);
 
-  folder = signal<{ id: number; patientId: string; doctorId: string; bloodType?: string; height?: number; weight?: number; createdAt: string; updatedAt: string } | null>(null);
+  folder = signal<MedicalFolder | null>(null);
+  clearingRestriction = signal(false);
   patientDisplayName = signal<string>('');
   doctorDisplayName = signal<string>('');
   latestAiReport = signal<AIReport | null>(null);
@@ -78,6 +81,26 @@ export class MedicalFolderDetailComponent implements OnInit {
   history = signal<MedicalHistory[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
+
+  // ── Badges ──────────────────────────────────────────────────
+  badges = signal<PatientBadge[]>([]);
+  groupedBadges = computed(() => {
+    const list = this.badges();
+    const groups = new Map<string, { badge: PatientBadge, count: number }>();
+    list.forEach(b => {
+      const existing = groups.get(b.badgeCode);
+      if (existing) {
+        existing.count++;
+      } else {
+        groups.set(b.badgeCode, { badge: b, count: 1 });
+      }
+    });
+    return Array.from(groups.values());
+  });
+  loadingBadges = signal(false);
+  evaluatingBadges = signal(false);
+  readonly badgeIcons = BADGE_ICONS;
+  readonly badgeColors = BADGE_COLORS;
 
   readonly tablePageSize = TABLE_PAGE_SIZE;
   currentPageDiagnostics = signal(1);
@@ -205,6 +228,38 @@ export class MedicalFolderDetailComponent implements OnInit {
     return bmi.toFixed(1);
   }
 
+  attendanceRiskLabel(level: MedicalFolder['attendanceRiskLevel']): string {
+    switch (level) {
+      case 'WARNING':
+        return 'Avertissement';
+      case 'RESTRICTED':
+        return 'Restriction';
+      case 'NONE':
+      default:
+        return 'Normal';
+    }
+  }
+
+  clearAttendanceRestriction(): void {
+    const f = this.folder();
+    if (!f?.id || this.readOnly() || this.clearingRestriction()) return;
+    this.clearingRestriction.set(true);
+    this.medicalFolderService.clearBookingRestriction(f.id).subscribe({
+      next: (updated) => {
+        this.folder.set(updated);
+        this.clearingRestriction.set(false);
+        this.alertDialog.info({ zTitle: 'Succès', zContent: 'Restriction de réservation mise à jour.' });
+      },
+      error: (err) => {
+        this.alertDialog.warning({
+          zTitle: 'Erreur',
+          zContent: err?.error?.message || err?.message || 'Impossible de lever la restriction.',
+        });
+        this.clearingRestriction.set(false);
+      },
+    });
+  }
+
   ngOnInit(): void {
     this.load();
   }
@@ -218,6 +273,7 @@ export class MedicalFolderDetailComponent implements OnInit {
       next: (f) => {
         this.folder.set(f);
         this.loadDisplayNames(f);
+        this.loadBadges(f.patientId);
       },
       error: (err) => {
         this.error.set(err?.error?.message || 'Folder not found');
@@ -239,6 +295,57 @@ export class MedicalFolderDetailComponent implements OnInit {
       },
       error: () => this.history.set([]),
     });
+  }
+
+  // ── Badge methods ─────────────────────────────────────────────
+
+  loadBadges(patientId: string): void {
+    this.loadingBadges.set(true);
+    this.patientBadgeService.getBadges(patientId).pipe(
+      catchError(() => of([]))
+    ).subscribe(badges => {
+      this.badges.set(badges);
+      this.loadingBadges.set(false);
+    });
+  }
+
+  evaluateBadges(): void {
+    const f = this.folder();
+    if (!f) return;
+    this.evaluatingBadges.set(true);
+    this.patientBadgeService.evaluateBadges(f.patientId).subscribe({
+      next: (newBadges) => {
+        this.evaluatingBadges.set(false);
+        // Reload all badges to get the full list
+        this.loadBadges(f.patientId);
+        if (newBadges.length > 0) {
+          this.alertDialog.info({
+            zTitle: '🏆 Nouveaux badges !',
+            zContent: `${newBadges.length} nouveau(x) badge(s) attribué(s) : ${newBadges.map(b => b.badgeTitle).join(', ')}`,
+          });
+        } else {
+          this.alertDialog.info({
+            zTitle: 'Badges à jour',
+            zContent: 'Aucun nouveau badge à attribuer. Le patient a déjà tous les badges qu\'il mérite !',
+          });
+        }
+      },
+      error: () => {
+        this.evaluatingBadges.set(false);
+        this.alertDialog.warning({
+          zTitle: 'Erreur',
+          zContent: 'Impossible d\'évaluer les badges. Vérifiez que le game-service est accessible.',
+        });
+      },
+    });
+  }
+
+  getBadgeIcon(code: string): string {
+    return this.badgeIcons[code] || '🏅';
+  }
+
+  getBadgeColorClass(code: string): string {
+    return this.badgeColors[code] || 'bg-gray-100 text-gray-700 border-gray-200';
   }
 
   setPageDiagnostics(p: number): void {

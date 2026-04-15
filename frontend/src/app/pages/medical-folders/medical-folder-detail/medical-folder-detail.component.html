@@ -17,6 +17,132 @@
   } @else if (folder()) {
   @let f = folder()!;
 
+  @if ((f.consecutiveNoShows ?? 0) > 0 || (f.totalNoShows ?? 0) > 0 || f.bookingRestricted || (f.attendanceRiskLevel && f.attendanceRiskLevel !== 'NONE')) {
+  <z-card class="p-5 border-amber-200/80 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/20">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div class="space-y-2">
+        <h3 class="text-sm font-semibold text-foreground flex items-center gap-2">
+          <span aria-hidden="true">📋</span> Présence &amp; absences (no-show)
+        </h3>
+        <div class="flex flex-wrap gap-2 text-sm">
+          <span class="rounded-md bg-background/80 px-2 py-1 ring-1 ring-border">
+            Consécutifs : <strong>{{ f.consecutiveNoShows ?? 0 }}</strong>
+          </span>
+          <span class="rounded-md bg-background/80 px-2 py-1 ring-1 ring-border">
+            Total : <strong>{{ f.totalNoShows ?? 0 }}</strong>
+          </span>
+          @if (f.attendanceRiskLevel) {
+          <span
+            class="rounded-md px-2 py-1 text-xs font-medium"
+            [class.bg-orange-100]="f.attendanceRiskLevel === 'WARNING'"
+            [class.text-orange-900]="f.attendanceRiskLevel === 'WARNING'"
+            [class.bg-red-100]="f.attendanceRiskLevel === 'RESTRICTED'"
+            [class.text-red-900]="f.attendanceRiskLevel === 'RESTRICTED'"
+            [class.bg-muted]="f.attendanceRiskLevel === 'NONE'"
+          >
+            Niveau : {{ attendanceRiskLabel(f.attendanceRiskLevel) }}
+          </span>
+          }
+        </div>
+        @if (f.bookingRestricted) {
+        <p class="text-sm text-destructive font-medium">
+          Réservation bloquée pour ce patient.
+          @if (f.restrictionReason) {
+          <span class="block mt-1 font-normal text-muted-foreground">{{ f.restrictionReason }}</span>
+          }
+        </p>
+        }
+        @if (f.manualReviewRequired) {
+        <p class="text-xs text-amber-800 dark:text-amber-200">Revue manuelle recommandée.</p>
+        }
+        @if (f.attendanceRestrictionOverridden) {
+        <p class="text-xs text-muted-foreground">Restriction levée ou ajustée après revue.</p>
+        }
+      </div>
+      @if (!readOnly() && f.bookingRestricted) {
+      <button
+        z-button
+        zType="outline"
+        zSize="sm"
+        type="button"
+        [disabled]="clearingRestriction()"
+        (click)="clearAttendanceRestriction()"
+      >
+        {{ clearingRestriction() ? '…' : 'Lever la restriction' }}
+      </button>
+      }
+    </div>
+  </z-card>
+  }
+
+  <!-- 🏆 Patient Badges / Achievements -->
+  <z-card class="p-5 border-violet-200/60 dark:border-violet-900/40 bg-gradient-to-r from-violet-50/40 via-blue-50/20 to-amber-50/30 dark:from-violet-950/20 dark:via-blue-950/10 dark:to-amber-950/10">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-sm font-semibold text-foreground flex items-center gap-2">
+        <span aria-hidden="true">🏆</span> Badges &amp; Achievements
+        @if (groupedBadges().length > 0) {
+        <span class="px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-[10px] font-bold">
+          {{ groupedBadges().length }}
+        </span>
+        }
+      </h3>
+      @if (!readOnly()) {
+      <button z-button zType="outline" zSize="sm"
+        class="border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-900/20"
+        [disabled]="evaluatingBadges()"
+        (click)="evaluateBadges()">
+        @if (evaluatingBadges()) {
+          <span class="h-3 w-3 animate-spin rounded-full border-2 border-violet-600 border-t-transparent mr-1.5"></span>
+          Évaluation…
+        } @else {
+          <z-icon zType="refresh-cw" class="mr-1 h-3.5 w-3.5" />
+          Évaluer les badges
+        }
+      </button>
+      }
+    </div>
+
+    @if (loadingBadges()) {
+      <div class="flex gap-2">
+        <z-skeleton class="h-8 w-32 rounded-full" />
+        <z-skeleton class="h-8 w-28 rounded-full" />
+        <z-skeleton class="h-8 w-36 rounded-full" />
+      </div>
+    } @else if (groupedBadges().length > 0) {
+      <div class="flex flex-wrap gap-2">
+        @for (item of groupedBadges(); track item.badge.badgeCode) {
+        <div class="group relative inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all hover:shadow-md hover:scale-105 cursor-default"
+             [class]="getBadgeColorClass(item.badge.badgeCode)"
+             [title]="item.badge.description">
+          <span class="text-sm">{{ getBadgeIcon(item.badge.badgeCode) }}</span>
+          <span>{{ item.badge.badgeTitle }}</span>
+          @if (item.count > 1) {
+            <span class="ml-1 px-1.5 py-0.5 rounded-full bg-black/10 dark:bg-white/10 text-[10px]">
+              x{{ item.count }}
+            </span>
+          }
+          <!-- Tooltip on hover -->
+          <div class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 rounded-lg bg-foreground text-background text-[11px] p-2.5 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity z-50 text-center leading-relaxed">
+            {{ item.badge.description }}
+            @if (item.count > 1) {
+              <div class="mt-1 font-bold">Obtenu {{ item.count }} fois</div>
+            }
+            <div class="text-[10px] opacity-70 mt-1">Dernier badge : {{ item.badge.awardedAt | date:'dd/MM/yyyy HH:mm' }}</div>
+            <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-px w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-foreground"></div>
+          </div>
+        </div>
+        }
+      </div>
+    } @else {
+      <p class="text-xs text-muted-foreground italic">
+        Aucun badge pour le moment.
+        @if (!readOnly()) {
+        Cliquez sur « Évaluer les badges » pour analyser les performances aux jeux cognitifs.
+        }
+      </p>
+    }
+  </z-card>
+
   <!-- Patient View Header -->
   @if (readOnly()) {
   <z-card class="p-6 border-primary/20">

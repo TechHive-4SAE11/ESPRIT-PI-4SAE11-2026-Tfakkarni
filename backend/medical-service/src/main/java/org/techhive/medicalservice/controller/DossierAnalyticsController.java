@@ -68,4 +68,10 @@ public class DossierAnalyticsController {
         log.info("GET /api/medical-folders/analytics/folder/{}", folderId);
         return ResponseEntity.ok(dossierAnalyticsService.getFolderStats(folderId));
     }
+
+    @GetMapping("/flagged-patients")
+    public ResponseEntity<List<org.techhive.medicalservice.dto.FlaggedPatientDto>> getFlaggedPatients() {
+        log.info("GET /api/medical-folders/analytics/flagged-patients");
+        return ResponseEntity.ok(dossierAnalyticsService.getFlaggedPatients());
+    }
 }

@@ -1,0 +1,194 @@
+<div class="p-6 max-w-6xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500">
+
+  <div class="flex items-center gap-4 mb-8">
+    <button z-button zType="outline" zSize="sm" (click)="goBack()">
+      <z-icon zType="arrow-left" class="mr-2" /> Retour
+    </button>
+    <h1 class="text-3xl font-extrabold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent">
+      Alertes & Matching Médical
+    </h1>
+  </div>
+
+  @if (isLoading()) {
+    <div class="flex justify-center py-20">
+      <div class="h-10 w-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  } @else if (error()) {
+    <div class="p-4 bg-red-100 text-red-700 rounded-xl border border-red-200">
+      {{ error() }}
+    </div>
+  } @else if (medicalAlert() && compliance()) {
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- F1: Alertes médicales -->
+      <z-card class="border-l-4 shadow-xl" [class.border-l-red-500]="medicalAlert().severity === 'CRITIQUE'"
+              [class.border-l-orange-500]="medicalAlert().severity === 'MODEREE'"
+              [class.border-l-emerald-500]="medicalAlert().severity === 'INFO'">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold flex items-center gap-2">
+              <span class="text-2xl">🧠</span> Alerte Cognitive
+            </h2>
+            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                  [ngClass]="{
+                    'bg-red-100 text-red-700': medicalAlert().severity === 'CRITIQUE',
+                    'bg-orange-100 text-orange-700': medicalAlert().severity === 'MODEREE',
+                    'bg-emerald-100 text-emerald-700': medicalAlert().severity === 'INFO'
+                  }">
+              {{ medicalAlert().severity }}
+            </span>
+          </div>
+
+          <div class="text-center py-6">
+            <p class="text-5xl font-black mb-2" [ngClass]="{
+              'text-red-500': medicalAlert().severity === 'CRITIQUE',
+              'text-orange-500': medicalAlert().severity === 'MODEREE',
+              'text-emerald-500': medicalAlert().severity === 'INFO'
+            }">{{ medicalAlert().score | number:'1.0-0' }}</p>
+            <p class="text-lg text-slate-600 font-medium">{{ medicalAlert().message }}</p>
+          </div>
+
+          @if (medicalAlert().action) {
+            <div class="mt-6 flex justify-center">
+              <button z-button zType="default" zSize="lg"
+                      class="w-full sm:w-auto shadow-lg shadow-violet-500/30 hover:scale-105 transition-transform"
+                      (click)="triggerMatching(medicalAlert().action)">
+                <z-icon zType="calendar-plus" class="mr-2" /> {{ medicalAlert().action }}
+              </button>
+            </div>
+          }
+        </div>
+      </z-card>
+
+      <!-- F3: Score d'observance -->
+      <z-card class="border-l-4 shadow-xl" [class.border-l-red-500]="compliance().severity === 'CRITIQUE'"
+              [class.border-l-orange-500]="compliance().severity === 'MODEREE'"
+              [class.border-l-blue-500]="compliance().severity === 'INFO'">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold flex items-center gap-2">
+              <span class="text-2xl">📅</span> Observance des RDV
+            </h2>
+            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                  [ngClass]="{
+                    'bg-red-100 text-red-700': compliance().severity === 'CRITIQUE',
+                    'bg-orange-100 text-orange-700': compliance().severity === 'MODEREE',
+                    'bg-blue-100 text-blue-700': compliance().severity === 'INFO'
+                  }">
+              {{ compliance().severity }}
+            </span>
+          </div>
+
+          <div class="text-center py-6">
+            <p class="text-5xl font-black mb-2 flex items-center justify-center gap-1" [ngClass]="{
+              'text-red-500': compliance().severity === 'CRITIQUE',
+              'text-orange-500': compliance().severity === 'MODEREE',
+              'text-blue-500': compliance().severity === 'INFO'
+            }">{{ compliance().score | number:'1.0-0' }}<span class="text-2xl">%</span></p>
+            <p class="text-md text-slate-700 font-medium px-4">{{ compliance().message }}</p>
+          </div>
+
+          <div class="mt-6 flex justify-center">
+            <div class="w-full bg-slate-100 rounded-full h-3 mb-2 overflow-hidden">
+              <div class="h-3 rounded-full transition-all duration-1000"
+                   [ngClass]="{
+                       'bg-red-500': compliance().severity === 'CRITIQUE',
+                       'bg-orange-500': compliance().severity === 'MODEREE',
+                       'bg-blue-500': compliance().severity === 'INFO'
+                    }"
+                   [style.width.%]="compliance().score"></div>
+            </div>
+          </div>
+
+        </div>
+      </z-card>
+
+    </div>
+
+    <!-- F2: Résultat du Matching (Recommandation personnalisée) -->
+    @if (isMatchingLoading()) {
+      <div class="mt-8 p-12 bg-white rounded-2xl shadow-xl border border-violet-100 text-center animate-pulse">
+        <div class="inline-block p-4 rounded-full bg-violet-100 mb-4">
+          <z-icon zType="loader-circle" class="h-8 w-8 text-violet-600 animate-spin" />
+        </div>
+        <h3 class="text-xl font-bold text-slate-800">Analyse de votre dossier médical en cours...</h3>
+        <p class="text-slate-500 mt-2">Recherche de la spécialité la plus adaptée selon vos antécédents, allergies et symptômes.</p>
+      </div>
+    } @else if (matchingResult()) {
+      <div class="mt-8 border border-violet-200 rounded-2xl overflow-hidden shadow-2xl">
+        <div class="bg-gradient-to-r from-violet-600 to-indigo-600 p-6 text-white text-center">
+          <h3 class="text-2xl font-bold mb-2">Recommandation personnalisée</h3>
+          <p class="text-violet-100 text-lg">{{ matchingResult().message }}</p>
+          <div class="mt-4 inline-block bg-white text-violet-700 px-6 py-2 rounded-full font-black text-2xl shadow-lg">
+            {{ matchingResult().specialty }}
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Liste des médecins disponibles -->
+    @if (showDoctorList() && availableDoctors().length > 0) {
+      <div class="mt-8">
+        <h2 class="text-xl font-bold mb-4">👨‍⚕️ Médecins disponibles</h2>
+        <div class="grid gap-4">
+          @for (doctor of availableDoctors(); track doctor.id) {
+            <z-card class="p-4">
+              <div class="flex justify-between items-center">
+                <div>
+                  <h3 class="font-bold">{{ doctor.name }}</h3>
+                  <p class="text-gray-600">{{ doctor.specialty }}</p>
+                  <p class="text-sm text-green-600">📅 Prochain créneau : {{ doctor.nextAvailable }}</p>
+                </div>
+                <z-button (click)="selectDoctor(doctor)">Sélectionner</z-button>
+              </div>
+            </z-card>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Formulaire de rendez-vous pré-rempli -->
+    @if (showAppointmentForm()) {
+      <div class="mt-8">
+        <z-card class="p-6">
+          <h2 class="text-xl font-bold mb-4">📋 Nouveau rendez-vous</h2>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Médecin</label>
+              <input type="text" class="w-full border rounded-lg p-2 bg-gray-50"
+                     [value]="appointmentData().doctorName" disabled>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">Spécialité</label>
+              <input type="text" class="w-full border rounded-lg p-2 bg-gray-50"
+                     [value]="appointmentData().specialty" disabled>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">Date et heure</label>
+              <input type="datetime-local" class="w-full border rounded-lg p-2"
+                     [(ngModel)]="appointmentData().dateTime">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">Motif</label>
+              <textarea class="w-full border rounded-lg p-2" rows="3"
+                        [(ngModel)]="appointmentData().reason"
+                        placeholder="Motif de la consultation..."></textarea>
+            </div>
+
+            <div class="flex gap-3">
+              <z-button (click)="createAppointment()">Confirmer le rendez-vous</z-button>
+              <z-button zType="outline" (click)="showAppointmentForm.set(false)">Annuler</z-button>
+            </div>
+          </div>
+        </z-card>
+      </div>
+    }
+
+  }
+
+</div>

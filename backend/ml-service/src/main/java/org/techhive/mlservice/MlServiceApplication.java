@@ -9,13 +9,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-
+import org.springframework.cloud.openfeign.EnableFeignClients;
 @SpringBootApplication
+@EnableFeignClients
 public class MlServiceApplication {
 
     /**
      * Loads repo-root {@code .env} into JVM system properties so Spring can resolve
-     * {@code GEMINI_API_KEY}, {@code HUGGINGFACE_API_KEY}, {@code ML_TWILIO_*}, etc.
+     * {@code GEMINI_API_KEY}, {@code HUGGINGFACE_API_KEY}, {@code ML_TWILIO_*},
+     * etc.
      * OS environment variables win if already set.
      */
     private static void loadEnvFile() {
@@ -33,10 +35,10 @@ public class MlServiceApplication {
                 continue;
             }
             Dotenv dotenv = Dotenv.configure()
-                .directory(envPath.getParent().toString())
-                .filename(envPath.getFileName().toString())
-                .ignoreIfMissing()
-                .load();
+                    .directory(envPath.getParent().toString())
+                    .filename(envPath.getFileName().toString())
+                    .ignoreIfMissing()
+                    .load();
             dotenv.entries().forEach(e -> {
                 String key = e.getKey();
                 if (System.getenv(key) == null) {
