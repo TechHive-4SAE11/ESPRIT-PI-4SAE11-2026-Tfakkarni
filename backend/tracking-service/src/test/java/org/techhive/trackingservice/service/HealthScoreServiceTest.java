@@ -44,7 +44,7 @@ class HealthScoreServiceTest {
         @DisplayName("Hydratation ≥ 1500 ml → 20/20")
         void hydration_ge_1500_gives_20() {
             DailyLog log = createLogWithHydration(1500);
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
@@ -58,7 +58,7 @@ class HealthScoreServiceTest {
         @DisplayName("Hydratation 1000-1499 ml → 15/20")
         void hydration_1000_to_1499_gives_15() {
             DailyLog log = createLogWithHydration(1200);
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
@@ -71,7 +71,7 @@ class HealthScoreServiceTest {
         @DisplayName("Hydratation 500-999 ml → 8/20")
         void hydration_500_to_999_gives_8() {
             DailyLog log = createLogWithHydration(700);
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
@@ -83,7 +83,7 @@ class HealthScoreServiceTest {
         @DisplayName("Hydratation < 500 ml → 3/20")
         void hydration_lt_500_gives_3() {
             DailyLog log = createLogWithHydration(400);
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
@@ -101,7 +101,7 @@ class HealthScoreServiceTest {
         @DisplayName("100% médicaments pris → 25/25")
         void medications_100_percent_gives_25() {
             DailyLog log = createLogWithMedicationIntakes(3, 3); // 3 pris sur 3 attendus
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID))
                     .thenReturn(List.of(new Medication(), new Medication(), new Medication()));
 
@@ -115,7 +115,7 @@ class HealthScoreServiceTest {
         @DisplayName("0 médicament prescrit → 25/25")
         void zero_expected_medications_gives_25() {
             DailyLog log = createMinimalLog();
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
@@ -132,7 +132,7 @@ class HealthScoreServiceTest {
         @DisplayName("3 incidents ou plus → 0/15")
         void three_or_more_incidents_gives_0() {
             DailyLog log = createLogWithIncidentCount(3);
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
@@ -145,7 +145,7 @@ class HealthScoreServiceTest {
         @DisplayName("0 incident → 15/15")
         void zero_incidents_gives_15() {
             DailyLog log = createMinimalLog();
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
@@ -159,7 +159,7 @@ class HealthScoreServiceTest {
             DailyLog log1 = createLogWithIncidentCount(1);
             DailyLog log2 = createLogWithIncidentCount(2);
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE))
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE))
                     .thenReturn(Optional.of(log1))
                     .thenReturn(Optional.of(log2));
 
@@ -180,7 +180,7 @@ class HealthScoreServiceTest {
             DailyLog log = createMinimalLog();
             log.setSleepHours(null);
             log.setMoodLevel("BONNE");
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
@@ -198,7 +198,7 @@ class HealthScoreServiceTest {
             DailyLog log = createMinimalLog();
             log.setMoodLevel(null);
             log.setSleepHours(null);
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
@@ -218,7 +218,7 @@ class HealthScoreServiceTest {
             log.getActivityEntries().clear();
             log.getActivityEntries().add(createPhysicalActivity(30));
             log.getIncidentEntries().clear();
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
@@ -240,7 +240,7 @@ class HealthScoreServiceTest {
             DailyLog log = createMinimalLog();
             log.getActivityEntries().clear();
             log.getActivityEntries().add(createPhysicalActivity(30));
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
@@ -258,7 +258,7 @@ class HealthScoreServiceTest {
             logBad.setMoodLevel("MAUVAISE");
             logBad.setSleepHours(7.0);
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE))
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE))
                     .thenReturn(Optional.of(logGood))
                     .thenReturn(Optional.of(logBad));
 
@@ -278,7 +278,7 @@ class HealthScoreServiceTest {
             log4.setMoodLevel("BONNE");
             log4.setSleepHours(4.0);
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE))
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE))
                     .thenReturn(Optional.of(log7))
                     .thenReturn(Optional.of(log4));
 
@@ -296,7 +296,7 @@ class HealthScoreServiceTest {
         @Test
         @DisplayName("Aucun log → humeur/sommeil exclus, adjustedMaxScore 80")
         void no_log_returns_adjusted_structure() {
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.empty());
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.empty());
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
@@ -313,7 +313,7 @@ class HealthScoreServiceTest {
             DailyLog log = createMinimalLog();
             log.setMoodLevel("MOYENNE");
             log.setSleepHours(6.0);
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);

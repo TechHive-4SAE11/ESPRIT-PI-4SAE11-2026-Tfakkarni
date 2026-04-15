@@ -3,14 +3,14 @@ package org.techhive.iotservice.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.techhive.iotservice.dto.*;
-import org.techhive.iotservice.entity.HeartbeatReading;
-import org.techhive.iotservice.repository.HeartbeatReadingRepository;
+import org.techhive.iotservice.entity.HeartbeatReading;import org.techhive.iotservice.repository.HeartbeatReadingRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -321,5 +321,123 @@ public class SleepAnalysisService {
         }
 
         return insights;
+    }
+
+    /**
+     * Analyze sleep history for the last N days, producing per-night summaries
+     * and a weekly aggregate with trend detection.
+     */
+    public SleepHistoryResponse analyzeHistory(String patientId, int days) {
+        List<SleepHistoryResponse.DailySleepEntry> entries = new ArrayList<>();
+
+        for (int d = days - 1; d >= 0; d--) {
+            LocalDate date = LocalDate.now().minusDays(d + 1); // yesterday minus d
+            SleepAnalysisResponse analysis = analyze(patientId, date);
+
+            // Only include nights that have actual data
+            if (analysis.getTimeline() != null && !analysis.getTimeline().isEmpty()) {
+                entries.add(SleepHistoryResponse.DailySleepEntry.builder()
+                        .date(date)
+                        .summary(analysis.getSummary())
+                        .insights(analysis.getInsights())
+                        .build());
+            }
+        }
+
+        SleepHistoryResponse.WeeklySummary weeklySummary = computeWeeklySummary(entries);
+
+        return SleepHistoryResponse.builder()
+                .patientId(patientId)
+                .days(days)
+                .entries(entries)
+                .weeklySummary(weeklySummary)
+                .build();
+    }
+
+    private SleepHistoryResponse.WeeklySummary computeWeeklySummary(
+            List<SleepHistoryResponse.DailySleepEntry> entries) {
+
+        if (entries.isEmpty()) {
+            return SleepHistoryResponse.WeeklySummary.builder()
+                    .nightsWithData(0)
+                    .avgQualityScore(0)
+                    .avgQualityLabel("No Data")
+                    .trend("INSUFFICIENT_DATA")
+                    .weeklyInsights(List.of("No sleep data available for this period."))
+                    .build();
+        }
+
+        int totalQuality = 0, totalSleep = 0, totalAwakenings = 0;
+        double totalDeepPct = 0, totalEfficiency = 0;
+        SleepHistoryResponse.DailySleepEntry best = null, worst = null;
+
+        for (var entry : entries) {
+            SleepSummary s = entry.getSummary();
+            totalQuality += s.getQualityScore();
+            totalSleep += s.getTotalSleepMinutes();
+            totalAwakenings += s.getAwakenings();
+            totalDeepPct += s.getDeepSleepPercent();
+            totalEfficiency += s.getSleepEfficiency();
+
+            if (best == null || s.getQualityScore() > best.getSummary().getQualityScore()) best = entry;
+            if (worst == null || s.getQualityScore() < worst.getSummary().getQualityScore()) worst = entry;
+        }
+
+        int n = entries.size();
+        double avgQ = (double) totalQuality / n;
+        String avgLabel = avgQ >= 85 ? "Excellent" : avgQ >= 70 ? "Good" : avgQ >= 50 ? "Fair" : "Poor";
+
+        // Trend: compare first half vs second half average quality
+        String trend = "STABLE";
+        if (n >= 3) {
+            int mid = n / 2;
+            double firstHalf = entries.subList(0, mid).stream()
+                    .mapToInt(e -> e.getSummary().getQualityScore()).average().orElse(0);
+            double secondHalf = entries.subList(mid, n).stream()
+                    .mapToInt(e -> e.getSummary().getQualityScore()).average().orElse(0);
+            if (secondHalf - firstHalf > 5) trend = "IMPROVING";
+            else if (firstHalf - secondHalf > 5) trend = "DECLINING";
+        }
+
+        // Generate weekly insights
+        List<String> weeklyInsights = new ArrayList<>();
+        weeklyInsights.add(String.format("Average sleep quality: %s (%.0f/100) over %d nights",
+                avgLabel, avgQ, n));
+        int avgSleepH = (totalSleep / n) / 60;
+        int avgSleepM = (totalSleep / n) % 60;
+        weeklyInsights.add(String.format("Average sleep duration: %dh %dm per night", avgSleepH, avgSleepM));
+
+        if (best != null) {
+            weeklyInsights.add(String.format("Best night: %s (score: %d/100)",
+                    best.getDate(), best.getSummary().getQualityScore()));
+        }
+        if (worst != null && (best == null || !worst.getDate().equals(best.getDate()))) {
+            weeklyInsights.add(String.format("Worst night: %s (score: %d/100)",
+                    worst.getDate(), worst.getSummary().getQualityScore()));
+        }
+
+        if ("IMPROVING".equals(trend)) {
+            weeklyInsights.add("Trend: Improving — sleep quality is getting better!");
+        } else if ("DECLINING".equals(trend)) {
+            weeklyInsights.add("Trend: Declining — consider reviewing sleep habits or medications.");
+        } else {
+            weeklyInsights.add("Trend: Stable — consistent sleep patterns.");
+        }
+
+        return SleepHistoryResponse.WeeklySummary.builder()
+                .avgQualityScore(Math.round(avgQ * 10.0) / 10.0)
+                .avgQualityLabel(avgLabel)
+                .avgTotalSleepMinutes(totalSleep / n)
+                .avgDeepSleepPercent(Math.round(totalDeepPct / n * 10.0) / 10.0)
+                .avgEfficiency(Math.round(totalEfficiency / n * 10.0) / 10.0)
+                .totalAwakenings(totalAwakenings)
+                .nightsWithData(n)
+                .bestNight(best != null ? best.getDate() : null)
+                .bestNightScore(best != null ? best.getSummary().getQualityScore() : 0)
+                .worstNight(worst != null ? worst.getDate() : null)
+                .worstNightScore(worst != null ? worst.getSummary().getQualityScore() : 0)
+                .trend(trend)
+                .weeklyInsights(weeklyInsights)
+                .build();
     }
 }

@@ -63,8 +63,8 @@ public class FeatureGateService {
                 gate.setMeetingSuggestedFrequencyDays(0); // as needed
             }
             case EARLY -> {
-                gate.setIotEnabled(true);
-                gate.setIotLevel(IotLevel.BASIC);
+                gate.setIotEnabled(false);
+                gate.setIotLevel(IotLevel.DISABLED);
                 gate.setGameComplexity(GameComplexity.STANDARD);
                 gate.setMonitoringLevel(MonitoringLevel.OPTIONAL);
                 gate.setNotificationEscalation(EscalationLevel.MEDIUM);
@@ -73,8 +73,8 @@ public class FeatureGateService {
                 gate.setMeetingSuggestedFrequencyDays(30);
             }
             case MODERATE -> {
-                gate.setIotEnabled(true);
-                gate.setIotLevel(IotLevel.FULL);
+                gate.setIotEnabled(false);
+                gate.setIotLevel(IotLevel.DISABLED);
                 gate.setGameComplexity(GameComplexity.SIMPLIFIED);
                 gate.setMonitoringLevel(MonitoringLevel.RECOMMENDED);
                 gate.setNotificationEscalation(EscalationLevel.HIGH);

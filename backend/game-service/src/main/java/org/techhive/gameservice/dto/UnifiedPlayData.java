@@ -16,6 +16,8 @@ public class UnifiedPlayData {
   private Long gameId;
   private String title;
   private int totalQuestions;
+  private int optionCount; // 2=MINIMAL, 3=SIMPLIFIED, 4=STANDARD
+  private String gameComplexity; // STANDARD, SIMPLIFIED, MINIMAL
   private List<UnifiedPlayItem> items;
 
   @Data

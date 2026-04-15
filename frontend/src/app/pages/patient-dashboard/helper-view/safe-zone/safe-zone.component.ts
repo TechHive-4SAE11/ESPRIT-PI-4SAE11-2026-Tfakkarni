@@ -71,22 +71,11 @@ import { isPointInPolygon } from '@/core/utils/geofence.util';
 
     <!-- GPS STATUS BAR -->
     <z-card class="p-4 mb-6">
-      <!-- Thing name config -->
+      <!-- Thing name display -->
       <div class="mb-3 pb-3 border-b border-border">
-        <label class="text-xs font-medium text-muted-foreground block mb-1">
-          dweet.cc thing name — must match <code class="bg-muted px-1 rounded">THING_NAME</code> in your Python script
-        </label>
-        <div class="flex gap-2 items-center">
-          <input
-            class="flex-1 px-2 py-1 text-sm border border-border rounded-md bg-background text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary"
-            [value]="thingName()"
-            (input)="thingName.set($any($event.target).value)"
-            placeholder="tfk-gps-..."
-          />
-          <button z-button zType="outline" zSize="sm" (click)="resetThingName()">
-            Reset
-          </button>
-        </div>
+        <p class="text-xs text-muted-foreground">
+          IoT Device: <code class="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{{ thingName() }}</code>
+        </p>
       </div>
       <div class="flex items-center justify-between flex-wrap gap-3">
         <div class="flex items-center gap-3">
@@ -359,7 +348,7 @@ export class SafeZoneComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     if (this.keycloakId) {
-      this.thingName.set(`tfk-gps-${this.keycloakId}`);
+      this.thingName.set(`tfakkarni-high-1`);
       this.loadZones();
       this.loadViolations();
     }
@@ -690,7 +679,7 @@ export class SafeZoneComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isTracking.set(true);
     this.gpsError.set('');
 
-    const thingName = this.thingName() || `tfk-gps-${this.keycloakId}`;
+    const thingName = this.thingName() || `tfakkarni-high-1`;
     console.log(`[SafeZone] Polling dweet.cc thing: ${thingName}`);
 
     // timer(0, 3000): emit immediately (0ms delay), then every 3s

@@ -2,6 +2,7 @@ import {
   Component,
   OnInit,
   signal,
+  computed,
   Input,
   Output,
   EventEmitter,
@@ -47,6 +48,7 @@ import { FollowUpReminderAlertComponent } from '@/shared/components/follow-up-re
 import { Meeting } from '@/core/services/meeting.service';
 import { AnalyticsService } from '@/core/services/analytics.service';
 import type { PatientScoreResponse } from '@/core/models/analytics.model';
+import { FeatureGateService } from '@/core/services/feature-gate.service';
 
 @Component({
   selector: 'app-helper-view',
@@ -85,6 +87,7 @@ export class HelperViewComponent implements OnInit {
   private readonly userApiService = inject(UserApiService);
   private readonly router = inject(Router);
   private readonly analyticsService = inject(AnalyticsService);
+  private readonly featureGateService = inject(FeatureGateService);
 
   @Input() keycloakId = '';
   @Output() pageChange = new EventEmitter<string>();
@@ -119,9 +122,13 @@ export class HelperViewComponent implements OnInit {
   // ── Patient Analytics ──
   patientScore = signal<PatientScoreResponse | null>(null);
 
+  // ── IoT Feature Gating ──
+  iotEnabled = computed(() => this.featureGateService.iotEnabled());
+
   ngOnInit(): void {
     if (this.keycloakId) {
       this.loadUserNeonDbId();
+      this.featureGateService.loadGates(this.keycloakId);
       this.analyticsService.getPatientScore(this.keycloakId).subscribe({
         next: score => this.patientScore.set(score),
         error: () => { },

@@ -13,10 +13,10 @@ SERIAL_PORT = "COM4"  # Change to your Arduino port
 BAUD_RATE = 115200     # Must match the merged Arduino sketch
 
 # MUST match the patient's Keycloak subject ID.
-# The Angular frontend polls: dweet.cc/get/latest/dweet/for/tfk-gps-{keycloakId}
+# The Angular frontend polls: dweet.cc/get/latest/dweet/for/{THING_NAME}
 # Replace with the patient's Keycloak ID
 KEYCLOAK_ID = "90ad6c94-d4e0-4d6c-99ad-5c8431a62ce8"
-THING_NAME = f"tfk-gps-{KEYCLOAK_ID}"
+THING_NAME = "tfakkarni-high-1"
 DWEET_URL = f"https://dweet.cc/dweet/for/{THING_NAME}"
 
 # Mock data base coordinates (Tunis, Tunisia)

@@ -35,7 +35,7 @@ public class DailyMonitoringService {
      */
     @Transactional
     public DailyLog getOrCreateLog(String keycloakId, LocalDate date) {
-        DailyLog log = logRepo.findByPatientKeycloakIdAndLogDate(keycloakId, date)
+        DailyLog log = logRepo.findFirstByPatientKeycloakIdAndLogDate(keycloakId, date)
                 .orElseGet(() -> {
                     DailyLog newLog = new DailyLog();
                     newLog.setPatientKeycloakId(keycloakId);

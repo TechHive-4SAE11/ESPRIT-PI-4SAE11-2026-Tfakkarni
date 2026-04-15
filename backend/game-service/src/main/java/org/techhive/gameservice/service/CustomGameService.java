@@ -25,6 +25,7 @@ public class CustomGameService {
   private final QuestionMemoryRepository questionRepo;
   private final MemoryTagRepository tagRepo;
   private final DataPointPerformanceRepository perfRepo;
+  private final PatientContextService patientContextService;
 
   // ===================== CRUD =====================
 
@@ -127,6 +128,8 @@ public class CustomGameService {
         .gameId(game.getId())
         .title(game.getTitle())
         .totalQuestions(playItems.size())
+        .optionCount(patientContextService.getOptionCount(keycloakId))
+        .gameComplexity(patientContextService.getGameComplexity(keycloakId))
         .items(playItems)
         .build();
   }
@@ -219,6 +222,8 @@ public class CustomGameService {
         .gameId(null)
         .title("Random Memory Mix")
         .totalQuestions(allItems.size())
+        .optionCount(patientContextService.getOptionCount(keycloakId))
+        .gameComplexity(patientContextService.getGameComplexity(keycloakId))
         .items(allItems)
         .build();
   }
