@@ -37,4 +37,11 @@ public interface TrackingServiceClient {
     Map<String, Object> getHealthScore(
             @PathVariable("patientId") String patientId,
             @RequestParam("date") String date);
+
+    /** Doctor ratings from tracking-service */
+    @GetMapping("/api/ratings/ranking")
+    List<Map<String, Object>> getDoctorRatingsRanking();
+
+    @GetMapping("/api/ratings/doctor/{doctorKeycloakId}")
+    List<Map<String, Object>> getRatingsForDoctor(@PathVariable("doctorKeycloakId") String doctorKeycloakId);
 }

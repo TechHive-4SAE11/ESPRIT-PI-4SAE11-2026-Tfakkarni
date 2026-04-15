@@ -21,4 +21,7 @@ public interface MedicalServiceClient {
 
     @GetMapping("/api/medical-folders/{folderId}/coaching-goals")
     List<Map<String, Object>> getCoachingGoals(@PathVariable("folderId") Long folderId);
+
+    @GetMapping("/api/medical-folders/doctor/{doctorId}")
+    List<Map<String, Object>> getMedicalFoldersByDoctor(@PathVariable("doctorId") String doctorId);
 }

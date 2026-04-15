@@ -28,4 +28,9 @@ public class MedicalServiceClientFallback implements MedicalServiceClient {
     public List<Map<String, Object>> getCoachingGoals(Long folderId) {
         return Collections.emptyList();
     }
+
+    @Override
+    public List<Map<String, Object>> getMedicalFoldersByDoctor(String doctorId) {
+        return Collections.emptyList();
+    }
 }
