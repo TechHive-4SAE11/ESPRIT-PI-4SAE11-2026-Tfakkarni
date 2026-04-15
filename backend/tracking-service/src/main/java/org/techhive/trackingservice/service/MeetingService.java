@@ -35,7 +35,7 @@ public class MeetingService {
 
             Map<String, Object> roomData = dailyRoomService.createRoom(roomName);
 
-            String roomUrl = roomData.get("url") != null ? roomData.get("url").toString() : "";
+            String roomUrl    = roomData.get("url") != null ? roomData.get("url").toString() : "";
             String dailyRoomId = roomData.get("id") != null ? roomData.get("id").toString() : "";
 
             MedicalMeeting meeting = MedicalMeeting.builder()
@@ -63,7 +63,6 @@ public class MeetingService {
 
     /**
      * Get a meeting token for a participant and activate the meeting if needed.
-     * Accepts doctor, patient, OR helper keycloakId.
      */
     @Transactional
     public Map<String, String> getMeetingToken(Long meetingId, String keycloakId, String userName) {
@@ -71,8 +70,7 @@ public class MeetingService {
             MedicalMeeting meeting = meetingRepository.findById(meetingId)
                     .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + meetingId));
 
-            // Save helperKeycloakId if this is not the doctor or patient
-            boolean isDoctor = keycloakId.equals(meeting.getDoctorKeycloakId());
+            boolean isDoctor  = keycloakId.equals(meeting.getDoctorKeycloakId());
             boolean isPatient = keycloakId.equals(meeting.getPatientKeycloakId());
             if (!isDoctor && !isPatient && meeting.getHelperKeycloakId() == null) {
                 meeting.setHelperKeycloakId(keycloakId);
@@ -80,35 +78,29 @@ public class MeetingService {
                 log.info("Meeting {} - helper registered: {}", meetingId, keycloakId);
             }
 
-            boolean isOwner = isDoctor;
-
             String token = dailyRoomService.createMeetingToken(
-                    meeting.getRoomName(), keycloakId, userName, isOwner
-            );
+                    meeting.getRoomName(), keycloakId, userName, isDoctor);
 
-            // Activate meeting on first join
             if (meeting.getStatus() == MeetingStatus.SCHEDULED) {
                 meeting.setStatus(MeetingStatus.ACTIVE);
                 meeting.setStartedAt(LocalDateTime.now());
                 meetingRepository.save(meeting);
-                log.info("Meeting {} activated by user {}", meetingId, userName);
             }
 
             Map<String, String> result = new LinkedHashMap<>();
-            result.put("token", token);
-            result.put("roomUrl", meeting.getRoomUrl());
+            result.put("token",    token);
+            result.put("roomUrl",  meeting.getRoomUrl());
             result.put("roomName", meeting.getRoomName());
             return result;
 
         } catch (Exception e) {
-            log.error("Failed to get meeting token for meeting {}: {}", meetingId, e.getMessage());
+            log.error("Failed to get meeting token: {}", e.getMessage());
             throw new RuntimeException("Erreur lors de la récupération du token: " + e.getMessage(), e);
         }
     }
 
     /**
-     * Save live transcript chunk (auto-save from frontend).
-     * Optionally generates a Groq mini-summary for the current segment.
+     * Save live transcript + optional Groq partial summary.
      */
     @Transactional
     public PartialSummaryResponse saveTranscript(Long meetingId, String transcript,
@@ -119,7 +111,7 @@ public class MeetingService {
 
         meeting.setTranscript(transcript);
 
-        String miniSummary = null;
+        String miniSummary    = null;
         String updatedSummaries = meeting.getTranscriptSummaries();
 
         if (requestPartialSummary && transcript != null && !transcript.trim().isEmpty()) {
@@ -127,15 +119,11 @@ public class MeetingService {
                     transcript, segmentLabel,
                     meeting.getPatientName(), meeting.getDoctorName());
 
-            // Append to JSON array stored as plain text
             String entry = "{\"label\":\"" + escJson(segmentLabel)
                     + "\",\"summary\":\"" + escJson(miniSummary) + "\"}";
-            if (updatedSummaries == null || updatedSummaries.isBlank()) {
-                updatedSummaries = "[" + entry + "]";
-            } else {
-                updatedSummaries = updatedSummaries.substring(0, updatedSummaries.lastIndexOf(']'))
-                        + "," + entry + "]";
-            }
+            updatedSummaries = (updatedSummaries == null || updatedSummaries.isBlank())
+                    ? "[" + entry + "]"
+                    : updatedSummaries.substring(0, updatedSummaries.lastIndexOf(']')) + "," + entry + "]";
             meeting.setTranscriptSummaries(updatedSummaries);
         }
 
@@ -151,52 +139,34 @@ public class MeetingService {
                 .build();
     }
 
-    /** Escape double-quotes and backslashes for inline JSON embedding. */
     private String escJson(String s) {
         if (s == null) return "";
         return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
     }
 
-    /**
-     * Combine notes + transcript into a single text for the final AI summary.
-     * If both exist, sections are clearly separated.
-     */
     private String building(String notes, String transcript) {
         boolean hasNotes      = notes != null && !notes.isBlank();
         boolean hasTranscript = transcript != null && !transcript.isBlank();
-        if (hasNotes && hasTranscript) {
-            return "=== NOTES DU MÉDECIN ===\n" + notes
-                 + "\n\n=== TRANSCRIPTION EN DIRECT ===\n" + transcript;
-        } else if (hasTranscript) {
+        if (hasNotes && hasTranscript)
+            return "=== NOTES DU MÉDECIN ===\n" + notes + "\n\n=== TRANSCRIPTION EN DIRECT ===\n" + transcript;
+        if (hasTranscript)
             return "=== TRANSCRIPTION EN DIRECT ===\n" + transcript;
-        } else {
-            return notes;
-        }
+        return notes;
     }
 
     /**
-     * Update meeting notes (auto-save from frontend).
+     * Update meeting notes (auto-save).
      */
     @Transactional
     public MeetingResponse updateNotes(Long meetingId, String notes) {
-        try {
-            MedicalMeeting meeting = meetingRepository.findById(meetingId)
-                    .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + meetingId));
-
-            meeting.setNotes(notes);
-            meeting = meetingRepository.save(meeting);
-            log.debug("Notes updated for meeting {}", meetingId);
-
-            return toResponse(meeting);
-
-        } catch (Exception e) {
-            log.error("Failed to update notes for meeting {}: {}", meetingId, e.getMessage());
-            throw new RuntimeException("Erreur lors de la mise à jour des notes: " + e.getMessage(), e);
-        }
+        MedicalMeeting meeting = meetingRepository.findById(meetingId)
+                .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + meetingId));
+        meeting.setNotes(notes);
+        return toResponse(meetingRepository.save(meeting));
     }
 
     /**
-     * End a meeting: compute duration, generate AI summary, cleanup room.
+     * End meeting + generate Groq AI summary.
      */
     @Transactional
     public MeetingSummaryResponse endMeeting(Long meetingId, String finalNotes) {
@@ -204,12 +174,8 @@ public class MeetingService {
             MedicalMeeting meeting = meetingRepository.findById(meetingId)
                     .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + meetingId));
 
-            // Update notes if provided
-            if (finalNotes != null && !finalNotes.trim().isEmpty()) {
-                meeting.setNotes(finalNotes);
-            }
+            if (finalNotes != null && !finalNotes.trim().isEmpty()) meeting.setNotes(finalNotes);
 
-            // Calculate duration
             LocalDateTime start = meeting.getStartedAt() != null ? meeting.getStartedAt() : meeting.getScheduledAt();
             int duration = 0;
             if (start != null) {
@@ -217,145 +183,86 @@ public class MeetingService {
                 if (duration < 1) duration = 1;
             }
             meeting.setDurationMinutes(duration);
-
-            // End the meeting first (so it's always marked as ended even if AI fails)
             meeting.setStatus(MeetingStatus.ENDED);
             meeting.setEndedAt(LocalDateTime.now());
             meetingRepository.save(meeting);
 
-            // Generate AI summary (uses notes + transcript if available)
-            String notesForSummary = building(meeting.getNotes(), meeting.getTranscript());
             String summary;
             try {
                 summary = meetingSummaryService.generateSummary(
-                        notesForSummary,
-                        meeting.getPatientName(),
-                        meeting.getDoctorName(),
-                        duration
-                );
-            } catch (Exception aiEx) {
-                log.error("AI summary generation failed for meeting {}: {}", meetingId, aiEx.getMessage());
+                        building(meeting.getNotes(), meeting.getTranscript()),
+                        meeting.getPatientName(), meeting.getDoctorName(), duration);
+            } catch (Exception e) {
+                log.error("AI summary failed for meeting {}: {}", meetingId, e.getMessage());
                 summary = "Résumé non disponible — erreur lors de la génération AI.";
             }
             meeting.setAiSummary(summary);
             meetingRepository.save(meeting);
 
-            log.info("Meeting {} ended. Duration: {} min", meetingId, duration);
-
-            // Cleanup Daily.co room (non-blocking)
-            try {
-                dailyRoomService.deleteRoom(meeting.getRoomName());
-            } catch (Exception e) {
-                log.warn("Non-blocking: failed to delete Daily room '{}': {}", meeting.getRoomName(), e.getMessage());
-            }
+            try { dailyRoomService.deleteRoom(meeting.getRoomName()); }
+            catch (Exception e) { log.warn("Daily room cleanup failed: {}", e.getMessage()); }
 
             return MeetingSummaryResponse.builder()
-                    .meetingId(meeting.getId())
-                    .summary(summary)
-                    .durationMinutes(duration)
-                    .build();
+                    .meetingId(meeting.getId()).summary(summary).durationMinutes(duration).build();
 
         } catch (Exception e) {
             log.error("Failed to end meeting {}: {}", meetingId, e.getMessage());
-            throw new RuntimeException("Erreur lors de la clôture de la réunion: " + e.getMessage(), e);
+            throw new RuntimeException("Erreur lors de la clôture: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Delete a meeting by ID (also tries to cleanup the Daily.co room).
-     */
     @Transactional
     public void deleteMeeting(Long meetingId) {
         MedicalMeeting meeting = meetingRepository.findById(meetingId)
                 .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + meetingId));
-        // Try to cleanup Daily.co room
         try {
-            if (meeting.getRoomName() != null && meeting.getStatus() != MeetingStatus.ENDED) {
+            if (meeting.getRoomName() != null && meeting.getStatus() != MeetingStatus.ENDED)
                 dailyRoomService.deleteRoom(meeting.getRoomName());
-            }
-        } catch (Exception e) {
-            log.warn("Could not delete Daily.co room '{}': {}", meeting.getRoomName(), e.getMessage());
-        }
+        } catch (Exception e) { log.warn("Daily room cleanup failed: {}", e.getMessage()); }
         meetingRepository.deleteById(meetingId);
-        log.info("Meeting {} deleted", meetingId);
     }
 
-    /**
-     * Generate PDF bytes for a meeting.
-     */
     public byte[] generatePdf(Long meetingId) throws Exception {
-        MedicalMeeting meeting = meetingRepository.findById(meetingId)
-                .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + meetingId));
-        return meetingPdfService.generateMeetingPdf(meeting);
+        return meetingPdfService.generateMeetingPdf(
+                meetingRepository.findById(meetingId)
+                        .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + meetingId)));
     }
 
-    /**
-     * Delegate Claude API connection test to MeetingSummaryService.
-     */
     public Map<String, Object> testClaudeApi() {
         return meetingSummaryService.testClaudeConnection();
     }
 
-    /**
-     * Regenerate AI summary for an already-ended meeting.
-     * Useful when Claude API was unavailable during the original end call.
-     */
     @Transactional
     public MeetingSummaryResponse regenerateSummary(Long meetingId) {
         MedicalMeeting meeting = meetingRepository.findById(meetingId)
                 .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + meetingId));
-
         String summary = meetingSummaryService.generateSummary(
-                meeting.getNotes(),
-                meeting.getPatientName(),
-                meeting.getDoctorName(),
-                meeting.getDurationMinutes() != null ? meeting.getDurationMinutes() : 1
-        );
+                meeting.getNotes(), meeting.getPatientName(), meeting.getDoctorName(),
+                meeting.getDurationMinutes() != null ? meeting.getDurationMinutes() : 1);
         meeting.setAiSummary(summary);
         meetingRepository.save(meeting);
-        log.info("Summary regenerated for meeting {}", meetingId);
-
         return MeetingSummaryResponse.builder()
-                .meetingId(meeting.getId())
-                .summary(summary)
-                .durationMinutes(meeting.getDurationMinutes() != null ? meeting.getDurationMinutes() : 0)
-                .build();
+                .meetingId(meeting.getId()).summary(summary)
+                .durationMinutes(meeting.getDurationMinutes() != null ? meeting.getDurationMinutes() : 0).build();
     }
 
-    /**
-     * Get a meeting by ID.
-     */
     public MeetingResponse getById(Long id) {
-        MedicalMeeting meeting = meetingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + id));
-        return toResponse(meeting);
+        return toResponse(meetingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Réunion introuvable: " + id)));
     }
 
-    /**
-     * Get all meetings for a doctor.
-     */
     public List<MeetingResponse> getMeetingsForDoctor(String doctorKeycloakId) {
         return meetingRepository.findByDoctorKeycloakIdOrderByCreatedAtDesc(doctorKeycloakId)
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+                .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
-    /**
-     * Get all meetings for a patient.
-     */
     public List<MeetingResponse> getMeetingsForPatient(String keycloakId) {
-        // Search by patientKeycloakId OR helperKeycloakId
-        // so the helper (connected person) sees meetings created for their patient
         return meetingRepository.findByPatientOrHelperKeycloakId(keycloakId)
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+                .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
-    /**
-     * Map entity to response DTO.
-     */
+    // ── DTO mapper ────────────────────────────────────────────────────────────
+
     private MeetingResponse toResponse(MedicalMeeting m) {
         return MeetingResponse.builder()
                 .id(m.getId())
@@ -364,6 +271,9 @@ public class MeetingService {
                 .status(m.getStatus().name())
                 .patientName(m.getPatientName())
                 .doctorName(m.getDoctorName())
+                // ── IDs nécessaires pour l'évaluation patient ──
+                .doctorKeycloakId(m.getDoctorKeycloakId())
+                .patientKeycloakId(m.getPatientKeycloakId())
                 .notes(m.getNotes())
                 .aiSummary(m.getAiSummary())
                 .transcript(m.getTranscript())

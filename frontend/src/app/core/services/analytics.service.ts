@@ -11,6 +11,8 @@ import type {
   BatchJobResult,
   CorrelationStatsResponse,
   PrescriptionImpactResponse,
+  DoctorMatchResponse,
+  SeverePatientResponse,
 } from '@/core/models/analytics.model';
 
 @Injectable({ providedIn: 'root' })
@@ -111,5 +113,20 @@ export class AnalyticsService {
 
   runDoctorEffectiveness(): Observable<BatchJobResult> {
     return this.http.post<BatchJobResult>(`${this.base}/jobs/doctor-effectiveness`, {});
+  }
+
+  // ─── Doctor–Patient Matching ───
+
+  getRankedDoctors(): Observable<DoctorMatchResponse[]> {
+    return this.http.get<DoctorMatchResponse[]>(`${this.base}/matching/ranked-doctors`);
+  }
+
+  getRecommendedDoctor(stage: string = 'SEVERE'): Observable<DoctorMatchResponse> {
+    const params = new HttpParams().set('stage', stage);
+    return this.http.get<DoctorMatchResponse>(`${this.base}/matching/recommend`, { params });
+  }
+
+  getSeverePatients(): Observable<SeverePatientResponse[]> {
+    return this.http.get<SeverePatientResponse[]>(`${this.base}/matching/severe-patients`);
   }
 }

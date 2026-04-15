@@ -123,3 +123,31 @@ export interface CorrelationStatsResponse {
   keyInsight: string;
   adherenceCorrelation: number;
 }
+
+// ── Doctor–Patient Matching ──
+
+export interface DoctorMatchResponse {
+  doctorKeycloakId: string;
+  doctorName: string;
+  matchScore: number;
+  averageRating: number;
+  totalRatings: number;
+  stabilizationRate: number;
+  declineRate: number;
+  appointmentShowRate: number;
+  currentPatientCount: number;
+  hasRiskFlags: boolean;
+}
+
+export interface SeverePatientResponse {
+  patientKeycloakId: string;
+  patientName: string;
+  stage: AlzheimerStage;
+  overallScore: number;
+  cognitiveScore: number;
+  currentDoctorKeycloakId: string | null;
+  currentDoctorName: string;
+  recommendedDoctorKeycloakId: string | null;
+  recommendedDoctorName: string | null;
+  recommendedDoctorMatchScore: number;
+}

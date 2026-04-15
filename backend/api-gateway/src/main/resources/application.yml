@@ -163,6 +163,11 @@ spring:
           uri: lb://tracking-service
           predicates:
             - Path=/api/meetings/**
+        # ── Doctor ratings & ranking ──────────────────────────────────────────
+        - id: doctor-ratings
+          uri: lb://tracking-service
+          predicates:
+            - Path=/api/ratings/**
         - id: follow-up-reminders
           uri: lb://tracking-service
           predicates:

@@ -39,4 +39,14 @@ public class TrackingServiceClientFallback implements TrackingServiceClient {
     public Map<String, Object> getHealthScore(String patientId, String date) {
         return Collections.emptyMap();
     }
+
+    @Override
+    public List<Map<String, Object>> getDoctorRatingsRanking() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<Map<String, Object>> getRatingsForDoctor(String doctorKeycloakId) {
+        return Collections.emptyList();
+    }
 }

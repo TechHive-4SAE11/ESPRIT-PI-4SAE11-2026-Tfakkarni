@@ -14,9 +14,10 @@ import { ZardDividerComponent } from '@/shared/components/divider';
 import { UserApiService, type UserInfo } from '@/core/services/user-api.service';
 import { GameService, type GameResponse, type OverviewStatsResponse } from '@/core/services/game.service';
 import { AnalyticsService } from '@/core/services/analytics.service';
-import type { PlatformOverviewResponse, DoctorEffectivenessResponse, BatchJobResult } from '@/core/models/analytics.model';
+import type { PlatformOverviewResponse, DoctorEffectivenessResponse, BatchJobResult, DoctorMatchResponse, SeverePatientResponse } from '@/core/models/analytics.model';
 import { ProfileComponent } from '@/pages/patient-dashboard/helper-view/profile/profile.component';
 import { KeycloakService } from 'keycloak-angular';
+import { DoctorRatingRankingComponent } from './doctor-rating-ranking.component';
 import { finalize } from 'rxjs';
 
 @Component({
@@ -26,6 +27,7 @@ import { finalize } from 'rxjs';
     CommonModule,
     FormsModule,
     DashboardLayoutComponent,
+    DoctorRatingRankingComponent,
     ZardCardComponent,
     ZardIconComponent,
     ZardBadgeComponent,
@@ -548,12 +550,146 @@ import { finalize } from 'rxjs';
                 }
               </div>
             </z-card>
+            <z-card>
+              <div class="p-6">
+                <app-doctor-rating-ranking />
+              </div>
+            </z-card>
           </div>
         }
 
         <!-- ══════════════════════════════════════════════════════════ -->
         <!-- BATCH JOBS                                                -->
         <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- DOCTOR-PATIENT MATCHING                                     -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        @case ('Matching') {
+          <div class="space-y-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-xl font-bold tracking-tight">Matching Médecin–Patient</h2>
+                <p class="text-sm text-muted-foreground mt-1">Patients à risque et recommandations de médecins</p>
+              </div>
+              <button z-button zType="outline" zSize="sm" (click)="loadMatching()">
+                <z-icon zType="refresh-cw" class="h-4 w-4 mr-1" /> Actualiser
+              </button>
+            </div>
+
+            <!-- Ranked Doctors -->
+            <z-card>
+              <div class="p-6">
+                <h3 class="text-lg font-semibold mb-4">Classement des médecins (score composite)</h3>
+                <p class="text-xs text-muted-foreground mb-4">Score = Stabilisation×50% + Note patient×30% + Présence RDV×20%</p>
+                @if (rankedDoctors().length) {
+                  <table z-table>
+                    <thead z-table-header>
+                      <tr z-table-row>
+                        <th z-table-head>#</th>
+                        <th z-table-head>Médecin</th>
+                        <th z-table-head>Score</th>
+                        <th z-table-head>Note</th>
+                        <th z-table-head>Stabilisation</th>
+                        <th z-table-head>Présence RDV</th>
+                        <th z-table-head>Patients</th>
+                        <th z-table-head>Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody z-table-body>
+                      @for (doc of rankedDoctors(); track doc.doctorKeycloakId; let i = $index) {
+                        <tr z-table-row [class]="doc.hasRiskFlags ? 'opacity-60' : ''">
+                          <td z-table-cell class="font-bold text-muted-foreground">{{ i + 1 }}</td>
+                          <td z-table-cell class="font-medium">{{ doc.doctorName }}</td>
+                          <td z-table-cell>
+                            <span class="font-bold" [class]="doc.matchScore >= 60 ? 'text-emerald-600' : doc.matchScore >= 40 ? 'text-amber-600' : 'text-red-600'">
+                              {{ doc.matchScore | number:'1.1-1' }}
+                            </span>
+                          </td>
+                          <td z-table-cell>
+                            <div class="flex items-center gap-1">
+                              <span class="text-amber-500">★</span>
+                              <span>{{ doc.averageRating | number:'1.1-1' }}</span>
+                              <span class="text-xs text-muted-foreground">({{ doc.totalRatings }})</span>
+                            </div>
+                          </td>
+                          <td z-table-cell>
+                            <span class="text-emerald-600">{{ doc.stabilizationRate | number:'1.0-0' }}%</span>
+                          </td>
+                          <td z-table-cell>{{ doc.appointmentShowRate | number:'1.0-0' }}%</td>
+                          <td z-table-cell>{{ doc.currentPatientCount }}</td>
+                          <td z-table-cell>
+                            @if (doc.hasRiskFlags) {
+                              <z-badge zType="destructive">Signalé</z-badge>
+                            } @else {
+                              <z-badge zType="outline">OK</z-badge>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="text-sm text-muted-foreground">Aucune donnée. Lancez les tâches de calcul d'abord.</p>
+                }
+              </div>
+            </z-card>
+
+            <!-- Severe Patients with Recommendations -->
+            <z-card>
+              <div class="p-6">
+                <h3 class="text-lg font-semibold mb-4">Patients à risque — Recommandations</h3>
+                @if (severePatients().length) {
+                  <table z-table>
+                    <thead z-table-header>
+                      <tr z-table-row>
+                        <th z-table-head>Patient</th>
+                        <th z-table-head>Stade</th>
+                        <th z-table-head>Score global</th>
+                        <th z-table-head>Score cognitif</th>
+                        <th z-table-head>Médecin actuel</th>
+                        <th z-table-head>Médecin recommandé</th>
+                        <th z-table-head>Score match</th>
+                      </tr>
+                    </thead>
+                    <tbody z-table-body>
+                      @for (p of severePatients(); track p.patientKeycloakId) {
+                        <tr z-table-row>
+                          <td z-table-cell class="font-medium">{{ p.patientName }}</td>
+                          <td z-table-cell>
+                            <z-badge [zType]="p.stage === 'SEVERE' ? 'destructive' : 'default'">{{ getStageLabel(p.stage) }}</z-badge>
+                          </td>
+                          <td z-table-cell>{{ p.overallScore | number:'1.0-0' }}</td>
+                          <td z-table-cell>{{ p.cognitiveScore | number:'1.0-0' }}</td>
+                          <td z-table-cell class="text-muted-foreground">{{ p.currentDoctorName || 'Non assigné' }}</td>
+                          <td z-table-cell>
+                            @if (p.recommendedDoctorName) {
+                              <span class="font-medium text-emerald-600">{{ p.recommendedDoctorName }}</span>
+                            } @else {
+                              <span class="text-muted-foreground">—</span>
+                            }
+                          </td>
+                          <td z-table-cell>
+                            @if (p.recommendedDoctorMatchScore) {
+                              <span class="font-bold">{{ p.recommendedDoctorMatchScore | number:'1.1-1' }}</span>
+                            } @else {
+                              <span class="text-muted-foreground">—</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <div class="flex flex-col items-center py-8 text-muted-foreground">
+                    <z-icon zType="check" class="h-10 w-10 mb-2 opacity-40" />
+                    <p>Aucun patient à risque élevé détecté</p>
+                  </div>
+                }
+              </div>
+            </z-card>
+          </div>
+        }
+
         @case ('Tâches') {
           <div class="space-y-6">
             <h2 class="text-xl font-bold tracking-tight">Tâches planifiées</h2>
@@ -832,6 +968,10 @@ export class AdminDashboardComponent implements OnInit {
   lastJobResult = signal<BatchJobResult | null>(null);
   jobRunning = signal<string | null>(null);
 
+  // Matching state
+  rankedDoctors = signal<DoctorMatchResponse[]>([]);
+  severePatients = signal<SeverePatientResponse[]>([]);
+
   // Search / Filter — both signals for reactivity
   searchQuery = signal('');
   roleFilter = signal<string>('all');
@@ -864,6 +1004,7 @@ export class AdminDashboardComponent implements OnInit {
         { icon: 'users', label: 'Utilisateurs', action: () => this.setPage('Utilisateurs') },
         { icon: 'gamepad-2', label: 'Jeux', action: () => this.setPage('Jeux') },
         { icon: 'bar-chart-3', label: 'Analytique', action: () => this.setPage('Statistiques') },
+        { icon: 'target', label: 'Matching', action: () => this.setPage('Matching') },
         { icon: 'zap', label: 'Tâches', action: () => this.setPage('Tâches') },
       ],
     },
@@ -1201,6 +1342,18 @@ export class AdminDashboardComponent implements OnInit {
       error: err => console.error('Failed to load stats', err),
     });
     this.loadAnalytics();
+    this.loadMatching();
+  }
+
+  loadMatching(): void {
+    this.analyticsService.getRankedDoctors().subscribe({
+      next: data => this.rankedDoctors.set(data),
+      error: () => {},
+    });
+    this.analyticsService.getSeverePatients().subscribe({
+      next: data => this.severePatients.set(data),
+      error: () => {},
+    });
   }
 
   private loadAnalytics(): void {
