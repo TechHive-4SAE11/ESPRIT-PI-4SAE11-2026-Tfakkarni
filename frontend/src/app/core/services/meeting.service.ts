@@ -12,6 +12,9 @@ export interface Meeting {
   status: 'SCHEDULED' | 'ACTIVE' | 'ENDED';
   patientName: string;
   doctorName: string;
+  // Keycloak IDs — populated since fix
+  doctorKeycloakId: string;
+  patientKeycloakId: string;
   notes: string;
   aiSummary: string;
   transcript: string;
@@ -71,45 +74,29 @@ export class MeetingService {
     );
   }
 
-  /**
-   * Get meeting token with cache — avoids repeated Daily.co API calls.
-   * Cache expires after 10 minutes (tokens are valid for meeting.room-expiry-minutes).
-   */
   getMeetingToken(id: number, keycloakId: string, userName: string): Observable<MeetingToken> {
     const cacheKey = `${id}:${keycloakId}`;
     const cached = this.tokenCache.get(cacheKey);
-
     if (cached && cached.expiresAt > Date.now()) {
-      console.log(`[MeetingService] Token cache HIT for meeting ${id}`);
       return of(cached.data);
     }
-
     return this.http.get<MeetingToken>(
       `${this.base}/${id}/token`,
       { params: { keycloakId, userName } }
     ).pipe(
       tap(data => {
-        // Cache token for 10 minutes
         this.tokenCache.set(cacheKey, { data, expiresAt: Date.now() + 10 * 60 * 1000 });
-        console.log(`[MeetingService] Token cached for meeting ${id}`);
       }),
       catchError(err => { console.error('Error fetching meeting token:', err); throw err; })
     );
   }
 
-  /**
-   * Pre-fetch a token in background (called when meeting is ACTIVE in the list).
-   * This makes the join near-instant for the patient.
-   */
   prefetchToken(id: number, keycloakId: string, userName: string): void {
     const cacheKey = `${id}:${keycloakId}`;
     const cached = this.tokenCache.get(cacheKey);
-    if (cached && cached.expiresAt > Date.now()) return; // already cached
-
-    console.log(`[MeetingService] Pre-fetching token for meeting ${id}`);
+    if (cached && cached.expiresAt > Date.now()) return;
     this.getMeetingToken(id, keycloakId, userName).subscribe({
-      next: () => console.log(`[MeetingService] Token pre-fetched for meeting ${id}`),
-      error: err => console.warn(`[MeetingService] Pre-fetch failed for meeting ${id}:`, err)
+      error: err => console.warn(`Pre-fetch failed for meeting ${id}:`, err)
     });
   }
 
@@ -119,7 +106,6 @@ export class MeetingService {
     );
   }
 
-  /** Save live transcript chunk + optionally request a Groq partial summary */
   saveTranscript(id: number, transcript: string,
     requestPartialSummary: boolean,
     segmentLabel: string): Observable<PartialSummaryResult> {
@@ -151,7 +137,7 @@ export class MeetingService {
     );
   }
 
-  /** Download meeting PDF from backend (includes transcript + AI summaries) */
+  /** Download meeting PDF from backend */
   downloadMeetingPdf(id: number, patientName: string): void {
     const url = `${this.base}/${id}/pdf`;
     const a = document.createElement('a');

@@ -16,6 +16,9 @@ public class MeetingResponse {
     private String status;
     private String patientName;
     private String doctorName;
+    // Keycloak IDs — needed for rating feature
+    private String doctorKeycloakId;
+    private String patientKeycloakId;
     private String notes;
     private String aiSummary;
     private String transcript;

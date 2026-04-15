@@ -17,6 +17,7 @@ import { AnalyticsService } from '@/core/services/analytics.service';
 import type { PlatformOverviewResponse, DoctorEffectivenessResponse, BatchJobResult } from '@/core/models/analytics.model';
 import { ProfileComponent } from '@/pages/patient-dashboard/helper-view/profile/profile.component';
 import { KeycloakService } from 'keycloak-angular';
+import { DoctorRatingRankingComponent } from './doctor-rating-ranking.component';
 import { finalize } from 'rxjs';
 
 @Component({
@@ -26,6 +27,7 @@ import { finalize } from 'rxjs';
     CommonModule,
     FormsModule,
     DashboardLayoutComponent,
+    DoctorRatingRankingComponent,
     ZardCardComponent,
     ZardIconComponent,
     ZardBadgeComponent,
@@ -546,6 +548,11 @@ import { finalize } from 'rxjs';
                 } @else {
                   <p class="text-sm text-muted-foreground">Aucune donnée de classement disponible</p>
                 }
+              </div>
+            </z-card>
+            <z-card>
+              <div class="p-6">
+                <app-doctor-rating-ranking />
               </div>
             </z-card>
           </div>
