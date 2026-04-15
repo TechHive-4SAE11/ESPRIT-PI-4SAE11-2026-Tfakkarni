@@ -1,16 +1,6 @@
-server:
-  port: 18086
-  servlet:
-    context-path: /
-
 spring:
   application:
     name: medical-service
-
-  # config service/client — values below are fallbacks used when config-server is not running
-  cloud:
-    config:
-      enabled: true
   config:
     import: optional:configserver:http://localhost:8888
 

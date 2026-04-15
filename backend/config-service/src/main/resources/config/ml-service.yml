@@ -1,7 +1,16 @@
+# ============================================================
+# ml-service — centralized config
+# ============================================================
 server:
   port: 18085
 
 spring:
+  ai:
+    huggingface:
+      api-key: ${HUGGINGFACE_API_KEY}
+      chat:
+        options:
+          model: meta-llama/Llama-2-7b-chat-hf
   datasource:
     url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
     username: neondb_owner
@@ -16,14 +25,18 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
-
-# Set GEMINI_API_KEY in environment or repo-root .env (loaded by ml-service at startup)
 gemini:
   api-key: ${GEMINI_API_KEY:}
   model: gemini-2.5-flash
+
+huggingface:
+  api-key: ${HUGGINGFACE_API_KEY:}
+  model: facebook/bart-large-mnli
+
+ml:
+  twilio:
+    account-sid: ${ML_TWILIO_SID:}
+    auth-token: ${ML_TWILIO_TOKEN:}
+    phone-number: ${ML_TWILIO_PHONE:}
+    whatsapp-number: ${ML_TWILIO_WHATSAPP:}
+    doctor-phone: ${ML_DOCTOR_PHONE:}

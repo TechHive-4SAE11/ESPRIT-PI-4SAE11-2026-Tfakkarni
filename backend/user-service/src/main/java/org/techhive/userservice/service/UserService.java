@@ -21,6 +21,25 @@ public class UserService {
     return userRepository.findAll();
   }
 
+  public List<User> searchUsersByName(String name) {
+    if (name == null || name.isBlank()) {
+        return List.of();
+    }
+    
+    String[] parts = name.trim().split("\\s+");
+    // Search using the first word and then filter if there are more words
+    List<User> users = userRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(parts[0], parts[0]);
+    
+    if (parts.length > 1) {
+        return users.stream()
+            .filter(u -> (u.getFirstName() != null && u.getFirstName().toLowerCase().contains(parts[1].toLowerCase())) ||
+                         (u.getLastName() != null && u.getLastName().toLowerCase().contains(parts[1].toLowerCase())))
+            .toList();
+    }
+    
+    return users;
+  }
+
   public List<User> getUsersByRole(String role) {
     return userRepository.findByRole(role);
   }

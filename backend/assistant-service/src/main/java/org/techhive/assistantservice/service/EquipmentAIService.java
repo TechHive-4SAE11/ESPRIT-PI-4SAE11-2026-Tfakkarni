@@ -58,7 +58,50 @@ public class EquipmentAIService {
         log.debug("OpenAI recommendation response: {}", aiResponse);
 
         // 4. Parse and build response
-        return parseRecommendationResponse(request, aiResponse, availableEquipment);
+        EquipmentRecommendResponse response = parseRecommendationResponse(request, aiResponse, availableEquipment);
+        
+        // 5. Automatically save/link the recommended equipment for the patient (as an Active Loan)
+        if (response.getRecommendations() != null) {
+            for (EquipmentRecommendation recommendation : response.getRecommendations()) {
+                try {
+                    Long assignId = recommendation.getEquipmentId();
+                    
+                    if (assignId == null || assignId == -1L) {
+                        // AI invented a new equipment recommendation. Let's add it to the catalog!
+                        org.techhive.assistantservice.client.dto.EquipmentDTO newEq = new org.techhive.assistantservice.client.dto.EquipmentDTO();
+                        newEq.setName(recommendation.getEquipmentName());
+                        newEq.setCategory(recommendation.getCategory());
+                        newEq.setDescription(recommendation.getJustification());
+                        newEq.setCondition("NEW");
+                        newEq.setStatus("AVAILABLE");
+                        newEq.setDonorId(1L);
+                        
+                        newEq = medicalServiceClient.createEquipment(newEq);
+                        assignId = newEq.getId();
+                        log.info("AI invented a new equipment. Created it in catalog with ID: {}", assignId);
+                    }
+                    
+                    if (assignId != null && assignId > 0) {
+                        org.techhive.assistantservice.client.dto.EquipmentLoanDTO loanDTO = 
+                            org.techhive.assistantservice.client.dto.EquipmentLoanDTO.builder()
+                                .equipmentId(assignId)
+                                .borrowerId(request.getPatientId())
+                                .purpose("AI Recommended: " + recommendation.getJustification())
+                                .notes("Auto-assigned by Medical AI Assistant based on medical folder analysis")
+                                .build();
+                        
+                        medicalServiceClient.borrowEquipment(loanDTO);
+                        log.info("Automatically generated EquipmentLoan for equipment ID: {} for patient ID: {}", 
+                                 assignId, request.getPatientId());
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to automatically assign equipment to patient ID: {}. Error: {}", 
+                             request.getPatientId(), e.getMessage());
+                }
+            }
+        }
+
+        return response;
     }
 
     private String callOpenAIForRecommendations(EquipmentRecommendRequest request, String equipmentContext) {
@@ -67,19 +110,21 @@ public class EquipmentAIService {
                 
                 A patient needs equipment recommendations based on the following:
                 - Patient ID: %d
-                - Medical Condition: %s
-                - Severity Level: %s
+                - Medical Condition (Base): %s
+                - Severity Level (Base): %s
+                
+                %s
                 
                 Available equipment in our inventory:
                 %s
                 
                 Please recommend the TOP 3 most suitable equipment items from the available inventory.
-                If the inventory is empty or doesn't have suitable items, provide general recommendations.
+                If the inventory doesn't have a perfectly suitable item, feel free to generate a brand new recommendation and set its Equipment ID to -1.
                 
                 For each recommendation, provide:
-                1. Equipment ID (from inventory, or -1 if general recommendation)
+                1. Equipment ID (must be from the inventory list above. Use -1 if you are recommending something new that is not in the list)
                 2. Equipment name
-                3. Category
+                3. Category (MUST exactly match one of these: MOBILITY, RESPIRATORY, CARDIAC, ORTHOPEDIC, FURNITURE, MONITORING, THERAPEUTIC, SURGICAL, OTHER)
                 4. Detailed justification (why this equipment helps with the condition)
                 5. Relevance score (0.0 to 1.0)
                 6. Usage instructions specific to the patient's condition
@@ -102,6 +147,7 @@ public class EquipmentAIService {
                   "generalAdvice": "Overall medical advice for the patient"
                 }
                 """, request.getPatientId(), request.getCondition(), request.getSeverity(),
+                request.getCustomContext() != null ? "--- DEEP MEDICAL PROFILE ---\n" + request.getCustomContext() : "",
                 equipmentContext.isEmpty() ? "No equipment currently available in inventory." : equipmentContext);
 
         try {

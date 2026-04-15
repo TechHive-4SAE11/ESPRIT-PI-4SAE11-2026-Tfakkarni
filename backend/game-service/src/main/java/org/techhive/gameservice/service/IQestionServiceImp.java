@@ -49,12 +49,18 @@ public class IQestionServiceImp implements IQuestionService {
 
     @Override
     public Question updateQuestion(QuestionDTO questionDTO) {
-        if (!questionRepository.existsById(questionDTO.getId())) {
+        Question existingQuestion = questionRepository.findById(questionDTO.getId()).orElse(null);
+        if (existingQuestion == null) {
             log.error("Question not found with id: {}", questionDTO.getId());
             return null;
         }
 
-        Question question = questionDTO.toEntity();
+        existingQuestion.setText(questionDTO.getText());
+        if (questionDTO.getDifficultyLevel() != null) {
+            existingQuestion.setDifficultyLevel(questionDTO.getDifficultyLevel());
+        }
+        // Allows clearing media attachment if set as empty string
+        existingQuestion.setMediaAttachment(questionDTO.getMediaAttachment());
 
         // Set the quiz
         Quiz quiz = quizRepository.findById(questionDTO.getQuizId())
@@ -65,14 +71,9 @@ public class IQestionServiceImp implements IQuestionService {
             return null;
         }
 
-        question.setQuiz(quiz);
+        existingQuestion.setQuiz(quiz);
 
-        if (!validateQuestion(question)) {
-            log.error("Invalid question data");
-            return null;
-        }
-
-        return questionRepository.save(question);
+        return questionRepository.save(existingQuestion);
     }
 
     @Override

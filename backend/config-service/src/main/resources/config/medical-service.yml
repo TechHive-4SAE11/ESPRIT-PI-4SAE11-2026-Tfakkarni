@@ -1,17 +1,12 @@
+# ============================================================
+# medical-service — centralized config
+# ============================================================
 server:
   port: 18086
   servlet:
     context-path: /
-  error:
-    include-message: always
-    include-exception: true
-    include-stacktrace: always
 
 spring:
-  config:
-    import: optional:file:.env[.properties],optional:file:.env.secret[.properties]
-
-
   datasource:
     url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&prepareThreshold=0
     username: neondb_owner
@@ -20,7 +15,6 @@ spring:
     hikari:
       data-source-properties:
         prepareThreshold: 0
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -34,58 +28,29 @@ spring:
           fetch_size: 50
         order_inserts: true
         order_updates: true
-
-  # Console H2 pour voir les donnees
   h2:
     console:
       enabled: true
       path: /h2-console
       settings:
         web-allow-others: true
-
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:demo-key}
       model: gpt-3.5-turbo
 
 eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    register-with-eureka: true
-    fetch-registry: true
   instance:
-    hostname: localhost
+    prefer-ip-address: true
     instance-id: ${spring.application.name}:${server.port}
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
-
 logging:
-  file:
-    name: medical-service.log
   level:
-    root: INFO
     org.techhive.medicalservice: DEBUG
     org.springframework.web: DEBUG
     org.springframework.security: DEBUG
     org.springframework.boot.actuate.health: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
-# Set SAFETY_AUDIT_PRESENTATION_DEMO=true when tracking prescriptions are unavailable (demo / jury).
-medical:
-  analytics:
-    safety-audit:
-      presentation-demo: ${SAFETY_AUDIT_PRESENTATION_DEMO:false}
-
-# Alert service (for appointment reminders + coaching FCM)
 alert-service:
   url: http://localhost:18084
 
@@ -97,7 +62,11 @@ coaching:
   weather:
     enabled: true
 
-# Google Calendar Configuration
+medical:
+  analytics:
+    safety-audit:
+      presentation-demo: ${SAFETY_AUDIT_PRESENTATION_DEMO:false}
+
 google:
   calendar:
     client-id: ${GOOGLE_CLIENT_ID:}

@@ -9,34 +9,13 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "assistant.video")
 public class VideoApiConfig {
 
-    private String provider = "SCRIPT_ONLY";
+    private String provider = "PEXELS";
 
-    private DIdConfig dId = new DIdConfig();
-    private HeyGenConfig heygen = new HeyGenConfig();
-    private LumaConfig luma = new LumaConfig();
-    private RunwayConfig runway = new RunwayConfig();
+    private PexelsConfig pexels = new PexelsConfig();
 
     @Data
-    public static class DIdConfig {
+    public static class PexelsConfig {
         private String apiKey;
-        private String apiUrl = "https://api.d-id.com";
-    }
-
-    @Data
-    public static class HeyGenConfig {
-        private String apiKey;
-        private String apiUrl = "https://api.heygen.com";
-    }
-
-    @Data
-    public static class LumaConfig {
-        private String apiKey;
-        private String apiUrl = "https://api.lumalabs.ai";
-    }
-
-    @Data
-    public static class RunwayConfig {
-        private String apiKey;
-        private String apiUrl = "https://api.runwayml.com";
+        private String apiUrl = "https://api.pexels.com";
     }
 }

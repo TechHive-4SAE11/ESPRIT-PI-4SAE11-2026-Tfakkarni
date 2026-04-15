@@ -1,3 +1,6 @@
+# ============================================================
+# alert-service — centralized config
+# ============================================================
 server:
   port: 18084
 
@@ -7,7 +10,6 @@ spring:
     username: neondb_owner
     password: npg_3uElGswIc7gk
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -15,16 +17,12 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-
-  # Console H2 pour voir les données (SUPER UTILE !)
   h2:
     console:
       enabled: true
       path: /h2-console
       settings:
         web-allow-others: true
-
-  # Redis configuration (gardé inchangé)
   data:
     redis:
       host: live-bullfrog-45869.upstash.io
@@ -39,23 +37,22 @@ spring:
           max-idle: 5
           min-idle: 1
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
-
-# Firebase configuration (gardé inchangé)
 firebase:
   config-file: classpath:firebase-service-account.json
 
-# Tracking service URL (gardé inchangé)
 tracking-service:
   url: http://localhost:18083
 
-# Notification scheduler (gardé inchangé)
 notification:
   scheduler:
     enabled: true
     medication-reminder-cron: "0 */1 * * * *"
+
+mailtrap:
+  token: f4ed6c5f383c7fe7e305eba8d1bcaef9
+  inbox-id: 4413425
+  from: noreply@tfakkarni.com
+
+telegram:
+  bot-token: "8761174713:AAEG23SiwUmSEDTFTlMm-7GLzUZQpqDJzzg"
+  default-chat-id: "5674590232"

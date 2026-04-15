@@ -1,14 +1,6 @@
-server:
-  port: 18083
-
 spring:
   application:
     name: tracking-service
-
-  # config service/client — values below are fallbacks used when config-server is not running
-  cloud:
-    config:
-      enabled: true
   config:
     import: optional:configserver:http://localhost:8888
 
