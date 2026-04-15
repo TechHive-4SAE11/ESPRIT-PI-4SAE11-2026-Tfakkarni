@@ -21,7 +21,7 @@ import { PublicQuizComponent } from './public-quiz/public-quiz.component';
             <span class="text-xl font-bold text-primary">Tfakkarni</span>
           </div>
           <nav class="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
-            <a href="#quiz" class="hover:text-foreground transition-colors">Self-Test</a>
+            <a href="javascript:void(0)" (click)="scrollToQuizSection()" class="hover:text-foreground transition-colors">Self-Test</a>
             <a href="#how-it-works" class="hover:text-foreground transition-colors">How It Works</a>
             <a href="#roles" class="hover:text-foreground transition-colors">Roles</a>
             <a href="#features" class="hover:text-foreground transition-colors">Features</a>
@@ -30,7 +30,7 @@ import { PublicQuizComponent } from './public-quiz/public-quiz.component';
             <a routerLink="/login">
               <button z-button zType="outline">Sign In</button>
             </a>
-            <button z-button (click)="startQuiz()">Take the Test</button>
+            <button z-button (click)="scrollToQuizSection()">Take the Test</button>
           </div>
         </div>
       </header>
@@ -53,7 +53,7 @@ import { PublicQuizComponent } from './public-quiz/public-quiz.component';
             all in one place.
           </p>
           <div class="flex flex-wrap items-center justify-center gap-4">
-            <button z-button zSize="lg" class="text-lg px-8 py-6" (click)="startQuiz()">
+            <button z-button zSize="lg" class="text-lg px-8 py-6" (click)="scrollToQuizSection()">
                 Take the Alzheimer's Test
                 <z-icon zType="arrow-right" class="ml-2" />
             </button>
@@ -424,7 +424,7 @@ import { PublicQuizComponent } from './public-quiz/public-quiz.component';
               It takes only a few minutes and could make all the difference.
             </p>
             <div class="flex flex-wrap items-center justify-center gap-4">
-              <button z-button zType="outline" zSize="lg" class="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6 border-white" (click)="startQuiz()">
+              <button z-button zType="outline" zSize="lg" class="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6 border-white" (click)="scrollToQuizSection()">
                   Take the Alzheimer's Quiz
                   <z-icon zType="arrow-right" class="ml-2" />
               </button>
@@ -483,6 +483,12 @@ export class LandingComponent implements OnInit {
       setTimeout(() => {
         document.getElementById('quiz-widget')?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
+    }
+  }
+
+  scrollToQuizSection(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      document.getElementById('quiz')?.scrollIntoView({ behavior: 'smooth' });
     }
   }
 }
