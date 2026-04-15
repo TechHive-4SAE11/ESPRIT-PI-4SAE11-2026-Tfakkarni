@@ -284,20 +284,9 @@ export class QuizManagementComponent implements OnInit {
 
     this.quizService.getQuestionsByQuizId(quizId)
       .pipe(
-        switchMap(questions => {
-          if (questions.length === 0) return of([]);
-          const questionsWithAnswers$ = questions.map(question => {
-            if (!question.id) return of({ ...question, answers: [] });
-            return this.quizService.getAnswersByQuestionId(question.id).pipe(
-              map(answers => ({ ...question, answers: answers || [] })),
-              catchError(() => of({ ...question, answers: [] }))
-            );
-          });
-          return forkJoin(questionsWithAnswers$);
-        }),
-        tap(questionsWithAnswers => {
-          this.questions.set(questionsWithAnswers);
-          this.displayedQuestions.set(questionsWithAnswers);
+        tap(questions => {
+          this.questions.set(questions);
+          this.displayedQuestions.set(questions);
         }),
         catchError(() => {
           this.notify('Failed to load questions', 'error');
@@ -403,11 +392,8 @@ export class QuizManagementComponent implements OnInit {
 
           if (answersToCreate.length === 0) return of([]);
 
-          // Créer chaque réponse individuellement (évite le batch défaillant)
-          const creates$ = answersToCreate.map(ans =>
-            this.quizService.createAnswer(ans).pipe(catchError(() => of(null)))
-          );
-          return forkJoin(creates$);
+          // Utiliser l'appel Batch réparé au lieu de boucler
+          return this.quizService.createAnswersBatch(answersToCreate).pipe(catchError(() => of(null)));
         })
       ).subscribe({
         next: () => {

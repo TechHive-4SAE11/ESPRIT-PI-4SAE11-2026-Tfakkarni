@@ -42,18 +42,26 @@ public class IAnswerServiceImp implements IAnswerService {
 
     @Override
     public Answer updateAnswer(AnswerDTO answerDTO) {
-        if (!answerRepository.existsById(answerDTO.getId())) {
+        Answer existingAnswer = answerRepository.findById(answerDTO.getId()).orElse(null);
+        if (existingAnswer == null) {
             log.error("Answer not found with id: {}", answerDTO.getId());
             return null;
         }
 
-        Answer answer = answerDTO.toEntity();
+        existingAnswer.setText(answerDTO.getText());
+        if (answerDTO.getIsCorrect() != null) {
+            existingAnswer.setIsCorrect(answerDTO.getIsCorrect());
+        }
+        if (answerDTO.getExplanation() != null) {
+            existingAnswer.setExplanation(answerDTO.getExplanation());
+        }
+
         Question question = questionRepository.findById(answerDTO.getQuestionId())
                 .orElse(null);
-        answer.setQuestion(question);
+        existingAnswer.setQuestion(question);
 
-        validateAnswer(answer);
-        return answerRepository.save(answer);
+        validateAnswer(existingAnswer);
+        return answerRepository.save(existingAnswer);
     }
 
     @Override
