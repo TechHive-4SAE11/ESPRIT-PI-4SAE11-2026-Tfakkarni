@@ -45,6 +45,17 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
+	<!-- Shared dependencies for all child modules -->
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.retry</groupId>
+			<artifactId>spring-retry</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
+	</dependencies>
 	<build>
 		<pluginManagement>
 			<plugins>

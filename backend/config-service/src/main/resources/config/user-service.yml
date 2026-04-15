@@ -1,12 +1,11 @@
+# ============================================================
+# user-service — centralized config
+# ============================================================
 server:
   port: 18081
 
 spring:
-
-  profiles:
-    active: prod  # Change to 'local' for H2 database
   datasource:
-    # Replace with YOUR Neon connection string from https://console.neon.tech (Dashboard → Connection string)
     url: ${NEON_DATABASE_URL:jdbc:postgresql://ep-purple-sun-aga3c9f6-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require}
     username: ${NEON_USER:neondb_owner}
     password: ${NEON_PASSWORD:npg_4kKCY7bocxUn}
@@ -21,13 +20,6 @@ spring:
         format_sql: true
         auto_quote_keyword: true
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
-
 keycloak:
   server-url: https://lemur-12.cloud-iam.com/auth
   realm: tfakkarni
@@ -35,6 +27,11 @@ keycloak:
     username: admin
     password: "${KEYCLOAK_ADMIN_PASSWORD:3ejcJta;Mz7UE//OjV0M}"
   frontend-client-id: tfakkarni-frontend
+
+mailtrap:
+  token: f4ed6c5f383c7fe7e305eba8d1bcaef9
+  inbox-id: 4413425
+  from: noreply@tfakkarni.com
 
 didit:
   api-key: ${DIDIT_API_KEY:}

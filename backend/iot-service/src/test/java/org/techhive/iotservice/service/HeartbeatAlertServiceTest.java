@@ -15,7 +15,7 @@ class HeartbeatAlertServiceTest {
 
     @BeforeEach
     void setUp() {
-        alertService = new HeartbeatAlertService();
+        alertService = new HeartbeatAlertService(null);
         ReflectionTestUtils.setField(alertService, "highBpmThreshold", 120);
         ReflectionTestUtils.setField(alertService, "lowBpmThreshold", 40);
         ReflectionTestUtils.setField(alertService, "cooldownMinutes", 10);

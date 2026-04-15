@@ -42,19 +42,28 @@ public class IQuizServiceImp implements IQuizService {
 
     @Override
     public Quiz updateQuiz(QuizDTO quizDTO) {
-        if (!quizRepository.existsById(quizDTO.getId())) {
+        Quiz existingQuiz = quizRepository.findById(quizDTO.getId()).orElse(null);
+        if (existingQuiz == null) {
             log.error("Quiz not found with id: {}", quizDTO.getId());
             return null;
         }
 
-        Quiz quiz = quizDTO.toEntity();
+        existingQuiz.setTopic(quizDTO.getTopic());
+        existingQuiz.setCaregiverId(quizDTO.getCaregiverId());
 
-        if (!validateQuiz(quiz)) {
+        if (quizDTO.getTotalScore() != null) {
+            existingQuiz.setTotalScore(quizDTO.getTotalScore());
+        }
+        if (quizDTO.getDateTaken() != null) {
+            existingQuiz.setDateTaken(quizDTO.getDateTaken());
+        }
+
+        if (!validateQuiz(existingQuiz)) {
             log.error("Invalid quiz data");
             return null;
         }
 
-        return quizRepository.save(quiz);
+        return quizRepository.save(existingQuiz);
     }
 
     @Override

@@ -15,6 +15,8 @@ patient@patient.com            123456          patient         Mohamed Trabelsi
 patient2@patient.com           123456          patient         Fatma Bouazizi
 patient3@patient.com           123456          patient         Youssef Gharbi
 h@h.com                        123456          patient         Hedi Hammami
+up@up.com                      123456          patient         Trending Up
+down@down.com                  123456          patient         Trending Down
 
 Keycloak IDs:
 admin@admin.com                e7e89578-4658-47de-bb1c-00099556fa54
@@ -24,6 +26,8 @@ patient@patient.com            955f3d4e-488f-4022-8496-52717ebdf836
 patient2@patient.com           fec80b9c-6b27-45a3-8cf2-511103bdbec2
 patient3@patient.com           5d2457f4-716e-4a14-9554-264b64def9f0
 h@h.com                        deaaff23-cddf-4c89-bf24-93d964efc13e
+up@up.com                      697a3c8d-281d-4f2d-aaaf-bd90f7443c00
+down@down.com                  4741efb2-bc40-42f8-9f51-d89aba4650ea
 
 DATA PER PATIENT:
   folder+diagnostics+history, 2 coaching goals (5d progress each),
@@ -34,6 +38,12 @@ DATA PER PATIENT:
   safe zone+2 geofence alerts, heartbeat readings,
   composite score+history+feature gate+5 cognitive domains,
   doctor notifications+follow-up reminders+appointment reminders
+
+SCORE TREND PATIENTS:
+  up@up.com   — IMPROVING (scores go up over 7 days)
+  down@down.com — DECLINING (scores go down over 7 days)
+  7 days: daily logs, games, quizzes, 1722 heartbeat readings each,
+  analytics scores+history, feature gates, cognitive domains
 
 HIGH-RISK PATIENT (h@h.com):
   Hedi Hammami — SEVERE stage, IoT EMERGENCY level

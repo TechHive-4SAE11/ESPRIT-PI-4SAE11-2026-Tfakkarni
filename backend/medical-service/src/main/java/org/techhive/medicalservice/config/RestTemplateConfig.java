@@ -8,12 +8,6 @@ import org.springframework.context.annotation.Primary;
 @Configuration
 public class RestTemplateConfig {
 
-	@Bean
-	@Primary
-	@LoadBalanced
-	public RestTemplate restTemplate() {
-		return new RestTemplate();
-	}
 
 	/** Plain client for external HTTPS (Open-Meteo, etc.) — not service-discovery. */
 	@Bean

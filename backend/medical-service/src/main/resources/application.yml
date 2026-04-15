@@ -1,112 +1,13 @@
-server:
-  port: 18086
-  servlet:
-    context-path: /
-
 spring:
   application:
     name: medical-service
-
-  # config service/client — values below are fallbacks used when config-server is not running
-  cloud:
-    config:
-      enabled: true
   config:
     import: optional:configserver:http://localhost:8888
-
-  datasource:
-    # prepareThreshold=0: avoid "cached plan must not change result type" when Hibernate ddl-auto runs ALTERs
-    # and then re-reads metadata on the same connection (common with Neon/PgBouncer + PG JDBC).
-    url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&prepareThreshold=0
-    username: neondb_owner
-    password: npg_3uElGswIc7gk
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      data-source-properties:
-        prepareThreshold: 0
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-        jdbc:
-          batch_size: 20
-          fetch_size: 50
-        order_inserts: true
-        order_updates: true
-
-  # Console H2 pour voir les donnees
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-      settings:
-        web-allow-others: true
-
-  ai:
-    openai:
-      api-key: ${OPENAI_API_KEY:demo-key}
-      model: gpt-3.5-turbo
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    register-with-eureka: true
-    fetch-registry: true
-  instance:
-    prefer-ip-address: true
-    instance-id: ${spring.application.name}:${server.port}
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
-
-logging:
-  level:
-    org.techhive.medicalservice: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.security: DEBUG
-    org.springframework.boot.actuate.health: DEBUG
-
-# Alert service (for appointment reminders + coaching FCM)
-alert-service:
-  url: http://localhost:18084
-
-# Coaching goals: stale reminders + Open-Meteo (outdoor progress)
-coaching:
-  stale-days: 7
-  stale-notification-cooldown-hours: 168
-  scheduler:
-    stale-cron: "0 */5 * * * ?"
-  weather:
-    enabled: true
-
-# Safety audit: when tracking has no prescription data, still show plausible KPIs for demos (medical-service only).
-medical:
-  analytics:
-    safety-audit:
-      presentation-demo: false
-      gemini:
-        enabled: true
-        api-key: ${GEMINI_API_KEY:}
-        model: gemini-2.5-flash
-        max-patients-per-request: 48
-
-# Google Calendar Configuration
-google:
-  calendar:
-    client-id: ${GOOGLE_CLIENT_ID:}
-    client-secret: ${GOOGLE_CLIENT_SECRET:}
-    redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:18086/api/medical/calendar/callback}
-    application-name: Tfakkarni Medical
-    credentials-path: classpath:/credentials.json
+  cloud:
+    config:
+      fail-fast: true
+      retry:
+        initial-interval: 3000
+        max-attempts: 10
+        max-interval: 10000
+        multiplier: 1.5

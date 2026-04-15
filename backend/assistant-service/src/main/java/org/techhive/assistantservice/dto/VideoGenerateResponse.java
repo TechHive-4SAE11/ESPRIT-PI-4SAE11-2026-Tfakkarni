@@ -23,6 +23,7 @@ public class VideoGenerateResponse {
     private String thumbnailUrl;
     private String script;
     private List<StoryboardScene> storyboard;
+    private Integer sceneCount;
     private LocalDateTime createdAt;
 
     @Data

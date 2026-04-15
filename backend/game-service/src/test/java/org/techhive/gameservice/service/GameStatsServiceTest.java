@@ -37,6 +37,8 @@ class GameStatsServiceTest {
     private MovieGameAttemptRepository movieGameAttemptRepository;
     @Mock
     private PersonalQuestionAttemptRepository personalQuestionAttemptRepository;
+    @Mock
+    private PatientContextService patientContextService;
 
     @InjectMocks
     private GameStatsService gameStatsService;

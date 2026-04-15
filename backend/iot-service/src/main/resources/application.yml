@@ -1,54 +1,13 @@
-server:
-  port: 18088
-
 spring:
   application:
     name: iot-service
-
-  cloud:
-    config:
-      enabled: true
   config:
     import: optional:configserver:http://localhost:8888
-
-  datasource:
-    url: jdbc:postgresql://ep-cold-credit-alglq1kq-pooler.c-3.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
-    username: neondb_owner
-    password: npg_wNa0As4fytdT
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
-    health:
-      show-details: always
-
-# Telegram Bot — alerts on elevated heartbeat
-telegram:
-  bot-token: "8761174713:AAEG23SiwUmSEDTFTlMm-7GLzUZQpqDJzzg"
-  default-chat-id: "5674590232"
-
-# Heartbeat alert thresholds
-heartbeat:
-  alert:
-    high-bpm: 120
-    low-bpm: 40
-    cooldown-minutes: 10
+  cloud:
+    config:
+      fail-fast: true
+      retry:
+        initial-interval: 3000
+        max-attempts: 10
+        max-interval: 10000
+        multiplier: 1.5

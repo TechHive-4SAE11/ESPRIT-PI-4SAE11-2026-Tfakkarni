@@ -1,5 +1,6 @@
 package org.techhive.assistantservice.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -8,11 +9,10 @@ import org.techhive.assistantservice.entity.GeneratedVideo;
 import org.techhive.assistantservice.entity.enums.VideoProvider;
 import org.techhive.assistantservice.entity.enums.VideoStatus;
 import org.techhive.assistantservice.repository.GeneratedVideoRepository;
-import org.springframework.web.reactive.function.client.WebClient;
 
 /**
  * Integration service for external video generation APIs.
- * Supports D-ID, HeyGen, Luma Dream Machine, Runway Gen-2.
+ * Uses Pexels for stock video search.
  * Falls back to SCRIPT_ONLY mode when no API key is configured.
  */
 @Slf4j
@@ -22,6 +22,25 @@ public class VideoApiIntegrationService {
 
     private final VideoApiConfig videoApiConfig;
     private final GeneratedVideoRepository videoRepository;
+    private final ObjectMapper objectMapper;
+    private final PexelsVideoService pexelsVideoService;
+
+    /**
+     * Check if an external video provider is configured.
+     */
+    public boolean isExternalProviderConfigured() {
+        VideoProvider provider = VideoProvider.valueOf(videoApiConfig.getProvider());
+        if (provider == VideoProvider.SCRIPT_ONLY) {
+            return false;
+        }
+
+        return switch (provider) {
+            case PEXELS -> videoApiConfig.getPexels() != null
+                    && videoApiConfig.getPexels().getApiKey() != null
+                    && !videoApiConfig.getPexels().getApiKey().isBlank();
+            default -> false;
+        };
+    }
 
     /**
      * Send a script to an external video API for rendering.
@@ -32,14 +51,15 @@ public class VideoApiIntegrationService {
                 .orElseThrow(() -> new RuntimeException("Video not found: " + videoId));
 
         VideoProvider provider = VideoProvider.valueOf(videoApiConfig.getProvider());
-        log.info("Generating video via provider: {} for video ID: {}", provider, videoId);
+        log.info("=== VIDEO GENERATION START === Provider: {} | Video ID: {}", provider, videoId);
 
         try {
+            // Mark video as GENERATING
+            video.setStatus(VideoStatus.GENERATING);
+            videoRepository.save(video);
+
             String videoUrl = switch (provider) {
-                case D_ID -> generateWithDID(script, video);
-                case HEYGEN -> generateWithHeyGen(script, video);
-                case LUMA -> generateWithLuma(script, video);
-                case RUNWAY -> generateWithRunway(script, video);
+                case PEXELS -> pexelsVideoService.fetchVideo(video);
                 case SCRIPT_ONLY -> {
                     log.info("SCRIPT_ONLY mode: no external video API called. Script saved.");
                     yield null;
@@ -49,122 +69,20 @@ public class VideoApiIntegrationService {
             if (videoUrl != null) {
                 video.setVideoUrl(videoUrl);
                 video.setStatus(VideoStatus.READY);
+                log.info("=== VIDEO GENERATION SUCCESS === Video ID: {} | URL: {}", videoId, videoUrl);
             } else {
                 video.setStatus(VideoStatus.READY);  // Script-only is considered ready
+                log.info("=== VIDEO GENERATION COMPLETE (no URL) === Video ID: {}", videoId);
             }
             videoRepository.save(video);
 
             return videoUrl;
         } catch (Exception e) {
-            log.error("Video generation failed for video {}: {}", videoId, e.getMessage());
-            video.setStatus(VideoStatus.FAILED);
+            log.error("=== VIDEO GENERATION FAILED === Video ID: {} | Error: {}", videoId, e.getMessage(), e);
+            // Revert state in DB so it doesn't get stuck indefinitely on GENERATING
+            video.setStatus(VideoStatus.SCRIPT_ONLY);
             videoRepository.save(video);
-            throw new RuntimeException("Video generation failed: " + e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
         }
-    }
-
-    /**
-     * D-ID API integration - generates talking head avatar video.
-     */
-    private String generateWithDID(String script, GeneratedVideo video) {
-        VideoApiConfig.DIdConfig config = videoApiConfig.getDId();
-        if (config.getApiKey() == null || config.getApiKey().isBlank()) {
-            log.warn("D-ID API key not configured. Falling back to script-only mode.");
-            return null;
-        }
-
-        log.info("Calling D-ID API to generate talking avatar video...");
-
-        WebClient webClient = WebClient.builder()
-                .baseUrl(config.getApiUrl())
-                .defaultHeader("Authorization", "Basic " + config.getApiKey())
-                .defaultHeader("Content-Type", "application/json")
-                .build();
-
-        // D-ID talks endpoint
-        String requestBody = String.format("""
-                {
-                  "source_url": "https://d-id-public-bucket.s3.amazonaws.com/alice.jpg",
-                  "script": {
-                    "type": "text",
-                    "input": "%s",
-                    "provider": {
-                      "type": "microsoft",
-                      "voice_id": "fr-FR-DeniseNeural"
-                    }
-                  }
-                }
-                """, escapeJson(script));
-
-        try {
-            String response = webClient.post()
-                    .uri("/talks")
-                    .bodyValue(requestBody)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
-
-            log.info("D-ID response: {}", response);
-            // In a real implementation, poll for completion and extract video URL
-            return null; // Placeholder - poll for result_url
-        } catch (Exception e) {
-            log.error("D-ID API call failed: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * HeyGen API integration - generates AI avatar video.
-     */
-    private String generateWithHeyGen(String script, GeneratedVideo video) {
-        VideoApiConfig.HeyGenConfig config = videoApiConfig.getHeygen();
-        if (config.getApiKey() == null || config.getApiKey().isBlank()) {
-            log.warn("HeyGen API key not configured. Falling back to script-only mode.");
-            return null;
-        }
-
-        log.info("Calling HeyGen API to generate avatar video...");
-        // HeyGen v2 API integration placeholder
-        // POST /v2/video/generate with avatar_id, script, etc.
-        return null;
-    }
-
-    /**
-     * Luma Dream Machine integration - generates AI video from prompts.
-     */
-    private String generateWithLuma(String script, GeneratedVideo video) {
-        VideoApiConfig.LumaConfig config = videoApiConfig.getLuma();
-        if (config.getApiKey() == null || config.getApiKey().isBlank()) {
-            log.warn("Luma API key not configured. Falling back to script-only mode.");
-            return null;
-        }
-
-        log.info("Calling Luma Dream Machine API...");
-        // Luma API integration placeholder
-        return null;
-    }
-
-    /**
-     * Runway Gen-2 integration - generates AI video from text prompts.
-     */
-    private String generateWithRunway(String script, GeneratedVideo video) {
-        VideoApiConfig.RunwayConfig config = videoApiConfig.getRunway();
-        if (config.getApiKey() == null || config.getApiKey().isBlank()) {
-            log.warn("Runway API key not configured. Falling back to script-only mode.");
-            return null;
-        }
-
-        log.info("Calling Runway Gen-2 API...");
-        // Runway API integration placeholder
-        return null;
-    }
-
-    private String escapeJson(String input) {
-        if (input == null) return "";
-        return input.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
     }
 }

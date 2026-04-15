@@ -24,6 +24,16 @@ public class AnswerDTO {
     @JsonProperty("isCorrect")
     private Boolean isCorrect;
 
+    @com.fasterxml.jackson.annotation.JsonGetter("isCorrect")
+    public Boolean getIsCorrect() {
+        return this.isCorrect;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonSetter("isCorrect")
+    public void setIsCorrect(Boolean isCorrect) {
+        this.isCorrect = isCorrect;
+    }
+
     private String explanation;
 
     @NotNull(message = "Question ID is required")

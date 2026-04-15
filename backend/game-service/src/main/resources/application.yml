@@ -1,62 +1,13 @@
-server:
-  port: 18082
-
 spring:
   application:
     name: game-service
-
-  # config service/client — values below are fallbacks used when config-server is not running
-  cloud:
-    config:
-      enabled: true
   config:
     import: optional:configserver:http://localhost:8888
-
-  datasource:
-    url: jdbc:postgresql://ep-damp-bar-agi72bgl-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
-    username: neondb_owner
-    password: npg_8ZUiCsXMu0jd
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 50MB
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
-
-tmdb:
-  api-key: bac4726f178ccc49f4659a52479b4725
-
-# ── TTS Pipeline (Google Translate + ElevenLabs) ──────────────────────────────
-google:
-  translate:
-    api-key: ${GOOGLE_TRANSLATE_API_KEY:YOUR_GOOGLE_TRANSLATE_API_KEY}
-
-elevenlabs:
-  api-key: ${ELEVENLABS_API_KEY:YOUR_ELEVENLABS_API_KEY}
-  voice-id-en: 2qfp6zPuviqeCOZIE9RZ
-  voice-id-tn: GLRyn2pNxpZ4FAjmlY3z
-  model-id: eleven_multilingual_v2
-
-# actuator
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
-    health:
-      show-details: always
+  cloud:
+    config:
+      fail-fast: true
+      retry:
+        initial-interval: 3000
+        max-attempts: 10
+        max-interval: 10000
+        multiplier: 1.5

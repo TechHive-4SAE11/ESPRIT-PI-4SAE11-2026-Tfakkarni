@@ -1,100 +1,13 @@
-server:
-  port: 18083
-
 spring:
   application:
     name: tracking-service
-
-  # config service/client — values below are fallbacks used when config-server is not running
-  cloud:
-    config:
-      enabled: true
   config:
     import: optional:configserver:http://localhost:8888
-
-  servlet:
-    context-path: /api/tracking
-    multipart:
-      max-file-size: 25MB
-      max-request-size: 30MB
-  datasource:
-    url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
-    username: neondb_owner
-    password: npg_3uElGswIc7gk
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-  task:
-    scheduling:
-      pool:
-        size: 5  # Thread pool size for scheduled tasks
-
-# Medication status scheduler configuration
-medication:
-  scheduler:
-    enabled: true
-    daily-update-cron: "0 0 0 * * *"          # Midnight daily
-    periodic-update-cron: "0 0 */6 * * *"     # Every 6 hours
-
-# Daily follow-up reminder scheduler
-followup:
-  scheduler:
-    cron: "0 0 22 * * *"                       # Every day at 22:00
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
-
-# Mailtrap Sandbox (incident alerts)
-mailtrap:
-  token: f4ed6c5f383c7fe7e305eba8d1bcaef9
-  inbox-id: 4413425
-  from: noreply@tfakkarni.com
-
-# Telegram Bot — @tfakkarni_alert_bot (alerts on GRAVE incidents)
-telegram:
-  bot-token: "8761174713:AAEG23SiwUmSEDTFTlMm-7GLzUZQpqDJzzg"
-  default-chat-id: "5674590232"
-
-# Alert fallback — email utilisé si user-service ne répond pas
-alert:
-  fallback-email: "doctor@gmail.com"
-
-# ElevenLabs Speech-to-Text API
-elevenlabs:
-  api:
-    key: 73c14898e29696c0436967f175924d3902aa45ab609a206221c5275a0d4db84c
-
-# actuator
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
-    health:
-      show-details: always
-
-# Daily.co Video Conferencing API
-daily:
-  api-key: "296f35c5b0a3624ccbc58966d8840752b08291e3a0b378964eb661b31caacb8c"
-  api-url: "https://api.daily.co/v1"
-
-# Groq API (free tier: 14400 req/day) — used for AI meeting summaries & live transcript
-claude:
-  api-key: "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"
-  api-url: "https://api.groq.com/openai/v1/chat/completions"
-  model: "llama-3.1-8b-instant"
-
-# Meeting room settings
-meeting:
-  room-expiry-minutes: 60
+  cloud:
+    config:
+      fail-fast: true
+      retry:
+        initial-interval: 3000
+        max-attempts: 10
+        max-interval: 10000
+        multiplier: 1.5

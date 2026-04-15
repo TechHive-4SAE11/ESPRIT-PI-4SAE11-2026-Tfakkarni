@@ -11,10 +11,20 @@ public class RestClientConfig {
     @Value("${alert-service.url:http://localhost:18084}")
     private String alertServiceUrl;
 
+    @Value("${user-service.url:http://localhost:18081}")
+    private String userServiceUrl;
+
     @Bean
     public RestClient alertServiceRestClient(RestClient.Builder builder) {
         return builder
                 .baseUrl(alertServiceUrl)
+                .build();
+    }
+
+    @Bean
+    public RestClient userServiceRestClient(RestClient.Builder builder) {
+        return builder
+                .baseUrl(userServiceUrl)
                 .build();
     }
 }

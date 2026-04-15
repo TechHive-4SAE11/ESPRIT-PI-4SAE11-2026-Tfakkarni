@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
+import org.techhive.medicalservice.client.MlServiceClient;
 import org.techhive.medicalservice.dto.AIReportResponse;
 import org.techhive.medicalservice.dto.ClinicalAnalysisResult;
 import org.techhive.medicalservice.dto.DiagnosticsResponse;
@@ -32,13 +32,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AIReportServiceImpl implements AIReportService {
 
-	private static final String ML_ANALYZE_URL = "http://ml-service/api/ml/analyze/dossier";
-
 	private final AIReportRepository aiReportRepository;
 	private final MedicalFolderRepository medicalFolderRepository;
 	private final DiagnosticsService diagnosticsService;
 	private final MedicalHistoryService medicalHistoryService;
-	private final RestTemplate restTemplate;
+	private final MlServiceClient mlServiceClient;
 	private final ObjectMapper objectMapper;
 
 	@Override
@@ -127,7 +125,7 @@ public class AIReportServiceImpl implements AIReportService {
 				.toList());
 
 		DossierForMlRequest request = builder.build();
-		ClinicalAnalysisResult result = restTemplate.postForObject(ML_ANALYZE_URL, request, ClinicalAnalysisResult.class);
+		ClinicalAnalysisResult result = mlServiceClient.analyzeDossier(request);
 		if (result == null) {
 			report.setStatus(AIReport.Status.ERROR);
 			report.setErrorMessage("ML service returned empty response");

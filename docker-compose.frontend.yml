@@ -1,0 +1,25 @@
+name: tfakkarni-frontend
+
+services:
+  frontend:
+    container_name: tfakkarni-frontend
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        API_BASE_URL: http://localhost:9090
+    image: tfakkarni/frontend:latest
+    ports:
+      - "18080:80"
+    networks:
+      - tfakkarni-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+networks:
+  tfakkarni-network:
+    external: true
+    name: tfakkarni-network

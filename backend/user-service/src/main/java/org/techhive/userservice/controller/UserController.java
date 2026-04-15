@@ -66,6 +66,19 @@ public class UserController {
     }
   }
 
+  @GetMapping("/search")
+  public ResponseEntity<?> searchUsersByName(@RequestParam("name") String name) {
+    try {
+      // It's a quick hack inside the controller logic, but ideally goes to UserService
+      List<User> users = userService.searchUsersByName(name);
+      return ResponseEntity.ok(users);
+    } catch (Exception e) {
+      log.error("Error searching users by name", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(Map.of("error", "Failed to search users: " + e.getMessage()));
+    }
+  }
+
   @GetMapping("/role/{role}")
   public ResponseEntity<?> getUsersByRole(@PathVariable String role) {
     try {

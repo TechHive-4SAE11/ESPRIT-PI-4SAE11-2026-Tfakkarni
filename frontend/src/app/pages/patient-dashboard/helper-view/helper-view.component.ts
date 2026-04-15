@@ -33,6 +33,7 @@ import { QuizManagementComponent } from '../quiz-management/quiz-management.comp
 import { EquipmentManagementComponent } from '../equipment-management/equipment-management.component';
 import { SleepAnalysisComponent } from './sleep-analysis/sleep-analysis.component';
 import { HelperCoachingComponent } from './helper-coaching/helper-coaching.component';
+import { ScoreStatisticsComponent } from './score-statistics/score-statistics.component';
 
 import { PrescriptionService } from '@/core/services/prescription.service';
 import { PrescriptionResponseDTO } from '@/core/models/prescription.model';
@@ -76,6 +77,7 @@ import { FeatureGateService } from '@/core/services/feature-gate.service';
     EquipmentManagementComponent,
     SleepAnalysisComponent,
     HelperCoachingComponent,
+    ScoreStatisticsComponent,
     MeetingRoomComponent,
     HelperMeetingListComponent,
     FollowUpReminderAlertComponent,

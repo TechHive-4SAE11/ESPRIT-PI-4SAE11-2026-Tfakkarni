@@ -1,103 +1,13 @@
-server:
-  port: 18089
-
 spring:
   application:
     name: assistant-service
-
-  # config service/client — values below are fallbacks used when config-server is not running
-  cloud:
-    config:
-      enabled: true
   config:
     import: optional:configserver:http://localhost:8888
-
-  # ── Database (H2 local fallback) ──
-  datasource:
-    url: jdbc:h2:mem:assistantdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
-        format_sql: true
-
-  # ── Spring AI - OpenAI ──
-  ai:
-    openai:
-      api-key: ${OPENAI_API_KEY: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}
-      chat:
-        options:
-          model: gpt-4o-mini
-          temperature: 0.7
-          max-tokens: 2000
-
-# ── Eureka ──
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
-    register-with-eureka: true
-    fetch-registry: true
-  instance:
-    prefer-ip-address: true
-    instance-id: ${spring.application.name}:${server.port}
-
-# ── Feign ──
-feign:
-  client:
+  cloud:
     config:
-      default:
-        connectTimeout: 5000
-        readTimeout: 10000
-        loggerLevel: BASIC
-
-# ── External Video API (optional) ──
-assistant:
-  video:
-    provider: SCRIPT_ONLY
-    d-id:
-      api-key: ${DID_API_KEY:}
-      api-url: https://api.d-id.com
-    heygen:
-      api-key: ${HEYGEN_API_KEY:}
-      api-url: https://api.heygen.com
-    luma:
-      api-key: ${LUMA_API_KEY:}
-      api-url: https://api.lumalabs.ai
-    runway:
-      api-key: ${RUNWAY_API_KEY:}
-      api-url: https://api.runwayml.com
-
-# ── Actuator ──
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
-
-# ── Logging ──
-logging:
-  level:
-    org.techhive.assistantservice: DEBUG
-    org.springframework.cloud.openfeign: DEBUG
-    org.springframework.ai: DEBUG
-
-# ── Springdoc ──
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-  swagger-ui:
-    path: /swagger-ui.html
+      fail-fast: true
+      retry:
+        initial-interval: 3000
+        max-attempts: 10
+        max-interval: 10000
+        multiplier: 1.5

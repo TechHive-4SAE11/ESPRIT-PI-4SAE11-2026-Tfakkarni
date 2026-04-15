@@ -4,8 +4,8 @@
 export interface QuizGenerateRequest {
   topic: string;
   numberOfQuestions: number;
-  difficultyLevel: number; // 1-3
-  caregiverId: number;
+  difficultyLevel?: number | null; // 1-3, optional: AI decides if not provided
+  caregiverId?: number; // optional, internal usage
 }
 
 export interface GeneratedAnswer {
@@ -63,6 +63,7 @@ export interface EquipmentRecommendResponse {
 export interface VoiceCommandRequest {
   command: string;
   userId: number;
+  patientName?: string;
   sessionId?: string;
 }
 
@@ -98,7 +99,7 @@ export interface VideoGenerateResponse {
   topic: string;
   memoryType: string;
   duration: number;
-  status: 'GENERATING' | 'READY' | 'FAILED';
+  status: 'GENERATING' | 'READY' | 'FAILED' | 'SCRIPT_ONLY';
   videoUrl?: string;
   thumbnailUrl?: string;
   script: string;
