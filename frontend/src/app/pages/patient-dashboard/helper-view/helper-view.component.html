@@ -165,7 +165,7 @@
         <span><span class="text-muted-foreground">IoT</span> <strong>{{ patientScore()!.iotRiskScore | number:'1.0-0'
                 }}</strong></span>
     </div>
-    <span class="ml-auto text-xs px-2.5 py-1 rounded-full font-semibold shrink-0" [class]="patientScore()!.stage === 'LOW_RISK' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+    <span class="text-xs px-2.5 py-1 rounded-full font-semibold shrink-0" [class]="patientScore()!.stage === 'LOW_RISK' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
         : patientScore()!.stage === 'EARLY' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
         : patientScore()!.stage === 'MODERATE' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
         : patientScore()!.stage === 'SEVERE' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
@@ -176,6 +176,11 @@
         : patientScore()!.stage === 'SEVERE' ? 'Stade sévère'
         : 'Inconnu' }}
     </span>
+    <button (click)="setPage('Score Statistiques')"
+        class="ml-auto shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-md hover:shadow-lg hover:bg-primary/90 transition-all">
+        <z-icon zType="bar-chart-3" class="h-4 w-4" />
+        Complète Statistique
+    </button>
 </div>
 }
 
@@ -462,6 +467,10 @@
     </button>
 </div>
 <app-statistics-dashboard [keycloakId]="keycloakId" />
+}
+
+@case ('Score Statistiques') {
+<app-score-statistics [keycloakId]="keycloakId" [currentScore]="patientScore()" (goBack)="setPage('Home')" />
 }
 
 @case ('Safe Zone') {

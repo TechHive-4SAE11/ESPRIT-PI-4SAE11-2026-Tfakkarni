@@ -82,7 +82,7 @@ class AnswerServiceTest {
     @Test
     void updateAnswer_whenNotFound_shouldReturnNull() {
         AnswerDTO dto = AnswerDTO.builder().id(99L).text("test").questionId(1L).build();
-        when(answerRepository.existsById(99L)).thenReturn(false);
+        when(answerRepository.findById(99L)).thenReturn(Optional.empty());
 
         Answer result = answerService.updateAnswer(dto);
 

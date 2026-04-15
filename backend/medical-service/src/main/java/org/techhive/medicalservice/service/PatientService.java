@@ -3,7 +3,7 @@ package org.techhive.medicalservice.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.techhive.medicalservice.client.UserServiceRestClient;
+import org.techhive.medicalservice.client.UserServiceSearchClient;
 import org.techhive.medicalservice.dto.PatientDTO;
 import org.techhive.medicalservice.entity.MedicalFolder;
 import org.techhive.medicalservice.repository.MedicalFolderRepository;
@@ -16,7 +16,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PatientService {
 
-    private final UserServiceRestClient userServiceClient;
+    private final UserServiceSearchClient userServiceClient;
     private final MedicalFolderRepository medicalFolderRepository;
 
     public PatientDTO findByName(String name) {

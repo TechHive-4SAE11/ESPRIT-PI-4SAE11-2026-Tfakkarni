@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class UserServiceRestClient {
+public class UserServiceSearchClient {
 
     private final RestClient userServiceRestClient;
 
-    public UserServiceRestClient(RestClient userServiceRestClient) {
+    public UserServiceSearchClient(RestClient userServiceRestClient) {
         this.userServiceRestClient = userServiceRestClient;
     }
 

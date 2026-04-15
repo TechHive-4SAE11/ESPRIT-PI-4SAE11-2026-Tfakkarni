@@ -16,6 +16,7 @@ import org.techhive.iotservice.dto.SleepAnalysisResponse;
 import org.techhive.iotservice.dto.SleepSummary;
 import org.techhive.iotservice.service.IotService;
 import org.techhive.iotservice.service.SleepAnalysisService;
+import org.techhive.iotservice.service.FeatureGateClient;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -35,6 +36,9 @@ class HeartbeatControllerTest {
     @Mock
     private SleepAnalysisService sleepAnalysisService;
 
+    @Mock
+    private FeatureGateClient featureGateClient;
+
     @InjectMocks
     private HeartbeatController heartbeatController;
 
@@ -48,6 +52,7 @@ class HeartbeatControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(heartbeatController).build();
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
+        when(featureGateClient.isIotEnabled(anyString())).thenReturn(true);
     }
 
     @Test

@@ -307,9 +307,6 @@ import {
                     }
                   </div>
                 </div>
-              }
-                  </div>
-                </div>
               } @else if (v.status === 'FAILED') {
                 <div class="p-4 rounded-xl bg-red-50 text-red-700 text-sm flex items-center justify-between border border-red-100">
                   <span>⚠️ Video generation failed. Please retry.</span>

@@ -105,7 +105,7 @@ class QuestionServiceTest {
 
     @Test
     void updateQuestion_whenQuestionNotFound_shouldReturnNull() {
-        when(questionRepository.existsById(1L)).thenReturn(false);
+        when(questionRepository.findById(1L)).thenReturn(Optional.empty());
 
         Question result = questionService.updateQuestion(sampleQuestionDTO);
 

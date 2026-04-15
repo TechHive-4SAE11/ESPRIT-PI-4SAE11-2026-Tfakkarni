@@ -35,6 +35,8 @@ class CustomGameServiceTest {
     private MemoryTagRepository tagRepo;
     @Mock
     private DataPointPerformanceRepository perfRepo;
+    @Mock
+    private PatientContextService patientContextService;
 
     @InjectMocks
     private CustomGameService customGameService;

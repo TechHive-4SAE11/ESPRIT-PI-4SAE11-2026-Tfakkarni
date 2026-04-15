@@ -97,6 +97,7 @@ def needs_serial() -> bool:
 
 def run() -> None:
     """Hybrid mode: each sensor can be mock or real independently."""
+    global MOCK_GPS, MOCK_BPM
     gps_label = "MOCK" if MOCK_GPS else "REAL (serial)"
     bpm_label = "MOCK" if MOCK_BPM else "REAL (serial)"
     print(f"GPS: {gps_label}  |  BPM: {bpm_label}")
@@ -105,8 +106,13 @@ def run() -> None:
 
     ser = None
     if needs_serial():
-        ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
-        print(f"Connected to {SERIAL_PORT} at {BAUD_RATE} baud")
+        try:
+            ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
+            print(f"Connected to {SERIAL_PORT} at {BAUD_RATE} baud")
+        except serial.SerialException:
+            print(f"Could not open {SERIAL_PORT} -- falling back to full mock mode.")
+            MOCK_GPS = True
+            MOCK_BPM = True
 
     last_send_time = 0.0
     last_real_lat: str | None = None

@@ -112,7 +112,7 @@ class QuizServiceTest {
 
     @Test
     void updateQuiz_whenExists_shouldReturnUpdatedQuiz() {
-        when(quizRepository.existsById(1L)).thenReturn(true);
+        when(quizRepository.findById(1L)).thenReturn(Optional.of(sampleQuiz));
         when(quizRepository.save(any(Quiz.class))).thenReturn(sampleQuiz);
 
         Quiz result = quizService.updateQuiz(sampleQuizDTO);
@@ -123,7 +123,7 @@ class QuizServiceTest {
 
     @Test
     void updateQuiz_whenNotExists_shouldReturnNull() {
-        when(quizRepository.existsById(1L)).thenReturn(false);
+        when(quizRepository.findById(1L)).thenReturn(Optional.empty());
 
         Quiz result = quizService.updateQuiz(sampleQuizDTO);
 
