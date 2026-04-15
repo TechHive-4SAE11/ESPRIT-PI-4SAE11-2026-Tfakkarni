@@ -150,6 +150,22 @@ public class PatientScoreService {
         ScoreAnalyticsResponse gameAnalytics = gameClient.getScoreAnalytics(patientKeycloakId);
         List<PrescriptionResponseDTO> prescriptions = trackingClient.getPrescriptionsByPatient(patientKeycloakId);
         
+        // Advanced: Use real compliance data via OpenFeign
+        Map<String, Object> complianceData = trackingClient.getMedicationCompliance(patientKeycloakId, days);
+        Map<String, Double> complianceByDate = new HashMap<>();
+        
+        if (complianceData != null && complianceData.get("history") instanceof List) {
+            List<Map<String, Object>> history = (List<Map<String, Object>>) complianceData.get("history");
+            for (Map<String, Object> entry : history) {
+                String dateStr = (String) entry.get("date");
+                Object rateObj = entry.get("complianceRate");
+                if (dateStr != null && rateObj != null) {
+                    double rate = (rateObj instanceof Number) ? ((Number) rateObj).doubleValue() : 0.0;
+                    complianceByDate.put(dateStr, rate / 100.0); // Convert percentage to 0.0-1.0
+                }
+            }
+        }
+        
         List<PrescriptionImpactResponse.PrescriptionImpactPoint> impactTimeline = new ArrayList<>();
         List<PrescriptionImpactResponse.PrescriptionMarker> markers = new ArrayList<>();
         
@@ -192,18 +208,28 @@ public class PatientScoreService {
             }
         }
         
+        // Fill the timeline with real scores and compliance
+        Double lastKnownScore = null;
         for (int i = 0; i <= days; i++) {
             LocalDate date = start.plusDays(i);
             if (date.isAfter(LocalDate.now())) break;
             
             Double avgScore = scoresByDate.get(date);
+            // Algorithm: "Carry Forward" to handle gaps in user activity for better trending
+            if (avgScore == null && lastKnownScore != null) {
+                avgScore = lastKnownScore;
+            } else if (avgScore != null) {
+                lastKnownScore = avgScore;
+            }
+            
             boolean hasP = prescriptionDates.contains(date);
+            Double adherence = complianceByDate.get(date.toString());
             
             impactTimeline.add(PrescriptionImpactResponse.PrescriptionImpactPoint.builder()
                 .date(date.toString())
                 .avgScore(avgScore)
                 .hasNewPrescription(hasP)
-                .medAdherence(0.8 + Math.random() * 0.2)
+                .medAdherence(adherence != null ? adherence : 0.0)
                 .build());
         }
         

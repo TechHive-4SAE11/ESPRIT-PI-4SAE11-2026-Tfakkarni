@@ -15,4 +15,14 @@ public class MedicationComplianceResponse {
     private String endDate;
     private int taken;
     private int missed;
+    private java.util.List<CompliancePoint> history;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CompliancePoint {
+        private String date;
+        private double complianceRate;
+    }
 }
