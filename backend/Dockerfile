@@ -1,9 +1,10 @@
+# syntax=docker/dockerfile:1
 # Build one Spring Boot module: docker build --build-arg MODULE=medical-service -t tfakkarni/medical-service .
 FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /workspace
 COPY . .
 ARG MODULE=discovery-service
-RUN mvn -B -DskipTests package -pl "${MODULE}"
+RUN --mount=type=cache,target=/root/.m2 mvn -B -DskipTests package -pl "${MODULE}"
 
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app

@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Documentation
+*.md
+!frontend/README.md
+
+# Node
+frontend/node_modules
+frontend/dist
+frontend/.angular
+
+# Java build output (handled per-service via backend/.dockerignore)
+backend/**/target
+
+# Keycloak local install
+keycloak/
+
+# CI/CD
+.github/
+
+# Agent / memory files
+_agent/

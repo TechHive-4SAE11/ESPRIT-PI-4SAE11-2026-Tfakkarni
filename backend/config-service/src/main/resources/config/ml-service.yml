@@ -12,9 +12,9 @@ spring:
         options:
           model: meta-llama/Llama-2-7b-chat-hf
   datasource:
-    url: jdbc:postgresql://ep-young-recipe-ag0a1sn7-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
-    username: neondb_owner
-    password: npg_3uElGswIc7gk
+    url: ${NEON_SHARED_DB_URL}
+    username: ${NEON_SHARED_DB_USERNAME}
+    password: ${NEON_SHARED_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

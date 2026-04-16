@@ -24,7 +24,7 @@ spring:
         format_sql: true
   ai:
     openai:
-      api-key: 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
+      api-key: ${GROQ_ASSISTANT_API_KEY}
       base-url: https://api.groq.com/openai
       chat:
         options:
@@ -49,7 +49,7 @@ assistant:
   video:
     provider: PEXELS
     pexels:
-      api-key: "VaN3nyY1QpMdhBuY3ChDloAn06JUCO3oARELtzSVUQoy9WPPu8nQHeUq"
+      api-key: "${PEXELS_API_KEY}"
       api-url: "https://api.pexels.com"
 
 logging:

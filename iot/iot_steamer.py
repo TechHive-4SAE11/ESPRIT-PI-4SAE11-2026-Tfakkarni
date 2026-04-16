@@ -1,3 +1,4 @@
+import os
 import random
 import time
 import serial
@@ -6,11 +7,12 @@ import requests
 # --- CONFIGURATION ---
 # Control mock/real independently for GPS and BPM.
 # Set to True to use simulated data, False to read from Arduino serial.
-MOCK_GPS = True
-MOCK_BPM = False
+# Can be overridden via environment variables MOCK_GPS / MOCK_BPM (e.g. in Docker).
+MOCK_GPS = os.getenv("MOCK_GPS", "True").lower() in ("true", "1", "yes")
+MOCK_BPM = os.getenv("MOCK_BPM", "False").lower() in ("true", "1", "yes")
 
-SERIAL_PORT = "COM4"  # Change to your Arduino port
-BAUD_RATE = 115200     # Must match the merged Arduino sketch
+SERIAL_PORT = os.getenv("SERIAL_PORT", "COM4")
+BAUD_RATE = int(os.getenv("BAUD_RATE", "115200"))
 
 # MUST match the patient's Keycloak subject ID.
 # The Angular frontend polls: dweet.cc/get/latest/dweet/for/{THING_NAME}

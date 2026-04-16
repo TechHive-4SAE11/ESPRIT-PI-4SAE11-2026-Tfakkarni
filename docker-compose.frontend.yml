@@ -1,4 +1,4 @@
-name: tfakkarni-frontend
+name: tfakkarni-app
 
 services:
   frontend:
@@ -8,6 +8,8 @@ services:
       dockerfile: frontend/Dockerfile
       args:
         API_BASE_URL: http://localhost:9090
+        KEYCLOAK_URL: https://lemur-12.cloud-iam.com/auth
+        KEYCLOAK_CLIENT_ID: tfakkarni-frontend-docker
     image: tfakkarni/frontend:latest
     ports:
       - "18080:80"
@@ -21,5 +23,5 @@ services:
 
 networks:
   tfakkarni-network:
-    external: true
     name: tfakkarni-network
+    driver: bridge

@@ -6,9 +6,9 @@ server:
 
 spring:
   datasource:
-    url: ${NEON_DATABASE_URL:jdbc:postgresql://ep-purple-sun-aga3c9f6-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require}
-    username: ${NEON_USER:neondb_owner}
-    password: ${NEON_PASSWORD:npg_4kKCY7bocxUn}
+    url: ${NEON_USER_DB_URL}
+    username: ${NEON_USER_DB_USERNAME}
+    password: ${NEON_USER_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -25,12 +25,12 @@ keycloak:
   realm: tfakkarni
   admin:
     username: admin
-    password: "${KEYCLOAK_ADMIN_PASSWORD:3ejcJta;Mz7UE//OjV0M}"
+    password: "${KEYCLOAK_ADMIN_PASSWORD}"
   frontend-client-id: tfakkarni-frontend
 
 mailtrap:
-  token: f4ed6c5f383c7fe7e305eba8d1bcaef9
-  inbox-id: 4413425
+  token: ${MAILTRAP_TOKEN}
+  inbox-id: ${MAILTRAP_INBOX_ID}
   from: noreply@tfakkarni.com
 
 didit:

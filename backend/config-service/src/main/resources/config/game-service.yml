@@ -6,9 +6,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://ep-damp-bar-agi72bgl-pooler.c-2.eu-central-1.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require
-    username: neondb_owner
-    password: npg_8ZUiCsXMu0jd
+    url: ${NEON_GAME_DB_URL}
+    username: ${NEON_GAME_DB_USERNAME}
+    password: ${NEON_GAME_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -24,7 +24,7 @@ spring:
       max-request-size: 50MB
 
 tmdb:
-  api-key: bac4726f178ccc49f4659a52479b4725
+  api-key: ${TMDB_API_KEY}
 
 google:
   translate:

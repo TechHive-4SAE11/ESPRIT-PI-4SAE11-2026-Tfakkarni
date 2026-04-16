@@ -6,17 +6,15 @@ ENV NPM_CONFIG_LEGACY_PEER_DEPS=true
 
 ARG API_BASE_URL=http://localhost:9090
 ARG KEYCLOAK_URL=https://lemur-12.cloud-iam.com/auth
-RUN printf 'API_BASE_URL=%s\nKEYCLOAK_URL=%s\n' "${API_BASE_URL}" "${KEYCLOAK_URL}" > .env
+ARG KEYCLOAK_CLIENT_ID=tfakkarni-frontend
 
 # .npmrc enables legacy-peer-deps (Keycloak / Apex / FullCalendar peers vs npm 9+ strict resolver in Linux images).
 COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./frontend/
 RUN cd frontend && npm ci --legacy-peer-deps \
     || (echo "npm ci failed; falling back to npm install --legacy-peer-deps" && npm install --legacy-peer-deps)
 
-# Create .env directly where the set-env script expects it
-ARG API_BASE_URL=http://localhost:9090
-ARG KEYCLOAK_URL=https://lemur-12.cloud-iam.com/auth
-RUN printf 'API_BASE_URL=%s\nKEYCLOAK_URL=%s\n' "${API_BASE_URL}" "${KEYCLOAK_URL}" > frontend/.env
+# Create .env where the set-env script expects it
+RUN printf 'API_BASE_URL=%s\nKEYCLOAK_URL=%s\nKEYCLOAK_CLIENT_ID=%s\n' "${API_BASE_URL}" "${KEYCLOAK_URL}" "${KEYCLOAK_CLIENT_ID}" > frontend/.env
 
 COPY frontend ./frontend
 WORKDIR /workspace/frontend

@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /workspace
 
@@ -17,16 +18,18 @@ COPY iot-service/pom.xml iot-service/
 COPY assistant-service/pom.xml assistant-service/
 COPY analytics-service/pom.xml analytics-service/
 
-# 2. Cache dependencies for the entire project (Fast!)
-RUN mvn dependency:go-offline -B
+# 2. Cache dependencies (persistent volume — survives --no-cache)
+RUN --mount=type=cache,target=/root/.m2 mvn dependency:go-offline -B
 
 # 3. Build only this specific module
 COPY discovery-service/ discovery-service/
-RUN mvn package -DskipTests -B -pl discovery-service
+RUN --mount=type=cache,target=/root/.m2 mvn package -DskipTests -B -pl discovery-service
 
 FROM eclipse-temurin:17-jre-jammy
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY --from=build /workspace/discovery-service/target/*.jar app.jar
+COPY --from=build /workspace/discovery-service/target /tmp/target
+RUN find /tmp/target -maxdepth 1 -name '*.jar' ! -name '*-plain.jar' | head -1 | xargs -I{} cp {} /app/app.jar && rm -rf /tmp/target
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
 EXPOSE 8761
 ENTRYPOINT ["java", "-jar", "app.jar"]

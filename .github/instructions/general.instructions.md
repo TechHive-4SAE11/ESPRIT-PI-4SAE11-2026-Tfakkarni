@@ -51,7 +51,7 @@ applyTo: "**/*"
 - **Backend**: Spring Boot 3.3.6, Spring Cloud 2023.0.4, Java 17, Maven multi-module
 - **Gateway**: Spring Cloud Gateway + OAuth2 Resource Server (JWT from Keycloak)
 - **Discovery**: Netflix Eureka
-- **Auth**: Keycloak 26 — realm: `techhive`, client: `tfakkarni-frontend`
+- **Auth**: Keycloak 26 — realm: `tfakkarni`, client: `tfakkarni-frontend`
 - **Database**: PostgreSQL on Neon Cloud, Hibernate 6 with `ddl-auto: update`
 - **IoT**: Bracelet devices posting GPS/heartbeat/alerts via REST to tracking-service & alert-service
 

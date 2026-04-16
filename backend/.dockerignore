@@ -1,0 +1,23 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Documentation
+*.md
+
+# Build output (Maven re-builds inside Docker)
+**/target
+
+# Scripts not needed in image
+scripts/
+
+# Misc
+_assistant_files.txt
+_config_files.txt
+_game_files.txt
+_medical_files.txt
