@@ -1,0 +1,8 @@
+/* Les classes utilitaires Tailwind gèrent déjà l'essentiel du design.
+   Ce fichier est gardé au cas où des animations CSS spécifiques 
+   souhaiteraient être ajoutées plus tard. */
+
+   :host {
+    display: block;
+    width: 100%;
+}

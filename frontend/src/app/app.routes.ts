@@ -216,6 +216,15 @@ export const routes: Routes = [
     data: { roles: ['patient', 'admin'] },
   },
 
+  // ===== ROUTES POUR LE DASHBOARD DES SERVICES =====
+  {
+    path: 'service-dashboard',
+    loadComponent: () =>
+      import('@/features/dashboard/service-dashboard/service-dashboard.component').then(
+        (m) => m.ServiceDashboardComponent
+      ),
+  },
+
   {
     path: '**',
     redirectTo: 'landing',
