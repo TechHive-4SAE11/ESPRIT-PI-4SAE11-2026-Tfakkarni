@@ -34,6 +34,10 @@ public class VoiceAssistantService {
     private final VideoScriptService videoScriptService;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
+    // Injected Controllers to reuse their existing logic
+    private final org.techhive.assistantservice.controller.QuizAIController quizAIController;
+    private final org.techhive.assistantservice.controller.EquipmentAIController equipmentAIController;
+
     /**
      * Process a voice command and return an appropriate response.
      */
@@ -55,6 +59,9 @@ public class VoiceAssistantService {
                 case "BORROW" -> handleBorrowCommand(parameter, request.getUserId());
                 case "RETURN" -> handleReturnCommand(parameter, request.getUserId());
                 case "QUIZ" -> handleQuizCommand(parameter, request.getUserId());
+                case "QUIZ_FOR_PATIENT" -> handleQuizForPatientCommand(parameter);
+                case "RECOMMENDED_QUIZ" -> handleRecommendedQuizCommand(request.getPatientName());
+                case "RECOMMEND_EQUIPMENT" -> handleRecommendEquipmentCommand(parameter, request.getPatientName());
                 case "STATUS" -> handleStatusCommand(request.getUserId());
                 case "VIDEO" -> handleVideoCommand(parameter, request.getUserId(), request.getPatientName());
                 default -> handleAICommand(command, request.getUserId()); // Fallback chat
@@ -75,7 +82,10 @@ public class VoiceAssistantService {
                 Classify the following user command into exactly one of these actions:
                 - BORROW: Borrow or request medical equipment (wheelchair, bed, etc.) — FR: emprunter, demander
                 - RETURN: Return or give back equipment — FR: rendre, retourner
-                - QUIZ: Generate, create or start a quiz on a given topic — FR: quiz, générer quiz
+                - QUIZ: Generate a generic quiz on a specific topic. Extract the topic.
+                - QUIZ_FOR_PATIENT: Generate a personalized quiz for a specific patient. Extract the patient's name.
+                - RECOMMENDED_QUIZ: Generate a recommended quiz based on weak topics.
+                - RECOMMEND_EQUIPMENT: Recommend equipment for a specific condition or patient. Extract condition/topic.
                 - STATUS: Ask for status, scores, or active loans — FR: statut, état
                 - VIDEO: Create or generate a memory or therapeutic video — FR: vidéo, créer vidéo
                 - UNKNOWN: If it does not match anything above.
@@ -84,11 +94,13 @@ public class VoiceAssistantService {
                 
                 Command: "%s"
                 
-                Respond ONLY with a JSON object containing "action" and "parameter" (the subject/item, empty if none).
-                Example:
+                Respond ONLY with a JSON object containing "action" and "parameter" (the subject/item/name/condition, empty if none).
+                Examples:
+                {"action": "QUIZ_FOR_PATIENT", "parameter": "Mohamed"}
+                {"action": "QUIZ", "parameter": "memory"}
+                {"action": "RECOMMENDED_QUIZ", "parameter": ""}
+                {"action": "RECOMMEND_EQUIPMENT", "parameter": "mobility"}
                 {"action": "BORROW", "parameter": "wheelchair"}
-                {"action": "QUIZ", "parameter": "geography"}
-                {"action": "VIDEO", "parameter": "childhood memories"}
                 """, command);
 
         ChatClient chatClient = chatClientBuilder.build();
@@ -239,6 +251,10 @@ public class VoiceAssistantService {
     private VoiceCommandResponse handleQuizCommand(String topic, Long userId) {
         log.info("Quiz generation request on topic: '{}'", topic);
 
+        if (topic == null || topic.trim().isEmpty() || topic.trim().equalsIgnoreCase("null")) {
+            topic = "General Memory";
+        }
+
         QuizGenerateRequest quizRequest = QuizGenerateRequest.builder()
                 .topic(topic)
                 .numberOfQuestions(5)
@@ -261,6 +277,92 @@ public class VoiceAssistantService {
                     .build();
         }
     }
+
+    private VoiceCommandResponse handleQuizForPatientCommand(String patientName) {
+        log.info("Quiz for patient request: '{}'", patientName);
+        if (patientName == null || patientName.trim().isEmpty()) {
+            return VoiceCommandResponse.builder()
+                    .type("INFO")
+                    .message("Please specify the patient's name.")
+                    .build();
+        }
+
+        try {
+            org.techhive.assistantservice.dto.ReportBasedQuizByNameRequest req = new org.techhive.assistantservice.dto.ReportBasedQuizByNameRequest();
+            req.setPatientName(patientName);
+            req.setNumberOfQuestions(5);
+            
+            org.springframework.http.ResponseEntity<?> response = quizAIController.generateQuizFromPatientName(req);
+            
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() instanceof QuizDTO generatedQuiz) {
+                return VoiceCommandResponse.builder()
+                        .type("QUIZ_START")
+                        .message("🎯 Personalized quiz for '" + patientName + "' created successfully!")
+                        .data(generatedQuiz)
+                        .build();
+            } else {
+                throw new RuntimeException("Validation failed in AI service");
+            }
+        } catch (Exception e) {
+            return VoiceCommandResponse.builder()
+                    .type("ERROR")
+                    .message("Unable to generate the quiz for " + patientName + ": " + e.getMessage())
+                    .build();
+        }
+    }
+
+    private VoiceCommandResponse handleRecommendedQuizCommand(String currentPatientName) {
+        log.info("Recommended quiz request for patient context: '{}'", currentPatientName);
+        // Using the robust logic already built in QuizAIController for a specific patient
+        if (currentPatientName == null || currentPatientName.trim().isEmpty()) {
+            return VoiceCommandResponse.builder()
+                    .type("INFO")
+                    .message("Please select a patient or specify a patient name to generate a recommended quiz.")
+                    .build();
+        }
+        return handleQuizForPatientCommand(currentPatientName);
+    }
+
+    private VoiceCommandResponse handleRecommendEquipmentCommand(String condition, String currentPatientName) {
+        log.info("Equipment recommendation request: '{}' for patient '{}'", condition, currentPatientName);
+        
+        try {
+            if (currentPatientName != null && !currentPatientName.trim().isEmpty()) {
+                // If we have a patient context, use the AI recommendation from their name
+                org.springframework.http.ResponseEntity<?> response = equipmentAIController.recommendEquipmentFromPatientName(
+                    Map.of("patientName", currentPatientName)
+                );
+                if (response.getStatusCode().is2xxSuccessful()) {
+                    return VoiceCommandResponse.builder()
+                            .type("INFO")
+                            .message("🏥 Here are the equipment recommendations based on the patient's records.")
+                            .data(response.getBody())
+                            .build();
+                }
+            }
+            
+            // Otherwise fallback to generic condition search
+            if (condition == null || condition.trim().isEmpty()) {
+                condition = "General Mobility Issues";
+            }
+            
+            EquipmentRecommendRequest req = new EquipmentRecommendRequest();
+            req.setCondition(condition);
+            req.setSeverity("MODERATE");
+            org.springframework.http.ResponseEntity<?> response = equipmentAIController.recommendEquipment(req);
+            
+            return VoiceCommandResponse.builder()
+                    .type("INFO")
+                    .message("🏥 Equipment recommendations for " + condition + " retrieved successfully.")
+                    .data(response.getBody())
+                    .build();
+        } catch (Exception e) {
+            return VoiceCommandResponse.builder()
+                    .type("ERROR")
+                    .message("Unable to recommend equipment: " + e.getMessage())
+                    .build();
+        }
+    }
     
     /**
      * Handle video generation command.
@@ -268,6 +370,10 @@ public class VoiceAssistantService {
     private VoiceCommandResponse handleVideoCommand(String topic, Long userId, String patientName) {
         log.info("Video generation request on topic: '{}' for patient: '{}'", topic, patientName);
         
+        if (topic == null || topic.trim().isEmpty() || topic.trim().equalsIgnoreCase("null")) {
+            topic = "Childhood Memories";
+        }
+
         VideoGenerateRequest videoReq = VideoGenerateRequest.builder()
                 .topic(topic)
                 .patientId(userId)

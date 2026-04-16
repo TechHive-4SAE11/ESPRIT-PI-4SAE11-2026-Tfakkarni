@@ -458,7 +458,7 @@ import { IotService, SleepAnalysisResponse, SleepStageEntry, SleepHistoryRespons
         }
 
         <!-- Weekly Insights -->
-        @if (sleepHistory()!.weeklySummary?.weeklyInsights?.length) {
+        @if (sleepHistory()!.weeklySummary.weeklyInsights.length) {
           <z-card class="p-5">
             <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
               <span>🧠</span> Weekly Insights
