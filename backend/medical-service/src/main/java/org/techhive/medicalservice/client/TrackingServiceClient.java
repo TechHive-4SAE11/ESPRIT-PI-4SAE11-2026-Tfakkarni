@@ -8,13 +8,22 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.techhive.medicalservice.dto.audit.PatientMedicationAuditRequest;
 import org.techhive.medicalservice.dto.audit.PatientMedicationAuditResponse;
-import org.techhive.medicalservice.dto.tracking.TrackingSummaryDTO;
+import org.techhive.medicalservice.dto.tracking.MedicationComplianceDTO;
+import org.techhive.medicalservice.dto.tracking.IncidentStatsDTO;
+
+import java.util.List;
 
 @FeignClient(name = "tracking-service")
 public interface TrackingServiceClient {
 
-    @GetMapping("/api/tracking/logs/patient/{patientId}/summary")
-    TrackingSummaryDTO getPatientTrackingSummary(@PathVariable("patientId") String patientId);
+    @GetMapping("/api/statistics/{patientId}/medication-compliance?days=30")
+    MedicationComplianceDTO getPatientMedicationCompliance(@PathVariable("patientId") String patientId);
+
+    @GetMapping("/api/statistics/{patientId}/medication-compliance-by-drug")
+    List<MedicationComplianceDTO> getPatientMedicationComplianceByDrug(@PathVariable("patientId") String patientId);
+
+    @GetMapping("/api/statistics/{patientId}/incident-types?days=30")
+    IncidentStatsDTO getPatientIncidentStats(@PathVariable("patientId") String patientId);
 
     @PostMapping("/api/analytics/safety-audit/patient-medications")
     PatientMedicationAuditResponse getPatientMedications(@RequestBody PatientMedicationAuditRequest request);

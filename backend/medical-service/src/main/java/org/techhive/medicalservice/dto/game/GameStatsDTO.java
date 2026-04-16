@@ -11,8 +11,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GameStatsDTO {
-    private String patientId;
-    private Integer gamesPlayed;
+    private String playerKeycloakId;
+    private Integer totalGamesPlayed;
     private Double averageScore;
+    private Integer bestScore;
+    private Integer totalAttempts;
     private List<GameAttemptDTO> recentAttempts;
 }

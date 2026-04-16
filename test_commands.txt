@@ -6,3 +6,27 @@ monta
 back:
 .\mvnw.cmd test -Dtest="DailyMonitoringServiceTest,DailyMonitoringControllerTest"
 npx ng test --watch=false --browsers=ChromeHeadless
+front:
+npx ng test --watch=false --browsers=ChromeHeadless --include="**/daily-monitoring.service.spec.ts"
+
+# ──────────────────────────────────────────────────────────────────────
+# Raed - Prescription, Medication, CarePlan & Treatment Efficacy Analytics
+# ──────────────────────────────────────────────────────────────────────
+
+
+## Frontend Tests (run from frontend/ directory)
+
+# Prescription service & component
+npx ng test --watch=false --browsers=ChromeHeadless --include="**/prescription.service.spec.ts" --include="**/prescription-management.component.spec.ts"
+
+# Medication service & component
+npx ng test --watch=false --browsers=ChromeHeadless --include="**/medication.service.spec.ts" --include="**/medications.component.spec.ts"
+
+# CarePlan service & component
+npx ng test --watch=false --browsers=ChromeHeadless --include="**/care-plan.service.spec.ts" --include="**/care-plan-management.component.spec.ts"
+
+# Analytics service & dashboard
+npx ng test --watch=false --browsers=ChromeHeadless --include="**/analytics.service.spec.ts" --include="**/analytics-dashboard.component.spec.ts"
+
+# All Raed frontend tests at once
+npx ng test --watch=false --browsers=ChromeHeadless --include="**/prescription.service.spec.ts" --include="**/prescription-management.component.spec.ts" --include="**/medication.service.spec.ts" --include="**/medications.component.spec.ts" --include="**/care-plan.service.spec.ts" --include="**/care-plan-management.component.spec.ts" --include="**/analytics.service.spec.ts" --include="**/analytics-dashboard.component.spec.ts"
