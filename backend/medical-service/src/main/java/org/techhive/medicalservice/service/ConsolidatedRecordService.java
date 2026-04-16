@@ -184,13 +184,45 @@ public class ConsolidatedRecordService {
                 // Incidents summary
                 IncidentStatsDTO incidents = trackingServiceClient.getPatientIncidentStats(folder.getPatientId());
                 if (incidents != null && incidents.getLabels() != null && !incidents.getLabels().isEmpty()) {
-                    document.add(new Paragraph("Recent Incidents (last 30 days):", labelFont));
+                    Paragraph incTitle = new Paragraph("Recent Incidents (last 30 days)", labelFont);
+                    incTitle.setSpacingBefore(10);
+                    incTitle.setSpacingAfter(5);
+                    document.add(incTitle);
+
+                    int totalIncidents = incidents.getValues() != null
+                            ? incidents.getValues().stream().mapToInt(Integer::intValue).sum() : 0;
+
+                    PdfPTable incTable = new PdfPTable(3);
+                    incTable.setWidthPercentage(100);
+                    incTable.setWidths(new float[]{3f, 1.5f, 1.5f});
+
+                    Font tableHeaderFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.WHITE);
+                    for (String h : new String[]{"Incident Type", "Count", "% of Total"}) {
+                        PdfPCell hCell = new PdfPCell(new Phrase(h, tableHeaderFont));
+                        hCell.setBackgroundColor(new Color(220, 53, 69));
+                        hCell.setPadding(6);
+                        incTable.addCell(hCell);
+                    }
+
                     for (int i = 0; i < incidents.getLabels().size(); i++) {
                         String label = incidents.getLabels().get(i);
                         int count = (incidents.getValues() != null && i < incidents.getValues().size())
                                 ? incidents.getValues().get(i) : 0;
-                        document.add(new Paragraph("- " + label + ": " + count, bodyFont));
+                        double pct = totalIncidents > 0 ? (count * 100.0) / totalIncidents : 0;
+
+                        addTableCell(incTable, label, bodyFont);
+                        addTableCell(incTable, String.valueOf(count), bodyFont);
+                        addTableCell(incTable, String.format("%.0f %%", pct), bodyFont);
                     }
+                    document.add(incTable);
+
+                    Paragraph totalP = new Paragraph("Total incidents: " + totalIncidents, bodyFont);
+                    totalP.setSpacingAfter(10);
+                    document.add(totalP);
+                } else {
+                    Paragraph noInc = new Paragraph("No incidents reported in the last 30 days.", bodyFont);
+                    noInc.setSpacingBefore(10);
+                    document.add(noInc);
                 }
             } catch (Exception e) {
                 document.add(new Paragraph("Unable to retrieve tracking data: Service unavailable.", bodyFont));
