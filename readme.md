@@ -315,3 +315,19 @@ To run only the unit tests for Prescriptions, Medications, Care Plans, and Analy
 # This runs the 4 core services and the 4 management components together
 npm test -- --watch=false --include "src/app/core/services/{prescription,medication,care-plan,analytics}.service.spec.ts" --include "src/app/pages/**/*.{prescription,medication,care-plan,analytics-dashboard}.component.spec.ts"
 ```
+
+## 🔍 Observability & Distributed Tracing
+
+This project uses **Micrometer Tracing** and **Zipkin** for performance monitoring across the microservice ecosystem. Every request generates a unique **Trace ID** that follows the request from the Gateway to all downsteam services.
+
+### How to start the Tracing Dashboard:
+
+1.  **Launch Zipkin** (requires Docker):
+    ```bash
+    docker run -d -p 9411:9411 openzipkin/zipkin
+    ```
+2.  **Access the Dashboard**:
+    Open [http://localhost:9411](http://localhost:9411) in your browser.
+3.  **Visualization**:
+    Perform any action in the application to generate traffic. In Zipkin, you will see a unified Trace ID representing the full lifecycle of the request across all microservices (Gateway -> Service A -> Service B).
+
