@@ -1,0 +1,64 @@
+# ============================================================
+# Tfakkarni — Docker Compose Commands
+# ============================================================
+# Prerequisites:
+#   - Docker Desktop running
+#   - .env file present in project root (copy .env.example and fill values)
+# ============================================================
+
+# ---------- BUILD & START EVERYTHING ----------
+
+# 1. Build and start the backend (discovery, config, gateway + all microservices)
+docker compose -f docker-compose.backend.yml up -d --build
+
+# 2. Build and start the frontend (Angular + Nginx)
+docker compose -f docker-compose.frontend.yml up -d --build
+
+# ---------- START WITHOUT REBUILDING ----------
+
+docker compose -f docker-compose.backend.yml up -d
+docker compose -f docker-compose.frontend.yml up -d
+
+# ---------- STOP EVERYTHING ----------
+
+docker compose -f docker-compose.backend.yml down
+docker compose -f docker-compose.frontend.yml down
+
+# ---------- RESTART A SINGLE SERVICE ----------
+
+docker compose -f docker-compose.backend.yml restart tracking-service
+docker compose -f docker-compose.backend.yml restart user-service
+
+# ---------- VIEW LOGS ----------
+
+# All backend logs (follow mode)
+docker compose -f docker-compose.backend.yml logs -f
+
+# Single service logs
+docker compose -f docker-compose.backend.yml logs -f tracking-service
+docker compose -f docker-compose.backend.yml logs -f config-service
+docker compose -f docker-compose.backend.yml logs -f discovery-service
+docker compose -f docker-compose.frontend.yml logs -f frontend
+
+# ---------- CHECK STATUS ----------
+
+# See all containers and their health
+docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+# Eureka dashboard (should list all registered services)
+#   http://localhost:8761
+
+# ---------- FULL CLEAN REBUILD ----------
+
+# Stop, remove containers/images, rebuild from scratch
+docker compose -f docker-compose.backend.yml down --rmi local
+docker compose -f docker-compose.frontend.yml down --rmi local
+docker compose -f docker-compose.backend.yml up -d --build
+docker compose -f docker-compose.frontend.yml up -d --build
+
+# ---------- ACCESS POINTS ----------
+
+# Frontend:           http://localhost:18080
+# API Gateway:        http://localhost:9090
+# Eureka Dashboard:   http://localhost:8761
+# Config Server:      http://localhost:8888
