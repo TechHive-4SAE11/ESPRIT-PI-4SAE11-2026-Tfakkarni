@@ -71,6 +71,34 @@ public class SecurityConfig {
             .pathMatchers(HttpMethod.GET, "/api/games/quiz/**").permitAll()
             .pathMatchers(HttpMethod.GET, "/api/games/quiz/questions/**").permitAll()
             .pathMatchers(HttpMethod.GET, "/api/games/quiz/answer/**").permitAll()
+            
+            // Medical folder and Patient analytics restricted to Doctors
+            .pathMatchers("/api/medical-folders/analytics/**").hasAnyRole("DOCTOR","ADMIN")
+            .pathMatchers("/api/analytics/patient/**").permitAll()
+            .pathMatchers("/api/analytics/safety-audit/**").hasRole("DOCTOR")
+            .pathMatchers("/api/games/stats/analytics/**").permitAll()
+            .pathMatchers("/api/games/stats/overview").permitAll()
+            
+            // Prescription & Care Plan - Only Doctors/Admins can modify, Patients can only view
+            .pathMatchers(HttpMethod.POST, "/api/prescriptions/**").hasRole("DOCTOR")
+            .pathMatchers(HttpMethod.PUT, "/api/prescriptions/**").hasRole("DOCTOR")
+            .pathMatchers(HttpMethod.PATCH, "/api/prescriptions/**").hasRole("DOCTOR")
+            .pathMatchers(HttpMethod.DELETE, "/api/prescriptions/**").hasRole("DOCTOR")
+            .pathMatchers(HttpMethod.GET, "/api/prescriptions/**").hasAnyRole("DOCTOR", "PATIENT", "ADMIN")
+            
+            .pathMatchers(HttpMethod.POST, "/api/care-plans/**").hasRole("DOCTOR")
+            .pathMatchers(HttpMethod.PUT, "/api/care-plans/**").hasRole("DOCTOR")
+            .pathMatchers(HttpMethod.PATCH, "/api/care-plans/**").hasRole("DOCTOR")
+            .pathMatchers(HttpMethod.DELETE, "/api/care-plans/**").hasRole("DOCTOR")
+            .pathMatchers(HttpMethod.GET, "/api/care-plans/**").hasAnyRole("DOCTOR", "PATIENT", "ADMIN")
+            
+            // Medication management restricted to Doctors or Admins for modification
+            .pathMatchers(HttpMethod.POST, "/api/medications/**").hasAnyRole("DOCTOR", "ADMIN")
+            .pathMatchers(HttpMethod.PUT, "/api/medications/**").hasAnyRole("DOCTOR", "ADMIN")
+            .pathMatchers(HttpMethod.PATCH, "/api/medications/**").hasAnyRole("DOCTOR", "ADMIN")
+            .pathMatchers(HttpMethod.DELETE, "/api/medications/**").hasAnyRole("DOCTOR", "ADMIN")
+            .pathMatchers(HttpMethod.GET, "/api/medications/**").hasAnyRole("DOCTOR", "PATIENT", "ADMIN")
+            
             // All other endpoints require authentication
             .anyExchange().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2
