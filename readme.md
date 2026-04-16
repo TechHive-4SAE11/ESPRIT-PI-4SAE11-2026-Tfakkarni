@@ -303,3 +303,15 @@ Tfakkarni/
 | Keycloak admin console  | http://localhost:8280/admin (admin/admin)                            |
 | Eureka dashboard        | http://localhost:8761                                                |
 | DB schema changes       | Hibernate `ddl-auto: update` handles it — just update your `@Entity` |
+
+---
+
+## Testing
+
+### Core Medical Features (Unit Tests)
+To run only the unit tests for Prescriptions, Medications, Care Plans, and Analytics (Standardized Pagination & RBAC validation), run this in the `frontend` directory:
+
+```bash
+# This runs the 4 core services and the 4 management components together
+npm test -- --watch=false --include "src/app/core/services/{prescription,medication,care-plan,analytics}.service.spec.ts" --include "src/app/pages/**/*.{prescription,medication,care-plan,analytics-dashboard}.component.spec.ts"
+```
