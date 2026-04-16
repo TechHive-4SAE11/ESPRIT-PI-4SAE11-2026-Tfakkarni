@@ -43,6 +43,7 @@ services:
     container_name: tfakkarni-gateway
     build: { context: ./backend, dockerfile: api-gateway/Dockerfile }
     image: tfakkarni/gateway:latest
+    env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
       SPRING_CLOUD_CONFIG_URI: http://config-service:8888
@@ -64,6 +65,7 @@ services:
     container_name: tfakkarni-user
     build: { context: ./backend, dockerfile: user-service/Dockerfile }
     image: tfakkarni/user:latest
+    env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
       SPRING_CLOUD_CONFIG_URI: http://config-service:8888
@@ -84,6 +86,7 @@ services:
     container_name: tfakkarni-game
     build: { context: ./backend, dockerfile: game-service/Dockerfile }
     image: tfakkarni/game:latest
+    env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
       SPRING_CLOUD_CONFIG_URI: http://config-service:8888
@@ -104,6 +107,7 @@ services:
     container_name: tfakkarni-medical
     build: { context: ./backend, dockerfile: medical-service/Dockerfile }
     image: tfakkarni/medical:latest
+    env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
       SPRING_CLOUD_CONFIG_URI: http://config-service:8888
@@ -124,6 +128,7 @@ services:
     container_name: tfakkarni-alert
     build: { context: ./backend, dockerfile: alert-service/Dockerfile }
     image: tfakkarni/alert:latest
+    env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
       SPRING_CLOUD_CONFIG_URI: http://config-service:8888
@@ -144,6 +149,7 @@ services:
     container_name: tfakkarni-tracking
     build: { context: ./backend, dockerfile: tracking-service/Dockerfile }
     image: tfakkarni/tracking:latest
+    env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
       SPRING_CLOUD_CONFIG_URI: http://config-service:8888
@@ -164,6 +170,7 @@ services:
     container_name: tfakkarni-ml
     build: { context: ./backend, dockerfile: ml-service/Dockerfile }
     image: tfakkarni/ml:latest
+    env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
       SPRING_CLOUD_CONFIG_URI: http://config-service:8888
@@ -184,6 +191,7 @@ services:
     container_name: tfakkarni-medicament-validation
     build: { context: ./backend, dockerfile: medicament-validation-service/Dockerfile }
     image: tfakkarni/medicament-validation:latest
+    env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
       SPRING_CLOUD_CONFIG_URI: http://config-service:8888
@@ -204,6 +212,7 @@ services:
     container_name: tfakkarni-iot
     build: { context: ./backend, dockerfile: iot-service/Dockerfile }
     image: tfakkarni/iot:latest
+    env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
       SPRING_CLOUD_CONFIG_URI: http://config-service:8888
@@ -224,6 +233,7 @@ services:
     container_name: tfakkarni-assistant
     build: { context: ./backend, dockerfile: assistant-service/Dockerfile }
     image: tfakkarni/assistant:latest
+    env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
       SPRING_CLOUD_CONFIG_URI: http://config-service:8888
@@ -245,6 +255,7 @@ services:
     container_name: tfakkarni-analytics
     build: { context: ./backend, dockerfile: analytics-service/Dockerfile }
     image: tfakkarni/analytics:latest
+    env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
       SPRING_CLOUD_CONFIG_URI: http://config-service:8888
