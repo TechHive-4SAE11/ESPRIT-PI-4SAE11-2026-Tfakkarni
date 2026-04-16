@@ -64,7 +64,7 @@ class DailyMonitoringServiceTest {
         @Test
         @DisplayName("devrait retourner le log existant quand il existe déjà")
         void shouldReturnExistingLog() {
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, TODAY))
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, TODAY))
                     .thenReturn(Optional.of(sampleLog));
             // Existing log already has medication intakes (non-empty)
             MedicationIntakeLog intake = new MedicationIntakeLog();
@@ -75,14 +75,14 @@ class DailyMonitoringServiceTest {
 
             assertThat(result).isEqualTo(sampleLog);
             assertThat(result.getId()).isEqualTo(1L);
-            verify(logRepo).findByPatientKeycloakIdAndLogDate(PATIENT_ID, TODAY);
+            verify(logRepo).findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, TODAY);
             verify(logRepo, never()).save(any());
         }
 
         @Test
         @DisplayName("devrait créer un nouveau log quand aucun n'existe")
         void shouldCreateNewLogWhenNoneExists() {
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, TODAY))
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, TODAY))
                     .thenReturn(Optional.empty());
             when(logRepo.save(any(DailyLog.class))).thenReturn(sampleLog);
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID))
@@ -99,7 +99,7 @@ class DailyMonitoringServiceTest {
         @DisplayName("devrait auto-peupler les médicaments depuis les prescriptions actives")
         void shouldAutoPopulateMedicationsFromActivePrescriptions() {
             // New log with empty medication intakes
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, TODAY))
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, TODAY))
                     .thenReturn(Optional.empty());
             when(logRepo.save(any(DailyLog.class))).thenReturn(sampleLog);
 
@@ -129,7 +129,7 @@ class DailyMonitoringServiceTest {
             existingIntake.setId(50L);
             sampleLog.getMedicationIntakes().add(existingIntake);
 
-            when(logRepo.findByPatientKeycloakIdAndLogDate(PATIENT_ID, TODAY))
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, TODAY))
                     .thenReturn(Optional.of(sampleLog));
 
             service.getOrCreateLog(PATIENT_ID, TODAY);

@@ -1,6 +1,5 @@
 package org.techhive.trackingservice.service;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -37,51 +36,50 @@ class HealthScoreServiceTest {
     private HealthScoreService healthScoreService;
 
     @Nested
-    @DisplayName("Règles Hydratation")
+    @DisplayName("Règles Hydratation (/9)")
     class HydrationRules {
 
         @Test
-        @DisplayName("Hydratation ≥ 1500 ml → 20/20")
-        void hydration_ge_1500_gives_20() {
+        @DisplayName("Hydratation ≥ 1500 ml → 9/9")
+        void hydration_ge_1500_gives_9() {
             DailyLog log = createLogWithHydration(1500);
             when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
 
-            assertThat(r.getTotalScore()).isGreaterThanOrEqualTo(20);
-            assertThat(findBreakdown(r, "HYDRATATION").getScore()).isEqualTo(20);
-            assertThat(findBreakdown(r, "HYDRATATION").getMaxScore()).isEqualTo(20);
+            assertThat(findBreakdown(r, "HYDRATATION").getScore()).isEqualTo(9);
+            assertThat(findBreakdown(r, "HYDRATATION").getMaxScore()).isEqualTo(9);
         }
 
         @Test
-        @DisplayName("Hydratation 1000-1499 ml → 15/20")
-        void hydration_1000_to_1499_gives_15() {
+        @DisplayName("Hydratation 1200-1499 ml → 7/9")
+        void hydration_1200_to_1499_gives_7() {
             DailyLog log = createLogWithHydration(1200);
             when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
 
-            assertThat(findBreakdown(r, "HYDRATATION").getScore()).isEqualTo(15);
-            assertThat(findBreakdown(r, "HYDRATATION").getMaxScore()).isEqualTo(20);
+            assertThat(findBreakdown(r, "HYDRATATION").getScore()).isEqualTo(7);
+            assertThat(findBreakdown(r, "HYDRATATION").getMaxScore()).isEqualTo(9);
         }
 
         @Test
-        @DisplayName("Hydratation 500-999 ml → 8/20")
-        void hydration_500_to_999_gives_8() {
-            DailyLog log = createLogWithHydration(700);
+        @DisplayName("Hydratation 800-1199 ml → 5/9")
+        void hydration_800_to_1199_gives_5() {
+            DailyLog log = createLogWithHydration(900);
             when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
 
-            assertThat(findBreakdown(r, "HYDRATATION").getScore()).isEqualTo(8);
+            assertThat(findBreakdown(r, "HYDRATATION").getScore()).isEqualTo(5);
         }
 
         @Test
-        @DisplayName("Hydratation < 500 ml → 3/20")
-        void hydration_lt_500_gives_3() {
+        @DisplayName("Hydratation 400-799 ml → 3/9")
+        void hydration_400_to_799_gives_3() {
             DailyLog log = createLogWithHydration(400);
             when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
@@ -89,47 +87,59 @@ class HealthScoreServiceTest {
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
 
             assertThat(findBreakdown(r, "HYDRATATION").getScore()).isEqualTo(3);
-            assertThat(findBreakdown(r, "HYDRATATION").getMaxScore()).isEqualTo(20);
+            assertThat(findBreakdown(r, "HYDRATATION").getMaxScore()).isEqualTo(9);
+        }
+
+        @Test
+        @DisplayName("Hydratation < 400 ml → 1/9")
+        void hydration_lt_400_gives_1() {
+            DailyLog log = createLogWithHydration(200);
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
+
+            HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
+
+            assertThat(findBreakdown(r, "HYDRATATION").getScore()).isEqualTo(1);
         }
     }
 
     @Nested
-    @DisplayName("Règles Médicaments")
+    @DisplayName("Règles Médicaments (/75)")
     class MedicationRules {
 
         @Test
-        @DisplayName("100% médicaments pris → 25/25")
-        void medications_100_percent_gives_25() {
-            DailyLog log = createLogWithMedicationIntakes(3, 3); // 3 pris sur 3 attendus
+        @DisplayName("100% médicaments pris → 75/75")
+        void medications_100_percent_gives_75() {
+            DailyLog log = createLogWithMedicationIntakes(3, 3);
             when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID))
                     .thenReturn(List.of(new Medication(), new Medication(), new Medication()));
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
 
-            assertThat(findBreakdown(r, "MEDICATIONS").getScore()).isEqualTo(25);
-            assertThat(findBreakdown(r, "MEDICATIONS").getMaxScore()).isEqualTo(25);
+            assertThat(findBreakdown(r, "MEDICATIONS").getScore()).isEqualTo(75);
+            assertThat(findBreakdown(r, "MEDICATIONS").getMaxScore()).isEqualTo(75);
         }
 
         @Test
-        @DisplayName("0 médicament prescrit → 25/25")
-        void zero_expected_medications_gives_25() {
+        @DisplayName("0 médicament prescrit → 75/75")
+        void zero_expected_medications_gives_75() {
             DailyLog log = createMinimalLog();
             when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
 
-            assertThat(findBreakdown(r, "MEDICATIONS").getScore()).isEqualTo(25);
+            assertThat(findBreakdown(r, "MEDICATIONS").getScore()).isEqualTo(75);
         }
     }
 
     @Nested
-    @DisplayName("Règles Incidents")
+    @DisplayName("Règles Incidents (/7)")
     class IncidentRules {
 
         @Test
-        @DisplayName("3 incidents ou plus → 0/15")
+        @DisplayName("3 incidents ou plus → 0/7")
         void three_or_more_incidents_gives_0() {
             DailyLog log = createLogWithIncidentCount(3);
             when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
@@ -138,23 +148,23 @@ class HealthScoreServiceTest {
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
 
             assertThat(findBreakdown(r, "INCIDENTS").getScore()).isEqualTo(0);
-            assertThat(findBreakdown(r, "INCIDENTS").getMaxScore()).isEqualTo(15);
+            assertThat(findBreakdown(r, "INCIDENTS").getMaxScore()).isEqualTo(7);
         }
 
         @Test
-        @DisplayName("0 incident → 15/15")
-        void zero_incidents_gives_15() {
+        @DisplayName("0 incident → 7/7")
+        void zero_incidents_gives_7() {
             DailyLog log = createMinimalLog();
             when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
 
-            assertThat(findBreakdown(r, "INCIDENTS").getScore()).isEqualTo(15);
+            assertThat(findBreakdown(r, "INCIDENTS").getScore()).isEqualTo(7);
         }
 
         @Test
-        @DisplayName("1 incident → 10/15, 2 incidents → 5/15")
+        @DisplayName("1 incident → 5/7, 2 incidents → 2/7")
         void one_and_two_incidents() {
             DailyLog log1 = createLogWithIncidentCount(1);
             DailyLog log2 = createLogWithIncidentCount(2);
@@ -164,79 +174,19 @@ class HealthScoreServiceTest {
                     .thenReturn(Optional.of(log2));
 
             assertThat(healthScoreService.computeDailyScore(PATIENT_ID, DATE).getBreakdown().stream()
-                    .filter(b -> "INCIDENTS".equals(b.getCategory())).findFirst().orElseThrow().getScore()).isEqualTo(10);
-            assertThat(healthScoreService.computeDailyScore(PATIENT_ID, DATE).getBreakdown().stream()
                     .filter(b -> "INCIDENTS".equals(b.getCategory())).findFirst().orElseThrow().getScore()).isEqualTo(5);
+            assertThat(healthScoreService.computeDailyScore(PATIENT_ID, DATE).getBreakdown().stream()
+                    .filter(b -> "INCIDENTS".equals(b.getCategory())).findFirst().orElseThrow().getScore()).isEqualTo(2);
         }
     }
 
     @Nested
-    @DisplayName("Données manquantes - exclusion proportionnelle")
-    class MissingDataExclusion {
+    @DisplayName("Activité (/9)")
+    class ActivityRules {
 
         @Test
-        @DisplayName("Sommeil absent → SLEEP dans missingCategories et exclusion du calcul")
-        void sleep_absent_excluded_from_calculation() {
-            DailyLog log = createMinimalLog();
-            log.setSleepHours(null);
-            log.setMoodLevel("BONNE");
-            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
-            when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
-
-            HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
-
-            assertThat(r.getMissingCategories()).containsExactly("SLEEP");
-            assertThat(findBreakdown(r, "SLEEP").isExcluded()).isTrue();
-            assertThat(findBreakdown(r, "SLEEP").getRawValue()).isEqualTo("Donnée non renseignée");
-            assertThat(r.getAdjustedMaxScore()).isEqualTo(100 - 10); // 90, sommeil exclu
-            assertThat(r.getTotalScore()).isLessThanOrEqualTo(90);
-        }
-
-        @Test
-        @DisplayName("Humeur et sommeil absents → MOOD et SLEEP exclus, adjustedMaxScore = 80")
-        void mood_and_sleep_absent_adjusted_max_80() {
-            DailyLog log = createMinimalLog();
-            log.setMoodLevel(null);
-            log.setSleepHours(null);
-            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
-            when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
-
-            HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
-
-            assertThat(r.getMissingCategories()).containsExactlyInAnyOrder("MOOD", "SLEEP");
-            assertThat(r.getAdjustedMaxScore()).isEqualTo(80);
-            assertThat(findBreakdown(r, "MOOD").isExcluded()).isTrue();
-            assertThat(findBreakdown(r, "SLEEP").isExcluded()).isTrue();
-        }
-
-        @Test
-        @DisplayName("Risque calculé sur le pourcentage (totalScore / adjustedMaxScore)")
-        void risk_based_on_percentage_when_sleep_missing() {
-            DailyLog log = createLogWithHydration(1500);
-            log.setMoodLevel("BONNE");
-            log.setSleepHours(null);
-            log.getActivityEntries().clear();
-            log.getActivityEntries().add(createPhysicalActivity(30));
-            log.getIncidentEntries().clear();
-            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
-            when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
-
-            HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
-
-            assertThat(r.getAdjustedMaxScore()).isEqualTo(90);
-            int total = r.getTotalScore();
-            int pct = (total * 100) / 90;
-            assertThat(r.getRiskLevel()).isEqualTo(pct >= 85 ? "Excellent" : pct >= 65 ? "Stable" : pct >= 45 ? "Risque moyen" : "Risque élevé");
-        }
-    }
-
-    @Nested
-    @DisplayName("Activité et humeur / sommeil")
-    class ActivityAndMoodSleep {
-
-        @Test
-        @DisplayName("Activité ≥ 30 min → 20/20")
-        void activity_ge_30_gives_20() {
+        @DisplayName("Activité ≥ 30 min → 9/9")
+        void activity_ge_30_gives_9() {
             DailyLog log = createMinimalLog();
             log.getActivityEntries().clear();
             log.getActivityEntries().add(createPhysicalActivity(30));
@@ -245,47 +195,7 @@ class HealthScoreServiceTest {
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
 
-            assertThat(findBreakdown(r, "ACTIVITY").getScore()).isEqualTo(20);
-        }
-
-        @Test
-        @DisplayName("Humeur BONNE → 10/10, MAUVAISE → 2/10")
-        void mood_scores() {
-            DailyLog logGood = createMinimalLog();
-            logGood.setMoodLevel("BONNE");
-            logGood.setSleepHours(7.0);
-            DailyLog logBad = createMinimalLog();
-            logBad.setMoodLevel("MAUVAISE");
-            logBad.setSleepHours(7.0);
-            when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
-            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE))
-                    .thenReturn(Optional.of(logGood))
-                    .thenReturn(Optional.of(logBad));
-
-            assertThat(healthScoreService.computeDailyScore(PATIENT_ID, DATE).getBreakdown().stream()
-                    .filter(b -> "MOOD".equals(b.getCategory())).findFirst().orElseThrow().getScore()).isEqualTo(10);
-            assertThat(healthScoreService.computeDailyScore(PATIENT_ID, DATE).getBreakdown().stream()
-                    .filter(b -> "MOOD".equals(b.getCategory())).findFirst().orElseThrow().getScore()).isEqualTo(2);
-        }
-
-        @Test
-        @DisplayName("Sommeil ≥ 7h → 10/10, < 5h → 2/10")
-        void sleep_scores() {
-            DailyLog log7 = createMinimalLog();
-            log7.setMoodLevel("BONNE");
-            log7.setSleepHours(7.5);
-            DailyLog log4 = createMinimalLog();
-            log4.setMoodLevel("BONNE");
-            log4.setSleepHours(4.0);
-            when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
-            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE))
-                    .thenReturn(Optional.of(log7))
-                    .thenReturn(Optional.of(log4));
-
-            assertThat(healthScoreService.computeDailyScore(PATIENT_ID, DATE).getBreakdown().stream()
-                    .filter(b -> "SLEEP".equals(b.getCategory())).findFirst().orElseThrow().getScore()).isEqualTo(10);
-            assertThat(healthScoreService.computeDailyScore(PATIENT_ID, DATE).getBreakdown().stream()
-                    .filter(b -> "SLEEP".equals(b.getCategory())).findFirst().orElseThrow().getScore()).isEqualTo(2);
+            assertThat(findBreakdown(r, "ACTIVITY").getScore()).isEqualTo(9);
         }
     }
 
@@ -294,32 +204,53 @@ class HealthScoreServiceTest {
     class EdgeCases {
 
         @Test
-        @DisplayName("Aucun log → humeur/sommeil exclus, adjustedMaxScore 80")
+        @DisplayName("Aucun log → adjustedMaxScore 100, missingCategories vide")
         void no_log_returns_adjusted_structure() {
             when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.empty());
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
 
-            assertThat(r.getAdjustedMaxScore()).isEqualTo(80);
-            assertThat(r.getMissingCategories()).containsExactlyInAnyOrder("MOOD", "SLEEP");
-            assertThat(r.getTotalScore()).isLessThanOrEqualTo(80);
-            assertThat(r.getBreakdown()).hasSize(6);
+            assertThat(r.getAdjustedMaxScore()).isEqualTo(100);
+            assertThat(r.getMissingCategories()).isEmpty();
+            assertThat(r.getTotalScore()).isLessThanOrEqualTo(100);
+            assertThat(r.getBreakdown()).hasSize(4);
         }
 
         @Test
-        @DisplayName("Breakdown contient toutes les catégories")
+        @DisplayName("Breakdown contient les 4 catégories")
         void breakdown_contains_all_categories() {
             DailyLog log = createMinimalLog();
-            log.setMoodLevel("MOYENNE");
-            log.setSleepHours(6.0);
             when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
             when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of());
 
             HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
 
             List<String> categories = r.getBreakdown().stream().map(HealthScoreResponse.CategoryBreakdown::getCategory).toList();
-            assertThat(categories).containsExactlyInAnyOrder("HYDRATATION", "MEDICATIONS", "ACTIVITY", "MOOD", "SLEEP", "INCIDENTS");
+            assertThat(categories).containsExactlyInAnyOrder("HYDRATATION", "MEDICATIONS", "ACTIVITY", "INCIDENTS");
+        }
+
+        @Test
+        @DisplayName("Score parfait = 100 (meds 75 + hydration 9 + activity 9 + incidents 7)")
+        void perfect_score_is_100() {
+            DailyLog log = createLogWithHydration(1500);
+            log.getActivityEntries().clear();
+            log.getActivityEntries().add(createPhysicalActivity(30));
+            log.getIncidentEntries().clear();
+            log.getMedicationIntakes().clear();
+            MedicationIntakeLog intake = new MedicationIntakeLog();
+            intake.setStatus("PRIS");
+            Medication med = new Medication();
+            med.setId(1L);
+            intake.setMedication(med);
+            log.getMedicationIntakes().add(intake);
+            when(logRepo.findFirstByPatientKeycloakIdAndLogDate(PATIENT_ID, DATE)).thenReturn(Optional.of(log));
+            when(medicationRepo.findByPrescriptionSessionMedicalFolderIdPatient(PATIENT_ID)).thenReturn(List.of(med));
+
+            HealthScoreResponse r = healthScoreService.computeDailyScore(PATIENT_ID, DATE);
+
+            assertThat(r.getTotalScore()).isEqualTo(100);
+            assertThat(r.getRiskLevel()).isEqualTo("Excellent");
         }
     }
 

@@ -1,3 +1,8 @@
 # Aymen - Game & IoT Frontend Tests
 cd frontend
 npx ng test --no-watch --browsers=ChromeHeadless --include="**/game.service.spec.ts" --include="**/movie-game.service.spec.ts" --include="**/custom-game.service.spec.ts" --include="**/audio-game.service.spec.ts" --include="**/iot.service.spec.ts" --include="**/game-schemas.spec.ts" --include="**/data-point.service.spec.ts" --include="**/sleep-analysis.component.spec.ts"
+
+monta
+back:
+.\mvnw.cmd test -Dtest="DailyMonitoringServiceTest,DailyMonitoringControllerTest"
+npx ng test --watch=false --browsers=ChromeHeadless

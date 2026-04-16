@@ -31,7 +31,6 @@ import { ZardIdDirective } from '@/shared/core';
 import { mergeClasses, noopFn } from '@/shared/utils/merge-classes';
 
 import type { ZardAlertDialogRef } from './alert-dialog-ref';
-import { ZardAlertDialogService } from './alert-dialog.service';
 import { alertDialogVariants } from './alert-dialog.variants';
 import { ZardButtonComponent } from '@/shared/components/button/button.component';
 
@@ -163,6 +162,5 @@ export class ZardAlertDialogComponent<T> extends BasePortalOutlet {
 
 @NgModule({
   imports: [ZardButtonComponent, ZardAlertDialogComponent, OverlayModule, PortalModule, A11yModule],
-  providers: [ZardAlertDialogService],
 })
 export class ZardAlertDialogModule {}

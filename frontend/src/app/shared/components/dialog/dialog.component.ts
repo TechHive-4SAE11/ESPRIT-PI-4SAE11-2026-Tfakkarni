@@ -27,7 +27,6 @@ import {
 import { mergeClasses, noopFn } from '@/shared/utils/merge-classes';
 
 import type { ZardDialogRef } from './dialog-ref';
-import { ZardDialogService } from './dialog.service';
 import { dialogVariants } from './dialog.variants';
 import { ZardButtonComponent } from '@/shared/components/button/button.component';
 import { ZardIconComponent } from '@/shared/components/icon/icon.component';
@@ -223,6 +222,5 @@ export class ZardDialogComponent<T, U> extends BasePortalOutlet {
 
 @NgModule({
   imports: [ZardButtonComponent, ZardDialogComponent, OverlayModule, PortalModule, DragDropModule],
-  providers: [ZardDialogService],
 })
 export class ZardDialogModule { }
