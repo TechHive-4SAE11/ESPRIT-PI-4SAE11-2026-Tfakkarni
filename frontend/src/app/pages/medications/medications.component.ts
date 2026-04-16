@@ -368,7 +368,7 @@ export class MedicationManagementComponent implements OnInit {
   currentPage = signal<number>(0);
   totalPages = signal<number>(0);
   totalItems = signal<number>(0);
-  pageSize = signal<number>(10);
+  pageSize = signal<number>(5);
   selectedStatus = signal<MedicationStatus | null>(null);
   private hasLoadedOnce = false;
 

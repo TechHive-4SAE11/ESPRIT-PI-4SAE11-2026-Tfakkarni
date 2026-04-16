@@ -165,7 +165,7 @@ import { CarePlanService } from '@/core/services/care-plan.service';
 })
 export class CarePlanListComponent implements OnInit, OnChanges {
   @Input() patientId: string | null = null;
-  @Input() pageSize = signal<number>(1);
+  @Input() pageSize = signal<number>(5);
   
   private userApiService = inject(UserApiService);
   private carePlanService = inject(CarePlanService);

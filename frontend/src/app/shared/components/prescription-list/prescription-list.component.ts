@@ -162,7 +162,7 @@ import { PrescriptionService } from '@/core/services/prescription.service';
 })
 export class PrescriptionListComponent implements OnInit, OnChanges {
   @Input() patientId: string | null = null;
-  @Input() pageSize = signal<number>(1);
+  @Input() pageSize = signal<number>(5);
   
   private userApiService = inject(UserApiService);
   private prescriptionService = inject(PrescriptionService);

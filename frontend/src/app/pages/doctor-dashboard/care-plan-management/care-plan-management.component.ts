@@ -11,6 +11,8 @@ import { ZardButtonComponent } from '@/shared/components/button';
 import { ZardCardComponent } from '@/shared/components/card';
 import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardAlertDialogService } from '@/shared/components/alert-dialog/alert-dialog.service';
+import { ZardPaginationComponent } from '@/shared/components/pagination';
+import { PagedResponse } from '@/core/models/paged-response.model';
 
 import { UserInfo } from '@/core/services/user-api.service';
 import { CarePlanService } from '@/core/services/care-plan.service';
@@ -31,7 +33,8 @@ import {
     ReactiveFormsModule,
     ZardButtonComponent,
     ZardCardComponent,
-    ZardIconComponent
+    ZardIconComponent,
+    ZardPaginationComponent
   ],
   templateUrl: './care-plan-management.component.html',
 })
@@ -64,6 +67,12 @@ export class CarePlanManagementComponent implements OnInit, OnDestroy {
   isLoadingCarePlans = signal(false);
   isLoadingSessions = signal(false);
   isSubmitting = signal(false);
+
+  // Pagination signals
+  currentPage = signal<number>(0);
+  totalPages = signal<number>(0);
+  totalItems = signal<number>(0);
+  pageSize = signal<number>(5);
 
   editingCarePlanId = signal<number | null>(null);
   showCreateDialog = signal(false);
@@ -211,18 +220,30 @@ export class CarePlanManagementComponent implements OnInit, OnDestroy {
     this.isLoadingCarePlans.set(true);
     const patientDbId = this.patient.keycloakId || String(this.patient.id);
 
-    this.carePlanService.getCarePlansByPatient(patientDbId)
-      .pipe(
-        tap(plans => this.carePlans.set(plans)),
+    this.carePlanService.getCarePlansByPatientPaginated(
+      patientDbId,
+      this.currentPage(),
+      this.pageSize()
+    ).pipe(
+        tap((response: PagedResponse<CarePlanResponseDTO>) => {
+          this.carePlans.set(response.content);
+          this.totalPages.set(response.totalPages);
+          this.totalItems.set(response.totalElements);
+        }),
         catchError(err => {
           console.error('[CarePlanManagement] Failed to load care plans', err);
           this.errorMessage.set('Failed to load care plans');
-          return of([]);
+          return of(null);
         }),
         finalize(() => this.isLoadingCarePlans.set(false)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage.set(page);
+    this.loadCarePlans();
   }
 
   loadSessions(): void {

@@ -13,6 +13,8 @@ import { ZardIconComponent } from '@/shared/components/icon';
 import { ZardBadgeComponent } from '@/shared/components/badge';
 import { ZardAlertDialogService } from '@/shared/components/alert-dialog/alert-dialog.service';
 import { ZardInputDirective } from '@/shared/components/input';
+import { ZardPaginationComponent } from '@/shared/components/pagination';
+import { PagedResponse } from '@/core/models/paged-response.model';
 
 import { UserInfo } from '@/core/services/user-api.service';
 import { PrescriptionService } from '@/core/services/prescription.service';
@@ -43,7 +45,8 @@ import { environment } from '@/environments/environment';
     ZardButtonComponent,
     ZardIconComponent,
     ZardBadgeComponent,
-    ZardInputDirective
+    ZardInputDirective,
+    ZardPaginationComponent
   ],
   templateUrl: './prescription-management.component.html',
 })
@@ -77,6 +80,12 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
   sessions = signal<SessionResponseDTO[]>([]);
   selectedPrescription = signal<PrescriptionResponseDTO | null>(null);
   discontinueReason = signal('');
+
+  // Pagination signals
+  currentPage = signal<number>(0);
+  totalPages = signal<number>(0);
+  totalItems = signal<number>(0);
+  pageSize = signal<number>(5);
   private currentMedicationToDiscontinue: number | null = null;
 
   // Template signals
@@ -358,24 +367,33 @@ export class PrescriptionManagementComponent implements OnInit, OnDestroy {
     }
 
     this.isLoadingPrescriptions.set(true);
-    // Use keycloakId if available, fallback to id
     const patientDbId = this.patient.keycloakId || String(this.patient.id);
 
-    this.prescriptionService.getPrescriptionsByPatient(patientDbId)
-      .pipe(
-        tap(data => {
-          console.log('[PrescriptionManagement] Loaded prescriptions:', data);
-          this.prescriptions.set(data);
+    this.prescriptionService.getPrescriptionsByPatientPaginated(
+      patientDbId,
+      this.currentPage(),
+      this.pageSize()
+    ).pipe(
+        tap((response: PagedResponse<PrescriptionResponseDTO>) => {
+          console.log('[PrescriptionManagement] Loaded prescriptions:', response);
+          this.prescriptions.set(response.content);
+          this.totalPages.set(response.totalPages);
+          this.totalItems.set(response.totalElements);
         }),
         catchError(error => {
           console.error('[PrescriptionManagement] Error loading prescriptions:', error);
           this.prescriptions.set([]);
-          return of([]);
+          return of(null);
         }),
         finalize(() => this.isLoadingPrescriptions.set(false)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage.set(page);
+    this.loadPrescriptions();
   }
 
   loadSessions(): void {
