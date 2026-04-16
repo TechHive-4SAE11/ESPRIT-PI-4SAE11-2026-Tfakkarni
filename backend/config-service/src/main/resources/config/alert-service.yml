@@ -25,17 +25,17 @@ spring:
         web-allow-others: true
   data:
     redis:
-      host: live-bullfrog-45869.upstash.io
+      host: primary-vulture-99858.upstash.io
       port: 6379
-      password: AbMtAAIncDJjOWExMjVkOTcwYjk0MGM2OWY0MzZhNmUwMWYwNGQ0OXAyNDU4Njk
+      password: gQAAAAAAAYYSAAIncDFkOTMwMDQ3MDY3NTY0YzA1YWIwNmRjOTNiMjg4MzFlYXAxOTk4NTg
       ssl:
         enabled: true
       timeout: 60000
-      lettuce:
-        pool:
-          max-active: 10
-          max-idle: 5
-          min-idle: 1
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000 # 10 minutes
+      cache-null-values: false
 
 firebase:
   config-file: classpath:firebase-service-account.json

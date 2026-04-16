@@ -22,6 +22,18 @@ spring:
     scheduling:
       pool:
         size: 3
+  data:
+    redis:
+      host: primary-vulture-99858.upstash.io
+      port: 6379
+      password: gQAAAAAAAYYSAAIncDFkOTMwMDQ3MDY3NTY0YzA1YWIwNmRjOTNiMjg4MzFlYXAxOTk4NTg
+      ssl:
+        enabled: true
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000 # 1 hour
+      cache-null-values: false
 
 analytics:
   score:

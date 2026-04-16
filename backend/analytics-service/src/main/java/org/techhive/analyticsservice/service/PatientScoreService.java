@@ -2,6 +2,8 @@ package org.techhive.analyticsservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.techhive.analyticsservice.client.*;
@@ -37,6 +39,7 @@ public class PatientScoreService {
     private static final double W_ENGAGEMENT = 0.10;
 
     @Transactional
+    @CachePut(value = "patient_scores", key = "#patientKeycloakId")
     public PatientScoreResponse computeAndSave(String patientKeycloakId) {
         log.info("Computing composite score for patient {}", patientKeycloakId);
 
@@ -114,27 +117,26 @@ public class PatientScoreService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "patient_scores", key = "#patientKeycloakId")
     public PatientScoreResponse getScore(String patientKeycloakId) {
+        log.info("Fetching patient score for {}, cache miss if reaching repository", patientKeycloakId);
         Optional<PatientCompositeScore> existing = scoreRepository.findByPatientKeycloakId(patientKeycloakId);
         if (existing.isPresent()) {
             PatientCompositeScore s = existing.get();
-            if (s.getComputedAt() != null && s.getComputedAt().isAfter(LocalDateTime.now().minusHours(1))) {
-                List<CognitiveDomainDTO> domains = computeCognitiveDomains(patientKeycloakId);
-
-                return PatientScoreResponse.builder()
-                        .patientKeycloakId(patientKeycloakId)
-                        .cognitiveScore(s.getCognitiveScore())
-                        .dailyFunctioningScore(s.getDailyFunctioningScore())
-                        .medicalStabilityScore(s.getMedicalStabilityScore())
-                        .iotRiskScore(s.getIotRiskScore())
-                        .engagementScore(s.getEngagementScore())
-                        .overallScore(s.getOverallScore())
-                        .stage(s.getStage())
-                        .scoreTrend(s.getScoreTrend())
-                        .computedAt(s.getComputedAt())
-                        .cognitiveDomains(domains)
-                        .build();
-            }
+            List<CognitiveDomainDTO> domains = computeCognitiveDomains(patientKeycloakId);
+            return PatientScoreResponse.builder()
+                    .patientKeycloakId(patientKeycloakId)
+                    .cognitiveScore(s.getCognitiveScore())
+                    .dailyFunctioningScore(s.getDailyFunctioningScore())
+                    .medicalStabilityScore(s.getMedicalStabilityScore())
+                    .iotRiskScore(s.getIotRiskScore())
+                    .engagementScore(s.getEngagementScore())
+                    .overallScore(s.getOverallScore())
+                    .stage(s.getStage())
+                    .scoreTrend(s.getScoreTrend())
+                    .computedAt(s.getComputedAt())
+                    .cognitiveDomains(domains)
+                    .build();
         }
         return computeAndSave(patientKeycloakId);
     }

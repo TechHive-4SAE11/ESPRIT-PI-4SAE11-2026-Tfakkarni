@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.techhive.analyticsservice.entity.*;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,7 +14,8 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PatientScoreResponse {
+public class PatientScoreResponse implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String patientKeycloakId;
     private Double cognitiveScore;
     private Double dailyFunctioningScore;
