@@ -1,8 +1,9 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AssistantAIService } from '@/core/services/assistant-ai.service';
 import { UserApiService } from '@/core/services/user-api.service';
+import { ZardAlertDialogService } from '@/shared/components/alert-dialog';
 import {
   VideoGenerateRequest,
   VideoGenerateResponse,
@@ -127,7 +128,7 @@ import {
               <!-- Success -->
               <div class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
                 <p class="font-semibold text-emerald-800 dark:text-emerald-200">
-                  ✅ Video script generated for {{ patientName }}! (Video #{{ video.videoId }}) • {{ video.storyboard?.length || 0 }} scenes • {{ video.duration }}s
+                  ✅ Video script generated for {{ patientName }}! (Video #{{ video.videoId }}) • {{ video.storyboard.length || 0 }} scenes • {{ video.duration }}s
                 </p>
               </div>
 
@@ -292,15 +293,15 @@ import {
                   } @else {
                     <video [src]="v.videoUrl" controls autoplay loop class="w-full h-full object-cover"></video>
                   }
-                  
+
                   <!-- Voice Overlay Buttons -->
                   <div class="absolute bottom-4 right-4 flex gap-2">
-                    <button (click)="toggleVoice(v.script); $event.stopPropagation()" 
+                    <button (click)="toggleVoice(v.script); $event.stopPropagation()"
                             class="bg-background/90 text-foreground px-4 py-2 rounded-full shadow-lg font-medium hover:bg-rose-500 hover:text-white transition-all flex items-center gap-2">
                       <span>{{ isPaused ? '▶️' : isSpeaking ? '⏸️' : '🔊' }}</span> {{ isPaused ? 'Reprendre' : isSpeaking ? 'Pause' : 'Écouter' }}
                     </button>
                     @if (isSpeaking || isPaused) {
-                      <button (click)="stopVoice(); $event.stopPropagation()" 
+                      <button (click)="stopVoice(); $event.stopPropagation()"
                               class="bg-red-500/90 text-white px-4 py-2 rounded-full shadow-lg font-medium hover:bg-red-600 transition-all flex items-center gap-2">
                         ⏹️ Stop
                       </button>
@@ -345,6 +346,79 @@ import {
                   }
                 </div>
               }
+
+              <!-- Feedback Section -->
+              <div class="mt-6 border-t border-border pt-4">
+                <h4 class="font-semibold text-lg mb-3">Therapeutic Feedback</h4>
+                
+                @if (isSubmittingFeedback) {
+                  <div class="animate-pulse text-center p-4">Submitting feedback...</div>
+                } @else if (feedbackSubmittedFor === v.videoId) {
+                  <div class="p-3 bg-emerald-50 text-emerald-700 rounded-lg text-sm flex items-center gap-2">
+                    ✅ Feedback saved successfully.
+                  </div>
+                } @else {
+                  <div class="space-y-4">
+                    <div>
+                      <label class="block text-sm font-medium mb-1">Rating (1-5)</label>
+                      <div class="flex gap-2">
+                        @for (star of [1,2,3,4,5]; track star) {
+                          <button (click)="feedbackData.rating = star" class="text-2xl"
+                                  [class.opacity-40]="feedbackData.rating !== undefined && feedbackData.rating < star">⭐</button>
+                        }
+                      </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-sm font-medium mb-1">Patient Reaction</label>
+                        <select [(ngModel)]="feedbackData.reaction" class="w-full px-3 py-2 rounded-lg border text-sm bg-background">
+                          <option value="POSITIVE">Positive</option>
+                          <option value="NEUTRAL">Neutral</option>
+                          <option value="NEGATIVE">Negative</option>
+                        </select>
+                      </div>
+                      <div class="flex items-end pb-2">
+                        <label class="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                          <input type="checkbox" [(ngModel)]="feedbackData.engagedFully" class="w-4 h-4 rounded border-gray-300">
+                          Fully Engaged?
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="block text-sm font-medium mb-1">Notes / Comments</label>
+                      <textarea [(ngModel)]="feedbackData.comments" rows="2" class="w-full px-3 py-2 rounded-lg border text-sm bg-background" placeholder="Observation notes..."></textarea>
+                    </div>
+
+                    <button (click)="submitFeedback()" [disabled]="!feedbackData.rating"
+                            class="w-full py-2 bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-xl font-medium hover:from-slate-900 hover:to-black disabled:opacity-50 transition-colors shadow-sm">
+                      Submit Feedback
+                    </button>
+                  </div>
+                }
+                
+                <!-- History -->
+                @if (videoFeedbacks.length > 0) {
+                  <details class="mt-4 text-sm bg-muted/20 p-3 rounded-xl border border-border">
+                    <summary class="font-semibold cursor-pointer">View Past Feedback ({{videoFeedbacks.length}})</summary>
+                    <div class="space-y-3 mt-3">
+                      @for (fb of videoFeedbacks; track fb.id) {
+                        <div class="border-l-2 border-rose-400 pl-3">
+                          <div class="flex gap-2 items-center mb-1 text-xs text-muted-foreground">
+                            <span>{{fb.createdAt | date:'short'}}</span>
+                            • <span class="font-semibold text-foreground">{{fb.rating}}/5</span>
+                            • <span class="uppercase tracking-wider">{{fb.reaction}}</span>
+                            • <span>{{fb.engagedFully ? 'Engaged' : 'Distracted'}}</span>
+                          </div>
+                          <p class="text-foreground leading-relaxed">{{fb.comments}}</p>
+                        </div>
+                      }
+                    </div>
+                  </details>
+                }
+              </div>
+
             </div>
           </div>
         </div>
@@ -355,6 +429,7 @@ import {
 export class AiMemoryVideosComponent implements OnInit {
   private readonly aiService: AssistantAIService;
   private readonly userService: UserApiService;
+  private readonly alertDialog = inject(ZardAlertDialogService);
 
   activeTab: 'generate' | 'library' = 'generate';
 
@@ -465,8 +540,63 @@ export class AiMemoryVideosComponent implements OnInit {
     });
   }
 
+  isSubmittingFeedback = false;
+  feedbackSubmittedFor: number | null = null;
+  videoFeedbacks: any[] = [];
+  
+  feedbackData: VideoFeedbackRequest = {
+    patientId: 0,
+    rating: 0,
+    reaction: 'POSITIVE',
+    engagedFully: true,
+    comments: ''
+  };
+
   viewVideoDetail(video: VideoGenerateResponse): void {
     this.selectedVideo.set(video);
+    this.feedbackSubmittedFor = null;
+    this.feedbackData = {
+      patientId: video.patientId || this.libraryPatientId,
+      rating: 0,
+      reaction: 'POSITIVE',
+      engagedFully: true,
+      comments: ''
+    };
+    this.loadFeedbacks(video.videoId);
+  }
+
+  loadFeedbacks(videoId: number) {
+    this.videoFeedbacks = [];
+    this.aiService.getVideoFeedback(videoId).subscribe(fb => {
+       this.videoFeedbacks = fb;
+    });
+  }
+
+  submitFeedback() {
+    const vId = this.selectedVideo()?.videoId;
+    if (!vId) return;
+    
+    this.isSubmittingFeedback = true;
+    this.aiService.submitVideoFeedback(vId, this.feedbackData).subscribe({
+      next: (res) => {
+        this.isSubmittingFeedback = false;
+        this.feedbackSubmittedFor = vId;
+        this.loadFeedbacks(vId); // reload history
+        
+        // Show success popup using the existing alert dialog service
+        this.alertDialog.info({ 
+          zTitle: 'Thank You!', 
+          zContent: 'Your feedback has been saved successfully.' 
+        });
+      },
+      error: (err) => {
+        this.isSubmittingFeedback = false;
+        this.alertDialog.warning({ 
+          zTitle: 'Error', 
+          zContent: "Failed to submit feedback: " + (err.error?.message || err.message)
+        });
+      }
+    });
   }
 
   isSpeaking = false;
@@ -515,7 +645,7 @@ export class AiMemoryVideosComponent implements OnInit {
 
   retryVideo(videoId: number): void {
     // Optionally update local list to show generating
-    this.patientVideos.update(videos => 
+    this.patientVideos.update(videos =>
       videos.map(v => v.videoId === videoId ? { ...v, status: 'GENERATING' } : v)
     );
     if (this.selectedVideo()?.videoId === videoId) {
@@ -529,15 +659,15 @@ export class AiMemoryVideosComponent implements OnInit {
         // Automatically close modal or update modal
         if (this.selectedVideo()?.videoId === videoId) {
           this.loadPatientVideos(); // Will update main grid, let's also clear modal to force refresh
-          this.selectedVideo.set(null); 
+          this.selectedVideo.set(null);
         }
       },
       error: (err) => {
         const errorMsg = 'Failed to generate video/image: ' + (err.error?.message || err.message);
         this.errorMessage.set(errorMsg);
-        
+
         // Revert to FAILED so UI allows retry
-        this.patientVideos.update(videos => 
+        this.patientVideos.update(videos =>
           videos.map(v => v.videoId === videoId ? { ...v, status: 'FAILED' } : v)
         );
         if (this.selectedVideo()?.videoId === videoId) {

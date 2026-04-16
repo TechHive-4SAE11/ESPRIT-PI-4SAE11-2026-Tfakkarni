@@ -183,10 +183,10 @@ export class ScoreStatisticsComponent implements OnInit {
   history = signal<ScoreHistoryEntry[]>([]);
   dayRange = 90;
 
-  overallChartOptions = computed<ApexOptions | null>(() => {
+  overallChartOptions = computed<any | null>(() => {
     const data = this.history();
     if (!data.length) return null;
-    return this.buildOverallChart(data);
+    return this.buildOverallChart(data) as any;
   });
 
   categoryCharts = computed(() => {
@@ -195,10 +195,10 @@ export class ScoreStatisticsComponent implements OnInit {
     return this.buildCategoryCharts(data);
   });
 
-  radarOptions = computed<ApexOptions | null>(() => {
+  radarOptions = computed<any | null>(() => {
     const score = this.currentScore;
     if (!score) return null;
-    return this.buildRadar(score);
+    return this.buildRadar(score) as any;
   });
 
   ngOnInit(): void {
@@ -225,7 +225,7 @@ export class ScoreStatisticsComponent implements OnInit {
     return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
   }
 
-  private buildOverallChart(data: ScoreHistoryEntry[]): ApexOptions {
+  private buildOverallChart(data: ScoreHistoryEntry[]): any {
     const dates = data.map(d => this.formatDate(d.recordedAt));
     return {
       series: [
@@ -247,10 +247,10 @@ export class ScoreStatisticsComponent implements OnInit {
     };
   }
 
-  private buildCategoryCharts(data: ScoreHistoryEntry[]): { title: string; subtitle: string; emoji: string; options: ApexOptions }[] {
+  private buildCategoryCharts(data: ScoreHistoryEntry[]): { title: string; subtitle: string; emoji: string; options: any }[] {
     const dates = data.map(d => this.formatDate(d.recordedAt));
 
-    const makeAreaChart = (values: number[], color: string): ApexOptions => ({
+    const makeAreaChart = (values: number[], color: string): any => ({
       series: [{ name: 'Score', data: values }],
       chart: { type: 'area', height: 220, sparkline: { enabled: false }, toolbar: { show: false }, fontFamily: 'inherit' },
       stroke: { width: 2, curve: 'smooth' },
@@ -291,7 +291,7 @@ export class ScoreStatisticsComponent implements OnInit {
     ];
   }
 
-  private buildRadar(score: PatientScoreResponse): ApexOptions {
+  private buildRadar(score: PatientScoreResponse): any {
     return {
       series: [{
         name: 'Score actuel',

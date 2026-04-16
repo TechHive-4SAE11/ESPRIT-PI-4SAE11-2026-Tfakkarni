@@ -278,6 +278,14 @@ export class AiVoiceAssistantComponent implements AfterViewChecked {
 
       this.recognition.onerror = (event: any) => {
         console.error('Speech recognition error', event.error);
+        if (event.error === 'network') {
+          this.messages.push({
+            role: 'assistant',
+            content: 'Speech recognition network error. Please check your internet connection and verify microphone permissions, or type your message.',
+            type: 'ERROR',
+            timestamp: new Date(),
+          });
+        }
         this.isListening.set(false);
       };
     } else {
