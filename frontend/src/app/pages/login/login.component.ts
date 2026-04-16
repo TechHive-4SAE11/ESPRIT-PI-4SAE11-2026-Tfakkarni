@@ -80,7 +80,7 @@ export class LoginComponent implements OnInit {
 
       const body = new URLSearchParams();
       body.set('grant_type', 'password');
-      body.set('client_id', 'tfakkarni-frontend');
+      body.set('client_id', environment.keycloakClientId);
       body.set('username', this.username);
       body.set('password', this.password);
 
