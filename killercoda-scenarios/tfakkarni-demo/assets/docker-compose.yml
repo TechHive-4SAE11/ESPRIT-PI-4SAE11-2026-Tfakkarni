@@ -262,6 +262,36 @@ services:
     restart: unless-stopped
     deploy: { resources: { limits: { memory: 512M } } }
 
+  # --- OBSERVABILITY ---
+  zipkin:
+    container_name: tfakkarni-zipkin
+    image: openzipkin/zipkin:latest
+    ports: ["9411:9411"]
+    networks: [tfakkarni-network]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9411/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 256M } } }
+
+  # --- OBSERVABILITY ---
+  zipkin:
+    container_name: tfakkarni-zipkin
+    image: openzipkin/zipkin:latest
+    ports: ["9411:9411"]
+    networks: [tfakkarni-network]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9411/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 256M } } }
+
   # --- FRONTEND ---
   frontend:
     container_name: tfakkarni-frontend

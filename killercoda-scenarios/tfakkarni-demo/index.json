@@ -38,6 +38,13 @@
     ],
     "finish": {
       "text": "finish.md"
+    },
+    "assets": {
+      "host01": [
+        { "file": "docker-compose.yml", "target": "/root/tfakkarni/" },
+        { "file": "env-file", "target": "/root/tfakkarni/", "chmod": "600" },
+        { "file": "wait-for-service.sh", "target": "/root/tfakkarni/", "chmod": "+x" }
+      ]
     }
   },
   "backend": {
@@ -45,12 +52,5 @@
   },
   "environment": {
     "uilayout": "terminal"
-  },
-  "assets": {
-    "host01": [
-      { "file": "docker-compose.yml", "target": "/root/tfakkarni/" },
-      { "file": "env-file", "target": "/root/tfakkarni/", "chmod": "600" },
-      { "file": "wait-for-service.sh", "target": "/root/tfakkarni/", "chmod": "+x" }
-    ]
   }
 }
