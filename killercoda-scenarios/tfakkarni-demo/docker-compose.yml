@@ -1,0 +1,277 @@
+# Tfakkarni KillerCoda — Docker Compose (pre-built images from Docker Hub)
+# This file pulls pre-built images instead of building from source.
+
+name: tfakkarni-app
+
+services:
+  # --- INFRASTRUCTURE ---
+  discovery-service:
+    container_name: tfakkarni-discovery
+    image: thelime1/tfakkarni:discovery
+    environment:
+      EUREKA_INSTANCE_HOSTNAME: discovery-service
+    ports: ["8761:8761"]
+    networks: [tfakkarni-network]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 40s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  config-service:
+    container_name: tfakkarni-config
+    image: thelime1/tfakkarni:config
+    env_file: [.env]
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+    ports: ["8888:8888"]
+    networks: [tfakkarni-network]
+    depends_on:
+      discovery-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 40s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  api-gateway:
+    container_name: tfakkarni-gateway
+    image: thelime1/tfakkarni:gateway
+    env_file: [.env]
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_URI: http://config-service:8888
+    ports: ["9090:9090"]
+    networks: [tfakkarni-network]
+    depends_on:
+      config-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 40s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  # --- MICROSERVICES ---
+  user-service:
+    container_name: tfakkarni-user
+    image: thelime1/tfakkarni:user
+    env_file: [.env]
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_URI: http://config-service:8888
+    ports: ["18081:18081"]
+    networks: [tfakkarni-network]
+    depends_on:
+      config-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18081/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  game-service:
+    container_name: tfakkarni-game
+    image: thelime1/tfakkarni:game
+    env_file: [.env]
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_URI: http://config-service:8888
+    ports: ["18082:18082"]
+    networks: [tfakkarni-network]
+    depends_on:
+      config-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18082/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  medical-service:
+    container_name: tfakkarni-medical
+    image: thelime1/tfakkarni:medical
+    env_file: [.env]
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_URI: http://config-service:8888
+    ports: ["18086:18086"]
+    networks: [tfakkarni-network]
+    depends_on:
+      config-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18086/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  alert-service:
+    container_name: tfakkarni-alert
+    image: thelime1/tfakkarni:alert
+    env_file: [.env]
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_URI: http://config-service:8888
+    ports: ["18084:18084"]
+    networks: [tfakkarni-network]
+    depends_on:
+      config-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18084/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  tracking-service:
+    container_name: tfakkarni-tracking
+    image: thelime1/tfakkarni:tracking
+    env_file: [.env]
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_URI: http://config-service:8888
+    ports: ["18083:18083"]
+    networks: [tfakkarni-network]
+    depends_on:
+      config-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18083/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  ml-service:
+    container_name: tfakkarni-ml
+    image: thelime1/tfakkarni:ml
+    env_file: [.env]
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_URI: http://config-service:8888
+    ports: ["18085:18085"]
+    networks: [tfakkarni-network]
+    depends_on:
+      config-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18085/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  medicament-validation-service:
+    container_name: tfakkarni-medicament-validation
+    image: thelime1/tfakkarni:medicament-validation
+    env_file: [.env]
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_URI: http://config-service:8888
+    ports: ["18087:18087"]
+    networks: [tfakkarni-network]
+    depends_on:
+      config-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18087/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  iot-service:
+    container_name: tfakkarni-iot
+    image: thelime1/tfakkarni:iot
+    env_file: [.env]
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_URI: http://config-service:8888
+    ports: ["18088:18088"]
+    networks: [tfakkarni-network]
+    depends_on:
+      config-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18088/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  assistant-service:
+    container_name: tfakkarni-assistant
+    image: thelime1/tfakkarni:assistant
+    env_file: [.env]
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_URI: http://config-service:8888
+      SERVER_PORT: 18089
+    ports: ["18089:18089"]
+    networks: [tfakkarni-network]
+    depends_on:
+      config-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18089/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  analytics-service:
+    container_name: tfakkarni-analytics
+    image: thelime1/tfakkarni:analytics
+    env_file: [.env]
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_URI: http://config-service:8888
+    ports: ["18090:18090"]
+    networks: [tfakkarni-network]
+    depends_on:
+      config-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18090/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  # --- FRONTEND ---
+  frontend:
+    container_name: tfakkarni-frontend
+    image: thelime1/tfakkarni:frontend
+    ports: ["18080:80"]
+    networks: [tfakkarni-network]
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 256M } } }
+
+networks:
+  tfakkarni-network:
+    name: tfakkarni-network
+    driver: bridge

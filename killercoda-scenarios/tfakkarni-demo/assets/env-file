@@ -1,0 +1,87 @@
+# ============================================================
+# Tfakkarni .env file for KillerCoda scenario
+# ============================================================
+# IMPORTANT: Replace all placeholder values below with your
+# actual credentials before running the scenario.
+#
+# The services connect to cloud-hosted databases (Neon) and
+# Keycloak — no local DB or auth server needed.
+# ============================================================
+
+# --- Keycloak ---
+KEYCLOAK_URL=https://lemur-12.cloud-iam.com/auth
+KEYCLOAK_ADMIN_PASSWORD=REPLACE_ME
+
+# --- Neon PostgreSQL Databases ---
+NEON_USER_DB_URL=jdbc:postgresql://REPLACE_HOST:5432/neondb?sslmode=require&channel_binding=require
+NEON_USER_DB_USERNAME=neondb_owner
+NEON_USER_DB_PASSWORD=REPLACE_ME
+
+NEON_GAME_DB_URL=jdbc:postgresql://REPLACE_HOST:5432/neondb?sslmode=require&channel_binding=require
+NEON_GAME_DB_USERNAME=neondb_owner
+NEON_GAME_DB_PASSWORD=REPLACE_ME
+
+NEON_SHARED_DB_URL=jdbc:postgresql://REPLACE_HOST:5432/neondb?sslmode=require&channel_binding=require
+NEON_SHARED_DB_USERNAME=neondb_owner
+NEON_SHARED_DB_PASSWORD=REPLACE_ME
+
+NEON_MEDICAL_DB_URL=jdbc:postgresql://REPLACE_HOST:5432/neondb?sslmode=require&prepareThreshold=0
+NEON_IOT_DB_URL=jdbc:postgresql://REPLACE_HOST:5432/neondb?sslmode=require&channel_binding=require
+NEON_IOT_DB_USERNAME=neondb_owner
+NEON_IOT_DB_PASSWORD=REPLACE_ME
+
+# --- Redis (Upstash) ---
+REDIS_HOST=REPLACE_ME
+REDIS_PORT=6379
+REDIS_PASSWORD=REPLACE_ME
+
+# --- Email (Mailtrap) ---
+MAILTRAP_TOKEN=REPLACE_ME
+MAILTRAP_INBOX_ID=REPLACE_ME
+
+# --- Telegram ---
+TELEGRAM_BOT_TOKEN=REPLACE_ME
+TELEGRAM_CHAT_ID=REPLACE_ME
+
+# --- Video Calls (Daily.co) ---
+DAILY_API_KEY=REPLACE_ME
+
+# --- LLM APIs (Groq) ---
+GROQ_TRACKING_API_KEY=REPLACE_ME
+GROQ_ASSISTANT_API_KEY=REPLACE_ME
+
+# --- Image (Pexels) ---
+PEXELS_API_KEY=REPLACE_ME
+
+# --- Text-to-Speech (ElevenLabs) ---
+ELEVENLABS_API_KEY=REPLACE_ME
+ELEVENLABS_TRACKING_API_KEY=REPLACE_ME
+
+# --- Google Services ---
+GOOGLE_MAPS_API_KEY=REPLACE_ME
+GOOGLE_TRANSLATE_API_KEY=REPLACE_ME
+GOOGLE_CLIENT_ID=REPLACE_ME
+GOOGLE_CLIENT_SECRET=REPLACE_ME
+
+# --- reCAPTCHA ---
+RECAPTCHA_SECRET_KEY=REPLACE_ME
+
+# --- TMDB ---
+TMDB_API_KEY=REPLACE_ME
+TMDB_READ_ACCESS_TOKEN=REPLACE_ME
+
+# --- ML Service ---
+GEMINI_API_KEY=REPLACE_ME
+HUGGINGFACE_API_KEY=REPLACE_ME
+ML_TWILIO_SID=REPLACE_ME
+ML_TWILIO_TOKEN=REPLACE_ME
+ML_TWILIO_PHONE=REPLACE_ME
+ML_TWILIO_WHATSAPP=REPLACE_ME
+ML_DOCTOR_PHONE=REPLACE_ME
+
+# --- KYC (Didit) ---
+DIDIT_API_KEY=REPLACE_ME
+DIDIT_WORKFLOW_ID=REPLACE_ME
+
+# --- Misc ---
+SAFETY_AUDIT_PRESENTATION_DEMO=false

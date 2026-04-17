@@ -1,0 +1,56 @@
+{
+  "title": "Tfakkarni — Alzheimer Tracking Platform",
+  "description": "Deploy and explore the Tfakkarni microservice platform: an Alzheimer disease tracking & care system with IoT, AI quiz, memory games, and medical management.",
+  "time": "25 minutes",
+  "difficulty": "Intermediate",
+  "details": {
+    "intro": {
+      "text": "intro.md"
+    },
+    "steps": [
+      {
+        "title": "Deploy infrastructure services",
+        "text": "step1/text.md",
+        "verify": "step1/verify.sh"
+      },
+      {
+        "title": "Deploy backend microservices",
+        "text": "step2/text.md",
+        "verify": "step2/verify.sh"
+      },
+      {
+        "title": "Deploy the frontend",
+        "text": "step3/text.md",
+        "verify": "step3/verify.sh"
+      },
+      {
+        "title": "Explore the API Gateway & Eureka",
+        "text": "step4/text.md"
+      },
+      {
+        "title": "Test the Alzheimer risk quiz API",
+        "text": "step5/text.md"
+      },
+      {
+        "title": "Explore medical & game services",
+        "text": "step6/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish.md"
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "environment": {
+    "uilayout": "terminal"
+  },
+  "assets": {
+    "host01": [
+      { "file": "docker-compose.yml", "target": "/root/tfakkarni/" },
+      { "file": "assets/env-file", "target": "/root/tfakkarni/", "chmod": "600" },
+      { "file": "assets/wait-for-service.sh", "target": "/root/tfakkarni/", "chmod": "+x" }
+    ]
+  }
+}
