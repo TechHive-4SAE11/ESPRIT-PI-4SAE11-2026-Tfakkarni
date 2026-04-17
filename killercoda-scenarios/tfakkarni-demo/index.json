@@ -49,8 +49,8 @@
   "assets": {
     "host01": [
       { "file": "docker-compose.yml", "target": "/root/tfakkarni/" },
-      { "file": "assets/env-file", "target": "/root/tfakkarni/", "chmod": "600" },
-      { "file": "assets/wait-for-service.sh", "target": "/root/tfakkarni/", "chmod": "+x" }
+      { "file": "env-file", "target": "/root/tfakkarni/", "chmod": "600" },
+      { "file": "wait-for-service.sh", "target": "/root/tfakkarni/", "chmod": "+x" }
     ]
   }
 }
