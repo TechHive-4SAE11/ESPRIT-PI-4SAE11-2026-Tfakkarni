@@ -1,0 +1,156 @@
+// ============================================================
+// Tfakkarni Backend — CI/CD Pipeline
+// Spring Boot Microservices (Maven multi-module)
+// ============================================================
+
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven-3.9'   // Configure in Jenkins > Global Tool Configuration
+        jdk   'JDK-17'      // Configure in Jenkins > Global Tool Configuration
+    }
+
+    environment {
+        DOCKER_HUB_CREDS = credentials('dockerhub-credentials')  // Configure in Jenkins > Credentials
+        SONAR_TOKEN      = credentials('sonar-token')             // SonarQube token
+        DOCKER_REGISTRY  = 'tfakkarni'
+        SONAR_HOST       = 'http://sonarqube:9000'
+    }
+
+    stages {
+        // ── Stage 1: Checkout ──
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo "✅ Code checked out from ${env.GIT_URL} branch ${env.GIT_BRANCH}"
+            }
+        }
+
+        // ── Stage 2: Build ──
+        stage('Build') {
+            steps {
+                dir('backend') {
+                    bat 'mvn clean compile -DskipTests -B'
+                }
+                echo '✅ Build completed successfully'
+            }
+        }
+
+        // ── Stage 3: Unit Tests + JaCoCo Coverage ──
+        stage('Unit Tests') {
+            steps {
+                dir('backend') {
+                    bat 'mvn test -B'
+                }
+            }
+            post {
+                always {
+                    // Publish JUnit test results
+                    junit '**/target/surefire-reports/*.xml'
+                    // Publish JaCoCo coverage reports
+                    jacoco(
+                        execPattern: '**/target/jacoco.exec',
+                        classPattern: '**/target/classes',
+                        sourcePattern: '**/src/main/java'
+                    )
+                    echo '✅ Unit tests executed and reports published'
+                }
+            }
+        }
+
+        // ── Stage 4: SonarQube Analysis ──
+        stage('SonarQube Analysis') {
+            steps {
+                dir('backend') {
+                    withSonarQubeEnv('SonarQube') {  // Configure in Jenkins > System > SonarQube servers
+                        bat "mvn sonar:sonar -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN} -B"
+                    }
+                }
+                echo '✅ SonarQube analysis completed'
+            }
+        }
+
+        // ── Stage 5: Quality Gate ──
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: false
+                }
+                echo '✅ Quality gate evaluated'
+            }
+        }
+
+        // ── Stage 6: Package (JARs) ──
+        stage('Package') {
+            steps {
+                dir('backend') {
+                    bat 'mvn package -DskipTests -B'
+                }
+                echo '✅ JARs packaged successfully'
+            }
+        }
+
+        // ── Stage 7: Docker Build ──
+        stage('Docker Build') {
+            steps {
+                script {
+                    def services = [
+                        'discovery-service', 'config-service', 'api-gateway',
+                        'user-service', 'game-service', 'tracking-service',
+                        'alert-service', 'ml-service', 'medical-service',
+                        'medicament-validation-service', 'iot-service',
+                        'assistant-service', 'analytics-service'
+                    ]
+                    for (svc in services) {
+                        bat "docker build --build-arg MODULE=${svc} -t ${DOCKER_REGISTRY}/${svc}:latest -t ${DOCKER_REGISTRY}/${svc}:${env.BUILD_NUMBER} -f backend/Dockerfile backend/"
+                    }
+                }
+                echo '✅ All Docker images built'
+            }
+        }
+
+        // ── Stage 8: Docker Push ──
+        stage('Docker Push') {
+            steps {
+                script {
+                    bat "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
+
+                    def services = [
+                        'discovery-service', 'config-service', 'api-gateway',
+                        'user-service', 'game-service', 'tracking-service',
+                        'alert-service', 'ml-service', 'medical-service',
+                        'medicament-validation-service', 'iot-service',
+                        'assistant-service', 'analytics-service'
+                    ]
+                    for (svc in services) {
+                        bat "docker push ${DOCKER_REGISTRY}/${svc}:latest"
+                        bat "docker push ${DOCKER_REGISTRY}/${svc}:${env.BUILD_NUMBER}"
+                    }
+                }
+                echo '✅ All Docker images pushed to Docker Hub'
+            }
+        }
+
+        // ── Stage 9: Deploy ──
+        stage('Deploy') {
+            steps {
+                bat 'docker-compose -f docker-compose.backend.yml up -d --remove-orphans'
+                echo '✅ Backend services deployed'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '🎉 Backend CI/CD Pipeline completed successfully!'
+        }
+        failure {
+            echo '❌ Backend CI/CD Pipeline failed. Check logs above.'
+        }
+        always {
+            // Clean up workspace
+            cleanWs()
+        }
+    }
+}

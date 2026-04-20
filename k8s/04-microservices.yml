@@ -1,0 +1,496 @@
+# ============================================================
+# Microservices: All business services
+# Template: Deployment + ClusterIP Service per microservice
+# ============================================================
+
+# ── User Service ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: tfakkarni
+  labels:
+    app: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: tfakkarni/user:latest
+          ports:
+            - containerPort: 18081
+          envFrom:
+            - configMapRef:
+                name: tfakkarni-config
+            - secretRef:
+                name: tfakkarni-secrets
+          resources:
+            limits: { memory: "512Mi", cpu: "500m" }
+            requests: { memory: "256Mi", cpu: "200m" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 18081 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: tfakkarni
+spec:
+  selector:
+    app: user-service
+  ports:
+    - port: 18081
+      targetPort: 18081
+
+---
+# ── Game Service ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: game-service
+  namespace: tfakkarni
+  labels:
+    app: game-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: game-service
+  template:
+    metadata:
+      labels:
+        app: game-service
+    spec:
+      containers:
+        - name: game-service
+          image: tfakkarni/game:latest
+          ports:
+            - containerPort: 18082
+          envFrom:
+            - configMapRef:
+                name: tfakkarni-config
+            - secretRef:
+                name: tfakkarni-secrets
+          resources:
+            limits: { memory: "512Mi", cpu: "500m" }
+            requests: { memory: "256Mi", cpu: "200m" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 18082 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: game-service
+  namespace: tfakkarni
+spec:
+  selector:
+    app: game-service
+  ports:
+    - port: 18082
+      targetPort: 18082
+
+---
+# ── Tracking Service ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracking-service
+  namespace: tfakkarni
+  labels:
+    app: tracking-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tracking-service
+  template:
+    metadata:
+      labels:
+        app: tracking-service
+    spec:
+      containers:
+        - name: tracking-service
+          image: tfakkarni/tracking:latest
+          ports:
+            - containerPort: 18083
+          envFrom:
+            - configMapRef:
+                name: tfakkarni-config
+            - secretRef:
+                name: tfakkarni-secrets
+          resources:
+            limits: { memory: "512Mi", cpu: "500m" }
+            requests: { memory: "256Mi", cpu: "200m" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 18083 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tracking-service
+  namespace: tfakkarni
+spec:
+  selector:
+    app: tracking-service
+  ports:
+    - port: 18083
+      targetPort: 18083
+
+---
+# ── Alert Service ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alert-service
+  namespace: tfakkarni
+  labels:
+    app: alert-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alert-service
+  template:
+    metadata:
+      labels:
+        app: alert-service
+    spec:
+      containers:
+        - name: alert-service
+          image: tfakkarni/alert:latest
+          ports:
+            - containerPort: 18084
+          envFrom:
+            - configMapRef:
+                name: tfakkarni-config
+            - secretRef:
+                name: tfakkarni-secrets
+          resources:
+            limits: { memory: "512Mi", cpu: "500m" }
+            requests: { memory: "256Mi", cpu: "200m" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 18084 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alert-service
+  namespace: tfakkarni
+spec:
+  selector:
+    app: alert-service
+  ports:
+    - port: 18084
+      targetPort: 18084
+
+---
+# ── ML Service ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-service
+  namespace: tfakkarni
+  labels:
+    app: ml-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-service
+  template:
+    metadata:
+      labels:
+        app: ml-service
+    spec:
+      containers:
+        - name: ml-service
+          image: tfakkarni/ml:latest
+          ports:
+            - containerPort: 18085
+          envFrom:
+            - configMapRef:
+                name: tfakkarni-config
+            - secretRef:
+                name: tfakkarni-secrets
+          resources:
+            limits: { memory: "512Mi", cpu: "500m" }
+            requests: { memory: "256Mi", cpu: "200m" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 18085 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-service
+  namespace: tfakkarni
+spec:
+  selector:
+    app: ml-service
+  ports:
+    - port: 18085
+      targetPort: 18085
+
+---
+# ── Medical Service ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medical-service
+  namespace: tfakkarni
+  labels:
+    app: medical-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: medical-service
+  template:
+    metadata:
+      labels:
+        app: medical-service
+    spec:
+      containers:
+        - name: medical-service
+          image: tfakkarni/medical:latest
+          ports:
+            - containerPort: 18086
+          envFrom:
+            - configMapRef:
+                name: tfakkarni-config
+            - secretRef:
+                name: tfakkarni-secrets
+          resources:
+            limits: { memory: "512Mi", cpu: "500m" }
+            requests: { memory: "256Mi", cpu: "200m" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 18086 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: medical-service
+  namespace: tfakkarni
+spec:
+  selector:
+    app: medical-service
+  ports:
+    - port: 18086
+      targetPort: 18086
+
+---
+# ── Medicament Validation Service ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medicament-validation-service
+  namespace: tfakkarni
+  labels:
+    app: medicament-validation-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: medicament-validation-service
+  template:
+    metadata:
+      labels:
+        app: medicament-validation-service
+    spec:
+      containers:
+        - name: medicament-validation-service
+          image: tfakkarni/medicament-validation:latest
+          ports:
+            - containerPort: 18087
+          envFrom:
+            - configMapRef:
+                name: tfakkarni-config
+            - secretRef:
+                name: tfakkarni-secrets
+          resources:
+            limits: { memory: "512Mi", cpu: "500m" }
+            requests: { memory: "256Mi", cpu: "200m" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 18087 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: medicament-validation-service
+  namespace: tfakkarni
+spec:
+  selector:
+    app: medicament-validation-service
+  ports:
+    - port: 18087
+      targetPort: 18087
+
+---
+# ── IoT Service ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iot-service
+  namespace: tfakkarni
+  labels:
+    app: iot-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iot-service
+  template:
+    metadata:
+      labels:
+        app: iot-service
+    spec:
+      containers:
+        - name: iot-service
+          image: tfakkarni/iot:latest
+          ports:
+            - containerPort: 18088
+          envFrom:
+            - configMapRef:
+                name: tfakkarni-config
+            - secretRef:
+                name: tfakkarni-secrets
+          resources:
+            limits: { memory: "512Mi", cpu: "500m" }
+            requests: { memory: "256Mi", cpu: "200m" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 18088 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iot-service
+  namespace: tfakkarni
+spec:
+  selector:
+    app: iot-service
+  ports:
+    - port: 18088
+      targetPort: 18088
+
+---
+# ── Assistant Service ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: assistant-service
+  namespace: tfakkarni
+  labels:
+    app: assistant-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: assistant-service
+  template:
+    metadata:
+      labels:
+        app: assistant-service
+    spec:
+      containers:
+        - name: assistant-service
+          image: tfakkarni/assistant:latest
+          ports:
+            - containerPort: 18089
+          envFrom:
+            - configMapRef:
+                name: tfakkarni-config
+            - secretRef:
+                name: tfakkarni-secrets
+          env:
+            - name: SERVER_PORT
+              value: "18089"
+          resources:
+            limits: { memory: "512Mi", cpu: "500m" }
+            requests: { memory: "256Mi", cpu: "200m" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 18089 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: assistant-service
+  namespace: tfakkarni
+spec:
+  selector:
+    app: assistant-service
+  ports:
+    - port: 18089
+      targetPort: 18089
+
+---
+# ── Analytics Service ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: tfakkarni
+  labels:
+    app: analytics-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analytics-service
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+    spec:
+      containers:
+        - name: analytics-service
+          image: tfakkarni/analytics:latest
+          ports:
+            - containerPort: 18090
+          envFrom:
+            - configMapRef:
+                name: tfakkarni-config
+            - secretRef:
+                name: tfakkarni-secrets
+          resources:
+            limits: { memory: "512Mi", cpu: "500m" }
+            requests: { memory: "256Mi", cpu: "200m" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 18090 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+  namespace: tfakkarni
+spec:
+  selector:
+    app: analytics-service
+  ports:
+    - port: 18090
+      targetPort: 18090

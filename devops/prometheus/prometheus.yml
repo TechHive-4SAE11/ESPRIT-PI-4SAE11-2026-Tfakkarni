@@ -1,0 +1,120 @@
+# ============================================================
+# Prometheus configuration for Tfakkarni project
+# ============================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # ── Prometheus self-monitoring ──
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ── Spring Boot Microservices ──
+  # All services expose /actuator/prometheus via micrometer-registry-prometheus
+
+  - job_name: 'discovery-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['discovery-service:8761']
+        labels:
+          service: discovery-service
+          type: infrastructure
+
+  - job_name: 'config-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['config-service:8888']
+        labels:
+          service: config-service
+          type: infrastructure
+
+  - job_name: 'api-gateway'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['api-gateway:9090']
+        labels:
+          service: api-gateway
+          type: infrastructure
+
+  - job_name: 'user-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['user-service:18081']
+        labels:
+          service: user-service
+          type: microservice
+
+  - job_name: 'game-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['game-service:18082']
+        labels:
+          service: game-service
+          type: microservice
+
+  - job_name: 'tracking-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['tracking-service:18083']
+        labels:
+          service: tracking-service
+          type: microservice
+
+  - job_name: 'alert-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['alert-service:18084']
+        labels:
+          service: alert-service
+          type: microservice
+
+  - job_name: 'ml-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['ml-service:18085']
+        labels:
+          service: ml-service
+          type: microservice
+
+  - job_name: 'medical-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['medical-service:18086']
+        labels:
+          service: medical-service
+          type: microservice
+
+  - job_name: 'medicament-validation-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['medicament-validation-service:18087']
+        labels:
+          service: medicament-validation-service
+          type: microservice
+
+  - job_name: 'iot-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['iot-service:18088']
+        labels:
+          service: iot-service
+          type: microservice
+
+  - job_name: 'assistant-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['assistant-service:18089']
+        labels:
+          service: assistant-service
+          type: microservice
+
+  - job_name: 'analytics-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['analytics-service:18090']
+        labels:
+          service: analytics-service
+          type: microservice
