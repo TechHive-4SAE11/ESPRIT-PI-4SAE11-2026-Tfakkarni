@@ -29,8 +29,10 @@ pipeline {
         // ── Stage 2: Install Dependencies ──
         stage('Install Dependencies') {
             steps {
-                dir('frontend') {
-                    sh 'npm ci --legacy-peer-deps'
+                retry(3) {
+                    dir('frontend') {
+                        sh 'npm ci --legacy-peer-deps'
+                    }
                 }
                 echo '✅ Dependencies installed'
             }
