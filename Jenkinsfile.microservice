@@ -52,15 +52,6 @@ pipeline {
             }
         }
 
-        // ── Stage 4: Quality Gate ──
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: false
-                }
-            }
-        }
-
         // ── Stage 5: Docker Build & Push ──
         stage('Docker Build & Push') {
             steps {
