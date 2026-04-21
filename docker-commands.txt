@@ -45,8 +45,7 @@ docker compose -f docker-compose.frontend.yml logs -f frontend
 # See all containers and their health
 docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
-# Eureka dashboard (should list all registered services)
-#   http://localhost:8762
+#   http://localhost:8780
 
 # ---------- FULL CLEAN REBUILD ----------
 
@@ -60,8 +59,8 @@ docker compose -f docker-compose.frontend.yml up -d --build
 
 # Frontend:           http://localhost:18080
 # API Gateway:        http://localhost:9090
-# Eureka Dashboard:   http://localhost:8762
-# Config Server:      http://localhost:8888
+# Eureka Dashboard:   http://localhost:8780
+# Config Server:      http://localhost:18888
 # Jenkins:            http://localhost:8090 (admin / AdminTfakkarni123!)
 # SonarQube:          http://localhost:9095 (admin / AdminTfakkarni123!)
 # Grafana:            http://localhost:3000 (admin / AdminTfakkarni123!)
