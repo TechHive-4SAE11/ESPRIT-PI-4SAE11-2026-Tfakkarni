@@ -30,6 +30,11 @@ credentials:
               username: "${DOCKERHUB_USERNAME}"
               password: "${DOCKERHUB_PASSWORD}"
               description: "DockerHub Credentials"
+          - string:
+              scope: GLOBAL
+              id: "sonar-token"
+              secret: "${SONARQUBE_TOKEN}"
+              description: "SonarQube Token"
 
 unclassified:
   sonarGlobalConfiguration:
@@ -58,7 +63,7 @@ tool:
                     id: "20.12.2"
 
 jobs:
-  - script: >
+  - script: |
       pipelineJob('Backend-Pipeline') {
           definition {
               cpsScm {

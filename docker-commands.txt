@@ -46,7 +46,7 @@ docker compose -f docker-compose.frontend.yml logs -f frontend
 docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 # Eureka dashboard (should list all registered services)
-#   http://localhost:8761
+#   http://localhost:8762
 
 # ---------- FULL CLEAN REBUILD ----------
 
@@ -60,5 +60,27 @@ docker compose -f docker-compose.frontend.yml up -d --build
 
 # Frontend:           http://localhost:18080
 # API Gateway:        http://localhost:9090
-# Eureka Dashboard:   http://localhost:8761
+# Eureka Dashboard:   http://localhost:8762
 # Config Server:      http://localhost:8888
+# Jenkins:            http://localhost:8090 (admin / AdminTfakkarni123!)
+# SonarQube:          http://localhost:9095 (admin / AdminTfakkarni123!)
+# Grafana:            http://localhost:3000 (admin / AdminTfakkarni123!)
+# Prometheus:         http://localhost:9091
+
+# ============================================================
+# ---------- DEVOPS STACK COMMANDS ----------
+
+# 1. Boot up the full devops portal (SonarQube, Jenkins, Grafana, Prometheus)
+docker compose -f docker-compose.devops.yml up -d --build
+
+# 2. Re-initialize SonarQube token (if SonarQube volume was wiped)
+node devops/init-sonarqube.js
+
+# 3. Reload Jenkins configurations (useful after you modify .env or casc.yaml)
+docker compose -f docker-compose.devops.yml restart jenkins
+
+# 4. Stop DevOps stack
+docker compose -f docker-compose.devops.yml down
+
+# 5. Stop and WIPE DevOps stack data (danger: deletes Jenkins history and Sonar metrics)
+docker compose -f docker-compose.devops.yml down -v
