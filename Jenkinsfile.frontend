@@ -119,7 +119,7 @@ pipeline {
             echo '❌ Frontend CI/CD Pipeline failed. Check logs above.'
         }
         always {
-            cleanWs()
+            deleteDir()
         }
     }
 }
