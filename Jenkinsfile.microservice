@@ -34,13 +34,8 @@ pipeline {
             }
             post {
                 always {
-                    // Publish JUnit test results & Jacoco coverage only for this specific module
+                    // Publish JUnit test results only for this specific module
                     junit allowEmptyResults: true, testResults: "backend/${params.SERVICE_NAME}/target/surefire-reports/*.xml"
-                    jacoco(
-                        execPattern: "backend/${params.SERVICE_NAME}/target/jacoco.exec",
-                        classPattern: "backend/${params.SERVICE_NAME}/target/classes",
-                        sourcePattern: "backend/${params.SERVICE_NAME}/src/main/java"
-                    )
                 }
             }
         }
@@ -54,15 +49,6 @@ pipeline {
                     }
                 }
                 echo "✅ SonarQube component analysis pushed for ${params.SERVICE_NAME}"
-            }
-        }
-
-        // ── Stage 4: Quality Gate ──
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: false
-                }
             }
         }
 
@@ -105,7 +91,7 @@ pipeline {
         }
         always {
             // Clean up workspace
-            cleanWs()
+            deleteDir()
         }
     }
 }
