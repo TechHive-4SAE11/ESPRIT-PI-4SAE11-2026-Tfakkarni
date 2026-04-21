@@ -1,0 +1,119 @@
+name: tfakkarni-devops
+
+services:
+  # ──────────────────────────────────────────────
+  # SONARQUBE — Code quality & coverage
+  # ──────────────────────────────────────────────
+  sonarqube:
+    container_name: tfakkarni-sonarqube
+    image: sonarqube:10.7-community
+    ports: ["9095:9000"]
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    networks: [tfakkarni-network]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/api/system/status | grep -q UP"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 2G } } }
+
+  # ──────────────────────────────────────────────
+  # PROMETHEUS — Metrics scraping
+  # ──────────────────────────────────────────────
+  prometheus:
+    container_name: tfakkarni-prometheus
+    image: prom/prometheus:v2.53.0
+    ports: ["9091:9090"]
+    volumes:
+      - ./devops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    networks: [tfakkarni-network]
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  # ──────────────────────────────────────────────
+  # GRAFANA — Dashboards & visualization
+  # ──────────────────────────────────────────────
+  grafana:
+    container_name: tfakkarni-grafana
+    image: grafana/grafana:11.1.0
+    ports: ["3000:3000"]
+    environment:
+      GF_SECURITY_ADMIN_USER: ${DEVOPS_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${DEVOPS_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./devops/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./devops/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks: [tfakkarni-network]
+    depends_on:
+      prometheus: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512M } } }
+
+  # ──────────────────────────────────────────────
+  # JENKINS — CI/CD pipelines
+  # ──────────────────────────────────────────────
+  jenkins:
+    container_name: tfakkarni-jenkins
+    build:
+      context: ./devops/jenkins
+      dockerfile: Dockerfile
+    ports:
+      - "8090:8080"
+      - "50000:50000"
+    env_file:
+      - .env
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./devops/jenkins/casc.yaml:/var/jenkins_home/casc.yaml:ro
+    environment:
+      JAVA_OPTS: "-Xmx1024m -Djenkins.install.runSetupWizard=false"
+      CASC_JENKINS_CONFIG: "/var/jenkins_home/casc.yaml"
+    networks: [tfakkarni-network]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/login"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 5
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 2G } } }
+
+volumes:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
+  prometheus_data:
+  grafana_data:
+  jenkins_home:
+
+networks:
+  tfakkarni-network:
+    name: tfakkarni-network
+    driver: bridge

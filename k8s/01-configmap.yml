@@ -1,0 +1,12 @@
+# ============================================================
+# Tfakkarni — ConfigMap (shared environment variables)
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tfakkarni-config
+  namespace: tfakkarni
+data:
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://discovery-service:8761/eureka/"
+  SPRING_CLOUD_CONFIG_URI: "http://config-service:8888"
+  ZIPKIN_ENDPOINT: "http://zipkin:9411/api/v2/spans"

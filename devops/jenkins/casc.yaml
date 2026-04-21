@@ -1,0 +1,133 @@
+jenkins:
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "${DEVOPS_ADMIN_USER}"
+          password: "${DEVOPS_ADMIN_PASSWORD}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  systemMessage: "Welcome to Tfakkarni Jenkins DevOps Server - Automated with JCasC! 🎉"
+  numExecutors: 2
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: false
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope: GLOBAL
+              id: "git-credentials"
+              username: "${GIT_CREDENTIAL_USER}"
+              password: "${GIT_CREDENTIAL_PAT}"
+              description: "GitHub Credentials (PAT)"
+          - usernamePassword:
+              scope: GLOBAL
+              id: "dockerhub-credentials"
+              username: "${DOCKERHUB_USERNAME}"
+              password: "${DOCKERHUB_PASSWORD}"
+              description: "DockerHub Credentials"
+          - string:
+              scope: GLOBAL
+              id: "sonar-token"
+              secret: "${SONARQUBE_TOKEN}"
+              description: "SonarQube Token"
+
+unclassified:
+  sonarGlobalConfiguration:
+    buildWrapperEnabled: true
+    installations:
+      - name: "SonarQube"
+        serverUrl: "http://sonarqube:9000"
+        credentialsId: "sonar-token"
+  
+tool:
+  maven:
+    installations:
+      - name: "Maven-3.9"
+        properties:
+          - installSource:
+              installers:
+                - maven:
+                    id: "3.9.6"
+  nodejs:
+    installations:
+      - name: "NodeJS-20"
+        properties:
+          - installSource:
+              installers:
+                - nodejsInstaller:
+                    id: "20.12.2"
+
+jobs:
+  - script: |
+      def microservices = [
+          'discovery-service': 'tfakkarni/discovery',
+          'config-service': 'tfakkarni/config',
+          'api-gateway': 'tfakkarni/gateway',
+          'user-service': 'tfakkarni/user',
+          'game-service': 'tfakkarni/game',
+          'tracking-service': 'tfakkarni/tracking',
+          'alert-service': 'tfakkarni/alert',
+          'ml-service': 'tfakkarni/ml',
+          'medical-service': 'tfakkarni/medical',
+          'medicament-validation-service': 'tfakkarni/medicament-validation',
+          'iot-service': 'tfakkarni/iot',
+          'assistant-service': 'tfakkarni/assistant',
+          'analytics-service': 'tfakkarni/analytics'
+      ]
+
+      microservices.each { svcKey, svcImage ->
+          pipelineJob('Backend-' + svcKey + '-Pipeline') {
+              parameters {
+                  stringParam('SERVICE_NAME', svcKey, 'Microservice module name')
+                  stringParam('DOCKER_IMAGE', svcImage, 'Target Docker image')
+              }
+              definition {
+                  cpsScm {
+                      scm {
+                          git {
+                              remote {
+                                  url('https://github.com/TechHive-4SAE11/ESPRIT-PI-4SAE11-2026-Tfakkarni.git')
+                                  credentials('git-credentials')
+                              }
+                              branch('main')
+                              extensions {
+                                  pathRestriction {
+                                      includedRegions('backend/' + svcKey + '/.*\\nbackend/pom.xml')
+                                      excludedRegions('')
+                                  }
+                              }
+                          }
+                      }
+                      scriptPath('Jenkinsfile.microservice')
+                  }
+              }
+          }
+      }
+      
+      pipelineJob('Frontend-Pipeline') {
+          definition {
+              cpsScm {
+                  scm {
+                      git {
+                          remote {
+                              url('https://github.com/TechHive-4SAE11/ESPRIT-PI-4SAE11-2026-Tfakkarni.git')
+                              credentials('git-credentials')
+                          }
+                          branch('main')
+                          extensions {
+                              pathRestriction {
+                                  includedRegions("frontend/.*")
+                                  excludedRegions('')
+                              }
+                          }
+                      }
+                  }
+                  scriptPath('Jenkinsfile.frontend')
+              }
+          }
+      }

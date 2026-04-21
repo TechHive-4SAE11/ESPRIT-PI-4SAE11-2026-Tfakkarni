@@ -1,0 +1,125 @@
+// ============================================================
+// Tfakkarni Frontend — CI/CD Pipeline
+// Angular 18 Application
+// ============================================================
+
+pipeline {
+    agent any
+
+    tools {
+        nodejs 'NodeJS-20'  // Configure in Jenkins > Global Tool Configuration
+    }
+
+    environment {
+        DOCKER_HUB_CREDS = credentials('dockerhub-credentials')
+        SONAR_TOKEN      = credentials('sonar-token')
+        DOCKER_REGISTRY  = 'tfakkarni'
+        SONAR_HOST       = 'http://sonarqube:9000'
+    }
+
+    stages {
+        // ── Stage 1: Checkout ──
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo "✅ Code checked out from ${env.GIT_URL} branch ${env.GIT_BRANCH}"
+            }
+        }
+
+        // ── Stage 2: Install Dependencies ──
+        stage('Install Dependencies') {
+            steps {
+                dir('frontend') {
+                    bat 'npm ci --legacy-peer-deps'
+                }
+                echo '✅ Dependencies installed'
+            }
+        }
+
+        // ── Stage 3: Unit Tests + Coverage ──
+        stage('Unit Tests') {
+            steps {
+                dir('frontend') {
+                    bat 'npx ng test --watch=false --browsers=ChromeHeadless --code-coverage'
+                }
+            }
+            post {
+                always {
+                    echo '✅ Frontend unit tests executed with coverage'
+                }
+            }
+        }
+
+        // ── Stage 4: SonarQube Analysis ──
+        stage('SonarQube Analysis') {
+            steps {
+                dir('frontend') {
+                    withSonarQubeEnv('SonarQube') {
+                        bat "npx sonar-scanner -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN}"
+                    }
+                }
+                echo '✅ SonarQube analysis completed'
+            }
+        }
+
+        // ── Stage 5: Quality Gate ──
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: false
+                }
+                echo '✅ Quality gate evaluated'
+            }
+        }
+
+        // ── Stage 6: Build Production ──
+        stage('Build') {
+            steps {
+                dir('frontend') {
+                    bat 'npx ng build --configuration=production'
+                }
+                echo '✅ Production build completed'
+            }
+        }
+
+        // ── Stage 7: Docker Build ──
+        stage('Docker Build') {
+            steps {
+                bat "docker build -f frontend/Dockerfile -t ${DOCKER_REGISTRY}/frontend:latest -t ${DOCKER_REGISTRY}/frontend:${env.BUILD_NUMBER} ."
+                echo '✅ Frontend Docker image built'
+            }
+        }
+
+        // ── Stage 8: Docker Push ──
+        stage('Docker Push') {
+            steps {
+                script {
+                    bat "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
+                    bat "docker push ${DOCKER_REGISTRY}/frontend:latest"
+                    bat "docker push ${DOCKER_REGISTRY}/frontend:${env.BUILD_NUMBER}"
+                }
+                echo '✅ Frontend Docker image pushed to Docker Hub'
+            }
+        }
+
+        // ── Stage 9: Deploy ──
+        stage('Deploy') {
+            steps {
+                bat 'docker-compose -f docker-compose.frontend.yml up -d --remove-orphans'
+                echo '✅ Frontend deployed'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '🎉 Frontend CI/CD Pipeline completed successfully!'
+        }
+        failure {
+            echo '❌ Frontend CI/CD Pipeline failed. Check logs above.'
+        }
+        always {
+            cleanWs()
+        }
+    }
+}

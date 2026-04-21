@@ -18,6 +18,10 @@
 	<properties>
 		<java.version>17</java.version>
 		<spring-cloud.version>2023.0.4</spring-cloud.version>
+		<sonar.projectKey>tfakkarni-backend</sonar.projectKey>
+		<sonar.projectName>Tfakkarni Backend</sonar.projectName>
+		<sonar.host.url>http://localhost:9000</sonar.host.url>
+		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<modules>
 		<module>discovery-service</module>
@@ -76,6 +80,11 @@
 			<groupId>io.zipkin.reporter2</groupId>
 			<artifactId>zipkin-reporter-brave</artifactId>
 		</dependency>
+		<!-- Prometheus metrics exporter for monitoring -->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
 	</dependencies>
 	<build>
 		<pluginManagement>
@@ -86,7 +95,37 @@
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>3.14.0</version>
 				</plugin>
+				<!-- JaCoCo — code coverage reports for SonarQube -->
+				<plugin>
+					<groupId>org.jacoco</groupId>
+					<artifactId>jacoco-maven-plugin</artifactId>
+					<version>0.8.12</version>
+					<executions>
+						<execution>
+							<id>prepare-agent</id>
+							<goals><goal>prepare-agent</goal></goals>
+						</execution>
+						<execution>
+							<id>report</id>
+							<phase>test</phase>
+							<goals><goal>report</goal></goals>
+						</execution>
+					</executions>
+				</plugin>
+				<!-- SonarQube analysis -->
+				<plugin>
+					<groupId>org.sonarsource.scanner.maven</groupId>
+					<artifactId>sonar-maven-plugin</artifactId>
+					<version>3.11.0.3922</version>
+				</plugin>
 			</plugins>
 		</pluginManagement>
+		<!-- Activate JaCoCo for all modules -->
+		<plugins>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
 	</build>
 </project>
