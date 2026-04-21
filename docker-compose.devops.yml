@@ -7,7 +7,7 @@ services:
   sonarqube:
     container_name: tfakkarni-sonarqube
     image: sonarqube:10.7-community
-    ports: ["9000:9000"]
+    ports: ["9095:9000"]
     environment:
       SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
     volumes:
@@ -56,8 +56,8 @@ services:
     image: grafana/grafana:11.1.0
     ports: ["3000:3000"]
     environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: ${DEVOPS_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${DEVOPS_ADMIN_PASSWORD:-admin}
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
       - grafana_data:/var/lib/grafana
@@ -80,13 +80,18 @@ services:
   # ──────────────────────────────────────────────
   jenkins:
     container_name: tfakkarni-jenkins
-    image: jenkins/jenkins:lts-jdk17
+    build:
+      context: ./devops/jenkins
+      dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "8090:8080"
       - "50000:50000"
+    env_file:
+      - .env
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./devops/jenkins/casc.yaml:/var/jenkins_home/casc.yaml:ro
     environment:
       JAVA_OPTS: "-Xmx1024m"
     networks: [tfakkarni-network]
