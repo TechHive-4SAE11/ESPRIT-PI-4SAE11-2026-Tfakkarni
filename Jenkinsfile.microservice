@@ -28,7 +28,9 @@ pipeline {
                 echo "🏗️ Building isolated microservice: ${params.SERVICE_NAME}"
                 dir('backend') {
                     // Use -pl to resolve only this specific module and -am to also make dependencies within reactors, omitting testing on unchanged modules
-                    sh "mvn clean package -pl ${params.SERVICE_NAME} -am -B -Dspring.cloud.config.enabled=false -Deureka.client.enabled=false"
+                    withEnv(['SPRING_CLOUD_CONFIG_ENABLED=false', 'EUREKA_CLIENT_ENABLED=false', 'SPRING_PROFILES_ACTIVE=test']) {
+                        sh "mvn clean package -pl ${params.SERVICE_NAME} -am -B"
+                    }
                 }
                 echo "✅ Target JAR compiled"
             }
