@@ -80,6 +80,7 @@ services:
   # ──────────────────────────────────────────────
   jenkins:
     container_name: tfakkarni-jenkins
+    user: root
     build:
       context: ./devops/jenkins
       dockerfile: Dockerfile
