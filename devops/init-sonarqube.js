@@ -62,7 +62,13 @@ async function createToken(tokenName) {
     });
 
     if (!res.ok) {
-        console.log("Failed with new password:", await res.text());
+        const text = await res.text();
+        if (text.includes('already exists')) {
+            console.log(`✅ Token '${tokenName}' already exists in SonarQube's database!`);
+            console.log(`✅ Retaining the existing token safely in your .env file.`);
+            return null; // Don't wipe the .env token
+        }
+        console.log("Failed with new password:", text);
         // Try with 'admin' in case password change failed
         auth = getAuthHeader('admin', 'admin');
         res = await fetch(`${SONAR_URL}/api/user_tokens/generate?name=${tokenName}`, {
@@ -72,7 +78,13 @@ async function createToken(tokenName) {
     }
 
     if (!res.ok) {
-        console.error('❌ Failed to generate token. Both passwords failed.', await res.text());
+        const text = await res.text();
+        if (text.includes('already exists')) {
+            console.log(`✅ Token '${tokenName}' already exists in SonarQube's database!`);
+            console.log(`✅ Retaining the existing token safely in your .env file.`);
+            return null;
+        }
+        console.error('❌ Failed to generate token. Both passwords failed.', text);
         return null;
     }
     const data = await res.json();

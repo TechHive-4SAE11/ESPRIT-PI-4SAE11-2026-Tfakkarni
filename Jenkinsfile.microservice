@@ -1,0 +1,111 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven-3.9'   // Configure in Jenkins > Global Tool Configuration
+        jdk   'JDK-17'      // Configure in Jenkins > Global Tool Configuration
+    }
+
+    environment {
+        // params.SERVICE_NAME and params.DOCKER_IMAGE are injected via Job DSL parameterized configuration
+        DOCKER_HUB_CREDS = credentials('dockerhub-credentials')  // Configure in Jenkins > Credentials
+        SONAR_TOKEN      = credentials('sonar-token')             // SonarQube token
+        SONAR_HOST       = 'http://sonarqube:9000'
+    }
+
+    stages {
+        // ── Stage 1: Checkout ──
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo "✅ Code checked out from ${env.GIT_URL} branch ${env.GIT_BRANCH}"
+            }
+        }
+
+        // ── Stage 2: Build & Unit Tests ──
+        stage('Build & Test') {
+            steps {
+                echo "🏗️ Building isolated microservice: ${params.SERVICE_NAME}"
+                dir('backend') {
+                    // Use -pl to resolve only this specific module and -am to also make dependencies within reactors, omitting testing on unchanged modules
+                    bat "mvn clean package -pl ${params.SERVICE_NAME} -am -B"
+                }
+                echo "✅ Target JAR compiled"
+            }
+            post {
+                always {
+                    // Publish JUnit test results & Jacoco coverage only for this specific module
+                    junit allowEmptyResults: true, testResults: "backend/${params.SERVICE_NAME}/target/surefire-reports/*.xml"
+                    jacoco(
+                        execPattern: "backend/${params.SERVICE_NAME}/target/jacoco.exec",
+                        classPattern: "backend/${params.SERVICE_NAME}/target/classes",
+                        sourcePattern: "backend/${params.SERVICE_NAME}/src/main/java"
+                    )
+                }
+            }
+        }
+
+        // ── Stage 3: SonarQube Analysis ──
+        stage('SonarQube Analysis') {
+            steps {
+                dir('backend') {
+                    withSonarQubeEnv('SonarQube') {
+                        bat "mvn sonar:sonar -pl ${params.SERVICE_NAME} -am -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN} -B"
+                    }
+                }
+                echo "✅ SonarQube component analysis pushed for ${params.SERVICE_NAME}"
+            }
+        }
+
+        // ── Stage 4: Quality Gate ──
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: false
+                }
+            }
+        }
+
+        // ── Stage 5: Docker Build & Push ──
+        stage('Docker Build & Push') {
+            steps {
+                script {
+                    bat "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
+                    def buildImage = "${params.DOCKER_IMAGE}:${env.BUILD_NUMBER}"
+                    def latestImage = "${params.DOCKER_IMAGE}:latest"
+                    
+                    // Runs from 'backend' context targeting module-specific Dockerfile
+                    bat "docker build -t ${buildImage} -t ${latestImage} -f backend/${params.SERVICE_NAME}/Dockerfile backend/"
+                    
+                    bat "docker push ${buildImage}"
+                    bat "docker push ${latestImage}"
+                }
+                echo "✅ Docker Images tagged and pushed securely"
+            }
+        }
+
+        // ── Stage 6: Update Isolated Container ──
+        stage('Deploy') {
+            steps {
+                script {
+                    // Only start specifically the container linked to the microservice that triggered the build
+                    bat "docker-compose -f docker-compose.backend.yml up -d --no-deps ${params.SERVICE_NAME}"
+                }
+                echo "🚀 ${params.SERVICE_NAME} locally updated & deployed via Compose"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 Microservice CI/CD Pipeline for ${params.SERVICE_NAME} completed successfully!"
+        }
+        failure {
+            echo "❌ Microservice CI/CD Pipeline for ${params.SERVICE_NAME} failed. Review Logs."
+        }
+        always {
+            // Clean up workspace
+            cleanWs()
+        }
+    }
+}
