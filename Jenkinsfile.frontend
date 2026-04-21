@@ -30,7 +30,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir('frontend') {
-                    bat 'npm ci --legacy-peer-deps'
+                    sh 'npm ci --legacy-peer-deps'
                 }
                 echo '✅ Dependencies installed'
             }
@@ -40,7 +40,7 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 dir('frontend') {
-                    bat 'npx ng test --watch=false --browsers=ChromeHeadless --code-coverage'
+                    sh 'npx ng test --watch=false --browsers=ChromeHeadless --code-coverage'
                 }
             }
             post {
@@ -55,7 +55,7 @@ pipeline {
             steps {
                 dir('frontend') {
                     withSonarQubeEnv('SonarQube') {
-                        bat "npx sonar-scanner -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN}"
+                        sh "npx sonar-scanner -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN}"
                     }
                 }
                 echo '✅ SonarQube analysis completed'
@@ -76,7 +76,7 @@ pipeline {
         stage('Build') {
             steps {
                 dir('frontend') {
-                    bat 'npx ng build --configuration=production'
+                    sh 'npx ng build --configuration=production'
                 }
                 echo '✅ Production build completed'
             }
@@ -85,7 +85,7 @@ pipeline {
         // ── Stage 7: Docker Build ──
         stage('Docker Build') {
             steps {
-                bat "docker build -f frontend/Dockerfile -t ${DOCKER_REGISTRY}/frontend:latest -t ${DOCKER_REGISTRY}/frontend:${env.BUILD_NUMBER} ."
+                sh "docker build -f frontend/Dockerfile -t ${DOCKER_REGISTRY}/frontend:latest -t ${DOCKER_REGISTRY}/frontend:${env.BUILD_NUMBER} ."
                 echo '✅ Frontend Docker image built'
             }
         }
@@ -94,9 +94,9 @@ pipeline {
         stage('Docker Push') {
             steps {
                 script {
-                    bat "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
-                    bat "docker push ${DOCKER_REGISTRY}/frontend:latest"
-                    bat "docker push ${DOCKER_REGISTRY}/frontend:${env.BUILD_NUMBER}"
+                    sh "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
+                    sh "docker push ${DOCKER_REGISTRY}/frontend:latest"
+                    sh "docker push ${DOCKER_REGISTRY}/frontend:${env.BUILD_NUMBER}"
                 }
                 echo '✅ Frontend Docker image pushed to Docker Hub'
             }
@@ -105,7 +105,7 @@ pipeline {
         // ── Stage 9: Deploy ──
         stage('Deploy') {
             steps {
-                bat 'docker-compose -f docker-compose.frontend.yml up -d --remove-orphans'
+                sh 'docker-compose -f docker-compose.frontend.yml up -d --remove-orphans'
                 echo '✅ Frontend deployed'
             }
         }

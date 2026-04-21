@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         maven 'Maven-3.9'   // Configure in Jenkins > Global Tool Configuration
-        jdk   'JDK-17'      // Configure in Jenkins > Global Tool Configuration
+
     }
 
     environment {
@@ -28,7 +28,7 @@ pipeline {
                 echo "🏗️ Building isolated microservice: ${params.SERVICE_NAME}"
                 dir('backend') {
                     // Use -pl to resolve only this specific module and -am to also make dependencies within reactors, omitting testing on unchanged modules
-                    bat "mvn clean package -pl ${params.SERVICE_NAME} -am -B"
+                    sh "mvn clean package -pl ${params.SERVICE_NAME} -am -B"
                 }
                 echo "✅ Target JAR compiled"
             }
@@ -50,7 +50,7 @@ pipeline {
             steps {
                 dir('backend') {
                     withSonarQubeEnv('SonarQube') {
-                        bat "mvn sonar:sonar -pl ${params.SERVICE_NAME} -am -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN} -B"
+                        sh "mvn sonar:sonar -pl ${params.SERVICE_NAME} -am -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN} -B"
                     }
                 }
                 echo "✅ SonarQube component analysis pushed for ${params.SERVICE_NAME}"
@@ -70,15 +70,15 @@ pipeline {
         stage('Docker Build & Push') {
             steps {
                 script {
-                    bat "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
+                    sh "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
                     def buildImage = "${params.DOCKER_IMAGE}:${env.BUILD_NUMBER}"
                     def latestImage = "${params.DOCKER_IMAGE}:latest"
                     
                     // Runs from 'backend' context targeting module-specific Dockerfile
-                    bat "docker build -t ${buildImage} -t ${latestImage} -f backend/${params.SERVICE_NAME}/Dockerfile backend/"
+                    sh "docker build -t ${buildImage} -t ${latestImage} -f backend/${params.SERVICE_NAME}/Dockerfile backend/"
                     
-                    bat "docker push ${buildImage}"
-                    bat "docker push ${latestImage}"
+                    sh "docker push ${buildImage}"
+                    sh "docker push ${latestImage}"
                 }
                 echo "✅ Docker Images tagged and pushed securely"
             }
@@ -89,7 +89,7 @@ pipeline {
             steps {
                 script {
                     // Only start specifically the container linked to the microservice that triggered the build
-                    bat "docker-compose -f docker-compose.backend.yml up -d --no-deps ${params.SERVICE_NAME}"
+                    sh "docker-compose -f docker-compose.backend.yml up -d --no-deps ${params.SERVICE_NAME}"
                 }
                 echo "🚀 ${params.SERVICE_NAME} locally updated & deployed via Compose"
             }
