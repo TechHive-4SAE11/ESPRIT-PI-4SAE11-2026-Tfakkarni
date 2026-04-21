@@ -10,7 +10,7 @@ services:
         API_BASE_URL: http://localhost:9090
         KEYCLOAK_URL: https://lemur-12.cloud-iam.com/auth
         KEYCLOAK_CLIENT_ID: tfakkarni-frontend-docker
-    image: tfakkarni/frontend:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:frontend
     ports:
       - "18080:80"
     networks:

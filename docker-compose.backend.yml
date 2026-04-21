@@ -5,7 +5,7 @@ services:
   discovery-service:
     container_name: tfakkarni-discovery
     build: { context: ./backend, dockerfile: discovery-service/Dockerfile }
-    image: tfakkarni/discovery:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:discovery
     environment:
       EUREKA_INSTANCE_HOSTNAME: discovery-service
     ports: ["8780:8761"]
@@ -22,7 +22,7 @@ services:
   config-service:
     container_name: tfakkarni-config
     build: { context: ./backend, dockerfile: config-service/Dockerfile }
-    image: tfakkarni/config:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:config
     env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
@@ -43,7 +43,7 @@ services:
   api-gateway:
     container_name: tfakkarni-gateway
     build: { context: ./backend, dockerfile: api-gateway/Dockerfile }
-    image: tfakkarni/gateway:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:gateway
     env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
@@ -65,7 +65,7 @@ services:
   user-service:
     container_name: tfakkarni-user
     build: { context: ./backend, dockerfile: user-service/Dockerfile }
-    image: tfakkarni/user:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:user
     env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
@@ -86,7 +86,7 @@ services:
   game-service:
     container_name: tfakkarni-game
     build: { context: ./backend, dockerfile: game-service/Dockerfile }
-    image: tfakkarni/game:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:game
     env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
@@ -107,7 +107,7 @@ services:
   medical-service:
     container_name: tfakkarni-medical
     build: { context: ./backend, dockerfile: medical-service/Dockerfile }
-    image: tfakkarni/medical:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:medical
     env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
@@ -128,7 +128,7 @@ services:
   alert-service:
     container_name: tfakkarni-alert
     build: { context: ./backend, dockerfile: alert-service/Dockerfile }
-    image: tfakkarni/alert:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:alert
     env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
@@ -149,7 +149,7 @@ services:
   tracking-service:
     container_name: tfakkarni-tracking
     build: { context: ./backend, dockerfile: tracking-service/Dockerfile }
-    image: tfakkarni/tracking:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:tracking
     env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
@@ -170,7 +170,7 @@ services:
   ml-service:
     container_name: tfakkarni-ml
     build: { context: ./backend, dockerfile: ml-service/Dockerfile }
-    image: tfakkarni/ml:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:ml
     env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
@@ -191,7 +191,7 @@ services:
   medicament-validation-service:
     container_name: tfakkarni-medicament-validation
     build: { context: ./backend, dockerfile: medicament-validation-service/Dockerfile }
-    image: tfakkarni/medicament-validation:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:medicament-validation
     env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
@@ -212,7 +212,7 @@ services:
   iot-service:
     container_name: tfakkarni-iot
     build: { context: ./backend, dockerfile: iot-service/Dockerfile }
-    image: tfakkarni/iot:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:iot
     env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
@@ -233,7 +233,7 @@ services:
   assistant-service:
     container_name: tfakkarni-assistant
     build: { context: ./backend, dockerfile: assistant-service/Dockerfile }
-    image: tfakkarni/assistant:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:assistant
     env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
@@ -255,7 +255,7 @@ services:
   analytics-service:
     container_name: tfakkarni-analytics
     build: { context: ./backend, dockerfile: analytics-service/Dockerfile }
-    image: tfakkarni/analytics:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:analytics
     env_file: [.env]
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
@@ -294,7 +294,7 @@ services:
     build:
       context: .
       dockerfile: iot/Dockerfile
-    image: tfakkarni/iot-streamer:latest
+    image: ${DOCKERHUB_USERNAME:-thelime1}/tfakkarni:iot-streamer
     environment:
       MOCK_GPS: "true"
       MOCK_BPM: "true"

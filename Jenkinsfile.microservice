@@ -57,8 +57,13 @@ pipeline {
             steps {
                 script {
                     sh "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
-                    def buildImage = "${params.DOCKER_IMAGE}:${env.BUILD_NUMBER}"
-                    def latestImage = "${params.DOCKER_IMAGE}:latest"
+                    
+                    // Convert 'tfakkarni/game' to 'thelime1/tfakkarni:game'
+                    def moduleTag = params.DOCKER_IMAGE.replace('tfakkarni/', '')
+                    def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
+                    
+                    def buildImage = "${baseRepo}:${moduleTag}-${env.BUILD_NUMBER}"
+                    def latestImage = "${baseRepo}:${moduleTag}"
                     
                     // Runs from 'backend' context targeting module-specific Dockerfile
                     sh "docker build -t ${buildImage} -t ${latestImage} -f backend/${params.SERVICE_NAME}/Dockerfile backend/"

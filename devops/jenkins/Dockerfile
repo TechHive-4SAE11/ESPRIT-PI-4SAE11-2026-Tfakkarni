@@ -3,10 +3,11 @@ FROM jenkins/jenkins:lts-jdk17
 # Switch to root to install system packages
 USER root
 
-# Install Docker CLI and Docker Compose
+# Install Docker CLI and Docker Compose, and configure Git safe directory
 RUN apt-get update && \
     apt-get install -y docker.io docker-compose && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    git config --global --add safe.directory '*'
 
 # Switch back to the jenkins user
 USER jenkins

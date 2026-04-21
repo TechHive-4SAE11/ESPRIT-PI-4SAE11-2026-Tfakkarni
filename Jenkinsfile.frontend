@@ -75,7 +75,10 @@ pipeline {
         // ── Stage 7: Docker Build ──
         stage('Docker Build') {
             steps {
-                sh "docker build -f frontend/Dockerfile -t ${DOCKER_REGISTRY}/frontend:latest -t ${DOCKER_REGISTRY}/frontend:${env.BUILD_NUMBER} ."
+                script {
+                    def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
+                    sh "docker build -f frontend/Dockerfile -t ${baseRepo}:frontend -t ${baseRepo}:frontend-${env.BUILD_NUMBER} ."
+                }
                 echo '✅ Frontend Docker image built'
             }
         }
@@ -84,9 +87,10 @@ pipeline {
         stage('Docker Push') {
             steps {
                 script {
+                    def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
                     sh "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
-                    sh "docker push ${DOCKER_REGISTRY}/frontend:latest"
-                    sh "docker push ${DOCKER_REGISTRY}/frontend:${env.BUILD_NUMBER}"
+                    sh "docker push ${baseRepo}:frontend"
+                    sh "docker push ${baseRepo}:frontend-${env.BUILD_NUMBER}"
                 }
                 echo '✅ Frontend Docker image pushed to Docker Hub'
             }
