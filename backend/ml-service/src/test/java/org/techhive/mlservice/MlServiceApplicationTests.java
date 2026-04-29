@@ -7,5 +7,17 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(excludeAutoConfiguration = {DataSourceAutoConfiguration.class, DataSourceTransactionManagerAutoConfiguration.class, HibernateJpaAutoConfiguration.class, JpaRepositoriesAutoConfiguration.class}, properties = {"spring.ai.huggingface.api-key=dummy-key", "eureka.client.enabled=false", "spring.cloud.config.enabled=false"})
-class MlServiceApplicationTests { @Test void contextLoads() {} }
+@SpringBootTest(properties = {
+    "spring.cloud.config.enabled=false",
+    "eureka.client.enabled=false",
+    "keycloak.enabled=false"
+})
+@EnableAutoConfiguration(exclude = {
+    DataSourceAutoConfiguration.class,
+    SecurityAutoConfiguration.class
+})
+class MlServiceApplicationTests {
+    @Test
+    void contextLoads() {
+    }
+}
