@@ -1,0 +1,26 @@
+package org.techhive.analyticsservice.config;
+
+import feign.RequestInterceptor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+
+/**
+ * Propagates the JWT Bearer token from the current security context
+ * to outgoing Feign client requests, enabling authenticated inter-service calls.
+ */
+@Configuration
+public class FeignClientSecurityConfig {
+
+    @Bean
+    public RequestInterceptor bearerTokenRequestInterceptor() {
+        return requestTemplate -> {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication instanceof JwtAuthenticationToken jwtAuth) {
+                requestTemplate.header("Authorization", "Bearer " + jwtAuth.getToken().getTokenValue());
+            }
+        };
+    }
+}
