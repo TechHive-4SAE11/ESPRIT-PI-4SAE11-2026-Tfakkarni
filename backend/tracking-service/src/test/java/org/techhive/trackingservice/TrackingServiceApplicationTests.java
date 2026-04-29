@@ -7,23 +7,5 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(
-    excludeAutoConfiguration = {
-        DataSourceAutoConfiguration.class,
-        DataSourceTransactionManagerAutoConfiguration.class,
-        HibernateJpaAutoConfiguration.class,
-        JpaRepositoriesAutoConfiguration.class
-    },
-    properties = {
-        "eureka.client.enabled=false",
-        "spring.cloud.config.enabled=false",
-        "spring.cloud.config.fail-fast=false"
-    }
-)
-class TrackingServiceApplicationTests {
-
-    @Test
-    void contextLoads() {
-    }
-
-}
+@SpringBootTest(excludeAutoConfiguration = {DataSourceAutoConfiguration.class, DataSourceTransactionManagerAutoConfiguration.class, HibernateJpaAutoConfiguration.class, JpaRepositoriesAutoConfiguration.class}, properties = {"eureka.client.enabled=false", "spring.cloud.config.enabled=false", "spring.cloud.config.fail-fast=false"})
+class TrackingServiceApplicationTests { @Test void contextLoads() {} }
