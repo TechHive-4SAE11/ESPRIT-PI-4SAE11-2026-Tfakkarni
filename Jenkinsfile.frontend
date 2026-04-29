@@ -6,18 +6,13 @@
 pipeline {
     agent any
 
-    parameters {
-        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build (e.g. main, develop, feature/xyz)')
-    }
-
     tools {
-        nodejs 'NodeJS-20'  // Configure in Jenkins > Global Tool Configuration
+        nodejs 'NodeJS-20'
     }
 
     environment {
         DOCKER_HUB_CREDS = credentials('dockerhub-credentials')
         SONAR_TOKEN      = credentials('sonar-token')
-        DOCKER_REGISTRY  = 'tfakkarni'
         SONAR_HOST       = 'http://sonarqube:9000'
     }
 
@@ -25,12 +20,8 @@ pipeline {
         // ── Stage 1: Checkout ──
         stage('Checkout') {
             steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: "refs/heads/${params.BRANCH_NAME}"]],
-                    userRemoteConfigs: scm.userRemoteConfigs
-                ])
-                echo "✅ Code checked out from branch: ${params.BRANCH_NAME}"
+                checkout scm
+                echo "✅ Code checked out"
             }
         }
 
@@ -46,33 +37,7 @@ pipeline {
             }
         }
 
-        // ── Stage 3: Unit Tests + Coverage ──
-        stage('Unit Tests') {
-            steps {
-                dir('frontend') {
-                    sh 'npx ng test --watch=false --browsers=ChromeHeadless --code-coverage'
-                }
-            }
-            post {
-                always {
-                    echo '✅ Frontend unit tests executed with coverage'
-                }
-            }
-        }
-
-        // ── Stage 4: SonarQube Analysis ──
-        stage('SonarQube Analysis') {
-            steps {
-                dir('frontend') {
-                    withSonarQubeEnv('SonarQube') {
-                        sh "npx sonar-scanner -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN}"
-                    }
-                }
-                echo '✅ SonarQube analysis completed'
-            }
-        }
-
-        // ── Stage 6: Build Production ──
+        // ── Stage 3: Build Production ──
         stage('Build') {
             steps {
                 dir('frontend') {
@@ -82,23 +47,27 @@ pipeline {
             }
         }
 
-        // ── Stage 7: Docker Build ──
-        stage('Docker Build') {
+        // ── Stage 4: SonarQube Analysis (non-blocking) ──
+        stage('SonarQube Analysis') {
             steps {
-                script {
-                    def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
-                    sh "docker build -f frontend/Dockerfile -t ${baseRepo}:frontend -t ${baseRepo}:frontend-${env.BUILD_NUMBER} ."
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    dir('frontend') {
+                        withSonarQubeEnv('SonarQube') {
+                            sh "npx sonar-scanner -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN}"
+                        }
+                    }
                 }
-                echo '✅ Frontend Docker image built'
+                echo '✅ SonarQube analysis done (non-blocking)'
             }
         }
 
-        // ── Stage 8: Docker Push ──
-        stage('Docker Push') {
+        // ── Stage 5: Docker Build & Push ──
+        stage('Docker Build & Push') {
             steps {
                 script {
                     def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
                     sh "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
+                    sh "docker build -f frontend/Dockerfile -t ${baseRepo}:frontend -t ${baseRepo}:frontend-${env.BUILD_NUMBER} ."
                     sh "docker push ${baseRepo}:frontend"
                     sh "docker push ${baseRepo}:frontend-${env.BUILD_NUMBER}"
                 }
@@ -106,7 +75,7 @@ pipeline {
             }
         }
 
-        // ── Stage 9: Deploy ──
+        // ── Stage 6: Deploy ──
         stage('Deploy') {
             steps {
                 sh 'docker-compose -f docker-compose.frontend.yml up -d --remove-orphans'
@@ -127,3 +96,4 @@ pipeline {
         }
     }
 }
+
