@@ -1,11 +1,19 @@
 package org.techhive.userservice;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(excludeAutoConfiguration = {DataSourceAutoConfiguration.class, DataSourceTransactionManagerAutoConfiguration.class, HibernateJpaAutoConfiguration.class, JpaRepositoriesAutoConfiguration.class}, properties = {"eureka.client.enabled=false", "spring.cloud.config.enabled=false", "spring.cloud.config.fail-fast=false"})
-class UserServiceApplicationTests { @Test void contextLoads() {} }
+@SpringBootTest(properties = {
+    "eureka.client.enabled=false",
+    "spring.cloud.config.enabled=false",
+    "spring.autoconfigure.exclude=" +
+        "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
+        "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration"
+})
+class UserServiceApplicationTests {
+
+    @Test
+    void contextLoads() {
+    }
+
+}
