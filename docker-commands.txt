@@ -63,7 +63,7 @@ docker compose -f docker-compose.frontend.yml up -d --build
 # Config Server:      http://localhost:18888
 # Jenkins:            http://localhost:8090 (admin / AdminTfakkarni123!)
 # SonarQube:          http://localhost:9095 (admin / AdminTfakkarni123!)
-# Grafana:            http://localhost:3000 (admin / AdminTfakkarni123!)
+# Grafana:            http://localhost:8500 (admin / AdminTfakkarni123!)
 # Prometheus:         http://localhost:9091
 
 # ============================================================
