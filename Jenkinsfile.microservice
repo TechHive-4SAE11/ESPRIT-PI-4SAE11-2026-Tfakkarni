@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build (e.g. main, develop, feature/xyz)')
+    }
+
     tools {
         maven 'Maven-3.9'   // Configure in Jenkins > Global Tool Configuration
 
@@ -17,8 +21,12 @@ pipeline {
         // ── Stage 1: Checkout ──
         stage('Checkout') {
             steps {
-                checkout scm
-                echo "✅ Code checked out from ${env.GIT_URL} branch ${env.GIT_BRANCH}"
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "refs/heads/${params.BRANCH_NAME}"]],
+                    userRemoteConfigs: scm.userRemoteConfigs
+                ])
+                echo "✅ Code checked out from branch: ${params.BRANCH_NAME}"
             }
         }
 
