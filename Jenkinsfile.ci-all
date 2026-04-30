@@ -1,0 +1,67 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven-3.9'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo '✅ Repository checked out'
+            }
+        }
+
+        stage('CI - Backend Services (ordered)') {
+            steps {
+                script {
+                    def services = [
+                        'discovery-service',
+                        'config-service',
+                        'api-gateway',
+                        'user-service',
+                        'game-service',
+                        'tracking-service',
+                        'alert-service',
+                        'ml-service',
+                        'medical-service',
+                        'medicament-validation-service',
+                        'iot-service',
+                        'assistant-service',
+                        'analytics-service'
+                    ]
+
+                    for (svc in services) {
+                        echo "\n--- CI: ${svc} ---"
+                        dir('backend') {
+                            sh "mvn clean package -pl ${svc} -am -B"
+                        }
+                        junit allowEmptyResults: true, testResults: "backend/${svc}/target/surefire-reports/*.xml"
+                    }
+                }
+            }
+        }
+
+        stage('CI - Frontend') {
+            steps {
+                dir('frontend') {
+                    sh 'pnpm install --silent'
+                    sh 'npx ng build --configuration=production'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '🎉 CI for all services completed successfully.'
+        }
+        failure {
+            echo '❌ CI failed for one or more services. Check logs.'
+        }
+        always {
+            deleteDir()
+        }
+    }
+}
