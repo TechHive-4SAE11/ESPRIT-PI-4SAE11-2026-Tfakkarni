@@ -1,8 +1,15 @@
+// ============================================================
+// Jenkinsfile.ci - Continuous Integration
+// Déclenché sur: git push (toutes les branches)
+// Exécute: Build + Tests + SonarQube
+// ============================================================
+
 pipeline {
     agent any
 
     parameters {
-        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build (e.g. main, develop, feature/xyz)')
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
+        string(name: 'SERVICE_NAME', defaultValue: 'user-service', description: 'Service name')
     }
 
     tools {
@@ -10,9 +17,8 @@ pipeline {
     }
 
     environment {
-        DOCKER_HUB_CREDS = credentials('dockerhub-credentials')
-        SONAR_TOKEN      = credentials('sonar-token')
-        SONAR_HOST       = 'http://sonarqube:9000'
+        SONAR_TOKEN = credentials('sonar-token')
+        SONAR_HOST  = 'http://sonarqube:9000'
     }
 
     stages {
@@ -23,11 +29,10 @@ pipeline {
                     branches: [[name: "refs/heads/${params.BRANCH_NAME}"]],
                     userRemoteConfigs: scm.userRemoteConfigs
                 ])
-                echo "✅ Code checked out"
+                echo "✅ Code checked out from: ${params.BRANCH_NAME}"
             }
         }
 
-        // ⭐ NOUVEAU : Créer le fichier de test pour éviter les erreurs Keycloak
         stage('Prepare Test Config') {
             steps {
                 script {
@@ -40,11 +45,9 @@ spring:
     exclude:
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-
 eureka:
   client:
     enabled: false
-
 keycloak:
   enabled: false
   server-url: http://localhost:8080
@@ -60,7 +63,6 @@ keycloak:
             steps {
                 echo "🏗️ Building: ${params.SERVICE_NAME}"
                 dir('backend') {
-                    // ⭐ MODIFICATION : Ajout des propriétés pour désactiver Keycloak
                     sh """
                         mvn clean package -pl ${params.SERVICE_NAME} -am -B \
                           -DskipTests \
@@ -68,8 +70,13 @@ keycloak:
                           -Dkeycloak.enabled=false \
                           -Dspring.cloud.config.enabled=false
                     """
+                    sh """
+                        mvn test -pl ${params.SERVICE_NAME} -B \
+                          -Dspring.profiles.active=test \
+                          -Dkeycloak.enabled=false
+                    """
                 }
-                echo "✅ Build completed"
+                echo "✅ Build and tests completed"
             }
             post {
                 always {
@@ -85,47 +92,17 @@ keycloak:
                         sh "mvn sonar:sonar -pl ${params.SERVICE_NAME} -am -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN} -B"
                     }
                 }
-                echo "✅ SonarQube done"
-            }
-        }
-
-        stage('Docker Build & Push') {
-            steps {
-                script {
-                    sh "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
-                    
-                    def moduleTag = params.DOCKER_IMAGE.replace('tfakkarni/', '')
-                    def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
-                    
-                    def buildImage = "${baseRepo}:${moduleTag}-${env.BUILD_NUMBER}"
-                    def latestImage = "${baseRepo}:${moduleTag}"
-                    
-                    sh "docker build -t ${buildImage} -t ${latestImage} -f backend/${params.SERVICE_NAME}/Dockerfile backend/"
-                    
-                    sh "docker push ${buildImage}"
-                    sh "docker push ${latestImage}"
-                }
-                echo "✅ Docker images pushed"
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                script {
-                    sh "docker-compose -f docker-compose.backend.yml up -d --no-deps ${params.SERVICE_NAME}"
-                    sleep 5
-                }
-                echo "🚀 ${params.SERVICE_NAME} deployed"
+                echo "✅ SonarQube analysis completed"
             }
         }
     }
 
     post {
         success {
-            echo "🎉 Pipeline for ${params.SERVICE_NAME} completed successfully!"
+            echo "🎉 CI Pipeline for ${params.SERVICE_NAME} completed successfully!"
         }
         failure {
-            echo "❌ Pipeline for ${params.SERVICE_NAME} failed. Review Logs."
+            echo "❌ CI Pipeline for ${params.SERVICE_NAME} failed."
         }
         always {
             deleteDir()

@@ -1,0 +1,113 @@
+// ============================================================
+// Jenkinsfile.cd - Continuous Deployment
+// Déclenché sur: success du CI + branche main
+// Exécute: Docker Build + Push + Deploy
+// ============================================================
+
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'SERVICE_NAME', defaultValue: 'user-service', description: 'Service name')
+        string(name: 'DOCKER_IMAGE', defaultValue: 'tfakkarni/user', description: 'Docker image name')
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'staging', 'production'], description: 'Environment')
+    }
+
+    environment {
+        DOCKER_HUB_CREDS = credentials('dockerhub-credentials')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "main"]],
+                    userRemoteConfigs: scm.userRemoteConfigs
+                ])
+                echo "✅ Code checked out from main"
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                script {
+                    sh "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
+                    
+                    def moduleTag = params.DOCKER_IMAGE.replace('tfakkarni/', '')
+                    def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
+                    
+                    def buildImage = "${baseRepo}:${moduleTag}-${env.BUILD_NUMBER}"
+                    def latestImage = "${baseRepo}:${moduleTag}"
+                    def envImage = "${baseRepo}:${moduleTag}-${params.ENVIRONMENT}"
+                    
+                    sh "docker build -t ${buildImage} -t ${latestImage} -t ${envImage} -f backend/${params.SERVICE_NAME}/Dockerfile backend/"
+                    
+                    sh "docker push ${buildImage}"
+                    sh "docker push ${latestImage}"
+                    sh "docker push ${envImage}"
+                }
+                echo "✅ Docker images built and pushed"
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    // Déployer selon l'environnement
+                    if (params.ENVIRONMENT == 'dev') {
+                        sh "docker-compose -f docker-compose.dev.yml up -d --no-deps ${params.SERVICE_NAME}"
+                    } else if (params.ENVIRONMENT == 'staging') {
+                        sh "docker-compose -f docker-compose.staging.yml up -d --no-deps ${params.SERVICE_NAME}"
+                    } else {
+                        sh "docker-compose -f docker-compose.prod.yml up -d --no-deps ${params.SERVICE_NAME}"
+                    }
+                    sleep 10
+                    sh "docker ps --filter name=${params.SERVICE_NAME}"
+                }
+                echo "🚀 ${params.SERVICE_NAME} deployed to ${params.ENVIRONMENT}"
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                script {
+                    def port = getServicePort(params.SERVICE_NAME)
+                    sh "curl --fail --retry 3 --retry-delay 5 http://localhost:${port}/actuator/health"
+                }
+                echo "✅ Health check passed"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 CD Pipeline for ${params.SERVICE_NAME} completed successfully!"
+        }
+        failure {
+            echo "❌ CD Pipeline for ${params.SERVICE_NAME} failed."
+        }
+        always {
+            deleteDir()
+        }
+    }
+}
+
+def getServicePort(serviceName) {
+    def ports = [
+        'config-service': 8888,
+        'discovery-service': 8761,
+        'api-gateway': 9090,
+        'user-service': 18081,
+        'game-service': 18082,
+        'medical-service': 18083,
+        'alert-service': 18084,
+        'assistant-service': 18089,
+        'analytics-service': 18086,
+        'iot-service': 18087,
+        'ml-service': 18088,
+        'tracking-service': 18090,
+        'medicament-validation-service': 18091
+    ]
+    return ports.get(serviceName, 8080)
+}

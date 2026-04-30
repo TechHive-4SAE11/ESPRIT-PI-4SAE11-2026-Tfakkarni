@@ -1,13 +1,14 @@
 // ============================================================
-// Tfakkarni Frontend — CI/CD Pipeline
+// Tfakkarni Frontend — CI Pipeline
 // Angular 18 Application
+// Déclenché sur: git push (toutes les branches)
 // ============================================================
 
 pipeline {
     agent any
 
     parameters {
-        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build (e.g. main, develop, feature/xyz)')
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
     }
 
     tools {
@@ -15,11 +16,8 @@ pipeline {
     }
 
     environment {
-        DOCKER_HUB_CREDS = credentials('dockerhub-credentials')
-        SONAR_TOKEN      = credentials('sonar-token')
-        DOCKER_REGISTRY  = 'tfakkarni'
-        SONAR_HOST       = 'http://sonarqube:9000'
-        // ⭐ AJOUT : Désactiver les logs inutiles
+        SONAR_TOKEN = credentials('sonar-token')
+        SONAR_HOST  = 'http://sonarqube:9000'
         CI = 'true'
         NG_CLI_ANALYTICS = 'false'
     }
@@ -32,21 +30,16 @@ pipeline {
                     branches: [[name: "refs/heads/${params.BRANCH_NAME}"]],
                     userRemoteConfigs: scm.userRemoteConfigs
                 ])
-                echo "✅ Code checked out from branch: ${params.BRANCH_NAME}"
+                echo "✅ Code checked out from: ${params.BRANCH_NAME}"
             }
         }
 
-        // ⭐ MODIFICATION : Installer les dépendances de manière plus robuste
         stage('Install Dependencies') {
             steps {
                 dir('frontend') {
                     script {
-                        // Supprimer node_modules et package-lock.json en cas d'échec
-                        sh '''
-                            rm -rf node_modules package-lock.json
-                            npm cache clean --force
-                        '''
-                        // Installer avec timeout
+                        sh 'rm -rf node_modules package-lock.json'
+                        sh 'npm cache clean --force'
                         timeout(time: 10, unit: 'MINUTES') {
                             sh 'npm install --legacy-peer-deps'
                         }
@@ -56,7 +49,6 @@ pipeline {
             }
         }
 
-        // ⭐ MODIFICATION : Tests avec retry et timeout
         stage('Unit Tests') {
             steps {
                 dir('frontend') {
@@ -70,7 +62,6 @@ pipeline {
             post {
                 always {
                     junit testResults: 'frontend/test-results/**/*.xml', allowEmptyResults: true
-                    echo '✅ Frontend unit tests executed'
                 }
             }
         }
@@ -104,45 +95,14 @@ pipeline {
                 echo '✅ Production build completed'
             }
         }
-
-        stage('Docker Build') {
-            steps {
-                script {
-                    def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
-                    sh "docker build -f frontend/Dockerfile -t ${baseRepo}:frontend -t ${baseRepo}:frontend-${env.BUILD_NUMBER} ."
-                }
-                echo '✅ Docker image built'
-            }
-        }
-
-        stage('Docker Push') {
-            steps {
-                script {
-                    def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
-                    sh """
-                        echo ${DOCKER_HUB_CREDS_PSW} | docker login -u ${DOCKER_HUB_CREDS_USR} --password-stdin
-                        docker push ${baseRepo}:frontend
-                        docker push ${baseRepo}:frontend-${env.BUILD_NUMBER}
-                    """
-                }
-                echo '✅ Docker image pushed'
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                sh 'docker-compose -f docker-compose.frontend.yml up -d --remove-orphans'
-                echo '✅ Frontend deployed'
-            }
-        }
     }
 
     post {
         success {
-            echo '🎉 Frontend CI/CD Pipeline completed successfully!'
+            echo '🎉 Frontend CI Pipeline completed successfully!'
         }
         failure {
-            echo '❌ Frontend CI/CD Pipeline failed. Check logs above.'
+            echo '❌ Frontend CI Pipeline failed. Check logs above.'
         }
         always {
             deleteDir()
