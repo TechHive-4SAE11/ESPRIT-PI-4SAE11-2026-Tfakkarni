@@ -6,6 +6,10 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build (e.g. main, develop, feature/xyz)')
+    }
+
     tools {
         nodejs 'NodeJS-20'
     }
@@ -13,69 +17,118 @@ pipeline {
     environment {
         DOCKER_HUB_CREDS = credentials('dockerhub-credentials')
         SONAR_TOKEN      = credentials('sonar-token')
+        DOCKER_REGISTRY  = 'tfakkarni'
         SONAR_HOST       = 'http://sonarqube:9000'
+        // ⭐ AJOUT : Désactiver les logs inutiles
+        CI = 'true'
+        NG_CLI_ANALYTICS = 'false'
     }
 
     stages {
-        // ── Stage 1: Checkout ──
         stage('Checkout') {
             steps {
-                checkout scm
-                echo "✅ Code checked out"
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "refs/heads/${params.BRANCH_NAME}"]],
+                    userRemoteConfigs: scm.userRemoteConfigs
+                ])
+                echo "✅ Code checked out from branch: ${params.BRANCH_NAME}"
             }
         }
 
-        // ── Stage 2: Install Dependencies ──
+        // ⭐ MODIFICATION : Installer les dépendances de manière plus robuste
         stage('Install Dependencies') {
             steps {
-                retry(3) {
-                    dir('frontend') {
-                        sh 'npm ci --legacy-peer-deps'
+                dir('frontend') {
+                    script {
+                        // Supprimer node_modules et package-lock.json en cas d'échec
+                        sh '''
+                            rm -rf node_modules package-lock.json
+                            npm cache clean --force
+                        '''
+                        // Installer avec timeout
+                        timeout(time: 10, unit: 'MINUTES') {
+                            sh 'npm install --legacy-peer-deps'
+                        }
                     }
                 }
                 echo '✅ Dependencies installed'
             }
         }
 
-        // ── Stage 3: Build Production ──
+        // ⭐ MODIFICATION : Tests avec retry et timeout
+        stage('Unit Tests') {
+            steps {
+                dir('frontend') {
+                    timeout(time: 15, unit: 'MINUTES') {
+                        retry(2) {
+                            sh 'npx ng test --watch=false --browsers=ChromeHeadless --code-coverage --no-progress'
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    junit testResults: 'frontend/test-results/**/*.xml', allowEmptyResults: true
+                    echo '✅ Frontend unit tests executed'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                dir('frontend') {
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                            npx sonar-scanner \
+                                -Dsonar.host.url=${SONAR_HOST} \
+                                -Dsonar.token=${SONAR_TOKEN} \
+                                -Dsonar.projectKey=tfakkarni-frontend \
+                                -Dsonar.sources=src \
+                                -Dsonar.tests=src \
+                                -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+                        """
+                    }
+                }
+                echo '✅ SonarQube analysis completed'
+            }
+        }
+
         stage('Build') {
             steps {
                 dir('frontend') {
-                    sh 'npx ng build --configuration=production'
+                    timeout(time: 10, unit: 'MINUTES') {
+                        sh 'npx ng build --configuration=production --progress=false'
+                    }
                 }
                 echo '✅ Production build completed'
             }
         }
 
-        // ── Stage 4: SonarQube Analysis (non-blocking) ──
-        stage('SonarQube Analysis') {
-            steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    dir('frontend') {
-                        withSonarQubeEnv('SonarQube') {
-                            sh "npx sonar-scanner -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN}"
-                        }
-                    }
-                }
-                echo '✅ SonarQube analysis done (non-blocking)'
-            }
-        }
-
-        // ── Stage 5: Docker Build & Push ──
-        stage('Docker Build & Push') {
+        stage('Docker Build') {
             steps {
                 script {
                     def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
-                    sh "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
                     sh "docker build -f frontend/Dockerfile -t ${baseRepo}:frontend -t ${baseRepo}:frontend-${env.BUILD_NUMBER} ."
-                    sh "docker push ${baseRepo}:frontend"
-                    sh "docker push ${baseRepo}:frontend-${env.BUILD_NUMBER}"
                 }
-                echo '✅ Frontend Docker image pushed to Docker Hub'
+                echo '✅ Docker image built'
             }
         }
 
-        // ── Stage 6: Deploy ──
+        stage('Docker Push') {
+            steps {
+                script {
+                    def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
+                    sh """
+                        echo ${DOCKER_HUB_CREDS_PSW} | docker login -u ${DOCKER_HUB_CREDS_USR} --password-stdin
+                        docker push ${baseRepo}:frontend
+                        docker push ${baseRepo}:frontend-${env.BUILD_NUMBER}
+                    """
+                }
+                echo '✅ Docker image pushed'
+            }
+        }
+
         stage('Deploy') {
             steps {
                 sh 'docker-compose -f docker-compose.frontend.yml up -d --remove-orphans'
@@ -96,4 +149,3 @@ pipeline {
         }
     }
 }
-
