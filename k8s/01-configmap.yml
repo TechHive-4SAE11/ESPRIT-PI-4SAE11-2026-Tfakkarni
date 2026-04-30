@@ -7,6 +7,20 @@ metadata:
   name: tfakkarni-config
   namespace: tfakkarni
 data:
+  # Spring Cloud infra
   EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://discovery-service:8761/eureka/"
   SPRING_CLOUD_CONFIG_URI: "http://config-service:8888"
   ZIPKIN_ENDPOINT: "http://zipkin:9411/api/v2/spans"
+  # Auth
+  KEYCLOAK_URL: "https://lemur-12.cloud-iam.com/auth"
+  # Redis (Upstash — non-sensitive connection info)
+  REDIS_HOST: "primary-vulture-99858.upstash.io"
+  REDIS_PORT: "6379"
+  # Notification targets
+  TELEGRAM_CHAT_ID: "5674590232"
+  MAILTRAP_INBOX_ID: "4413425"
+  # Twilio public identifiers
+  ML_TWILIO_PHONE: "+21627193466"
+  ML_TWILIO_WHATSAPP: "+14155238886"
+  # Feature flags
+  SAFETY_AUDIT_PRESENTATION_DEMO: "false"

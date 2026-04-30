@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: tfakkarni/frontend:latest
+          image: thelime1/tfakkarni:frontend
           ports:
             - containerPort: 80
           resources:

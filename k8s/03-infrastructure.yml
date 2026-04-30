@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: discovery-service
-          image: tfakkarni/discovery:latest
+          image: thelime1/tfakkarni:discovery
           ports:
             - containerPort: 8761
           env:
@@ -83,7 +83,7 @@ spec:
     spec:
       containers:
         - name: config-service
-          image: tfakkarni/config:latest
+          image: thelime1/tfakkarni:config
           ports:
             - containerPort: 8888
           envFrom:
@@ -144,7 +144,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: tfakkarni/gateway:latest
+          image: thelime1/tfakkarni:gateway
           ports:
             - containerPort: 9090
           envFrom:
