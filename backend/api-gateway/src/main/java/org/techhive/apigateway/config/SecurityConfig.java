@@ -35,7 +35,13 @@ public class SecurityConfig {
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:18080",
-        "http://127.0.0.1:18080"));
+        "http://127.0.0.1:18080",
+        "http://localhost:30080",
+        "http://127.0.0.1:30080"));
+    config.setAllowedOriginPatterns(List.of(
+        "https://*.ngrok-free.app",
+        "https://*.ngrok.app",
+        "https://*.ngrok.io"));
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
     config.setAllowedHeaders(
         List.of("Authorization", "Content-Type", "X-User-Id", "Accept", "Origin", "X-Requested-With"));

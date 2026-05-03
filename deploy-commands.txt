@@ -1,0 +1,84 @@
+Tfakkarni deployment commands
+============================
+
+Namespace
+---------
+kubectl get namespaces
+kubectl get all -n tfakkarni
+kubectl get pods -n tfakkarni -o wide
+kubectl get deploy -n tfakkarni -o wide
+kubectl get svc -n tfakkarni -o wide
+
+Deploy or re-apply manifests
+----------------------------
+scripts/deploy-k8s.sh --dry-run=client
+scripts/deploy-k8s.sh
+kubectl apply -f k8s/01-configmap.yml
+kubectl apply -f k8s/03-infrastructure.yml
+kubectl apply -f k8s/04-microservices.yml
+kubectl apply -f k8s/05-frontend.yml
+
+Restart and watch rollouts
+--------------------------
+kubectl -n tfakkarni rollout restart deployment/config-service
+kubectl -n tfakkarni rollout restart deployment/api-gateway
+kubectl -n tfakkarni rollout restart deployment/frontend
+
+kubectl -n tfakkarni rollout status deployment/config-service --timeout=300s
+kubectl -n tfakkarni rollout status deployment/api-gateway --timeout=420s
+kubectl -n tfakkarni rollout status deployment/frontend --timeout=300s
+
+Images
+------
+docker login
+docker build -f backend/config-service/Dockerfile -t thelime1/tfakkarni:config backend
+docker build -f backend/api-gateway/Dockerfile -t thelime1/tfakkarni:gateway backend
+docker build -f frontend/Dockerfile -t thelime1/tfakkarni:frontend .
+docker push thelime1/tfakkarni:config
+docker push thelime1/tfakkarni:gateway
+docker push thelime1/tfakkarni:frontend
+
+kubectl -n tfakkarni set image deployment/config-service config-service=thelime1/tfakkarni:config
+kubectl -n tfakkarni set image deployment/api-gateway api-gateway=thelime1/tfakkarni:gateway
+kubectl -n tfakkarni set image deployment/frontend frontend=thelime1/tfakkarni:frontend
+
+Logs and debugging
+------------------
+kubectl -n tfakkarni logs deploy/config-service --tail=200
+kubectl -n tfakkarni logs deploy/api-gateway --tail=200
+kubectl -n tfakkarni logs deploy/user-service --tail=200
+kubectl -n tfakkarni logs deploy/frontend --tail=200
+
+kubectl -n tfakkarni describe pod -l app=config-service
+kubectl -n tfakkarni describe pod -l app=api-gateway
+kubectl -n tfakkarni describe pod -l app=user-service
+kubectl -n tfakkarni describe pod -l app=frontend
+
+kubectl -n tfakkarni get events --sort-by=.lastTimestamp
+kubectl -n tfakkarni get pods --field-selector=status.phase!=Running
+
+Health checks
+-------------
+NODE_IP="$(kubectl get node kali -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
+curl -i "http://${NODE_IP}:30090/actuator/health"
+curl -i "http://${NODE_IP}:30080/"
+
+Current ngrok and Keycloak client sync
+--------------------------------------
+scripts/sync-keycloak-ngrok-client.sh --dry-run
+scripts/sync-keycloak-ngrok-client.sh
+
+CORS preflight from current ngrok origin
+---------------------------------------
+NGROK_URL="$(scripts/sync-keycloak-ngrok-client.sh --dry-run | awk -F': ' '/^ngrok URL:/{print $2; exit}')"
+NODE_IP="$(kubectl get node kali -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
+curl -i -X OPTIONS "http://${NODE_IP}:30090/api/users/kyc/skip/test" \
+  -H "Origin: ${NGROK_URL}" \
+  -H "Access-Control-Request-Method: PUT" \
+  -H "Access-Control-Request-Headers: content-type,authorization"
+
+Docker Hub pull secret
+----------------------
+scripts/fix-k8s-image-pull-secret.sh
+kubectl -n tfakkarni get secret dockerhub-pull-secret
+kubectl -n tfakkarni get sa default -o jsonpath='{.imagePullSecrets}'
