@@ -1,0 +1,41 @@
+spring:
+  cloud:
+    config:
+      enabled: false
+  datasource:
+    url: jdbc:h2:mem:tracking_service_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+
+eureka:
+  client:
+    enabled: false
+
+mailtrap:
+  token: test-mailtrap-token
+  inbox-id: test-mailtrap-inbox
+
+elevenlabs:
+  api:
+    key: test-elevenlabs-api-key
+
+claude:
+  api-key: test-claude-api-key
+  api-url: http://localhost/claude-test
+  model: test-claude-model
+
+daily:
+  api-key: test-daily-api-key
+  api-url: http://localhost/daily-test
+
+meeting:
+  room-expiry-minutes: 30
+
+telegram:
+  bot-token: test-telegram-bot-token
+  default-chat-id: test-telegram-chat-id

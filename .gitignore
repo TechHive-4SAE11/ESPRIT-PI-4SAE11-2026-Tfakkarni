@@ -1,7 +1,9 @@
 /keycloak
 
 # Environment secrets
+.env
 .env.secret
+ngrok.yml
 
 # IDE
 .idea/
@@ -17,6 +19,8 @@
 **/out/
 
 # Compiled files
+__pycache__/
+*.py[cod]
 *.class
 *.jar
 *.war

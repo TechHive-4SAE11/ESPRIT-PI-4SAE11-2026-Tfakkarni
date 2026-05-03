@@ -24,6 +24,7 @@ spec:
       containers:
         - name: user-service
           image: thelime1/tfakkarni:user
+          imagePullPolicy: Always
           ports:
             - containerPort: 18081
           envFrom:
@@ -38,6 +39,12 @@ spec:
             httpGet: { path: /actuator/health, port: 18081 }
             initialDelaySeconds: 60
             periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 18081 }
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
@@ -73,6 +80,7 @@ spec:
       containers:
         - name: game-service
           image: thelime1/tfakkarni:game
+          imagePullPolicy: Always
           ports:
             - containerPort: 18082
           envFrom:
@@ -87,6 +95,12 @@ spec:
             httpGet: { path: /actuator/health, port: 18082 }
             initialDelaySeconds: 60
             periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 18082 }
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
@@ -122,6 +136,7 @@ spec:
       containers:
         - name: tracking-service
           image: thelime1/tfakkarni:tracking
+          imagePullPolicy: Always
           ports:
             - containerPort: 18083
           envFrom:
@@ -136,6 +151,12 @@ spec:
             httpGet: { path: /actuator/health, port: 18083 }
             initialDelaySeconds: 60
             periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 18083 }
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
@@ -171,6 +192,7 @@ spec:
       containers:
         - name: alert-service
           image: thelime1/tfakkarni:alert
+          imagePullPolicy: Always
           ports:
             - containerPort: 18084
           envFrom:
@@ -185,6 +207,12 @@ spec:
             httpGet: { path: /actuator/health, port: 18084 }
             initialDelaySeconds: 60
             periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 18084 }
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
@@ -220,6 +248,7 @@ spec:
       containers:
         - name: ml-service
           image: thelime1/tfakkarni:ml
+          imagePullPolicy: Always
           ports:
             - containerPort: 18085
           envFrom:
@@ -234,6 +263,12 @@ spec:
             httpGet: { path: /actuator/health, port: 18085 }
             initialDelaySeconds: 60
             periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 18085 }
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
@@ -269,6 +304,7 @@ spec:
       containers:
         - name: medical-service
           image: thelime1/tfakkarni:medical
+          imagePullPolicy: Always
           ports:
             - containerPort: 18086
           envFrom:
@@ -283,6 +319,12 @@ spec:
             httpGet: { path: /actuator/health, port: 18086 }
             initialDelaySeconds: 60
             periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 18086 }
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
@@ -318,6 +360,7 @@ spec:
       containers:
         - name: medicament-validation-service
           image: thelime1/tfakkarni:medicament-validation
+          imagePullPolicy: Always
           ports:
             - containerPort: 18087
           envFrom:
@@ -332,6 +375,12 @@ spec:
             httpGet: { path: /actuator/health, port: 18087 }
             initialDelaySeconds: 60
             periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 18087 }
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
@@ -367,6 +416,7 @@ spec:
       containers:
         - name: iot-service
           image: thelime1/tfakkarni:iot
+          imagePullPolicy: Always
           ports:
             - containerPort: 18088
           envFrom:
@@ -381,6 +431,12 @@ spec:
             httpGet: { path: /actuator/health, port: 18088 }
             initialDelaySeconds: 60
             periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 18088 }
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
@@ -416,6 +472,7 @@ spec:
       containers:
         - name: assistant-service
           image: thelime1/tfakkarni:assistant
+          imagePullPolicy: Always
           ports:
             - containerPort: 18089
           envFrom:
@@ -433,6 +490,12 @@ spec:
             httpGet: { path: /actuator/health, port: 18089 }
             initialDelaySeconds: 60
             periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 18089 }
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
@@ -468,6 +531,7 @@ spec:
       containers:
         - name: analytics-service
           image: thelime1/tfakkarni:analytics
+          imagePullPolicy: Always
           ports:
             - containerPort: 18090
           envFrom:
@@ -482,6 +546,12 @@ spec:
             httpGet: { path: /actuator/health, port: 18090 }
             initialDelaySeconds: 60
             periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 18090 }
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service

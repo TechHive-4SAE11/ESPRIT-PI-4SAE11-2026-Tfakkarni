@@ -11,6 +11,13 @@ medicament:
   scheduler:
     enabled: false
     load-on-startup: false
+    refresh-cron: "0 0 3 * * *"
+
+openfda:
+  api:
+    base-url: http://localhost/openfda-test
+    page-size: 1
+    max-pages: 1
 
 eureka:
   client:

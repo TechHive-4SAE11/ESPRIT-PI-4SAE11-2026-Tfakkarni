@@ -23,17 +23,20 @@ spec:
       containers:
         - name: discovery-service
           image: thelime1/tfakkarni:discovery
+          imagePullPolicy: Always
           ports:
             - containerPort: 8761
           env:
             - name: EUREKA_INSTANCE_HOSTNAME
               value: "discovery-service"
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=60.0"
           resources:
             limits:
-              memory: "512Mi"
+              memory: "768Mi"
               cpu: "500m"
             requests:
-              memory: "256Mi"
+              memory: "384Mi"
               cpu: "200m"
           readinessProbe:
             httpGet:
@@ -84,6 +87,7 @@ spec:
       containers:
         - name: config-service
           image: thelime1/tfakkarni:config
+          imagePullPolicy: Always
           ports:
             - containerPort: 8888
           envFrom:
@@ -91,12 +95,15 @@ spec:
                 name: tfakkarni-config
             - secretRef:
                 name: tfakkarni-secrets
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=60.0"
           resources:
             limits:
-              memory: "512Mi"
+              memory: "768Mi"
               cpu: "500m"
             requests:
-              memory: "256Mi"
+              memory: "384Mi"
               cpu: "200m"
           readinessProbe:
             httpGet:
@@ -145,6 +152,7 @@ spec:
       containers:
         - name: api-gateway
           image: thelime1/tfakkarni:gateway
+          imagePullPolicy: Always
           ports:
             - containerPort: 9090
           envFrom:
@@ -152,13 +160,16 @@ spec:
                 name: tfakkarni-config
             - secretRef:
                 name: tfakkarni-secrets
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=60.0"
           resources:
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "1280Mi"
+              cpu: "750m"
             requests:
-              memory: "256Mi"
-              cpu: "200m"
+              memory: "640Mi"
+              cpu: "250m"
           readinessProbe:
             httpGet:
               path: /actuator/health
@@ -214,6 +225,23 @@ spec:
             limits:
               memory: "256Mi"
               cpu: "300m"
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9411
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9411
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
