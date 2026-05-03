@@ -59,6 +59,8 @@ services:
       GF_SECURITY_ADMIN_USER: ${DEVOPS_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${DEVOPS_ADMIN_PASSWORD:-admin}
       GF_USERS_ALLOW_SIGN_UP: "false"
+      GRAFANA_TELEGRAM_BOT_TOKEN: ${GRAFANA_TELEGRAM_BOT_TOKEN:-}
+      GRAFANA_TELEGRAM_CHAT_ID: ${GRAFANA_TELEGRAM_CHAT_ID:-}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./devops/grafana/provisioning:/etc/grafana/provisioning:ro

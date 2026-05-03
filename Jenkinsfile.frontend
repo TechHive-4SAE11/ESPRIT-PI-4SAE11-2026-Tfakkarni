@@ -13,12 +13,11 @@ pipeline {
     environment {
         DOCKER_HUB_CREDS = credentials('dockerhub-credentials')
         SONAR_TOKEN      = credentials('sonar-token')
-        DOCKER_REGISTRY  = 'tfakkarni'
         SONAR_HOST       = 'http://sonarqube:9000'
+        KUBE_NAMESPACE   = 'tfakkarni'
     }
 
     stages {
-        // ── Stage 1: Checkout ──
         stage('Checkout') {
             steps {
                 checkout scm
@@ -26,22 +25,21 @@ pipeline {
             }
         }
 
-        // ── Stage 2: Install Dependencies ──
         stage('Install Dependencies') {
             steps {
                 retry(3) {
                     dir('frontend') {
-                        sh 'npm ci --legacy-peer-deps'
+                        sh 'pnpm install --frozen-lockfile || npm ci --legacy-peer-deps'
                     }
                 }
                 echo '✅ Dependencies installed'
             }
         }
 
-        // ── Stage 3: Unit Tests + Coverage ──
         stage('Unit Tests') {
             steps {
                 dir('frontend') {
+                    sh 'node scripts/set-env.js'
                     sh 'npx ng test --watch=false --browsers=ChromeHeadless --code-coverage'
                 }
             }
@@ -52,7 +50,6 @@ pipeline {
             }
         }
 
-        // ── Stage 4: SonarQube Analysis ──
         stage('SonarQube Analysis') {
             steps {
                 dir('frontend') {
@@ -64,7 +61,6 @@ pipeline {
             }
         }
 
-        // ── Stage 6: Build Production ──
         stage('Build') {
             steps {
                 dir('frontend') {
@@ -74,35 +70,36 @@ pipeline {
             }
         }
 
-        // ── Stage 7: Docker Build ──
         stage('Docker Build') {
             steps {
                 script {
-                    def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
-                    sh "docker build -f frontend/Dockerfile -t ${baseRepo}:frontend -t ${baseRepo}:frontend-${env.BUILD_NUMBER} ."
+                    env.IMAGE_REPO = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
+                    env.BUILD_IMAGE = "${env.IMAGE_REPO}:frontend-${env.BUILD_NUMBER}"
+                    env.LATEST_IMAGE = "${env.IMAGE_REPO}:frontend"
+                    sh "docker build -f frontend/Dockerfile -t ${env.BUILD_IMAGE} -t ${env.LATEST_IMAGE} ."
                 }
                 echo '✅ Frontend Docker image built'
             }
         }
 
-        // ── Stage 8: Docker Push ──
         stage('Docker Push') {
             steps {
                 script {
-                    def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
-                    sh "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
-                    sh "docker push ${baseRepo}:frontend"
-                    sh "docker push ${baseRepo}:frontend-${env.BUILD_NUMBER}"
+                    sh 'echo "$DOCKER_HUB_CREDS_PSW" | docker login -u "$DOCKER_HUB_CREDS_USR" --password-stdin'
+                    sh "docker push ${env.BUILD_IMAGE}"
+                    sh "docker push ${env.LATEST_IMAGE}"
                 }
                 echo '✅ Frontend Docker image pushed to Docker Hub'
             }
         }
 
-        // ── Stage 9: Deploy ──
-        stage('Deploy') {
+        stage('Deploy to Kubernetes') {
             steps {
-                sh 'docker-compose -f docker-compose.frontend.yml up -d --remove-orphans'
-                echo '✅ Frontend deployed'
+                script {
+                    sh "kubectl -n ${env.KUBE_NAMESPACE} set image deployment/frontend frontend=${env.BUILD_IMAGE}"
+                    sh "kubectl -n ${env.KUBE_NAMESPACE} rollout status deployment/frontend --timeout=180s"
+                }
+                echo "🚀 Frontend deployed to Kubernetes from Docker Hub image ${env.BUILD_IMAGE}"
             }
         }
     }
