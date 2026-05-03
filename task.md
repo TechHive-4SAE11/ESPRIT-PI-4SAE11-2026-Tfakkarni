@@ -77,7 +77,7 @@ docker ps access=permission denied while trying to connect to Docker daemon sock
 - [x] Sync/rebase final branch with latest `upstream/main` before PR. Verified 2026-05-03 18:21 Africa/Tunis: fetched `upstream/main` and `origin/devops-linux-k8s-monitoring-cd`; `upstream/main` is already an ancestor of HEAD, so no rebase was needed.
 - [x] Commit logical chunks. Verified 2026-05-03 18:26 Africa/Tunis: committed backend coverage tests as `de3b913` and devops/Kubernetes stabilization as `7c9ca06`; final tracker/docs commit follows with this checkbox update.
 - [x] Push branch to `origin`. Verified 2026-05-03 18:27 Africa/Tunis: first push to `origin devops/linux-k8s-monitoring-cd` failed with remote `directory file conflict`; retried against existing tracked remote branch using `git push origin HEAD:devops-linux-k8s-monitoring-cd`, then fetched and verified local/origin both at `37f8247`.
-- [ ] Open PR to `upstream/main` if GitHub auth allows.
+- [x] Open PR to `upstream/main` if GitHub auth allows. Verified 2026-05-03 18:28 Africa/Tunis: `gh pr create --repo TechHive-4SAE11/ESPRIT-PI-4SAE11-2026-Tfakkarni --base main --head lime1-agent:devops-linux-k8s-monitoring-cd ...` created PR #78 at https://github.com/TechHive-4SAE11/ESPRIT-PI-4SAE11-2026-Tfakkarni/pull/78; `gh pr view 78` returned state OPEN, base `main`, head `lime1-agent:devops-linux-k8s-monitoring-cd`.
 
 ### Initial inspection / documentation
 - [x] Inspected repo assets: Jenkinsfiles, compose files, k8s manifests, Grafana/Prometheus/Sonar files, game-service tests.
