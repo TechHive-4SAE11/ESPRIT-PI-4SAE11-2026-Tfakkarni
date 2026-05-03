@@ -1,0 +1,111 @@
+// ============================================================
+// Jenkinsfile.ci - Continuous Integration
+// Déclenché sur: git push (toutes les branches)
+// Exécute: Build + Tests + SonarQube
+// ============================================================
+
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
+        string(name: 'SERVICE_NAME', defaultValue: 'user-service', description: 'Service name')
+    }
+
+    tools {
+        maven 'Maven-3.9'
+    }
+
+    environment {
+        SONAR_TOKEN = credentials('sonar-token')
+        SONAR_HOST  = 'http://sonarqube:9000'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "refs/heads/${params.BRANCH_NAME}"]],
+                    userRemoteConfigs: scm.userRemoteConfigs
+                ])
+                echo "✅ Code checked out from: ${params.BRANCH_NAME}"
+            }
+        }
+
+        stage('Prepare Test Config') {
+            steps {
+                script {
+                    writeFile file: "backend/${params.SERVICE_NAME}/src/test/resources/application-test.yml", text: '''
+spring:
+  cloud:
+    config:
+      enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+eureka:
+  client:
+    enabled: false
+keycloak:
+  enabled: false
+  server-url: http://localhost:8080
+  realm: tfakkarni
+  client-id: backend
+  client-secret: dummy-secret
+'''
+                }
+            }
+        }
+
+        stage('Build & Test') {
+            steps {
+                echo "🏗️ Building: ${params.SERVICE_NAME}"
+                dir('backend') {
+                    sh """
+                        mvn clean package -pl ${params.SERVICE_NAME} -am -B \
+                          -DskipTests \
+                          -Dspring.profiles.active=test \
+                          -Dkeycloak.enabled=false \
+                          -Dspring.cloud.config.enabled=false
+                    """
+                    sh """
+                        mvn test -pl ${params.SERVICE_NAME} -B \
+                          -Dspring.profiles.active=test \
+                          -Dkeycloak.enabled=false
+                    """
+                }
+                echo "✅ Build and tests completed"
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true, testResults: "backend/${params.SERVICE_NAME}/target/surefire-reports/*.xml"
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                dir('backend') {
+                    withSonarQubeEnv('SonarQube') {
+                        sh "mvn sonar:sonar -pl ${params.SERVICE_NAME} -am -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN} -B"
+                    }
+                }
+                echo "✅ SonarQube analysis completed"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 CI Pipeline for ${params.SERVICE_NAME} completed successfully!"
+        }
+        failure {
+            echo "❌ CI Pipeline for ${params.SERVICE_NAME} failed."
+        }
+        always {
+            deleteDir()
+        }
+    }
+}

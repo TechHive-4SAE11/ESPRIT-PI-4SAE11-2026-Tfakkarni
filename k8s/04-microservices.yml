@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: tfakkarni/user:latest
+          image: thelime1/tfakkarni:user
           ports:
             - containerPort: 18081
           envFrom:
@@ -72,7 +72,7 @@ spec:
     spec:
       containers:
         - name: game-service
-          image: tfakkarni/game:latest
+          image: thelime1/tfakkarni:game
           ports:
             - containerPort: 18082
           envFrom:
@@ -121,7 +121,7 @@ spec:
     spec:
       containers:
         - name: tracking-service
-          image: tfakkarni/tracking:latest
+          image: thelime1/tfakkarni:tracking
           ports:
             - containerPort: 18083
           envFrom:
@@ -170,7 +170,7 @@ spec:
     spec:
       containers:
         - name: alert-service
-          image: tfakkarni/alert:latest
+          image: thelime1/tfakkarni:alert
           ports:
             - containerPort: 18084
           envFrom:
@@ -219,7 +219,7 @@ spec:
     spec:
       containers:
         - name: ml-service
-          image: tfakkarni/ml:latest
+          image: thelime1/tfakkarni:ml
           ports:
             - containerPort: 18085
           envFrom:
@@ -268,7 +268,7 @@ spec:
     spec:
       containers:
         - name: medical-service
-          image: tfakkarni/medical:latest
+          image: thelime1/tfakkarni:medical
           ports:
             - containerPort: 18086
           envFrom:
@@ -317,7 +317,7 @@ spec:
     spec:
       containers:
         - name: medicament-validation-service
-          image: tfakkarni/medicament-validation:latest
+          image: thelime1/tfakkarni:medicament-validation
           ports:
             - containerPort: 18087
           envFrom:
@@ -366,7 +366,7 @@ spec:
     spec:
       containers:
         - name: iot-service
-          image: tfakkarni/iot:latest
+          image: thelime1/tfakkarni:iot
           ports:
             - containerPort: 18088
           envFrom:
@@ -415,7 +415,7 @@ spec:
     spec:
       containers:
         - name: assistant-service
-          image: tfakkarni/assistant:latest
+          image: thelime1/tfakkarni:assistant
           ports:
             - containerPort: 18089
           envFrom:
@@ -467,7 +467,7 @@ spec:
     spec:
       containers:
         - name: analytics-service
-          image: tfakkarni/analytics:latest
+          image: thelime1/tfakkarni:analytics
           ports:
             - containerPort: 18090
           envFrom:
@@ -494,3 +494,34 @@ spec:
   ports:
     - port: 18090
       targetPort: 18090
+
+---
+# ── IoT Streamer (Python mock — no inbound port) ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iot-streamer
+  namespace: tfakkarni
+  labels:
+    app: iot-streamer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iot-streamer
+  template:
+    metadata:
+      labels:
+        app: iot-streamer
+    spec:
+      containers:
+        - name: iot-streamer
+          image: thelime1/tfakkarni:iot-streamer
+          env:
+            - name: MOCK_GPS
+              value: "true"
+            - name: MOCK_BPM
+              value: "true"
+          resources:
+            limits: { memory: "128Mi", cpu: "200m" }
+            requests: { memory: "64Mi", cpu: "50m" }
