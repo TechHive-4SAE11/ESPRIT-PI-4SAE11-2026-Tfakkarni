@@ -1,24 +1,31 @@
 // ============================================================
-// Jenkinsfile.ci - Continuous Integration
-// Déclenché sur: git push (toutes les branches)
-// Exécute: Build + Tests + SonarQube
+// Jenkinsfile.ci - Backend service Continuous Integration
+// One Jenkins job per backend service uses this parameterized file.
+// CI responsibility: checkout -> build/test -> Sonar -> Docker build -> Docker Hub push.
 // ============================================================
 
 pipeline {
     agent any
 
     parameters {
-        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
-        string(name: 'SERVICE_NAME', defaultValue: 'user-service', description: 'Service name')
+        string(name: 'BRANCH_NAME', defaultValue: 'collab', description: 'Git branch to build')
+        string(name: 'SERVICE_NAME', defaultValue: 'user-service', description: 'Backend Maven module / Kubernetes deployment name')
+        string(name: 'SERVICE_IMAGE_TAG', defaultValue: 'user', description: 'Docker tag prefix used by Kubernetes, e.g. user, gateway, tracking')
+        string(name: 'DOCKER_REPOSITORY', defaultValue: 'thelime1/tfakkarni', description: 'Docker Hub repository used by Kubernetes manifests')
+        booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run Maven tests before publishing image')
+        booleanParam(name: 'RUN_SONAR', defaultValue: true, description: 'Run SonarQube analysis')
     }
 
-    tools {
-        maven 'Maven-3.9'
-    }
+    tools { maven 'Maven-3.9' }
 
     environment {
-        SONAR_TOKEN = credentials('sonar-token')
-        SONAR_HOST  = 'http://sonarqube:9000'
+        DOCKER_HUB_CREDS = credentials('dockerhub-credentials')
+        SONAR_TOKEN      = credentials('sonar-token')
+        SONAR_HOST       = 'http://sonarqube:9000'
+        SPRING_PROFILES_ACTIVE = 'test'
+        SPRING_CLOUD_CONFIG_ENABLED = 'false'
+        EUREKA_CLIENT_ENABLED = 'false'
+        KEYCLOAK_ENABLED = 'false'
     }
 
     stages {
@@ -29,83 +36,106 @@ pipeline {
                     branches: [[name: "refs/heads/${params.BRANCH_NAME}"]],
                     userRemoteConfigs: scm.userRemoteConfigs
                 ])
-                echo "✅ Code checked out from: ${params.BRANCH_NAME}"
+                script {
+                    env.GIT_SHORT_SHA = sh(script: 'git rev-parse --short=8 HEAD', returnStdout: true).trim()
+                    env.IMAGE_BUILD_TAG = "${params.SERVICE_IMAGE_TAG}-${env.BUILD_NUMBER}"
+                    env.IMAGE_COMMIT_TAG = "${params.SERVICE_IMAGE_TAG}-${env.GIT_SHORT_SHA}"
+                    env.IMAGE_LATEST_TAG = "${params.SERVICE_IMAGE_TAG}"
+                    env.IMAGE_BUILD = "${params.DOCKER_REPOSITORY}:${env.IMAGE_BUILD_TAG}"
+                    env.IMAGE_COMMIT = "${params.DOCKER_REPOSITORY}:${env.IMAGE_COMMIT_TAG}"
+                    env.IMAGE_LATEST = "${params.DOCKER_REPOSITORY}:${env.IMAGE_LATEST_TAG}"
+                }
+                echo "✅ Checked out ${params.BRANCH_NAME} for ${params.SERVICE_NAME}"
             }
         }
 
         stage('Prepare Test Config') {
             steps {
-                script {
-                    writeFile file: "backend/${params.SERVICE_NAME}/src/test/resources/application-test.yml", text: '''
-spring:
-  cloud:
-    config:
-      enabled: false
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-eureka:
-  client:
-    enabled: false
-keycloak:
-  enabled: false
-  server-url: http://localhost:8080
-  realm: tfakkarni
-  client-id: backend
-  client-secret: dummy-secret
-'''
-                }
+                sh "mkdir -p backend/${params.SERVICE_NAME}/src/test/resources"
+                writeFile file: "backend/${params.SERVICE_NAME}/src/test/resources/application-test.yml", text: "spring:\n  cloud:\n    config:\n      enabled: false\n  autoconfigure:\n    exclude:\n      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration\n      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration\neureka:\n  client:\n    enabled: false\nkeycloak:\n  enabled: false\n  server-url: http://localhost:8080\n  realm: tfakkarni\n  client-id: backend\n  client-secret: dummy-secret\n"
             }
         }
 
         stage('Build & Test') {
             steps {
-                echo "🏗️ Building: ${params.SERVICE_NAME}"
                 dir('backend') {
-                    sh """
-                        mvn clean package -pl ${params.SERVICE_NAME} -am -B \
-                          -DskipTests \
-                          -Dspring.profiles.active=test \
-                          -Dkeycloak.enabled=false \
-                          -Dspring.cloud.config.enabled=false
-                    """
-                    sh """
-                        mvn test -pl ${params.SERVICE_NAME} -B \
-                          -Dspring.profiles.active=test \
-                          -Dkeycloak.enabled=false
-                    """
+                    script {
+                        if (params.RUN_TESTS) {
+                            sh """
+                                mvn clean package -pl ${params.SERVICE_NAME} -am -B \
+                                  -Dspring.profiles.active=test \
+                                  -Dkeycloak.enabled=false \
+                                  -Dspring.cloud.config.enabled=false
+                            """
+                        } else {
+                            sh """
+                                mvn clean package -pl ${params.SERVICE_NAME} -am -B -DskipTests \
+                                  -Dspring.profiles.active=test \
+                                  -Dkeycloak.enabled=false \
+                                  -Dspring.cloud.config.enabled=false
+                            """
+                        }
+                    }
                 }
-                echo "✅ Build and tests completed"
+                echo "✅ Maven build completed for ${params.SERVICE_NAME}"
             }
-            post {
-                always {
-                    junit allowEmptyResults: true, testResults: "backend/${params.SERVICE_NAME}/target/surefire-reports/*.xml"
-                }
-            }
+            post { always { junit allowEmptyResults: true, testResults: "backend/${params.SERVICE_NAME}/target/surefire-reports/*.xml" } }
         }
 
         stage('SonarQube Analysis') {
+            when { expression { return params.RUN_SONAR } }
             steps {
-                dir('backend') {
-                    withSonarQubeEnv('SonarQube') {
-                        sh "mvn sonar:sonar -pl ${params.SERVICE_NAME} -am -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN} -B"
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    dir('backend') {
+                        withSonarQubeEnv('SonarQube') {
+                            sh """
+                                mvn sonar:sonar -pl ${params.SERVICE_NAME} -am -B \
+                                  -DskipTests \
+                                  -Dsonar.host.url=${SONAR_HOST} \
+                                  -Dsonar.token=${SONAR_TOKEN} \
+                                  -Dsonar.projectKey=tfakkarni-${params.SERVICE_NAME} \
+                                  -Dsonar.projectName='Tfakkarni ${params.SERVICE_NAME}'
+                            """
+                        }
                     }
                 }
-                echo "✅ SonarQube analysis completed"
+                echo "✅ SonarQube analysis completed for ${params.SERVICE_NAME}"
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh """
+                    docker build \
+                      -t ${env.IMAGE_BUILD} \
+                      -t ${env.IMAGE_COMMIT} \
+                      -t ${env.IMAGE_LATEST} \
+                      -f backend/${params.SERVICE_NAME}/Dockerfile backend/
+                """
+                echo "✅ Docker image built: ${env.IMAGE_BUILD}"
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                sh """
+                    set +x
+                    printf '%s' '${DOCKER_HUB_CREDS_PSW}' | docker login -u '${DOCKER_HUB_CREDS_USR}' --password-stdin
+                    set -x
+                    docker push ${env.IMAGE_BUILD}
+                    docker push ${env.IMAGE_COMMIT}
+                    docker push ${env.IMAGE_LATEST}
+                """
+                writeFile file: 'ci-image.properties', text: "SERVICE_NAME=${params.SERVICE_NAME}\nSERVICE_IMAGE_TAG=${params.SERVICE_IMAGE_TAG}\nDOCKER_REPOSITORY=${params.DOCKER_REPOSITORY}\nIMAGE_TAG=${env.IMAGE_BUILD_TAG}\nIMAGE=${env.IMAGE_BUILD}\nGIT_SHORT_SHA=${env.GIT_SHORT_SHA}\n"
+                archiveArtifacts artifacts: 'ci-image.properties', fingerprint: true
+                echo "✅ Published Docker images for ${params.SERVICE_NAME}: ${env.IMAGE_BUILD}, ${env.IMAGE_COMMIT}, ${env.IMAGE_LATEST}"
             }
         }
     }
 
     post {
-        success {
-            echo "🎉 CI Pipeline for ${params.SERVICE_NAME} completed successfully!"
-        }
-        failure {
-            echo "❌ CI Pipeline for ${params.SERVICE_NAME} failed."
-        }
-        always {
-            deleteDir()
-        }
+        success { echo "🎉 CI for ${params.SERVICE_NAME} finished. CD should deploy image tag: ${env.IMAGE_BUILD_TAG}" }
+        failure { echo "❌ CI for ${params.SERVICE_NAME} failed. No CD should run." }
+        always { deleteDir() }
     }
 }
