@@ -76,7 +76,7 @@ docker ps access=permission denied while trying to connect to Docker daemon sock
 - [x] Working branch exists: `devops/linux-k8s-monitoring-cd`.
 - [x] Sync/rebase final branch with latest `upstream/main` before PR. Verified 2026-05-03 18:21 Africa/Tunis: fetched `upstream/main` and `origin/devops-linux-k8s-monitoring-cd`; `upstream/main` is already an ancestor of HEAD, so no rebase was needed.
 - [x] Commit logical chunks. Verified 2026-05-03 18:26 Africa/Tunis: committed backend coverage tests as `de3b913` and devops/Kubernetes stabilization as `7c9ca06`; final tracker/docs commit follows with this checkbox update.
-- [ ] Push branch to `origin`.
+- [x] Push branch to `origin`. Verified 2026-05-03 18:27 Africa/Tunis: first push to `origin devops/linux-k8s-monitoring-cd` failed with remote `directory file conflict`; retried against existing tracked remote branch using `git push origin HEAD:devops-linux-k8s-monitoring-cd`, then fetched and verified local/origin both at `37f8247`.
 - [ ] Open PR to `upstream/main` if GitHub auth allows.
 
 ### Initial inspection / documentation
