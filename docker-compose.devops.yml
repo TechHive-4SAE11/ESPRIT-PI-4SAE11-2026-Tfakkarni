@@ -54,13 +54,17 @@ services:
   grafana:
     container_name: tfakkarni-grafana
     image: grafana/grafana:11.1.0
-    ports: ["3000:3000"]
+    ports: ["8500:3000"]
     environment:
       GF_SECURITY_ADMIN_USER: ${DEVOPS_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${DEVOPS_ADMIN_PASSWORD:-admin}
       GF_USERS_ALLOW_SIGN_UP: "false"
       GRAFANA_TELEGRAM_BOT_TOKEN: ${GRAFANA_TELEGRAM_BOT_TOKEN:-}
       GRAFANA_TELEGRAM_CHAT_ID: ${GRAFANA_TELEGRAM_CHAT_ID:-}
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+      GF_SECURITY_CONTENT_SECURITY_POLICY: "false"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./devops/grafana/provisioning:/etc/grafana/provisioning:ro

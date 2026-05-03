@@ -1,0 +1,94 @@
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_NAME     = 'alert-service'
+        DOCKER_IMAGE_TAG = 'alert'
+        DOCKER_HUB_CREDS = credentials('dockerhub-credentials')
+        SONAR_TOKEN      = credentials('sonar-token')
+        SONAR_HOST       = 'http://sonarqube:9000'
+    }
+
+    tools {
+        maven 'Maven-3.9'
+    }
+
+    stages {
+
+        // ── Stage 1: Checkout ──
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo "✅ Code checked out from branch: ${env.BRANCH_NAME ?: 'collab'}"
+            }
+        }
+
+        // ── Stage 2: Build (tests skipped – require live DB) ──
+        stage('Build') {
+            steps {
+                dir('backend') {
+                    withEnv([
+                        'SPRING_CLOUD_CONFIG_ENABLED=false',
+                        'EUREKA_CLIENT_ENABLED=false',
+                        'SPRING_PROFILES_ACTIVE=test'
+                    ]) {
+                        sh "mvn clean package -pl ${SERVICE_NAME} -am -B -DskipTests"
+                    }
+                }
+                echo "✅ alert-service JAR compiled successfully"
+            }
+        }
+
+        // ── Stage 3: SonarQube Analysis ──
+        stage('SonarQube Analysis') {
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    dir('backend') {
+                        withSonarQubeEnv('SonarQube') {
+                            sh "mvn sonar:sonar -pl ${SERVICE_NAME} -am -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN} -B -DskipTests"
+                        }
+                    }
+                }
+                echo "✅ SonarQube analysis done (non-blocking)"
+            }
+        }
+
+        // ── Stage 4: Docker Build & Push ──
+        stage('Docker Build & Push') {
+            steps {
+                script {
+                    def baseRepo  = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
+                    def buildTag  = "${baseRepo}:${DOCKER_IMAGE_TAG}-${env.BUILD_NUMBER}"
+                    def latestTag = "${baseRepo}:${DOCKER_IMAGE_TAG}"
+
+                    sh "docker login -u ${DOCKER_HUB_CREDS_USR} -p ${DOCKER_HUB_CREDS_PSW}"
+                    sh "docker build -t ${buildTag} -t ${latestTag} -f backend/${SERVICE_NAME}/Dockerfile backend/"
+                    sh "docker push ${buildTag}"
+                    sh "docker push ${latestTag}"
+                }
+                echo "✅ Docker image pushed to DockerHub"
+            }
+        }
+
+        // ── Stage 5: Deploy via Compose ──
+        stage('Deploy') {
+            steps {
+                sh "docker-compose -f docker-compose.backend.yml up -d --no-deps ${SERVICE_NAME}"
+                echo "🚀 alert-service container updated and deployed"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 alert-service pipeline completed successfully!"
+        }
+        failure {
+            echo "❌ alert-service pipeline failed — check the logs above."
+        }
+        always {
+            junit allowEmptyResults: true, testResults: "backend/${SERVICE_NAME}/target/surefire-reports/*.xml"
+            deleteDir()
+        }
+    }
+}

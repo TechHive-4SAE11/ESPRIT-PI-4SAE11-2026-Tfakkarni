@@ -564,3 +564,34 @@ spec:
   ports:
     - port: 18090
       targetPort: 18090
+
+---
+# ── IoT Streamer (Python mock — no inbound port) ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iot-streamer
+  namespace: tfakkarni
+  labels:
+    app: iot-streamer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iot-streamer
+  template:
+    metadata:
+      labels:
+        app: iot-streamer
+    spec:
+      containers:
+        - name: iot-streamer
+          image: thelime1/tfakkarni:iot-streamer
+          env:
+            - name: MOCK_GPS
+              value: "true"
+            - name: MOCK_BPM
+              value: "true"
+          resources:
+            limits: { memory: "128Mi", cpu: "200m" }
+            requests: { memory: "64Mi", cpu: "50m" }

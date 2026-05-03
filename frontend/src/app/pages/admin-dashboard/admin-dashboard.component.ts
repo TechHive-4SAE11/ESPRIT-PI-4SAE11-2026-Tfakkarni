@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, computed, PLATFORM_ID, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '@/core/auth';
 import { DashboardLayoutComponent, type SidebarMenuGroup } from '@/shared/components/dashboard-layout';
@@ -796,6 +797,92 @@ import { finalize } from 'rxjs';
           </div>
         }
 
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- MONITORING                                                -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        @case ('Monitoring') {
+          <div class="space-y-6">
+
+            <!-- Header -->
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-2xl font-bold tracking-tight">Monitoring</h2>
+                <p class="text-muted-foreground mt-1">Métriques temps réel des microservices — actualisation toutes les 30 s</p>
+              </div>
+              <a [href]="grafanaDashboardUrl" target="_blank" rel="noopener noreferrer">
+                <button z-button zType="outline" zSize="sm">
+                  <z-icon zType="arrow-up-right" class="h-4 w-4 mr-1" />
+                  Ouvrir Grafana
+                </button>
+              </a>
+            </div>
+
+            <!-- Services Up/Down — stat, full width -->
+            <z-card>
+              <div class="p-4">
+                <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Services Up / Down</p>
+                <iframe [src]="grafanaPanel(1)" class="w-full border-0 rounded" style="height:120px" loading="lazy"></iframe>
+              </div>
+            </z-card>
+
+            <!-- HTTP metrics row -->
+            <div class="grid gap-4 md:grid-cols-2">
+              <z-card>
+                <div class="p-4">
+                  <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">HTTP Request Rate (req/s)</p>
+                  <iframe [src]="grafanaPanel(4)" class="w-full border-0 rounded" style="height:260px" loading="lazy"></iframe>
+                </div>
+              </z-card>
+              <z-card>
+                <div class="p-4">
+                  <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">HTTP Avg Response Time (ms)</p>
+                  <iframe [src]="grafanaPanel(5)" class="w-full border-0 rounded" style="height:260px" loading="lazy"></iframe>
+                </div>
+              </z-card>
+            </div>
+
+            <!-- CPU + Error rate row -->
+            <div class="grid gap-4 md:grid-cols-2">
+              <z-card>
+                <div class="p-4">
+                  <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Process CPU Usage (%)</p>
+                  <iframe [src]="grafanaPanel(8)" class="w-full border-0 rounded" style="height:260px" loading="lazy"></iframe>
+                </div>
+              </z-card>
+              <z-card>
+                <div class="p-4">
+                  <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">HTTP Error Rate (5xx)</p>
+                  <iframe [src]="grafanaPanel(9)" class="w-full border-0 rounded" style="height:260px" loading="lazy"></iframe>
+                </div>
+              </z-card>
+            </div>
+
+            <!-- JVM Memory row -->
+            <div class="grid gap-4 md:grid-cols-2">
+              <z-card>
+                <div class="p-4">
+                  <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">JVM Heap Memory (MB)</p>
+                  <iframe [src]="grafanaPanel(2)" class="w-full border-0 rounded" style="height:260px" loading="lazy"></iframe>
+                </div>
+              </z-card>
+              <z-card>
+                <div class="p-4">
+                  <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">JVM Non-Heap Memory (MB)</p>
+                  <iframe [src]="grafanaPanel(3)" class="w-full border-0 rounded" style="height:260px" loading="lazy"></iframe>
+                </div>
+              </z-card>
+            </div>
+
+            <!-- Scrape target status table — full width -->
+            <z-card>
+              <div class="p-4">
+                <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">État des services (Scrape Targets)</p>
+                <iframe [src]="grafanaPanel(10)" class="w-full border-0 rounded" style="height:320px" loading="lazy"></iframe>
+              </div>
+            </z-card>
+          </div>
+        }
+
         @case ('Mon Profil') {
           <app-profile [keycloakId]="adminKeycloakId" (goBack)="setPage('Home')" />
         }
@@ -1006,6 +1093,7 @@ export class AdminDashboardComponent implements OnInit {
         { icon: 'bar-chart-3', label: 'Analytique', action: () => this.setPage('Statistiques') },
         { icon: 'target', label: 'Matching', action: () => this.setPage('Matching') },
         { icon: 'zap', label: 'Tâches', action: () => this.setPage('Tâches') },
+        { icon: 'activity', label: 'Monitoring', action: () => this.setPage('Monitoring') },
       ],
     },
     {
@@ -1088,12 +1176,21 @@ export class AdminDashboardComponent implements OnInit {
 
   private readonly platformId = inject(PLATFORM_ID);
 
+  private readonly GRAFANA_SOLO = 'http://localhost:8500/d-solo/tfakkarni-monitoring/tfakkarni-e28094-microservices-monitoring';
+  readonly grafanaDashboardUrl = 'http://localhost:8500/d/tfakkarni-monitoring/tfakkarni-e28094-microservices-monitoring?orgId=1';
+
+  grafanaPanel(panelId: number): SafeResourceUrl {
+    const url = `${this.GRAFANA_SOLO}?orgId=1&from=now-1h&to=now&refresh=30s&panelId=${panelId}&theme=dark`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
+
   constructor(
     private readonly authService: AuthService,
     private readonly userApiService: UserApiService,
     private readonly gameService: GameService,
     private readonly keycloakService: KeycloakService,
     private readonly analyticsService: AnalyticsService,
+    private readonly sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {

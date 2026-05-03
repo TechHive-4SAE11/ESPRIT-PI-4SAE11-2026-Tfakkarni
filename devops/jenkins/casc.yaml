@@ -81,10 +81,12 @@ jobs:
       ]
 
       microservices.each { svcKey, svcImage ->
+          def jenkinsfilePath = (svcKey == 'alert-service') ? 'Jenkinsfile.alert-service' : 'Jenkinsfile.microservice'
           pipelineJob('Backend-' + svcKey + '-Pipeline') {
               parameters {
                   stringParam('SERVICE_NAME', svcKey, 'Microservice module name')
                   stringParam('DOCKER_IMAGE', svcImage, 'Target Docker image')
+                  stringParam('BRANCH_NAME', 'collab', 'Git branch to build')
               }
               definition {
                   cpsScm {
@@ -94,7 +96,7 @@ jobs:
                                   url('https://github.com/TechHive-4SAE11/ESPRIT-PI-4SAE11-2026-Tfakkarni.git')
                                   credentials('git-credentials')
                               }
-                              branch('main')
+                              branch('collab')
                               extensions {
                                   pathRestriction {
                                       includedRegions('backend/' + svcKey + '/.*\\nbackend/pom.xml')
@@ -103,7 +105,7 @@ jobs:
                               }
                           }
                       }
-                      scriptPath('Jenkinsfile.microservice')
+                      scriptPath(jenkinsfilePath)
                   }
               }
           }
@@ -118,7 +120,7 @@ jobs:
                               url('https://github.com/TechHive-4SAE11/ESPRIT-PI-4SAE11-2026-Tfakkarni.git')
                               credentials('git-credentials')
                           }
-                          branch('main')
+                          branch('collab')
                           extensions {
                               pathRestriction {
                                   includedRegions("frontend/.*")

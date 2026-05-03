@@ -1,0 +1,111 @@
+// ============================================================
+// Tfakkarni Frontend — CI Pipeline
+// Angular 18 Application
+// Déclenché sur: git push (toutes les branches)
+// ============================================================
+
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
+    }
+
+    tools {
+        nodejs 'NodeJS-20'
+    }
+
+    environment {
+        SONAR_TOKEN = credentials('sonar-token')
+        SONAR_HOST  = 'http://sonarqube:9000'
+        CI = 'true'
+        NG_CLI_ANALYTICS = 'false'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "refs/heads/${params.BRANCH_NAME}"]],
+                    userRemoteConfigs: scm.userRemoteConfigs
+                ])
+                echo "✅ Code checked out from: ${params.BRANCH_NAME}"
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('frontend') {
+                    script {
+                        sh 'rm -rf node_modules package-lock.json'
+                        sh 'npm cache clean --force'
+                        timeout(time: 10, unit: 'MINUTES') {
+                            sh 'npm install --legacy-peer-deps'
+                        }
+                    }
+                }
+                echo '✅ Dependencies installed'
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                dir('frontend') {
+                    timeout(time: 15, unit: 'MINUTES') {
+                        retry(2) {
+                            sh 'npx ng test --watch=false --browsers=ChromeHeadless --code-coverage --no-progress'
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    junit testResults: 'frontend/test-results/**/*.xml', allowEmptyResults: true
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                dir('frontend') {
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                            npx sonar-scanner \
+                                -Dsonar.host.url=${SONAR_HOST} \
+                                -Dsonar.token=${SONAR_TOKEN} \
+                                -Dsonar.projectKey=tfakkarni-frontend \
+                                -Dsonar.sources=src \
+                                -Dsonar.tests=src \
+                                -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+                        """
+                    }
+                }
+                echo '✅ SonarQube analysis completed'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir('frontend') {
+                    timeout(time: 10, unit: 'MINUTES') {
+                        sh 'npx ng build --configuration=production --progress=false'
+                    }
+                }
+                echo '✅ Production build completed'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '🎉 Frontend CI Pipeline completed successfully!'
+        }
+        failure {
+            echo '❌ Frontend CI Pipeline failed. Check logs above.'
+        }
+        always {
+            deleteDir()
+        }
+    }
+}

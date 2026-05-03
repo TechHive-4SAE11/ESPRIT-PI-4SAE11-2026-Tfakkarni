@@ -1,0 +1,51 @@
+# ============================================================
+# Tfakkarni — Ingress (nginx)
+#
+# Prerequisites (one-time, run before applying this file):
+#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.1/deploy/static/provider/cloud/deploy.yaml
+#   kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=120s
+#
+# Add to hosts file for local DNS:
+#   Windows: C:\Windows\System32\drivers\etc\hosts
+#   macOS/Linux: /etc/hosts
+#   Entry: 127.0.0.1  tfakkarni.local
+#
+# Access:
+#   Frontend:   http://tfakkarni.local
+#   API:        http://tfakkarni.local/api/...
+#   Eureka:     http://localhost:30761
+#   Gateway:    http://localhost:30090
+#   Frontend:   http://localhost:30080  (NodePort fallback)
+# ============================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tfakkarni-ingress
+  namespace: tfakkarni
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: tfakkarni.local
+      http:
+        paths:
+          # API routes → api-gateway (strip /api prefix so gateway receives /api/...)
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 9090
+          # Everything else → Angular frontend
+          - path: /()(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
