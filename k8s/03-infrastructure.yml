@@ -29,12 +29,14 @@ spec:
           env:
             - name: EUREKA_INSTANCE_HOSTNAME
               value: "discovery-service"
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=60.0"
           resources:
             limits:
-              memory: "512Mi"
+              memory: "768Mi"
               cpu: "500m"
             requests:
-              memory: "256Mi"
+              memory: "384Mi"
               cpu: "200m"
           readinessProbe:
             httpGet:
@@ -93,12 +95,15 @@ spec:
                 name: tfakkarni-config
             - secretRef:
                 name: tfakkarni-secrets
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=60.0"
           resources:
             limits:
-              memory: "512Mi"
+              memory: "768Mi"
               cpu: "500m"
             requests:
-              memory: "256Mi"
+              memory: "384Mi"
               cpu: "200m"
           readinessProbe:
             httpGet:
@@ -155,12 +160,15 @@ spec:
                 name: tfakkarni-config
             - secretRef:
                 name: tfakkarni-secrets
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=60.0"
           resources:
             limits:
-              memory: "512Mi"
+              memory: "768Mi"
               cpu: "500m"
             requests:
-              memory: "256Mi"
+              memory: "384Mi"
               cpu: "200m"
           readinessProbe:
             httpGet:

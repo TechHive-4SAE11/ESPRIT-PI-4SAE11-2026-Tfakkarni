@@ -5,6 +5,7 @@ const SONAR_URL = process.env.SONAR_URL || 'http://localhost:9095';
 const ENV_PATH = path.join(__dirname, '..', '.env');
 const ADMIN_PASSWORD = process.env.SONAR_ADMIN_PASSWORD || 'AdminTfakkarni123!';
 const STRICT_GATE = process.env.SONAR_STRICT_GATE || 'Tfakkarni Strict Gate';
+const GAME_GATE = process.env.SONAR_GAME_GATE || 'Tfakkarni Game Service Coverage Gate';
 const GAME_PROJECT_KEY = process.env.SONAR_GAME_PROJECT_KEY || 'tfakkarni-game-service';
 
 async function sleep(ms) {
