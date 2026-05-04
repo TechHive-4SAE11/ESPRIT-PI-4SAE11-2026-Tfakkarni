@@ -7,12 +7,6 @@ spring:
       api-key: dummy-hf-key
       chat:
         model: test-model
-    openai:
-      api-key: dummy-openai-key
-      chat:
-        api-key: dummy-openai-key
-        options:
-          model: gpt-4o-mini
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
@@ -66,16 +60,6 @@ firebase:
 notification:
   scheduler:
     medication-reminder-cron: "0 0 0 * * *"
-openfda:
-  api:
-    base-url: http://localhost/openfda-test
-    max-pages: 1
-    page-size: 1
-medicament:
-  scheduler:
-    enabled: false
-    load-on-startup: false
-    refresh-cron: "0 0 0 * * *"
 meeting:
   room-expiry-minutes: 60
 followup:
