@@ -15,19 +15,3 @@ keycloak:
   realm: tfakkarni
   client-id: backend
   client-secret: dummy-secret
-  frontend-client-id: frontend
-  admin:
-    username: test-admin
-    password: test-password
-mailtrap:
-  token: dummy-token
-  inbox-id: dummy-inbox
-  from: noreply@example.test
-didit:
-  api-key: dummy-didit-key
-  workflow-id: dummy-workflow
-recaptcha:
-  secret:
-    key: dummy-secret
-  verify:
-    url: http://localhost/recaptcha-test

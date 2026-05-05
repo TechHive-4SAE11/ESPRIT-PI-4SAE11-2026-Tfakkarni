@@ -1,89 +1,94 @@
 // ============================================================
-// Tfakkarni Frontend — CD Pipeline
-// Angular 18 Application
-// Déclenché sur: success CI + branche main
+// Jenkinsfile.cdfrontend - Frontend Continuous Deployment
+// CD responsibility: use/pull Docker Hub image produced by CI -> deploy frontend to Kubernetes.
 // ============================================================
 
 pipeline {
     agent any
 
     parameters {
-        choice(name: 'ENVIRONMENT', choices: ['dev', 'staging', 'production'], description: 'Environment')
+        string(name: 'DOCKER_REPOSITORY', defaultValue: 'thelime1/tfakkarni', description: 'Docker Hub repository to deploy from')
+        string(name: 'IMAGE_TAG', defaultValue: '', description: 'Exact image tag produced by CI, e.g. frontend-123. Empty uses frontend latest tag')
+        string(name: 'KUBE_NAMESPACE', defaultValue: 'tfakkarni', description: 'Kubernetes namespace')
+        string(name: 'MANIFEST_BRANCH', defaultValue: 'collab', description: 'Git branch used only for manifests/scripts if checkout is needed')
+        booleanParam(name: 'APPLY_MANIFESTS', defaultValue: true, description: 'Apply frontend/base manifests before setting image')
+        booleanParam(name: 'WAIT_FOR_ROLLOUT', defaultValue: true, description: 'Wait for Kubernetes rollout')
     }
 
-    environment {
-        DOCKER_HUB_CREDS = credentials('dockerhub-credentials')
-    }
+    environment { DOCKER_HUB_CREDS = credentials('dockerhub-credentials') }
 
     stages {
-        stage('Checkout') {
+        stage('Resolve Image') {
+            steps {
+                script {
+                    env.DEPLOY_TAG = params.IMAGE_TAG?.trim() ? params.IMAGE_TAG.trim() : 'frontend'
+                    env.DEPLOY_IMAGE = "${params.DOCKER_REPOSITORY}:${env.DEPLOY_TAG}"
+                }
+                echo "🚀 Preparing frontend CD with image ${env.DEPLOY_IMAGE}"
+            }
+        }
+
+        stage('Checkout Manifests') {
             steps {
                 checkout([
                     $class: 'GitSCM',
-                    branches: [[name: "main"]],
+                    branches: [[name: "refs/heads/${params.MANIFEST_BRANCH}"]],
                     userRemoteConfigs: scm.userRemoteConfigs
                 ])
-                echo "✅ Code checked out from main"
             }
         }
 
-        stage('Docker Build') {
+        stage('Pull Image From Docker Hub') {
             steps {
-                script {
-                    def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
-                    sh "docker build -f frontend/Dockerfile -t ${baseRepo}:frontend -t ${baseRepo}:frontend-${env.BUILD_NUMBER} -t ${baseRepo}:frontend-${params.ENVIRONMENT} ."
-                }
-                echo '✅ Docker image built'
+                sh """
+                    set +x
+                    printf '%s' '${DOCKER_HUB_CREDS_PSW}' | docker login -u '${DOCKER_HUB_CREDS_USR}' --password-stdin
+                    set -x
+                    docker pull ${env.DEPLOY_IMAGE}
+                """
             }
         }
 
-        stage('Docker Push') {
+        stage('Apply Kubernetes Base Manifests') {
+            when { expression { return params.APPLY_MANIFESTS } }
             steps {
-                script {
-                    def baseRepo = "${DOCKER_HUB_CREDS_USR}/tfakkarni"
-                    sh """
-                        echo ${DOCKER_HUB_CREDS_PSW} | docker login -u ${DOCKER_HUB_CREDS_USR} --password-stdin
-                        docker push ${baseRepo}:frontend
-                        docker push ${baseRepo}:frontend-${env.BUILD_NUMBER}
-                        docker push ${baseRepo}:frontend-${params.ENVIRONMENT}
-                    """
-                }
-                echo '✅ Docker image pushed'
+                sh """
+                    kubectl apply -f k8s/00-namespace.yml
+                    kubectl apply -f k8s/01-configmap.yml
+                    kubectl apply -f k8s/02-secrets.yml
+                    kubectl apply -f k8s/05-frontend.yml
+                    kubectl apply -f k8s/06-ingress.yml || true
+                """
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy Frontend Image') {
             steps {
-                script {
-                    if (params.ENVIRONMENT == 'dev') {
-                        sh 'docker-compose -f docker-compose.frontend.dev.yml up -d --remove-orphans'
-                    } else if (params.ENVIRONMENT == 'staging') {
-                        sh 'docker-compose -f docker-compose.frontend.staging.yml up -d --remove-orphans'
-                    } else {
-                        sh 'docker-compose -f docker-compose.frontend.prod.yml up -d --remove-orphans'
-                    }
-                }
-                echo "✅ Frontend deployed to ${params.ENVIRONMENT}"
+                sh """
+                    kubectl -n ${params.KUBE_NAMESPACE} set image deployment/frontend frontend=${env.DEPLOY_IMAGE}
+                    kubectl -n ${params.KUBE_NAMESPACE} annotate deployment/frontend \
+                      tfakkarni.techhive/deployed-image='${env.DEPLOY_IMAGE}' \
+                      tfakkarni.techhive/deployed-by='jenkins-cd' \
+                      --overwrite
+                """
             }
         }
 
-        stage('Health Check') {
+        stage('Rollout Verification') {
+            when { expression { return params.WAIT_FOR_ROLLOUT } }
             steps {
-                sh 'curl --fail --retry 3 --retry-delay 5 http://localhost:4200'
-                echo '✅ Health check passed'
+                sh """
+                    kubectl -n ${params.KUBE_NAMESPACE} rollout status deployment/frontend --timeout=300s
+                    kubectl -n ${params.KUBE_NAMESPACE} get deployment frontend -o wide
+                    kubectl -n ${params.KUBE_NAMESPACE} get pods -l app=frontend -o wide
+                """
             }
         }
     }
 
     post {
-        success {
-            echo '🎉 Frontend CD Pipeline completed successfully!'
-        }
-        failure {
-            echo '❌ Frontend CD Pipeline failed. Check logs above.'
-        }
-        always {
-            deleteDir()
-        }
+        success { echo "🎉 Frontend CD deployed ${env.DEPLOY_IMAGE}" }
+        failure { echo "❌ Frontend CD failed while deploying ${env.DEPLOY_IMAGE}" }
+        always { deleteDir() }
     }
 }
