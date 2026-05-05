@@ -1,17 +1,88 @@
 spring:
-  batch:
-    job:
+  cloud:
+    config:
       enabled: false
-  datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
-    username: sa
-    password:
-
+  ai:
+    huggingface:
+      api-key: dummy-hf-key
+      chat:
+        model: test-model
+    openai:
+      api-key: dummy-openai-key
+      chat:
+        api-key: dummy-openai-key
+        options:
+          model: gpt-4o-mini
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+eureka:
+  client:
+    enabled: false
+keycloak:
+  enabled: false
+  server-url: http://localhost:8080
+  realm: tfakkarni
+  client-id: backend
+  client-secret: dummy-secret
+  frontend-client-id: frontend
+  admin:
+    username: test-admin
+    password: test-password
+mailtrap:
+  token: dummy-token
+  inbox-id: dummy-inbox
+  from: noreply@example.test
+didit:
+  api-key: dummy-didit-key
+  workflow-id: dummy-workflow
+claude:
+  api-key: dummy-claude-key
+  api-url: http://localhost/claude-test
+  model: test-model
+daily:
+  api-key: dummy-daily-key
+  api-url: http://localhost/daily-test
+gemini:
+  api:
+    key: dummy-gemini-key
+elevenlabs:
+  api:
+    key: dummy-elevenlabs-key
+  api-key: dummy-elevenlabs-key
+  voice-id-en: test-voice
+  voice-id-tn: test-voice
+  model-id: test-model
+telegram:
+  bot-token: dummy-telegram-token
+  default-chat-id: "0"
+alert:
+  fallback-email: alerts@example.test
+tracking-service:
+  url: http://localhost:8081
+firebase:
+  config-file: src/test/resources/firebase-test.json
+notification:
+  scheduler:
+    medication-reminder-cron: "0 0 0 * * *"
+openfda:
+  api:
+    base-url: http://localhost/openfda-test
+    max-pages: 1
+    page-size: 1
 medicament:
   scheduler:
     enabled: false
     load-on-startup: false
-
-eureka:
-  client:
-    enabled: false
+    refresh-cron: "0 0 0 * * *"
+meeting:
+  room-expiry-minutes: 60
+followup:
+  scheduler:
+    cron: "0 0 0 * * *"
+recaptcha:
+  secret:
+    key: dummy-secret
+  verify:
+    url: http://localhost/recaptcha-test

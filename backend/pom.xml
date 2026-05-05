@@ -20,8 +20,8 @@
 		<spring-cloud.version>2023.0.4</spring-cloud.version>
 		<sonar.projectKey>tfakkarni-backend</sonar.projectKey>
 		<sonar.projectName>Tfakkarni Backend</sonar.projectName>
-		<sonar.host.url>http://localhost:9000</sonar.host.url>
-		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<sonar.host.url>http://localhost:9095</sonar.host.url>
+		<sonar.coverage.jacoco.xmlReportPaths>**/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<modules>
 		<module>discovery-service</module>

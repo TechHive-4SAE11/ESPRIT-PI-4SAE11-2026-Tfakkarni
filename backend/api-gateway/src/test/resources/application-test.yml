@@ -1,0 +1,22 @@
+spring:
+  cloud:
+    config:
+      enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+eureka:
+  client:
+    enabled: false
+keycloak:
+  enabled: false
+  server-url: http://localhost:8080
+  realm: tfakkarni
+  client-id: backend
+  client-secret: dummy-secret
+recaptcha:
+  secret:
+    key: dummy-secret
+  verify:
+    url: http://localhost/recaptcha-test

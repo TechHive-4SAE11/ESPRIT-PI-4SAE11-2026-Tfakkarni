@@ -1,23 +1,24 @@
 // ============================================================
-// Tfakkarni Frontend — CI Pipeline
-// Angular 18 Application
-// Déclenché sur: git push (toutes les branches)
+// Jenkinsfile.cifrontend - Frontend Continuous Integration
+// CI responsibility: checkout -> install/test/build -> Sonar -> Docker build -> Docker Hub push.
 // ============================================================
 
 pipeline {
     agent any
 
     parameters {
-        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
+        string(name: 'BRANCH_NAME', defaultValue: 'collab', description: 'Git branch to build')
+        string(name: 'DOCKER_REPOSITORY', defaultValue: 'thelime1/tfakkarni', description: 'Docker Hub repository used by Kubernetes manifests')
+        booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run Angular unit tests')
+        booleanParam(name: 'RUN_SONAR', defaultValue: true, description: 'Run SonarQube analysis')
     }
 
-    tools {
-        nodejs 'NodeJS-20'
-    }
+    tools { nodejs 'NodeJS-20' }
 
     environment {
-        SONAR_TOKEN = credentials('sonar-token')
-        SONAR_HOST  = 'http://sonarqube:9000'
+        DOCKER_HUB_CREDS = credentials('dockerhub-credentials')
+        SONAR_TOKEN      = credentials('sonar-token')
+        SONAR_HOST       = 'http://sonarqube:9000'
         CI = 'true'
         NG_CLI_ANALYTICS = 'false'
     }
@@ -30,82 +31,95 @@ pipeline {
                     branches: [[name: "refs/heads/${params.BRANCH_NAME}"]],
                     userRemoteConfigs: scm.userRemoteConfigs
                 ])
-                echo "✅ Code checked out from: ${params.BRANCH_NAME}"
+                script {
+                    env.GIT_SHORT_SHA = sh(script: 'git rev-parse --short=8 HEAD', returnStdout: true).trim()
+                    env.IMAGE_BUILD_TAG = "frontend-${env.BUILD_NUMBER}"
+                    env.IMAGE_COMMIT_TAG = "frontend-${env.GIT_SHORT_SHA}"
+                    env.IMAGE_LATEST_TAG = 'frontend'
+                    env.IMAGE_BUILD = "${params.DOCKER_REPOSITORY}:${env.IMAGE_BUILD_TAG}"
+                    env.IMAGE_COMMIT = "${params.DOCKER_REPOSITORY}:${env.IMAGE_COMMIT_TAG}"
+                    env.IMAGE_LATEST = "${params.DOCKER_REPOSITORY}:${env.IMAGE_LATEST_TAG}"
+                }
+                echo "✅ Frontend checked out from ${params.BRANCH_NAME}"
             }
         }
 
         stage('Install Dependencies') {
             steps {
                 dir('frontend') {
-                    script {
-                        sh 'rm -rf node_modules package-lock.json'
-                        sh 'npm cache clean --force'
-                        timeout(time: 10, unit: 'MINUTES') {
-                            sh 'npm install --legacy-peer-deps'
-                        }
-                    }
+                    sh 'rm -rf node_modules package-lock.json'
+                    sh 'npm cache clean --force'
+                    timeout(time: 10, unit: 'MINUTES') { sh 'npm install --legacy-peer-deps' }
                 }
-                echo '✅ Dependencies installed'
+                echo '✅ Frontend dependencies installed'
             }
         }
 
         stage('Unit Tests') {
-            steps {
-                dir('frontend') {
-                    timeout(time: 15, unit: 'MINUTES') {
-                        retry(2) {
-                            sh 'npx ng test --watch=false --browsers=ChromeHeadless --code-coverage --no-progress'
-                        }
-                    }
-                }
-            }
-            post {
-                always {
-                    junit testResults: 'frontend/test-results/**/*.xml', allowEmptyResults: true
-                }
-            }
+            when { expression { return params.RUN_TESTS } }
+            steps { dir('frontend') { timeout(time: 15, unit: 'MINUTES') { retry(2) { sh 'npx ng test --watch=false --browsers=ChromeHeadless --code-coverage --no-progress' } } } }
+            post { always { junit testResults: 'frontend/test-results/**/*.xml', allowEmptyResults: true } }
         }
 
         stage('SonarQube Analysis') {
+            when { expression { return params.RUN_SONAR } }
             steps {
-                dir('frontend') {
-                    withSonarQubeEnv('SonarQube') {
-                        sh """
-                            npx sonar-scanner \
-                                -Dsonar.host.url=${SONAR_HOST} \
-                                -Dsonar.token=${SONAR_TOKEN} \
-                                -Dsonar.projectKey=tfakkarni-frontend \
-                                -Dsonar.sources=src \
-                                -Dsonar.tests=src \
-                                -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-                        """
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    dir('frontend') {
+                        withSonarQubeEnv('SonarQube') {
+                            sh """
+                                npx sonar-scanner \
+                                  -Dsonar.host.url=${SONAR_HOST} \
+                                  -Dsonar.token=${SONAR_TOKEN} \
+                                  -Dsonar.projectKey=tfakkarni-frontend \
+                                  -Dsonar.sources=src \
+                                  -Dsonar.tests=src \
+                                  -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+                            """
+                        }
                     }
                 }
-                echo '✅ SonarQube analysis completed'
+                echo '✅ Frontend SonarQube analysis completed'
             }
         }
 
-        stage('Build') {
+        stage('Production Build') {
+            steps { dir('frontend') { timeout(time: 10, unit: 'MINUTES') { sh 'npx ng build --configuration=production --progress=false' } } }
+        }
+
+        stage('Docker Build') {
             steps {
-                dir('frontend') {
-                    timeout(time: 10, unit: 'MINUTES') {
-                        sh 'npx ng build --configuration=production --progress=false'
-                    }
-                }
-                echo '✅ Production build completed'
+                sh """
+                    docker build \
+                      -t ${env.IMAGE_BUILD} \
+                      -t ${env.IMAGE_COMMIT} \
+                      -t ${env.IMAGE_LATEST} \
+                      -f frontend/Dockerfile .
+                """
+                echo "✅ Frontend Docker image built: ${env.IMAGE_BUILD}"
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                sh """
+                    set +x
+                    printf '%s' '${DOCKER_HUB_CREDS_PSW}' | docker login -u '${DOCKER_HUB_CREDS_USR}' --password-stdin
+                    set -x
+                    docker push ${env.IMAGE_BUILD}
+                    docker push ${env.IMAGE_COMMIT}
+                    docker push ${env.IMAGE_LATEST}
+                """
+                writeFile file: 'ci-image.properties', text: "SERVICE_NAME=frontend\nSERVICE_IMAGE_TAG=frontend\nDOCKER_REPOSITORY=${params.DOCKER_REPOSITORY}\nIMAGE_TAG=${env.IMAGE_BUILD_TAG}\nIMAGE=${env.IMAGE_BUILD}\nGIT_SHORT_SHA=${env.GIT_SHORT_SHA}\n"
+                archiveArtifacts artifacts: 'ci-image.properties', fingerprint: true
+                echo "✅ Published frontend images: ${env.IMAGE_BUILD}, ${env.IMAGE_COMMIT}, ${env.IMAGE_LATEST}"
             }
         }
     }
 
     post {
-        success {
-            echo '🎉 Frontend CI Pipeline completed successfully!'
-        }
-        failure {
-            echo '❌ Frontend CI Pipeline failed. Check logs above.'
-        }
-        always {
-            deleteDir()
-        }
+        success { echo "🎉 Frontend CI finished. CD should deploy image tag: ${env.IMAGE_BUILD_TAG}" }
+        failure { echo '❌ Frontend CI failed. No CD should run.' }
+        always { deleteDir() }
     }
 }
