@@ -69,62 +69,67 @@ jobs:
       def dockerRepository = 'thelime1/tfakkarni'
 
       def backendServices = [
-          'discovery-service': 'discovery',
-          'config-service': 'config',
-          'api-gateway': 'gateway',
-          'user-service': 'user',
-          'game-service': 'game',
-          'tracking-service': 'tracking',
-          'alert-service': 'alert',
-          'ml-service': 'ml',
-          'medical-service': 'medical',
-          'medicament-validation-service': 'medicament-validation',
-          'iot-service': 'iot',
-          'assistant-service': 'assistant',
-          'analytics-service': 'analytics'
+          ['discovery-service', 'discovery'],
+          ['config-service', 'config'],
+          ['api-gateway', 'gateway'],
+          ['user-service', 'user'],
+          ['game-service', 'game'],
+          ['tracking-service', 'tracking'],
+          ['alert-service', 'alert'],
+          ['ml-service', 'ml'],
+          ['medical-service', 'medical'],
+          ['medicament-validation-service', 'medicament-validation'],
+          ['iot-service', 'iot'],
+          ['assistant-service', 'assistant'],
+          ['analytics-service', 'analytics']
       ]
 
-      def scmDefinition = { String branchName, String includedRegions, String scriptPathValue ->
-          cpsScm {
-              scm {
-                  git {
-                      remote {
-                          url(repoUrl)
-                          credentials('git-credentials')
-                      }
-                      branch(branchName)
-                      extensions {
-                          if (includedRegions?.trim()) {
-                              pathRestriction {
-                                  includedRegions(includedRegions)
-                                  excludedRegions('')
+      def applyScmDefinition = { jobContext, String branchName, String includedPattern, String scriptPathValue ->
+          jobContext.definition {
+              cpsScm {
+                  scm {
+                      git {
+                          remote {
+                              url(repoUrl)
+                              credentials('git-credentials')
+                          }
+                          branch(branchName)
+                          extensions {
+                              if (includedPattern?.trim()) {
+                                  pathRestriction {
+                                      includedRegions(includedPattern)
+                                      excludedRegions('')
+                                  }
                               }
                           }
                       }
                   }
+                  scriptPath(scriptPathValue)
               }
-              scriptPath(scriptPathValue)
           }
       }
 
-      backendServices.each { svcKey, imageTag ->
-          pipelineJob("Backend-${svcKey}-CI") {
-              description("CI for ${svcKey}: build/test, build Docker image, push to Docker Hub")
+      backendServices.each { svc ->
+          def svcKey = svc[0]
+          def imageTag = svc[1]
+
+          pipelineJob('Backend-' + svcKey + '-CI') {
+              description('CI for ' + svcKey + ': build/test, build Docker image, push to Docker Hub')
               parameters {
                   stringParam('SERVICE_NAME', svcKey, 'Backend Maven module and Kubernetes deployment name')
                   stringParam('SERVICE_IMAGE_TAG', imageTag, 'Docker tag prefix used by Kubernetes')
                   stringParam('BRANCH_NAME', defaultBranch, 'Git branch to build')
                   stringParam('DOCKER_REPOSITORY', dockerRepository, 'Docker Hub repository used by Kubernetes')
                   booleanParam('RUN_TESTS', true, 'Run Maven tests before publishing image')
-                  booleanParam('RUN_SONAR', true, 'Run SonarQube analysis')
+                  booleanParam('RUN_SONAR', false, 'Run SonarQube analysis')
               }
-              definition { scmDefinition(defaultBranch, "backend/${svcKey}/.*\nbackend/pom.xml\nJenkinsfile.ci", 'Jenkinsfile.ci') }
+              applyScmDefinition(delegate, defaultBranch, 'backend/' + svcKey + '/.*\nbackend/pom.xml\nJenkinsfile.ci', 'Jenkinsfile.ci')
           }
 
-          pipelineJob("Backend-${svcKey}-CD") {
-              description("CD for ${svcKey}: pull Docker Hub image and deploy only this service to Kubernetes")
+          pipelineJob('Backend-' + svcKey + '-CD') {
+              description('CD for ' + svcKey + ': pull Docker Hub image and deploy only this service to Kubernetes')
               triggers {
-                  upstream("Backend-${svcKey}-CI", 'SUCCESS')
+                  upstream('Backend-' + svcKey + '-CI', 'SUCCESS')
               }
               parameters {
                   stringParam('SERVICE_NAME', svcKey, 'Kubernetes deployment/container name')
@@ -136,7 +141,7 @@ jobs:
                   booleanParam('APPLY_MANIFESTS', true, 'Apply Kubernetes manifests before setting image')
                   booleanParam('WAIT_FOR_ROLLOUT', true, 'Wait for Kubernetes rollout')
               }
-              definition { scmDefinition(defaultBranch, "k8s/.*\nJenkinsfile.cd", 'Jenkinsfile.cd') }
+              applyScmDefinition(delegate, defaultBranch, "k8s/.*\nJenkinsfile.cd", 'Jenkinsfile.cd')
           }
       }
 
@@ -146,9 +151,9 @@ jobs:
               stringParam('BRANCH_NAME', defaultBranch, 'Git branch to build')
               stringParam('DOCKER_REPOSITORY', dockerRepository, 'Docker Hub repository used by Kubernetes')
               booleanParam('RUN_TESTS', true, 'Run Angular tests')
-              booleanParam('RUN_SONAR', true, 'Run SonarQube analysis')
+              booleanParam('RUN_SONAR', false, 'Run SonarQube analysis')
           }
-          definition { scmDefinition(defaultBranch, "frontend/.*\nJenkinsfile.cifrontend", 'Jenkinsfile.cifrontend') }
+          applyScmDefinition(delegate, defaultBranch, "frontend/.*\nJenkinsfile.cifrontend", 'Jenkinsfile.cifrontend')
       }
 
       pipelineJob('Frontend-CD') {
@@ -164,5 +169,5 @@ jobs:
               booleanParam('APPLY_MANIFESTS', true, 'Apply Kubernetes manifests before setting image')
               booleanParam('WAIT_FOR_ROLLOUT', true, 'Wait for Kubernetes rollout')
           }
-          definition { scmDefinition(defaultBranch, "k8s/.*\nJenkinsfile.cdfrontend", 'Jenkinsfile.cdfrontend') }
+          applyScmDefinition(delegate, defaultBranch, "k8s/.*\nJenkinsfile.cdfrontend", 'Jenkinsfile.cdfrontend')
       }

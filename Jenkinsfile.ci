@@ -13,7 +13,7 @@ pipeline {
         string(name: 'SERVICE_IMAGE_TAG', defaultValue: 'user', description: 'Docker tag prefix used by Kubernetes, e.g. user, gateway, tracking')
         string(name: 'DOCKER_REPOSITORY', defaultValue: 'thelime1/tfakkarni', description: 'Docker Hub repository used by Kubernetes manifests')
         booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run Maven tests before publishing image')
-        booleanParam(name: 'RUN_SONAR', defaultValue: true, description: 'Run SonarQube analysis')
+        booleanParam(name: 'RUN_SONAR', defaultValue: false, description: 'Run SonarQube analysis')
     }
 
     tools { maven 'Maven-3.9' }

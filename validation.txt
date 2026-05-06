@@ -1,0 +1,195 @@
+Tfakkarni validation and live presentation runbook
+=================================================
+
+Work from the project root:
+cd /home/kali/Desktop/ESPRIT-PI-4SAE11-2026-Tfakkarni
+
+0. Enable Docker and Kubernetes
+-------------------------------
+# Linux Docker engine
+sudo systemctl enable --now docker
+docker version
+docker compose version
+
+# Docker Desktop users: start Docker Desktop, enable WSL integration if needed,
+# then Settings > Kubernetes > Enable Kubernetes > Apply.
+
+# Verify Kubernetes access before the deploy part
+kubectl config current-context
+kubectl cluster-info
+kubectl get nodes
+
+# If using minikube instead of Docker Desktop Kubernetes:
+minikube start --driver=docker
+kubectl get nodes
+
+1. Start DevOps containers, show them, then stop them
+-----------------------------------------------------
+# Start Jenkins, SonarQube, Prometheus, and Grafana
+docker compose -f docker-compose.devops.yml up -d --build
+
+# Show status and presentation URLs
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+# Jenkins:    http://localhost:8090
+# SonarQube:  http://localhost:9095
+# Prometheus: http://localhost:9091
+# Grafana:    http://localhost:8500
+
+# Useful checks
+docker compose -f docker-compose.devops.yml logs --tail=80 jenkins
+docker compose -f docker-compose.devops.yml logs --tail=80 sonarqube
+docker compose -f docker-compose.devops.yml logs --tail=80 grafana
+
+# Bring DevOps stack down after showing it
+docker compose -f docker-compose.devops.yml down
+
+2. Bring up Tfakkarni locally with Docker Compose
+-------------------------------------------------
+# Make sure .env exists and contains real secrets before this step.
+
+# Backend, gateway, services, Zipkin, and IoT streamer
+docker compose -f docker-compose.backend.yml up -d --build
+
+# Frontend
+docker compose -f docker-compose.frontend.yml up -d --build
+
+# Validate local containers
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+curl -i http://localhost:9090/actuator/health
+curl -i http://localhost:18080/
+
+# Open during demo
+# Frontend:  http://localhost:18080
+# Gateway:   http://localhost:9090
+# Eureka:    http://localhost:8780
+# Config:    http://localhost:18888
+# Zipkin:    http://localhost:9411
+
+# Optional local logs
+docker compose -f docker-compose.backend.yml logs -f --tail=120 api-gateway
+docker compose -f docker-compose.backend.yml logs -f --tail=120 tracking-service
+docker compose -f docker-compose.frontend.yml logs -f --tail=120 frontend
+
+# Stop local app when moving to Kubernetes
+docker compose -f docker-compose.frontend.yml down
+docker compose -f docker-compose.backend.yml down
+
+3. Deploy Tfakkarni on Kubernetes
+---------------------------------
+# Validate manifests without changing the cluster
+scripts/deploy-k8s.sh --dry-run=client
+
+# Deploy in dependency order: namespace, config, infra, services, frontend
+scripts/deploy-k8s.sh
+
+# Watch readiness
+kubectl -n tfakkarni get pods -w
+
+# In another terminal, check rollout status
+kubectl -n tfakkarni rollout status deployment/discovery-service --timeout=300s
+kubectl -n tfakkarni rollout status deployment/config-service --timeout=300s
+kubectl -n tfakkarni rollout status deployment/api-gateway --timeout=300s
+kubectl -n tfakkarni rollout status deployment/frontend --timeout=300s
+
+# Validate deployed services
+kubectl get all -n tfakkarni
+kubectl -n tfakkarni get pods -o wide
+kubectl -n tfakkarni get svc -o wide
+
+# Access NodePort services
+NODE_IP="$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')"
+curl -i "http://${NODE_IP}:30090/actuator/health"
+curl -i "http://${NODE_IP}:30080/"
+# Frontend: http://NODE_IP:30080
+# Gateway:  http://NODE_IP:30090
+# Eureka:   http://NODE_IP:30761
+
+================================================================
+Demo and failure scenarios
+================================================================
+
+A. Kubernetes self-healing: take down a pod
+------------------------------------------
+kubectl -n tfakkarni get pods
+POD="$(kubectl -n tfakkarni get pod -l app=frontend -o jsonpath='{.items[0].metadata.name}')"
+kubectl -n tfakkarni delete pod "$POD"
+kubectl -n tfakkarni get pods -w
+kubectl -n tfakkarni rollout status deployment/frontend --timeout=180s
+
+Talking point: the ReplicaSet creates a replacement pod automatically.
+
+B. Restart a service cleanly
+----------------------------
+kubectl -n tfakkarni rollout restart deployment/api-gateway
+kubectl -n tfakkarni rollout status deployment/api-gateway --timeout=300s
+kubectl -n tfakkarni logs deploy/api-gateway --tail=120
+
+Talking point: controlled rollout without deleting Kubernetes objects.
+
+C. Show logs, events, and diagnosis commands
+--------------------------------------------
+kubectl -n tfakkarni logs deploy/config-service --tail=120
+kubectl -n tfakkarni logs deploy/tracking-service --tail=120
+kubectl -n tfakkarni describe pod -l app=api-gateway
+kubectl -n tfakkarni get events --sort-by=.lastTimestamp | tail -40
+kubectl -n tfakkarni get pods --field-selector=status.phase!=Running
+
+D. Simulate bad image, then rollback
+------------------------------------
+kubectl -n tfakkarni set image deployment/frontend frontend=thelime1/tfakkarni:bad-demo-image
+kubectl -n tfakkarni rollout status deployment/frontend --timeout=90s || true
+kubectl -n tfakkarni get pods
+kubectl -n tfakkarni describe pod -l app=frontend
+
+# Recover
+kubectl -n tfakkarni rollout undo deployment/frontend
+kubectl -n tfakkarni rollout status deployment/frontend --timeout=300s
+
+Talking point: Kubernetes exposes ImagePullBackOff and rollback restores service.
+
+E. Scale service down to show outage, then restore
+--------------------------------------------------
+kubectl -n tfakkarni scale deployment/api-gateway --replicas=0
+kubectl -n tfakkarni get pods -l app=api-gateway
+curl -i "http://${NODE_IP}:30090/actuator/health" || true
+
+# Recover
+kubectl -n tfakkarni scale deployment/api-gateway --replicas=1
+kubectl -n tfakkarni rollout status deployment/api-gateway --timeout=300s
+curl -i "http://${NODE_IP}:30090/actuator/health"
+
+F. Port-forward for local debugging
+-----------------------------------
+kubectl -n tfakkarni port-forward svc/frontend 8080:80
+# Open http://localhost:8080
+
+kubectl -n tfakkarni port-forward svc/api-gateway 9090:9090
+# curl -i http://localhost:9090/actuator/health
+
+G. Local Docker container failure and recovery
+----------------------------------------------
+docker compose -f docker-compose.backend.yml up -d
+docker stop tfakkarni-tracking
+docker ps -a --filter "name=tfakkarni-tracking"
+docker compose -f docker-compose.backend.yml restart tracking-service
+docker compose -f docker-compose.backend.yml logs --tail=80 tracking-service
+
+H. Resource and health summary for professor
+--------------------------------------------
+kubectl -n tfakkarni top pods
+kubectl -n tfakkarni get deploy
+kubectl -n tfakkarni get svc
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+Cleanup after validation
+------------------------
+# Kubernetes app cleanup only if the demo is finished
+kubectl delete namespace tfakkarni
+
+# Local Docker cleanup
+docker compose -f docker-compose.frontend.yml down
+docker compose -f docker-compose.backend.yml down
+docker compose -f docker-compose.devops.yml down
+
+# Do not use down -v during a presentation unless you want to delete Jenkins,
+# SonarQube, Prometheus, and Grafana persisted data.
