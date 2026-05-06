@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.TestPropertySource;
 import org.techhive.mlservice.repository.CaregiverStressHistoryRepository;
 import org.techhive.mlservice.repository.ChatSessionRepository;
 import org.techhive.mlservice.repository.ComplianceHistoryRepository;
