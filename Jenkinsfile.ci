@@ -54,7 +54,14 @@ pipeline {
         stage('Prepare Test Config') {
             steps {
                 sh "mkdir -p backend/${params.SERVICE_NAME}/src/test/resources"
-                writeFile file: "backend/${params.SERVICE_NAME}/src/test/resources/application-test.yml", text: "spring:\n  cloud:\n    config:\n      enabled: false\n  autoconfigure:\n    exclude:\n      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration\n      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration\neureka:\n  client:\n    enabled: false\nkeycloak:\n  enabled: false\n  server-url: http://localhost:8080\n  realm: tfakkarni\n  client-id: backend\n  client-secret: dummy-secret\n"
+                script {
+                    def testConfigPath = "backend/${params.SERVICE_NAME}/src/test/resources/application-test.yml"
+                    if (fileExists(testConfigPath)) {
+                        echo "Using existing ${testConfigPath}"
+                    } else {
+                        writeFile file: testConfigPath, text: "spring:\n  cloud:\n    config:\n      enabled: false\n  autoconfigure:\n    exclude:\n      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration\n      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration\neureka:\n  client:\n    enabled: false\nkeycloak:\n  enabled: false\n  server-url: http://localhost:8080\n  realm: tfakkarni\n  client-id: backend\n  client-secret: dummy-secret\n"
+                    }
+                }
             }
         }
 
