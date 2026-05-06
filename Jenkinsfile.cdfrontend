@@ -33,7 +33,8 @@ pipeline {
                 checkout([
                     $class: 'GitSCM',
                     branches: [[name: "refs/heads/${params.MANIFEST_BRANCH}"]],
-                    userRemoteConfigs: scm.userRemoteConfigs
+                    userRemoteConfigs: scm.userRemoteConfigs,
+                    extensions: [[$class: 'CloneOption', shallow: true, noTags: true, depth: 1, timeout: 30]]
                 ])
             }
         }

@@ -95,6 +95,12 @@ jobs:
                           }
                           branch(branchName)
                           extensions {
+                              cloneOptions {
+                                  shallow(true)
+                                  noTags(true)
+                                  depth(1)
+                                  timeout(30)
+                              }
                               if (includedPattern?.trim()) {
                                   pathRestriction {
                                       includedRegions(includedPattern)

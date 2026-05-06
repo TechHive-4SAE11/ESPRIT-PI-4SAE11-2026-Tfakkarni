@@ -29,7 +29,8 @@ pipeline {
                 checkout([
                     $class: 'GitSCM',
                     branches: [[name: "refs/heads/${params.BRANCH_NAME}"]],
-                    userRemoteConfigs: scm.userRemoteConfigs
+                    userRemoteConfigs: scm.userRemoteConfigs,
+                    extensions: [[$class: 'CloneOption', shallow: true, noTags: true, depth: 1, timeout: 30]]
                 ])
                 script {
                     env.GIT_SHORT_SHA = sh(script: 'git rev-parse --short=8 HEAD', returnStdout: true).trim()
