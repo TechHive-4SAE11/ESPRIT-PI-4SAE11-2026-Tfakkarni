@@ -253,7 +253,7 @@ export class GuessPlaceComponent implements OnInit {
       const sv = new google.maps.StreetViewService();
 
       // Check if Street View is available near the coordinates (radius 500m)
-      sv.getPanorama({ location, radius: 500 }, (data: google.maps.StreetViewPanoramaData | null, status: google.maps.StreetViewStatus) => {
+      sv.getPanorama({ location, radius: 500 }, (data, status) => {
         this.ngZone.run(() => {
           if (status === google.maps.StreetViewStatus.OK && data?.location?.latLng) {
             this.streetViewUnavailable.set(false);

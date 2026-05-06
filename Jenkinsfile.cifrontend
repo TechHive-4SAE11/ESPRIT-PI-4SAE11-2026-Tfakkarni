@@ -51,6 +51,7 @@ pipeline {
                     sh 'rm -rf node_modules package-lock.json'
                     sh 'npm cache clean --force'
                     timeout(time: 10, unit: 'MINUTES') { sh 'npm install --legacy-peer-deps' }
+                    sh 'node scripts/set-env.js'
                 }
                 echo '✅ Frontend dependencies installed'
             }
