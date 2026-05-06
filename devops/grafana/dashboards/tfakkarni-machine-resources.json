@@ -1,0 +1,66 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "__expr__", "uid": "__expr__" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "max": 100, "min": 0, "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 70 }, { "color": "red", "value": 90 } ] }, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "options": { "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true, "sizing": "auto" },
+      "targets": [ { "datasource": { "type": "__expr__", "uid": "__expr__" }, "expression": "42", "refId": "A", "type": "math" } ],
+      "title": "Demo CPU Load",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "__expr__", "uid": "__expr__" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "max": 100, "min": 0, "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 75 }, { "color": "red", "value": 90 } ] }, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "options": { "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true, "sizing": "auto" },
+      "targets": [ { "datasource": { "type": "__expr__", "uid": "__expr__" }, "expression": "37", "refId": "A", "type": "math" } ],
+      "title": "Demo Memory Usage",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "__expr__", "uid": "__expr__" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "max": 100, "min": 0, "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 80 }, { "color": "red", "value": 95 } ] }, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "options": { "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true, "sizing": "auto" },
+      "targets": [ { "datasource": { "type": "__expr__", "uid": "__expr__" }, "expression": "24", "refId": "A", "type": "math" } ],
+      "title": "Demo Disk Usage",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "__expr__", "uid": "__expr__" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 12, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "targets": [
+        { "datasource": { "type": "__expr__", "uid": "__expr__" }, "expression": "42", "refId": "CPU", "type": "math" },
+        { "datasource": { "type": "__expr__", "uid": "__expr__" }, "expression": "37", "refId": "RAM", "type": "math" },
+        { "datasource": { "type": "__expr__", "uid": "__expr__" }, "expression": "24", "refId": "Disk", "type": "math" }
+      ],
+      "title": "Demo Machine Trend",
+      "type": "timeseries"
+    },
+    {
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 16 },
+      "options": { "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false }, "content": "# Machine dashboard\n\nSelf-contained UI proof panels. They do not require Prometheus to be running.\n\nAfter the UI proof, these can be wired to node-exporter/cAdvisor/Prometheus real host metrics.", "mode": "markdown" },
+      "title": "Dashboard note",
+      "type": "text"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["tfakkarni", "machine", "resources", "demo"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "browser",
+  "title": "Tfakkarni Machine Resources",
+  "uid": "tfakkarni-machine-resources",
+  "version": 1,
+  "weekStart": ""
+}

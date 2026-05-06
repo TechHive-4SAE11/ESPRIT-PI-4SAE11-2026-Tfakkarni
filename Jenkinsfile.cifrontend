@@ -7,7 +7,7 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'BRANCH_NAME', defaultValue: 'collab', description: 'Git branch to build')
+        string(name: 'BRANCH_NAME', defaultValue: 'agent', description: 'Git branch to build')
         string(name: 'DOCKER_REPOSITORY', defaultValue: 'thelime1/tfakkarni', description: 'Docker Hub repository used by Kubernetes manifests')
         booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run Angular unit tests')
         booleanParam(name: 'RUN_SONAR', defaultValue: true, description: 'Run SonarQube analysis')

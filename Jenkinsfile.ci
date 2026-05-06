@@ -8,7 +8,7 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'BRANCH_NAME', defaultValue: 'collab', description: 'Git branch to build')
+        string(name: 'BRANCH_NAME', defaultValue: 'agent', description: 'Git branch to build')
         string(name: 'SERVICE_NAME', defaultValue: 'user-service', description: 'Backend Maven module / Kubernetes deployment name')
         string(name: 'SERVICE_IMAGE_TAG', defaultValue: 'user', description: 'Docker tag prefix used by Kubernetes, e.g. user, gateway, tracking')
         string(name: 'DOCKER_REPOSITORY', defaultValue: 'thelime1/tfakkarni', description: 'Docker Hub repository used by Kubernetes manifests')

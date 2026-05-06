@@ -1,23 +1,21 @@
 package org.techhive.discoveryservice;
 
+import com.netflix.appinfo.ApplicationInfoManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.netflix.eureka.server.EurekaServerAutoConfiguration;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
-@ActiveProfiles("test")
 @SpringBootTest(properties = {
-    "spring.cloud.config.enabled=false",
-    "eureka.client.enabled=false",
-    "eureka.server.enable-self-preservation=false"
-})
-@EnableAutoConfiguration(exclude = {
-    SecurityAutoConfiguration.class,
-    EurekaServerAutoConfiguration.class
+        "spring.autoconfigure.exclude=org.springframework.cloud.netflix.eureka.server.EurekaServerAutoConfiguration",
+        "eureka.client.enabled=false",
+        "spring.cloud.discovery.enabled=false"
 })
 class DiscoveryServiceApplicationTests {
+
+    @MockBean
+    private ApplicationInfoManager applicationInfoManager;
 
     @Test
     void contextLoads() {

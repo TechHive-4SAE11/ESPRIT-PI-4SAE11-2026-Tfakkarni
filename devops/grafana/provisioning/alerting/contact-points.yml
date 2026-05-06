@@ -1,19 +1,5 @@
 apiVersion: 1
 
-contactPoints:
-  - orgId: 1
-    name: telegram-tfakkarni
-    receivers:
-      - uid: telegram-tfakkarni
-        type: telegram
-        settings:
-          bottoken: ${GRAFANA_TELEGRAM_BOT_TOKEN}
-          chatid: !!str ${GRAFANA_TELEGRAM_CHAT_ID}
-          message: |-
-            {{ if eq .Status "firing" }}yow {{ .CommonLabels.alertname }}{{ else }}{{ .CommonLabels.alertname }} is good now{{ end }}
-            {{ range .Alerts }}
-            Service: {{ .Labels.service }}{{ if .Labels.job }} (job {{ .Labels.job }}){{ end }}
-            Summary: {{ .Annotations.summary }}
-            Details: {{ .Annotations.description }}
-            {{ end }}
-        disableResolveMessage: false
+# Intentionally no external contact points.
+# UI proof mode: alerts should be visible in Grafana without requiring Telegram/API keys.
+contactPoints: []

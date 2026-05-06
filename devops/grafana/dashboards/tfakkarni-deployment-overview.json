@@ -1,0 +1,53 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "__expr__", "uid": "__expr__" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 0 },
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "name" },
+      "targets": [ { "datasource": { "type": "__expr__", "uid": "__expr__" }, "expression": "1", "refId": "A", "type": "math" } ],
+      "title": "Deployment UI Proof Ready",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "__expr__", "uid": "__expr__" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 12, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 0 },
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [ { "datasource": { "type": "__expr__", "uid": "__expr__" }, "expression": "1", "refId": "A", "type": "math" } ],
+      "title": "Demo Deploy Signal",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "__expr__", "uid": "__expr__" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 5 },
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto" },
+      "targets": [ { "datasource": { "type": "__expr__", "uid": "__expr__" }, "expression": "3", "refId": "A", "type": "math" } ],
+      "title": "Visible Demo Alerts",
+      "type": "stat"
+    },
+    {
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 13 },
+      "options": { "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false }, "content": "# Deployment dashboard\n\nThis dashboard is intentionally self-contained for UI proof.\n\nWhat to check:\n- Dashboard appears under folder: Tfakkarni\n- Panels render even if Prometheus is not running\n- Demo deployment alert rules are visible under Alerting\n\nLater we can wire these panels to real Jenkins/Kubernetes/deploy metrics.", "mode": "markdown" },
+      "title": "How to read this dashboard",
+      "type": "text"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["tfakkarni", "deployment", "demo"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "browser",
+  "title": "Tfakkarni Deployment Overview",
+  "uid": "tfakkarni-deploy-overview",
+  "version": 1,
+  "weekStart": ""
+}

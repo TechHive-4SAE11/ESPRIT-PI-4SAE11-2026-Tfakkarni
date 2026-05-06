@@ -14,17 +14,18 @@ import org.techhive.mlservice.repository.FAQAnalyticsRepository;
 import org.techhive.mlservice.repository.TrainingModuleRepository;
 import org.techhive.mlservice.repository.UserProgressRepository;
 
-@SpringBootTest(properties = {
-    "spring.cloud.config.enabled=false",
-    "eureka.client.enabled=false",
-    "keycloak.enabled=false",
-    "spring.ai.huggingface.api-key=dummy-hf-key",
-    "spring.ai.huggingface.chat.model=test-model"
-})
-@EnableAutoConfiguration(exclude = {
-    DataSourceAutoConfiguration.class,
-    HibernateJpaAutoConfiguration.class,
-    SecurityAutoConfiguration.class
+@SpringBootTest
+@TestPropertySource(properties = {
+        "spring.ai.huggingface.api-key=dummy-key",
+        "huggingface.api-key=dummy-key",
+        "gemini.api-key=dummy-key",
+        "spring.datasource.url=jdbc:h2:mem:ml_service_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.sql.init.mode=never"
 })
 class MlServiceApplicationTests {
     @MockBean

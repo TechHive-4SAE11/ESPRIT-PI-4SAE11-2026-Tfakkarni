@@ -2,21 +2,58 @@ package org.techhive.assistantservice.dto;
 
 import org.junit.jupiter.api.Test;
 import org.techhive.assistantservice.client.dto.AnswerDTO;
+import org.techhive.assistantservice.client.dto.EquipmentDTO;
 import org.techhive.assistantservice.client.dto.EquipmentLoanDTO;
 import org.techhive.assistantservice.client.dto.QuestionDTO;
+import org.techhive.assistantservice.client.dto.QuizDTO;
 import org.techhive.assistantservice.entity.GeneratedVideo;
 import org.techhive.assistantservice.entity.VideoFeedback;
 import org.techhive.assistantservice.entity.enums.MemoryType;
 import org.techhive.assistantservice.entity.enums.VideoStatus;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class AssistantDataObjectsTest {
+
+    @Test
+    void lombokDataObjects_shouldHonorAccessorAndEqualityContracts() {
+        List<Class<?>> classes = List.of(
+                AIReportDTO.class,
+                EquipmentRecommendRequest.class,
+                EquipmentRecommendResponse.class,
+                EquipmentRecommendation.class,
+                MedicalFolderDTO.class,
+                PatientDTO.class,
+                QuizGenerateRequest.class,
+                ReportAnalysisResult.class,
+                ReportBasedQuizByNameRequest.class,
+                ReportBasedQuizRequest.class,
+                VideoFeedbackRequest.class,
+                VideoGenerateRequest.class,
+                VideoGenerateResponse.class,
+                VideoGenerateResponse.StoryboardScene.class,
+                VoiceCommandRequest.class,
+                VoiceCommandResponse.class,
+                AnswerDTO.class,
+                EquipmentDTO.class,
+                EquipmentLoanDTO.class,
+                QuestionDTO.class,
+                QuizDTO.class,
+                GeneratedVideo.class,
+                VideoFeedback.class
+        );
+
+        for (Class<?> type : classes) {
+            assertDataObjectContract(type);
+        }
+    }
 
     @Test
     void equipmentLoanDto_shouldExposeBuilderAndAccessors() {
@@ -149,5 +186,116 @@ class AssistantDataObjectsTest {
         } catch (Exception e) {
             throw new AssertionError("Could not invoke " + methodName, e);
         }
+    }
+
+    private void assertDataObjectContract(Class<?> type) {
+        Object populated = newInstance(type);
+        Object sameValues = newInstance(type);
+
+        List<Field> fields = fieldsOf(type);
+        for (Field field : fields) {
+            Object value = sampleValue(field.getType(), 0);
+            setProperty(populated, field, value);
+            setProperty(sameValues, field, value);
+            assertEquals(value, getProperty(populated, field), type.getSimpleName() + "." + field.getName());
+        }
+
+        assertEquals(populated, populated);
+        assertNotEquals(populated, null);
+        assertNotEquals(populated, "different type");
+        assertEquals(populated, sameValues, type.getSimpleName() + " should compare equal for same field values");
+        assertEquals(populated.hashCode(), sameValues.hashCode());
+        assertTrue(populated.toString().contains(type.getSimpleName()));
+
+        Object defaultValues = newInstance(type);
+        Object sameDefaults = newInstance(type);
+        assertEquals(defaultValues, sameDefaults);
+        assertEquals(defaultValues.hashCode(), sameDefaults.hashCode());
+
+        for (Field field : fields) {
+            Object changed = newInstance(type);
+            for (Field copied : fields) {
+                setProperty(changed, copied, getProperty(populated, copied));
+            }
+            setProperty(changed, field, sampleValue(field.getType(), 1));
+            assertNotEquals(populated, changed, type.getSimpleName() + " should include " + field.getName() + " in equals");
+
+            if (!field.getType().isPrimitive()) {
+                Object oneNull = newInstance(type);
+                Object oneValue = newInstance(type);
+                setProperty(oneValue, field, sampleValue(field.getType(), 0));
+                assertNotEquals(oneNull, oneValue, type.getSimpleName() + " should distinguish null " + field.getName());
+            }
+        }
+    }
+
+    private List<Field> fieldsOf(Class<?> type) {
+        return Arrays.stream(type.getDeclaredFields())
+                .filter(field -> !Modifier.isStatic(field.getModifiers()))
+                .toList();
+    }
+
+    private Object newInstance(Class<?> type) {
+        try {
+            var constructor = type.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            return constructor.newInstance();
+        } catch (Exception e) {
+            throw new AssertionError("Could not instantiate " + type.getName(), e);
+        }
+    }
+
+    private void setProperty(Object target, Field field, Object value) {
+        try {
+            Method setter = target.getClass().getMethod("set" + capitalize(field.getName()), field.getType());
+            setter.invoke(target, value);
+        } catch (Exception e) {
+            throw new AssertionError("Could not set " + target.getClass().getSimpleName() + "." + field.getName(), e);
+        }
+    }
+
+    private Object getProperty(Object target, Field field) {
+        try {
+            Method getter = target.getClass().getMethod("get" + capitalize(field.getName()));
+            return getter.invoke(target);
+        } catch (Exception e) {
+            throw new AssertionError("Could not get " + target.getClass().getSimpleName() + "." + field.getName(), e);
+        }
+    }
+
+    private String capitalize(String value) {
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
+    }
+
+    private Object sampleValue(Class<?> type, int variant) {
+        if (type == String.class) {
+            return variant == 0 ? "primary-value" : "alternate-value";
+        }
+        if (type == Long.class || type == long.class) {
+            return variant == 0 ? 101L : 202L;
+        }
+        if (type == Integer.class || type == int.class) {
+            return variant == 0 ? 11 : 22;
+        }
+        if (type == Double.class || type == double.class) {
+            return variant == 0 ? 0.75 : 0.25;
+        }
+        if (type == Boolean.class || type == boolean.class) {
+            return variant == 0;
+        }
+        if (type == LocalDateTime.class) {
+            return LocalDateTime.of(2026, 5, variant == 0 ? 5 : 6, 9, 30);
+        }
+        if (List.class.isAssignableFrom(type)) {
+            return variant == 0 ? List.of("primary") : List.of("alternate");
+        }
+        if (type == Object.class) {
+            return variant == 0 ? "payload" : 42;
+        }
+        if (type.isEnum()) {
+            Object[] constants = type.getEnumConstants();
+            return constants[Math.min(variant, constants.length - 1)];
+        }
+        throw new AssertionError("Unsupported sample type " + type.getName());
     }
 }

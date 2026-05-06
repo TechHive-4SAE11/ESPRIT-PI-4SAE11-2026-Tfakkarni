@@ -65,7 +65,7 @@ tool:
 jobs:
   - script: |
       def repoUrl = 'https://github.com/TechHive-4SAE11/ESPRIT-PI-4SAE11-2026-Tfakkarni.git'
-      def defaultBranch = 'collab'
+      def defaultBranch = 'agent'
       def dockerRepository = 'thelime1/tfakkarni'
 
       def backendServices = [

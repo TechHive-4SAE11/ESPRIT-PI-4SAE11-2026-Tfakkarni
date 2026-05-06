@@ -58,13 +58,35 @@ else
   echo "Create/update real secrets first, or set APPLY_PLACEHOLDER_SECRETS=true only for dry-run/demo clusters."
 fi
 
+# Apply core infrastructure before the rest of the app.  Kubernetes does not
+# provide a native "start this Deployment before that Deployment" ordering rule,
+# so this deploy script enforces the practical dependency order by waiting for
+# each foundation service to become Available before applying downstream
+# microservices and the frontend.
 kubectl_apply "${MANIFEST_DIR}/03-infrastructure.yml"
+
+if [[ -z "${DRY_RUN_MODE}" ]]; then
+  echo "Waiting for foundation services in dependency order: discovery-service (Eureka) -> config-service -> api-gateway"
+  kubectl -n "${NAMESPACE}" rollout status deployment/discovery-service --timeout=300s
+  kubectl -n "${NAMESPACE}" rollout status deployment/config-service --timeout=300s
+  kubectl -n "${NAMESPACE}" rollout status deployment/api-gateway --timeout=300s
+else
+  echo "Dry-run mode: skipping rollout waits for foundation services."
+fi
+
 kubectl_apply "${MANIFEST_DIR}/04-microservices.yml"
 kubectl_apply "${MANIFEST_DIR}/05-frontend.yml"
 
 cat <<EOF
 
-Applied manifests${DRY_RUN_MODE:+ in dry-run mode}. Useful rollout commands:
+Applied manifests${DRY_RUN_MODE:+ in dry-run mode}. Deployment ordering rule:
+  1. discovery-service (Eureka)
+  2. config-service
+  3. api-gateway
+  4. remaining microservices
+  5. frontend
+
+Useful rollout commands:
   kubectl -n ${NAMESPACE} get pods,svc
   kubectl -n ${NAMESPACE} rollout status deployment/discovery-service
   kubectl -n ${NAMESPACE} rollout status deployment/config-service

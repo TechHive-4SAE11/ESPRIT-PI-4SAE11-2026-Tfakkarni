@@ -16,13 +16,13 @@ services:
       - sonarqube_extensions:/opt/sonarqube/extensions
     networks: [tfakkarni-network]
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9000/api/system/status | grep -q UP"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/api/system/status | grep -q '\"status\":\"UP\"'"]
       interval: 30s
-      timeout: 10s
-      start_period: 120s
+      timeout: 20s
+      start_period: 600s
       retries: 5
     restart: unless-stopped
-    deploy: { resources: { limits: { memory: 2G } } }
+    deploy: { resources: { limits: { memory: 4G } } }
 
   # ──────────────────────────────────────────────
   # PROMETHEUS — Metrics scraping

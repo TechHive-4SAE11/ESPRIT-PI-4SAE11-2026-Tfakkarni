@@ -22,6 +22,9 @@ backend/**/target
 # Keycloak local install
 keycloak/
 
+# Local secrets
+ngrok.yml
+
 # CI/CD
 .github/
 

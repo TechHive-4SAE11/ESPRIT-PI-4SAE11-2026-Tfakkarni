@@ -78,6 +78,23 @@ class MedicamentValidationServiceTest {
         }
 
         @Test
+        @DisplayName("Devrait dedupliquer et limiter les suggestions")
+        void shouldDeduplicateAndLimitSuggestions() {
+            String name = "Metformn";
+            when(repository.existsByAnyNameIgnoreCase(name)).thenReturn(false);
+            when(repository.findSimilarDrugNames(name)).thenReturn(List.of("Metformin", "Metformin XR", "Metformin"));
+            when(repository.findSimilarBrandNames(name)).thenReturn(List.of("Glucophage", "Fortamet", "Metformin"));
+            when(repository.findSimilarGenericNames(name)).thenReturn(List.of("Riomet", "Extra suggestion"));
+
+            ValidationResultDTO result = validationService.validateDrugName(name);
+
+            assertThat(result.isValid()).isFalse();
+            assertThat(result.getSuggestions())
+                    .containsExactly("Metformin", "Metformin XR", "Glucophage", "Fortamet", "Riomet");
+            assertThat(result.getMessage()).contains("Did you mean");
+        }
+
+        @Test
         @DisplayName("Ne pas chercher de suggestions si le nom est trop court (< 3)")
         void shouldNotProvideSuggestionsForTooShortName() {
             // Given

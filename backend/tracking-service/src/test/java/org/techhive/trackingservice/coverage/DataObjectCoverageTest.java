@@ -136,6 +136,93 @@ class DataObjectCoverageTest {
     }
 
     @Test
+    void dataObjectsWithGeneratedEqualityExposeStableEqualityContracts() throws Exception {
+        int exercisedClasses = 0;
+        int exercisedFieldDifferences = 0;
+
+        for (Class<?> type : DATA_CLASSES) {
+            if (!declaresEquals(type)) {
+                continue;
+            }
+
+            Object left = instantiateNoArg(type);
+            Object right = instantiateNoArg(type);
+            if (left == null || right == null) {
+                continue;
+            }
+
+            List<Field> supportedFields = new ArrayList<>();
+            for (Field field : type.getDeclaredFields()) {
+                if (Modifier.isStatic(field.getModifiers())) {
+                    continue;
+                }
+                Object value = sampleValue(field.getType(), field.getName());
+                if (value == Unsupported.INSTANCE) {
+                    continue;
+                }
+                field.setAccessible(true);
+                field.set(left, value);
+                field.set(right, value);
+                supportedFields.add(field);
+            }
+
+            assertThat(left).isEqualTo(left);
+            assertThat(left).isNotEqualTo(null);
+            assertThat(left).isNotEqualTo("not a " + type.getSimpleName());
+            assertThat(left).isEqualTo(right);
+            assertThat(left.hashCode()).isEqualTo(right.hashCode());
+            assertThat(left.toString()).contains(type.getSimpleName());
+            exercisedClasses++;
+
+            for (Field field : supportedFields) {
+                Object changed = instantiateNoArg(type);
+                for (Field copied : supportedFields) {
+                    copied.set(changed, copied.get(left));
+                }
+                Object different = alternateSampleValue(field.getType(), field.getName());
+                if (different == Unsupported.INSTANCE) {
+                    continue;
+                }
+                field.set(changed, different);
+                assertThat(left)
+                        .as("%s equality should include %s", type.getSimpleName(), field.getName())
+                        .isNotEqualTo(changed);
+                exercisedFieldDifferences++;
+
+                if (!field.getType().isPrimitive()) {
+                    Object nullChanged = instantiateNoArg(type);
+                    for (Field copied : supportedFields) {
+                        copied.set(nullChanged, copied.get(left));
+                    }
+                    field.set(nullChanged, null);
+                    assertThat(left)
+                            .as("%s equality should include null mismatch for %s", type.getSimpleName(), field.getName())
+                            .isNotEqualTo(nullChanged);
+                    exercisedFieldDifferences++;
+
+                    Object reverseNullChanged = instantiateNoArg(type);
+                    for (Field copied : supportedFields) {
+                        copied.set(reverseNullChanged, copied.get(left));
+                    }
+                    field.set(left, null);
+                    assertThat(left)
+                            .as("%s equality should include reverse null mismatch for %s", type.getSimpleName(), field.getName())
+                            .isNotEqualTo(reverseNullChanged);
+                    field.set(reverseNullChanged, null);
+                    assertThat(left)
+                            .as("%s equality should accept matching null values for %s", type.getSimpleName(), field.getName())
+                            .isEqualTo(reverseNullChanged);
+                    field.set(left, field.get(right));
+                    exercisedFieldDifferences++;
+                }
+            }
+        }
+
+        assertThat(exercisedClasses).isGreaterThan(50);
+        assertThat(exercisedFieldDifferences).isGreaterThan(300);
+    }
+
+    @Test
     void enumsExposeExpectedValues() {
         assertThat(MedicationStatus.valueOf("ACTIVE")).isEqualTo(MedicationStatus.ACTIVE);
         assertThat(MedicationStatus.values()).contains(
@@ -207,6 +294,32 @@ class DataObjectCoverageTest {
         if (List.class.isAssignableFrom(type)) return new ArrayList<>();
         if (type.isEnum()) return type.getEnumConstants()[0];
         return Unsupported.INSTANCE;
+    }
+
+    private static Object alternateSampleValue(Class<?> type, String fieldName) {
+        Class<?> wrapped = wraps(type);
+        if (wrapped == String.class) return fieldName + "-other";
+        if (wrapped == Long.class) return 84L;
+        if (wrapped == Integer.class) return 14;
+        if (wrapped == Double.class) return 7.0d;
+        if (wrapped == Float.class) return 5.0f;
+        if (wrapped == Boolean.class) return false;
+        if (type == LocalDate.class) return LocalDate.of(2026, 5, 4);
+        if (type == LocalDateTime.class) return LocalDateTime.of(2026, 5, 4, 16, 0);
+        if (List.class.isAssignableFrom(type)) return List.of("other");
+        if (type.isEnum()) {
+            Object[] values = type.getEnumConstants();
+            return values.length > 1 ? values[1] : values[0];
+        }
+        return Unsupported.INSTANCE;
+    }
+
+    private static boolean declaresEquals(Class<?> type) {
+        try {
+            return type.getDeclaredMethod("equals", Object.class).getDeclaringClass() != Object.class;
+        } catch (NoSuchMethodException ignored) {
+            return false;
+        }
     }
 
     private static Class<?> wraps(Class<?> type) {

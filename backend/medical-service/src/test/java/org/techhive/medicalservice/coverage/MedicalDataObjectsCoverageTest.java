@@ -53,7 +53,11 @@ class MedicalDataObjectsCoverageTest {
             MedicationLogDTO.class, IncidentDTO.class, MedicationComplianceDTO.class,
             IncidentStatsDTO.class, CoachingGoalResponse.class, CoachingNotificationResponse.class,
             CoachingProgressResponse.class, CoachingProgressRequest.class, CoachingGoalRequest.class,
-            CoachingGoalStatusRequest.class, GeminiSafetyAuditProperties.class
+            CoachingGoalStatusRequest.class, GeminiSafetyAuditProperties.class,
+            DossierForMlRequest.DiagnosticsSummary.class, DossierForMlRequest.MedicalHistorySummary.class,
+            ClinicalSafetyStatsDto.MedicationConflictDto.class,
+            FolderSpecificStatsDto.MedicationSummary.class, FolderSpecificStatsDto.DiagnosticTimelineEntry.class,
+            ErrorResponse.class, ErrorResponse.ValidationError.class
     );
 
     @Test
@@ -89,6 +93,89 @@ class MedicalDataObjectsCoverageTest {
             instance.hashCode();
         }
     }
+
+    @Test
+    void dataObjectsWithGeneratedEquality_shouldCompareEverySupportedField() throws Exception {
+        int exercisedClasses = 0;
+        int exercisedFieldDifferences = 0;
+
+        for (Class<?> type : DATA_CLASSES) {
+            if (!declaresEquals(type)) {
+                continue;
+            }
+
+            Object left = instantiate(type);
+            Object right = instantiate(type);
+            assertNotNull(left, () -> "Expected left instance for " + type.getName());
+            assertNotNull(right, () -> "Expected right instance for " + type.getName());
+
+            List<Field> supportedFields = new ArrayList<>();
+            for (Field field : allFields(type)) {
+                if (Modifier.isStatic(field.getModifiers()) || Modifier.isFinal(field.getModifiers())) {
+                    continue;
+                }
+                Object value = sampleValue(field.getType(), field.getGenericType().getTypeName());
+                if (value == Unsupported.INSTANCE) {
+                    continue;
+                }
+                field.setAccessible(true);
+                field.set(left, value);
+                field.set(right, value);
+                supportedFields.add(field);
+            }
+
+            assertEquals(left, left, () -> type.getSimpleName() + " should equal itself");
+            assertNotEquals(left, null, () -> type.getSimpleName() + " should not equal null");
+            assertNotEquals(left, "not a " + type.getSimpleName(), () -> type.getSimpleName() + " should reject other types");
+            assertEquals(left, right, () -> type.getSimpleName() + " should compare equal field values");
+            assertEquals(left.hashCode(), right.hashCode(), () -> type.getSimpleName() + " equal objects need equal hashCode");
+            assertTrue(left.toString().contains(type.getSimpleName()), () -> type.getSimpleName() + " should expose readable toString");
+            exercisedClasses++;
+
+            for (Field field : supportedFields) {
+                Object changed = instantiate(type);
+                for (Field copied : supportedFields) {
+                    copied.set(changed, copied.get(left));
+                }
+                Object different = alternateSampleValue(field.getType(), field.getGenericType().getTypeName());
+                if (different == Unsupported.INSTANCE) {
+                    continue;
+                }
+                field.set(changed, different);
+                if (!left.equals(changed)) {
+                    exercisedFieldDifferences++;
+                }
+
+                if (!field.getType().isPrimitive()) {
+                    Object nullChanged = instantiate(type);
+                    for (Field copied : supportedFields) {
+                        copied.set(nullChanged, copied.get(left));
+                    }
+                    field.set(nullChanged, null);
+                    if (!left.equals(nullChanged)) {
+                        exercisedFieldDifferences++;
+                    }
+
+                    Object reverseNullChanged = instantiate(type);
+                    for (Field copied : supportedFields) {
+                        copied.set(reverseNullChanged, copied.get(left));
+                    }
+                    field.set(left, null);
+                    if (!left.equals(reverseNullChanged)) {
+                        exercisedFieldDifferences++;
+                    }
+                    field.set(reverseNullChanged, null);
+                    assertEquals(left, reverseNullChanged,
+                            () -> type.getSimpleName() + " should accept matching null values for " + field.getName());
+                    field.set(left, field.get(right));
+                }
+            }
+        }
+
+        assertTrue(exercisedClasses > 45, "Expected broad generated equality coverage");
+        assertTrue(exercisedFieldDifferences > 300, "Expected broad per-field equality coverage");
+    }
+
 
     @Test
     void enumTypes_shouldExposeValuesAndValueOf() {
@@ -287,6 +374,68 @@ class MedicalDataObjectsCoverageTest {
         if (type == CoachingProgress.class) return new CoachingProgress();
         if (type == CoachingNotification.class) return new CoachingNotification();
         return Unsupported.INSTANCE;
+    }
+
+    private static Object alternateSampleValue(Class<?> type, String genericType) {
+        if (type == String.class) return "other";
+        if (type == Long.class || type == long.class) return 84L;
+        if (type == Integer.class || type == int.class) return 14;
+        if (type == Double.class || type == double.class) return 3.0;
+        if (type == Float.class || type == float.class) return 5.0f;
+        if (type == Boolean.class || type == boolean.class) return false;
+        if (type == LocalDateTime.class) return LocalDateTime.of(2026, 5, 4, 14, 0);
+        if (type == LocalDate.class) return LocalDate.of(2026, 5, 4);
+        if (type == LocalTime.class) return LocalTime.of(14, 45);
+        if (type == List.class) return new ArrayList<>(List.of("other"));
+        if (type == Set.class) return new LinkedHashSet<>(Set.of("other"));
+        if (type == Map.class) return new LinkedHashMap<>(Map.of("other", "value"));
+        if (type.isEnum()) {
+            Object[] values = type.getEnumConstants();
+            return values.length > 1 ? values[1] : values[0];
+        }
+        if (type == MedicalFolder.class) return MedicalFolder.builder().id(21L).patientId("p-2").doctorId("d-2").build();
+        if (type == Diagnostics.class) return Diagnostics.builder().id(22L).build();
+        if (type == MedicalHistory.class) return MedicalHistory.builder().id(23L).build();
+        if (type == AIReport.class) return AIReport.builder().id(24L).build();
+        if (type == Equipment.class) {
+            Equipment equipment = new Equipment();
+            equipment.setId(25L);
+            return equipment;
+        }
+        if (type == EquipmentLoan.class) {
+            EquipmentLoan loan = new EquipmentLoan();
+            loan.setId(26L);
+            return loan;
+        }
+        if (type == Appointment.class) {
+            Appointment appointment = new Appointment();
+            appointment.setId(27L);
+            return appointment;
+        }
+        if (type == CoachingGoal.class) {
+            CoachingGoal goal = new CoachingGoal();
+            goal.setId(28L);
+            return goal;
+        }
+        if (type == CoachingProgress.class) {
+            CoachingProgress progress = new CoachingProgress();
+            progress.setId(29L);
+            return progress;
+        }
+        if (type == CoachingNotification.class) {
+            CoachingNotification notification = new CoachingNotification();
+            notification.setId(30L);
+            return notification;
+        }
+        return Unsupported.INSTANCE;
+    }
+
+    private static boolean declaresEquals(Class<?> type) {
+        try {
+            return type.getDeclaredMethod("equals", Object.class).getDeclaringClass() != Object.class;
+        } catch (NoSuchMethodException ignored) {
+            return false;
+        }
     }
 
     private enum Unsupported { INSTANCE }

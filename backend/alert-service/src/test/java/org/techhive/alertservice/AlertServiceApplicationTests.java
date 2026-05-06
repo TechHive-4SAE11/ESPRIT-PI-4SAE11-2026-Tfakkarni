@@ -13,22 +13,17 @@ import org.techhive.alertservice.repository.IotAlertRepository;
 import org.techhive.alertservice.repository.SafeZoneRepository;
 
 @SpringBootTest(properties = {
-    "spring.cloud.config.enabled=false",
-    "eureka.client.enabled=false",
-    "keycloak.enabled=false",
-    "firebase.config-file=src/test/resources/firebase-test.json",
-    "mailtrap.token=dummy-token",
-    "mailtrap.inbox-id=dummy-inbox",
-    "mailtrap.from=noreply@example.test",
-    "telegram.bot-token=dummy-telegram-token",
-    "telegram.default-chat-id=0",
-    "tracking-service.url=http://localhost:8081",
-    "notification.scheduler.medication-reminder-cron=0 0 0 * * *"
-})
-@EnableAutoConfiguration(exclude = {
-    DataSourceAutoConfiguration.class,
-    HibernateJpaAutoConfiguration.class,
-    SecurityAutoConfiguration.class
+        "spring.datasource.url=jdbc:h2:mem:alert_service_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;NON_KEYWORDS=VALUE",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.cache.type=simple",
+        "spring.data.redis.repositories.enabled=false",
+        "spring.quartz.job-store-type=memory",
+        "firebase.config-file=classpath:missing-firebase-test.json",
+        "tracking-service.url=http://localhost:0"
 })
 class AlertServiceApplicationTests {
     @MockBean

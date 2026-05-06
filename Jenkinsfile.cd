@@ -13,7 +13,7 @@ pipeline {
         string(name: 'DOCKER_REPOSITORY', defaultValue: 'thelime1/tfakkarni', description: 'Docker Hub repository to deploy from')
         string(name: 'IMAGE_TAG', defaultValue: '', description: 'Exact image tag produced by CI, e.g. user-123. Empty uses SERVICE_IMAGE_TAG latest tag')
         string(name: 'KUBE_NAMESPACE', defaultValue: 'tfakkarni', description: 'Kubernetes namespace')
-        string(name: 'MANIFEST_BRANCH', defaultValue: 'collab', description: 'Git branch used only for manifests/scripts if checkout is needed')
+        string(name: 'MANIFEST_BRANCH', defaultValue: 'agent', description: 'Git branch used only for manifests/scripts if checkout is needed')
         booleanParam(name: 'APPLY_MANIFESTS', defaultValue: true, description: 'Apply base manifests before setting image')
         booleanParam(name: 'WAIT_FOR_ROLLOUT', defaultValue: true, description: 'Wait for Kubernetes rollout')
     }

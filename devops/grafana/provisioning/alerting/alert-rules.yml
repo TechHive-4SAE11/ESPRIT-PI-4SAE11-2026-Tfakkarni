@@ -2,32 +2,31 @@ apiVersion: 1
 
 groups:
   - orgId: 1
-    name: tfakkarni-service-health
+    name: tfakkarni-demo-alerts
     folder: Tfakkarni Alerts
     interval: 1m
     rules:
-      - uid: tfakkarni-service-down
-        title: service down
-        condition: C
+      - uid: tfakkarni-demo-deploy-alert
+        title: Demo deployment status alert
+        condition: B
         data:
           - refId: A
             relativeTimeRange:
-              from: 300
+              from: 60
               to: 0
-            datasourceUid: prometheus
+            datasourceUid: __expr__
             model:
               datasource:
-                type: prometheus
-                uid: prometheus
-              editorMode: code
-              expr: up{job!="prometheus"} == 0
-              instant: true
+                type: __expr__
+                uid: __expr__
+              expression: "1"
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
-          - refId: C
+              type: math
+          - refId: B
             relativeTimeRange:
-              from: 300
+              from: 60
               to: 0
             datasourceUid: __expr__
             model:
@@ -49,38 +48,38 @@ groups:
               expression: A
               intervalMs: 1000
               maxDataPoints: 43200
-              refId: C
+              refId: B
               type: threshold
-        noDataState: NoData
-        execErrState: Error
-        for: 2m
+        noDataState: OK
+        execErrState: OK
+        for: 0s
         annotations:
-          summary: yow service {{ $labels.service }} is down
-          description: Prometheus target {{ $labels.job }} has been unreachable for more than 2 minutes.
+          summary: Demo deployment alert visible in Grafana UI
+          description: Static demo alert for the UI proof. It does not send Telegram or external notifications.
         labels:
-          severity: critical
-      - uid: tfakkarni-high-cpu
-        title: high CPU
-        condition: C
+          area: deployment
+          severity: demo
+      - uid: tfakkarni-demo-machine-alert
+        title: Demo machine resource alert
+        condition: B
         data:
           - refId: A
             relativeTimeRange:
-              from: 300
+              from: 60
               to: 0
-            datasourceUid: prometheus
+            datasourceUid: __expr__
             model:
               datasource:
-                type: prometheus
-                uid: prometheus
-              editorMode: code
-              expr: process_cpu_usage{service=~".+"} > 0.80
-              instant: true
+                type: __expr__
+                uid: __expr__
+              expression: "1"
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
-          - refId: C
+              type: math
+          - refId: B
             relativeTimeRange:
-              from: 300
+              from: 60
               to: 0
             datasourceUid: __expr__
             model:
@@ -102,38 +101,38 @@ groups:
               expression: A
               intervalMs: 1000
               maxDataPoints: 43200
-              refId: C
+              refId: B
               type: threshold
-        noDataState: NoData
-        execErrState: Error
-        for: 5m
+        noDataState: OK
+        execErrState: OK
+        for: 0s
         annotations:
-          summary: yow service {{ $labels.service }} CPU is high
-          description: process_cpu_usage has stayed above 80% for 5 minutes.
+          summary: Demo machine/resource alert visible in Grafana UI
+          description: Static demo alert for the UI proof. It does not require Prometheus, Telegram, or API keys.
         labels:
-          severity: warning
-      - uid: tfakkarni-high-latency
-        title: long HTTP requests
-        condition: C
+          area: machine
+          severity: demo
+      - uid: tfakkarni-demo-games-pipeline-alert
+        title: Demo games pipeline alert
+        condition: B
         data:
           - refId: A
             relativeTimeRange:
-              from: 300
+              from: 60
               to: 0
-            datasourceUid: prometheus
+            datasourceUid: __expr__
             model:
               datasource:
-                type: prometheus
-                uid: prometheus
-              editorMode: code
-              expr: histogram_quantile(0.95, sum by (le, service) (rate(http_server_requests_seconds_bucket{service=~".+"}[5m]))) > 2
-              instant: true
+                type: __expr__
+                uid: __expr__
+              expression: "1"
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
-          - refId: C
+              type: math
+          - refId: B
             relativeTimeRange:
-              from: 300
+              from: 60
               to: 0
             datasourceUid: __expr__
             model:
@@ -155,13 +154,14 @@ groups:
               expression: A
               intervalMs: 1000
               maxDataPoints: 43200
-              refId: C
+              refId: B
               type: threshold
-        noDataState: NoData
-        execErrState: Error
-        for: 5m
+        noDataState: OK
+        execErrState: OK
+        for: 0s
         annotations:
-          summary: yow service {{ $labels.service }} has long HTTP requests
-          description: p95 HTTP latency has stayed above 2 seconds for 5 minutes.
+          summary: Demo games pipeline alert visible in Grafana UI
+          description: Static placeholder for the later Jenkins games pipeline proof.
         labels:
-          severity: warning
+          area: ci
+          severity: demo

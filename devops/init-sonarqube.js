@@ -7,6 +7,8 @@ const ADMIN_PASSWORD = process.env.SONAR_ADMIN_PASSWORD || 'AdminTfakkarni123!';
 const STRICT_GATE = process.env.SONAR_STRICT_GATE || 'Tfakkarni Strict Gate';
 const GAME_GATE = process.env.SONAR_GAME_GATE || 'Tfakkarni Game Service Coverage Gate';
 const GAME_PROJECT_KEY = process.env.SONAR_GAME_PROJECT_KEY || 'tfakkarni-game-service';
+const TOKEN_NAME = process.env.SONAR_TOKEN_NAME || 'jenkins-integration-token';
+const TOKEN_ONLY = ['1', 'true', 'yes'].includes(String(process.env.SONAR_TOKEN_ONLY || '').toLowerCase());
 
 async function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -78,6 +80,15 @@ async function getAdminAuth() {
     throw new Error('Unable to authenticate to SonarQube as admin. Set SONAR_ADMIN_PASSWORD if it was changed.');
 }
 
+async function tokenValid(token) {
+    if (!token) return false;
+    const auth = getAuthHeader(token, '');
+    const res = await sonarGet('/api/authentication/validate', {}, auth);
+    if (!res.ok) return false;
+    const data = await res.json();
+    return !!data.valid;
+}
+
 async function createToken(tokenName, auth) {
     console.log(`🔑 Generating Jenkins token '${tokenName}'...`);
     let res = await sonarPost('/api/user_tokens/generate', { name: tokenName }, auth);
@@ -85,13 +96,23 @@ async function createToken(tokenName, auth) {
     if (!res.ok) {
         const text = await res.text();
         if (text.includes('already exists')) {
-            console.log(`✅ Token '${tokenName}' already exists. Retaining existing .env token.`);
+            const uniqueName = `${tokenName}-${new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}`;
+            console.log(`⚠️ Token '${tokenName}' already exists. Generating replacement token '${uniqueName}' because SonarQube only shows token values at creation time.`);
+            res = await sonarPost('/api/user_tokens/generate', { name: uniqueName }, auth);
+            if (!res.ok) {
+                console.error('❌ Failed to generate replacement token.', await res.text());
+                return null;
+            }
+        } else {
+            console.error('❌ Failed to generate token.', text);
             return null;
         }
-        console.error('❌ Failed to generate token.', text);
-        return null;
     }
     const data = await res.json();
+    if (!(await tokenValid(data.token))) {
+        console.error('❌ Generated token did not validate.');
+        return null;
+    }
     return data.token;
 }
 
@@ -213,9 +234,14 @@ async function setup() {
     await waitForSonarQube();
     await changeAdminPassword();
     const auth = await getAdminAuth();
-    await setupQualityGates(auth);
 
-    const token = await createToken('jenkins-integration-token', auth);
+    if (!TOKEN_ONLY) {
+        await setupQualityGates(auth);
+    } else {
+        console.log('⏭️ SONAR_TOKEN_ONLY enabled; skipping quality gate/project setup.');
+    }
+
+    const token = await createToken(TOKEN_NAME, auth);
     if (token) updateEnvFile(token);
 
     console.log('\n🎉 SonarQube initialization complete! Next steps:');
