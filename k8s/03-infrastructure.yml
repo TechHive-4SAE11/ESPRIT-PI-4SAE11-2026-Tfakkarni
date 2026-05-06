@@ -23,7 +23,7 @@ spec:
       containers:
         - name: discovery-service
           image: thelime1/tfakkarni:discovery
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8761
           env:
@@ -87,7 +87,7 @@ spec:
       containers:
         - name: config-service
           image: thelime1/tfakkarni:config
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8888
           envFrom:
@@ -152,7 +152,7 @@ spec:
       containers:
         - name: api-gateway
           image: thelime1/tfakkarni:gateway
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9090
           envFrom:

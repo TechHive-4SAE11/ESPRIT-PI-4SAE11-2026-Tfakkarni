@@ -4,7 +4,7 @@ FROM node:20-bookworm-slim AS build
 WORKDIR /workspace
 ENV NPM_CONFIG_LEGACY_PEER_DEPS=true
 
-ARG API_BASE_URL=http://localhost:9090
+ARG API_BASE_URL=/api
 ARG KEYCLOAK_URL=https://lemur-12.cloud-iam.com/auth
 ARG KEYCLOAK_CLIENT_ID=tfakkarni-frontend
 

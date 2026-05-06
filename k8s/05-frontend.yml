@@ -21,7 +21,7 @@ spec:
       containers:
         - name: frontend
           image: thelime1/tfakkarni:frontend
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
           resources:

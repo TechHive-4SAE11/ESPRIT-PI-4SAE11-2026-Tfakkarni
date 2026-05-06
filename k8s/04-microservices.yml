@@ -24,7 +24,7 @@ spec:
       containers:
         - name: user-service
           image: thelime1/tfakkarni:user
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 18081
           envFrom:
@@ -80,7 +80,7 @@ spec:
       containers:
         - name: game-service
           image: thelime1/tfakkarni:game
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 18082
           envFrom:
@@ -136,7 +136,7 @@ spec:
       containers:
         - name: tracking-service
           image: thelime1/tfakkarni:tracking
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 18083
           envFrom:
@@ -192,7 +192,7 @@ spec:
       containers:
         - name: alert-service
           image: thelime1/tfakkarni:alert
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 18084
           envFrom:
@@ -248,7 +248,7 @@ spec:
       containers:
         - name: ml-service
           image: thelime1/tfakkarni:ml
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 18085
           envFrom:
@@ -304,7 +304,7 @@ spec:
       containers:
         - name: medical-service
           image: thelime1/tfakkarni:medical
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 18086
           envFrom:
@@ -360,7 +360,7 @@ spec:
       containers:
         - name: medicament-validation-service
           image: thelime1/tfakkarni:medicament-validation
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 18087
           envFrom:
@@ -416,7 +416,7 @@ spec:
       containers:
         - name: iot-service
           image: thelime1/tfakkarni:iot
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 18088
           envFrom:
@@ -472,7 +472,7 @@ spec:
       containers:
         - name: assistant-service
           image: thelime1/tfakkarni:assistant
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 18089
           envFrom:
@@ -531,7 +531,7 @@ spec:
       containers:
         - name: analytics-service
           image: thelime1/tfakkarni:analytics
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 18090
           envFrom:
