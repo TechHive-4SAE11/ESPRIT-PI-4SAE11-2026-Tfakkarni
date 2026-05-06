@@ -100,7 +100,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./devops/jenkins/casc.yaml:/var/jenkins_home/casc.yaml:ro
     environment:
-      JAVA_OPTS: "-Xmx1024m -Djenkins.install.runSetupWizard=false"
+      JAVA_OPTS: "-Xmx1536m -Djenkins.install.runSetupWizard=false"
       CASC_JENKINS_CONFIG: "/var/jenkins_home/casc.yaml"
     networks: [tfakkarni-network]
     healthcheck:
@@ -110,7 +110,7 @@ services:
       start_period: 120s
       retries: 5
     restart: unless-stopped
-    deploy: { resources: { limits: { memory: 2G } } }
+    deploy: { resources: { limits: { memory: 4G } } }
 
 volumes:
   sonarqube_data:

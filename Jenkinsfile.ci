@@ -26,6 +26,7 @@ pipeline {
         SPRING_CLOUD_CONFIG_ENABLED = 'false'
         EUREKA_CLIENT_ENABLED = 'false'
         KEYCLOAK_ENABLED = 'false'
+        MAVEN_OPTS = '-Xmx768m -XX:MaxMetaspaceSize=256m'
     }
 
     stages {
