@@ -3,11 +3,13 @@ FROM jenkins/jenkins:lts-jdk17
 # Switch to root to install system packages
 USER root
 
-# Install Docker CLI and Docker Compose, and configure Git safe directory
+# Install Docker CLI, Docker Compose, and Chromium for frontend Karma tests.
 RUN apt-get update && \
-    apt-get install -y docker.io docker-compose && \
+    apt-get install -y docker.io docker-compose chromium chromium-sandbox fonts-liberation && \
     rm -rf /var/lib/apt/lists/* && \
     git config --global --add safe.directory '*'
+
+ENV CHROME_BIN=/usr/bin/chromium
 
 # Switch back to the jenkins user
 USER jenkins

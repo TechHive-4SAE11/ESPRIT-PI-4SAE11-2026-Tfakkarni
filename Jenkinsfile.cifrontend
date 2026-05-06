@@ -59,7 +59,7 @@ pipeline {
 
         stage('Unit Tests') {
             when { expression { return params.RUN_TESTS } }
-            steps { dir('frontend') { timeout(time: 15, unit: 'MINUTES') { retry(2) { sh 'npx ng test --watch=false --browsers=ChromeHeadless --code-coverage --no-progress' } } } }
+            steps { dir('frontend') { timeout(time: 15, unit: 'MINUTES') { retry(2) { sh 'npx ng test --watch=false --browsers=ChromeHeadlessNoSandbox --code-coverage --no-progress' } } } }
             post { always { junit testResults: 'frontend/test-results/**/*.xml', allowEmptyResults: true } }
         }
 
