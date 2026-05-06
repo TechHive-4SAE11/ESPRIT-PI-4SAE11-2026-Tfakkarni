@@ -128,9 +128,6 @@ jobs:
 
           pipelineJob('Backend-' + svcKey + '-CD') {
               description('CD for ' + svcKey + ': pull Docker Hub image and deploy only this service to Kubernetes')
-              triggers {
-                  upstream('Backend-' + svcKey + '-CI', 'SUCCESS')
-              }
               parameters {
                   stringParam('SERVICE_NAME', svcKey, 'Kubernetes deployment/container name')
                   stringParam('SERVICE_IMAGE_TAG', imageTag, 'Docker tag prefix produced by CI')
@@ -158,9 +155,6 @@ jobs:
 
       pipelineJob('Frontend-CD') {
           description('Frontend CD: pull Docker Hub image and deploy frontend to Kubernetes')
-          triggers {
-              upstream('Frontend-CI', 'SUCCESS')
-          }
           parameters {
               stringParam('DOCKER_REPOSITORY', dockerRepository, 'Docker Hub repository to deploy from')
               stringParam('IMAGE_TAG', 'frontend', 'Exact image tag from CI, e.g. frontend-123. Default deploys latest frontend tag.')
