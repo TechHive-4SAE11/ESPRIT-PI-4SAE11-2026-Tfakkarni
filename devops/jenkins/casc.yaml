@@ -121,6 +121,9 @@ jobs:
 
           pipelineJob('Backend-' + svcKey + '-CI') {
               description('CI for ' + svcKey + ': build/test, build Docker image, push to Docker Hub')
+              properties {
+                  disableConcurrentBuilds()
+              }
               parameters {
                   stringParam('SERVICE_NAME', svcKey, 'Backend Maven module and Kubernetes deployment name')
                   stringParam('SERVICE_IMAGE_TAG', imageTag, 'Docker tag prefix used by Kubernetes')
@@ -134,6 +137,9 @@ jobs:
 
           pipelineJob('Backend-' + svcKey + '-CD') {
               description('CD for ' + svcKey + ': pull Docker Hub image and deploy only this service to Kubernetes')
+              properties {
+                  disableConcurrentBuilds()
+              }
               parameters {
                   stringParam('SERVICE_NAME', svcKey, 'Kubernetes deployment/container name')
                   stringParam('SERVICE_IMAGE_TAG', imageTag, 'Docker tag prefix produced by CI')
@@ -150,6 +156,9 @@ jobs:
 
       pipelineJob('Frontend-CI') {
           description('Frontend CI: install/test/build, build Docker image, push to Docker Hub')
+          properties {
+              disableConcurrentBuilds()
+          }
           parameters {
               stringParam('BRANCH_NAME', defaultBranch, 'Git branch to build')
               stringParam('DOCKER_REPOSITORY', dockerRepository, 'Docker Hub repository used by Kubernetes')
@@ -161,6 +170,9 @@ jobs:
 
       pipelineJob('Frontend-CD') {
           description('Frontend CD: pull Docker Hub image and deploy frontend to Kubernetes')
+          properties {
+              disableConcurrentBuilds()
+          }
           parameters {
               stringParam('DOCKER_REPOSITORY', dockerRepository, 'Docker Hub repository to deploy from')
               stringParam('IMAGE_TAG', 'frontend', 'Exact image tag from CI, e.g. frontend-123. Default deploys latest frontend tag.')
