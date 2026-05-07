@@ -8,6 +8,7 @@ NGROK_PORT="${NGROK_PORT:-30080}"
 NGROK_API_URL="${NGROK_API_URL:-http://127.0.0.1:4040}"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-tfakkarni-devops}"
 APPLY_PLACEHOLDER_SECRETS="${APPLY_PLACEHOLDER_SECRETS:-true}"
+IMAGE_PULL_SECRET_NAME="${IMAGE_PULL_SECRET_NAME:-dockerhub-pull-secret}"
 WAIT_FOR_ROLLOUT="${WAIT_FOR_ROLLOUT:-true}"
 START_NGROK="${START_NGROK:-true}"
 SYNC_KEYCLOAK="${SYNC_KEYCLOAK:-true}"
@@ -36,6 +37,7 @@ Environment:
   WAIT_FOR_ROLLOUT            Wait for rollout status, default: true
   START_NGROK                 Start/reuse ngrok, default: true
   SYNC_KEYCLOAK               Run Keycloak client sync, default: true
+  IMAGE_PULL_SECRET_NAME      Kubernetes Docker Hub pull secret, default: dockerhub-pull-secret
 EOF
 }
 
@@ -132,6 +134,64 @@ kubectl_apply() {
   fi
 }
 
+load_dockerhub_credentials() {
+  [[ -z "$DRY_RUN_MODE" ]] || return 1
+  [[ -f "${ROOT_DIR}/.env" ]] || return 1
+  readarray -t docker_env < <(python3 - <<'PY' "${ROOT_DIR}/.env"
+from pathlib import Path
+import sys
+
+keys = {"DOCKERHUB_USERNAME", "DOCKERHUB_PASSWORD"}
+values = {}
+for raw in Path(sys.argv[1]).read_text(errors="ignore").splitlines():
+    line = raw.strip()
+    if not line or line.startswith("#") or "=" not in line:
+        continue
+    key, value = line.split("=", 1)
+    key = key.strip().removeprefix("export ").strip()
+    if key in keys:
+        values[key] = value.strip().strip('"').strip("'")
+for key in sorted(keys):
+    print(f"{key}={values.get(key, '')}")
+PY
+  )
+  for kv in "${docker_env[@]}"; do
+    case "$kv" in
+      DOCKERHUB_USERNAME=*) DOCKERHUB_USERNAME="${kv#DOCKERHUB_USERNAME=}" ;;
+      DOCKERHUB_PASSWORD=*) DOCKERHUB_PASSWORD="${kv#DOCKERHUB_PASSWORD=}" ;;
+    esac
+  done
+  [[ -n "${DOCKERHUB_USERNAME:-}" && -n "${DOCKERHUB_PASSWORD:-}" ]]
+}
+
+configure_image_pull_secret() {
+  [[ -z "$DRY_RUN_MODE" ]] || return 0
+  if ! load_dockerhub_credentials; then
+    echo "Docker Hub credentials were not found in .env; continuing without imagePullSecret."
+    return 0
+  fi
+  echo "Creating/updating Kubernetes Docker Hub imagePullSecret ${IMAGE_PULL_SECRET_NAME}."
+  kubectl create secret docker-registry "$IMAGE_PULL_SECRET_NAME" \
+    --namespace "$NAMESPACE" \
+    --docker-server='https://index.docker.io/v1/' \
+    --docker-username="$DOCKERHUB_USERNAME" \
+    --docker-password="$DOCKERHUB_PASSWORD" \
+    --dry-run=client -o yaml | kubectl apply -f -
+  kubectl patch serviceaccount default -n "$NAMESPACE" \
+    -p "{\"imagePullSecrets\":[{\"name\":\"$IMAGE_PULL_SECRET_NAME\"}]}" >/dev/null || true
+}
+
+patch_deployments_image_pull_secret() {
+  [[ -z "$DRY_RUN_MODE" ]] || return 0
+  kubectl get secret "$IMAGE_PULL_SECRET_NAME" -n "$NAMESPACE" >/dev/null 2>&1 || return 0
+  mapfile -t deployments < <(kubectl get deployments -n "$NAMESPACE" -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
+  for deployment in "${deployments[@]}"; do
+    [[ -n "$deployment" ]] || continue
+    kubectl patch deployment "$deployment" -n "$NAMESPACE" --type=merge \
+      -p "{\"spec\":{\"template\":{\"spec\":{\"imagePullSecrets\":[{\"name\":\"$IMAGE_PULL_SECRET_NAME\"}]}}}}" >/dev/null
+  done
+}
+
 wait_rollout() {
   [[ "$WAIT_FOR_ROLLOUT" == "true" && -z "$DRY_RUN_MODE" ]] || return 0
   kubectl -n "$NAMESPACE" rollout status "$1" --timeout="${2:-420s}"
@@ -210,12 +270,14 @@ deploy() {
   if [[ "$APPLY_PLACEHOLDER_SECRETS" == "true" || -n "$DRY_RUN_MODE" ]]; then
     kubectl_apply "${MANIFEST_DIR}/02-secrets.yml"
   fi
+  configure_image_pull_secret
   kubectl_apply "${MANIFEST_DIR}/03-infrastructure.yml"
   wait_rollout deployment/discovery-service 420s
   wait_rollout deployment/config-service 420s
   wait_rollout deployment/api-gateway 420s
   kubectl_apply "${MANIFEST_DIR}/04-microservices.yml"
   kubectl_apply "${MANIFEST_DIR}/05-frontend.yml"
+  patch_deployments_image_pull_secret
   kubectl_apply "${MANIFEST_DIR}/06-ingress.yml"
   wait_rollout deployment/frontend 420s
 
