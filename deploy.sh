@@ -13,10 +13,24 @@ WAIT_FOR_CORE_ROLLOUT="${WAIT_FOR_CORE_ROLLOUT:-false}"
 WAIT_FOR_ROLLOUT="${WAIT_FOR_ROLLOUT:-true}"
 START_NGROK="${START_NGROK:-true}"
 SYNC_KEYCLOAK="${SYNC_KEYCLOAK:-true}"
+TRACE_COMMANDS="${TRACE_COMMANDS:-false}"
 DRY_RUN_MODE=""
 ACTION="deploy"
 NGROK_PID_FILE="${ROOT_DIR}/.ngrok-tfakkarni.pid"
 PORT_FORWARD_PID_FILE="${ROOT_DIR}/.kubectl-frontend-port-forward.pid"
+
+log() {
+  printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
+}
+
+section() {
+  printf '\n[%s] == %s ==\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
+}
+
+if [[ "$TRACE_COMMANDS" == "true" ]]; then
+  export PS4='+ [${BASH_SOURCE##*/}:${LINENO}] '
+  set -x
+fi
 
 usage() {
   cat <<'EOF'
@@ -27,7 +41,7 @@ Usage:
 What deploy does:
   1. Verifies Docker and Kubernetes access.
   2. Applies k8s manifests in dependency order.
-  3. Waits for frontend and core rollouts by default.
+  3. Waits for frontend rollout by default; core rollouts are optional.
   4. Exposes frontend on localhost:30080 if needed.
   5. Starts ngrok for localhost:30080.
   6. Syncs the ngrok HTTPS URL into Keycloak frontend clients.
@@ -40,6 +54,7 @@ Environment:
   START_NGROK                 Start/reuse ngrok, default: true
   SYNC_KEYCLOAK               Run Keycloak client sync, default: true
   IMAGE_PULL_SECRET_NAME      Kubernetes Docker Hub pull secret, default: dockerhub-pull-secret
+  TRACE_COMMANDS              Print every shell command before it runs, default: false
 EOF
 }
 
@@ -69,6 +84,7 @@ stop_pid_file() {
     local pid
     pid="$(cat "$file" 2>/dev/null || true)"
     if [[ -n "$pid" ]] && kill -0 "$pid" >/dev/null 2>&1; then
+      log "Stopping process ${pid} from ${file}."
       kill "$pid" >/dev/null 2>&1 || true
     fi
     rm -f "$file"
@@ -76,34 +92,44 @@ stop_pid_file() {
 }
 
 down() {
+  section "Cleanup"
   stop_pid_file "$PORT_FORWARD_PID_FILE"
   stop_pid_file "$NGROK_PID_FILE"
   if command -v kubectl >/dev/null 2>&1; then
+    log "Deleting namespace ${NAMESPACE} if it exists."
     kubectl delete namespace "$NAMESPACE" --ignore-not-found=true --wait=false
   fi
-  echo "Tfakkarni deployment cleanup requested for namespace ${NAMESPACE}."
+  log "Tfakkarni deployment cleanup requested for namespace ${NAMESPACE}."
 }
 
 start_docker_if_needed() {
+  section "Docker"
   need_cmd docker
+  log "Checking Docker daemon access."
   if docker info >/dev/null 2>&1; then
+    log "Docker is reachable."
     return
   fi
   if command -v systemctl >/dev/null 2>&1; then
-    echo "Docker is not reachable; trying to start docker.service."
+    log "Docker is not reachable; trying to start docker.service."
     sudo -n systemctl start docker 2>/dev/null || sudo systemctl start docker || true
   fi
   docker info >/dev/null
+  log "Docker is reachable after start attempt."
 }
 
 ensure_kubernetes() {
+  section "Kubernetes"
   need_cmd kubectl
+  log "Checking Kubernetes API access."
   if kubectl cluster-info >/dev/null 2>&1; then
+    log "Kubernetes API is reachable."
     return
   fi
   if command -v kind >/dev/null 2>&1; then
-    echo "No reachable Kubernetes API; creating/reusing kind cluster ${KIND_CLUSTER_NAME}."
+    log "No reachable Kubernetes API; creating/reusing kind cluster ${KIND_CLUSTER_NAME}."
     if ! kind get clusters | grep -qx "$KIND_CLUSTER_NAME"; then
+      log "Creating kind cluster ${KIND_CLUSTER_NAME} with NodePort mappings."
       cat <<EOF | kind create cluster --name "$KIND_CLUSTER_NAME" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -120,15 +146,19 @@ nodes:
         hostPort: 30761
         protocol: TCP
 EOF
+    else
+      log "Kind cluster ${KIND_CLUSTER_NAME} already exists."
     fi
     kubectl cluster-info >/dev/null
+    log "Kubernetes API is reachable."
     return
   fi
-  echo "Kubernetes is not reachable and kind is not installed." >&2
+  log "Kubernetes is not reachable and kind is not installed." >&2
   exit 1
 }
 
 kubectl_apply() {
+  log "Applying ${1}${DRY_RUN_MODE:+ with dry-run=${DRY_RUN_MODE}}."
   if [[ -n "$DRY_RUN_MODE" ]]; then
     kubectl apply --dry-run="$DRY_RUN_MODE" -f "$1"
   else
@@ -169,10 +199,10 @@ PY
 configure_image_pull_secret() {
   [[ -z "$DRY_RUN_MODE" ]] || return 0
   if ! load_dockerhub_credentials; then
-    echo "Docker Hub credentials were not found in .env; continuing without imagePullSecret."
+    log "Docker Hub credentials were not found in .env; continuing without imagePullSecret."
     return 0
   fi
-  echo "Creating/updating Kubernetes Docker Hub imagePullSecret ${IMAGE_PULL_SECRET_NAME}."
+  log "Creating/updating Kubernetes Docker Hub imagePullSecret ${IMAGE_PULL_SECRET_NAME}."
   kubectl create secret docker-registry "$IMAGE_PULL_SECRET_NAME" \
     --namespace "$NAMESPACE" \
     --docker-server='https://index.docker.io/v1/' \
@@ -185,10 +215,15 @@ configure_image_pull_secret() {
 
 patch_deployments_image_pull_secret() {
   [[ -z "$DRY_RUN_MODE" ]] || return 0
-  kubectl get secret "$IMAGE_PULL_SECRET_NAME" -n "$NAMESPACE" >/dev/null 2>&1 || return 0
+  if ! kubectl get secret "$IMAGE_PULL_SECRET_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+    log "Image pull secret ${IMAGE_PULL_SECRET_NAME} is not present; skipping deployment patches."
+    return 0
+  fi
+  log "Patching deployments to use imagePullSecret ${IMAGE_PULL_SECRET_NAME}."
   mapfile -t deployments < <(kubectl get deployments -n "$NAMESPACE" -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
   for deployment in "${deployments[@]}"; do
     [[ -n "$deployment" ]] || continue
+    log "Patching deployment/${deployment}."
     kubectl patch deployment "$deployment" -n "$NAMESPACE" --type=merge \
       -p "{\"spec\":{\"template\":{\"spec\":{\"imagePullSecrets\":[{\"name\":\"$IMAGE_PULL_SECRET_NAME\"}]}}}}" >/dev/null
   done
@@ -222,15 +257,19 @@ PY
   for image in "${manifest_images[@]}"; do
     [[ -n "$image" ]] || continue
     if docker image inspect "$image" >/dev/null 2>&1; then
-      echo "Loading cached Docker image into kind: ${image}"
+      log "Loading cached Docker image into kind: ${image}"
       kind load docker-image --name "$KIND_CLUSTER_NAME" "$image"
+    else
+      log "Local Docker image not found, cluster will pull it if needed: ${image}"
     fi
   done
 }
 
 wait_rollout() {
   [[ "$WAIT_FOR_ROLLOUT" == "true" && -z "$DRY_RUN_MODE" ]] || return 0
+  log "Waiting for rollout: ${1} (timeout ${2:-420s})."
   kubectl -n "$NAMESPACE" rollout status "$1" --timeout="${2:-420s}"
+  log "Rollout completed: ${1}."
 }
 
 wait_core_rollout() {
@@ -240,18 +279,25 @@ wait_core_rollout() {
 
 ensure_local_frontend_port() {
   [[ -z "$DRY_RUN_MODE" ]] || return 0
+  section "Local frontend access"
+  log "Checking http://127.0.0.1:${NGROK_PORT}/."
   if curl -fsS "http://127.0.0.1:${NGROK_PORT}/" >/dev/null 2>&1; then
+    log "Frontend is already reachable on localhost:${NGROK_PORT}."
     return 0
   fi
   stop_pid_file "$PORT_FORWARD_PID_FILE"
-  echo "Starting kubectl port-forward svc/frontend ${NGROK_PORT}:80 for ngrok."
+  log "Starting kubectl port-forward svc/frontend ${NGROK_PORT}:80 for ngrok."
   kubectl -n "$NAMESPACE" port-forward svc/frontend "${NGROK_PORT}:80" >/tmp/tfakkarni-frontend-port-forward.log 2>&1 &
   echo $! > "$PORT_FORWARD_PID_FILE"
   for _ in $(seq 1 30); do
-    curl -fsS "http://127.0.0.1:${NGROK_PORT}/" >/dev/null 2>&1 && return 0
+    if curl -fsS "http://127.0.0.1:${NGROK_PORT}/" >/dev/null 2>&1; then
+      log "Frontend is reachable on localhost:${NGROK_PORT}."
+      return 0
+    fi
+    log "Waiting for frontend port-forward to become reachable."
     sleep 2
   done
-  echo "Frontend did not become reachable on localhost:${NGROK_PORT}." >&2
+  log "Frontend did not become reachable on localhost:${NGROK_PORT}." >&2
   tail -40 /tmp/tfakkarni-frontend-port-forward.log >&2 || true
   exit 1
 }
@@ -271,41 +317,56 @@ PY
 
 start_ngrok() {
   [[ "$START_NGROK" == "true" && -z "$DRY_RUN_MODE" ]] || return 0
+  section "Ngrok"
   need_cmd ngrok
   if ngrok_https_url >/dev/null 2>&1; then
+    log "Reusing existing ngrok tunnel: $(ngrok_https_url)"
     return 0
   fi
   stop_pid_file "$NGROK_PID_FILE"
   local config_args=()
   [[ -f "${ROOT_DIR}/ngrok.yml" ]] && config_args=(--config "${ROOT_DIR}/ngrok.yml")
-  echo "Starting ngrok for http://127.0.0.1:${NGROK_PORT}."
+  log "Starting ngrok for http://127.0.0.1:${NGROK_PORT}."
   ngrok http "${config_args[@]}" "http://127.0.0.1:${NGROK_PORT}" --log=stdout >/tmp/tfakkarni-ngrok.log 2>&1 &
   echo $! > "$NGROK_PID_FILE"
   for _ in $(seq 1 30); do
-    ngrok_https_url >/dev/null 2>&1 && return 0
+    if ngrok_https_url >/dev/null 2>&1; then
+      log "Ngrok HTTPS tunnel is ready: $(ngrok_https_url)"
+      return 0
+    fi
+    log "Waiting for ngrok HTTPS tunnel."
     sleep 2
   done
-  echo "ngrok did not expose an HTTPS tunnel." >&2
+  log "ngrok did not expose an HTTPS tunnel." >&2
   tail -80 /tmp/tfakkarni-ngrok.log >&2 || true
   exit 1
 }
 
 sync_keycloak() {
   [[ "$SYNC_KEYCLOAK" == "true" && -z "$DRY_RUN_MODE" ]] || return 0
+  section "Keycloak"
   local public_url
   public_url="$(ngrok_https_url)"
-  echo "Syncing Keycloak frontend clients to ngrok URL: ${public_url}"
+  log "Syncing Keycloak frontend clients to ngrok URL: ${public_url}"
   "${ROOT_DIR}/scripts/sync-keycloak-ngrok-client.sh" --ngrok-url "$public_url"
 }
 
 deploy() {
+  section "Preflight"
+  log "Root directory: ${ROOT_DIR}"
+  log "Namespace: ${NAMESPACE}"
+  log "Manifest directory: ${MANIFEST_DIR}"
+  log "Ngrok: ${START_NGROK}; Keycloak sync: ${SYNC_KEYCLOAK}; rollout wait: ${WAIT_FOR_ROLLOUT}; core rollout wait: ${WAIT_FOR_CORE_ROLLOUT}"
   start_docker_if_needed
   ensure_kubernetes
+  section "Kind image cache"
   load_kind_cached_images
 
-  echo "Deploying Tfakkarni to namespace ${NAMESPACE}${DRY_RUN_MODE:+ (dry-run=${DRY_RUN_MODE})}."
+  section "Apply manifests"
+  log "Deploying Tfakkarni to namespace ${NAMESPACE}${DRY_RUN_MODE:+ (dry-run=${DRY_RUN_MODE})}."
   kubectl_apply "${MANIFEST_DIR}/00-namespace.yml"
   if [[ "$DRY_RUN_MODE" == "server" ]] && ! kubectl get namespace "$NAMESPACE" >/dev/null 2>&1; then
+    log "Namespace is not available for server dry-run yet; switching remaining applies to client dry-run."
     DRY_RUN_MODE="client"
   fi
   kubectl_apply "${MANIFEST_DIR}/01-configmap.yml"
@@ -329,9 +390,10 @@ deploy() {
   sync_keycloak
 
   if [[ -z "$DRY_RUN_MODE" ]]; then
+    section "Deployment status"
     kubectl -n "$NAMESPACE" get pods,svc
     if [[ "$START_NGROK" == "true" ]]; then
-      echo "Frontend ngrok URL: $(ngrok_https_url)"
+      log "Frontend ngrok URL: $(ngrok_https_url)"
     fi
   fi
 }
