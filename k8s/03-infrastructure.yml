@@ -26,6 +26,9 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8761
+          envFrom:
+            - configMapRef:
+                name: tfakkarni-config
           env:
             - name: EUREKA_INSTANCE_HOSTNAME
               value: "discovery-service"
