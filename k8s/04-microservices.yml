@@ -37,11 +37,11 @@ spec:
             requests: { memory: "256Mi", cpu: "200m" }
           readinessProbe:
             httpGet: { path: /actuator/health, port: 18081 }
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
           livenessProbe:
             httpGet: { path: /actuator/health, port: 18081 }
-            initialDelaySeconds: 90
+            initialDelaySeconds: 300
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
@@ -93,11 +93,11 @@ spec:
             requests: { memory: "256Mi", cpu: "200m" }
           readinessProbe:
             httpGet: { path: /actuator/health, port: 18082 }
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
           livenessProbe:
             httpGet: { path: /actuator/health, port: 18082 }
-            initialDelaySeconds: 90
+            initialDelaySeconds: 300
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
@@ -149,11 +149,11 @@ spec:
             requests: { memory: "256Mi", cpu: "200m" }
           readinessProbe:
             httpGet: { path: /actuator/health, port: 18083 }
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
           livenessProbe:
             httpGet: { path: /actuator/health, port: 18083 }
-            initialDelaySeconds: 90
+            initialDelaySeconds: 300
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
@@ -205,11 +205,11 @@ spec:
             requests: { memory: "256Mi", cpu: "200m" }
           readinessProbe:
             httpGet: { path: /actuator/health, port: 18084 }
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
           livenessProbe:
             httpGet: { path: /actuator/health, port: 18084 }
-            initialDelaySeconds: 90
+            initialDelaySeconds: 300
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
@@ -261,11 +261,11 @@ spec:
             requests: { memory: "256Mi", cpu: "200m" }
           readinessProbe:
             httpGet: { path: /actuator/health, port: 18085 }
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
           livenessProbe:
             httpGet: { path: /actuator/health, port: 18085 }
-            initialDelaySeconds: 90
+            initialDelaySeconds: 300
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
@@ -317,11 +317,11 @@ spec:
             requests: { memory: "256Mi", cpu: "200m" }
           readinessProbe:
             httpGet: { path: /actuator/health, port: 18086 }
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
           livenessProbe:
             httpGet: { path: /actuator/health, port: 18086 }
-            initialDelaySeconds: 90
+            initialDelaySeconds: 300
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
@@ -373,11 +373,11 @@ spec:
             requests: { memory: "256Mi", cpu: "200m" }
           readinessProbe:
             httpGet: { path: /actuator/health, port: 18087 }
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
           livenessProbe:
             httpGet: { path: /actuator/health, port: 18087 }
-            initialDelaySeconds: 90
+            initialDelaySeconds: 300
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
@@ -429,11 +429,11 @@ spec:
             requests: { memory: "256Mi", cpu: "200m" }
           readinessProbe:
             httpGet: { path: /actuator/health, port: 18088 }
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
           livenessProbe:
             httpGet: { path: /actuator/health, port: 18088 }
-            initialDelaySeconds: 90
+            initialDelaySeconds: 300
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
@@ -488,11 +488,11 @@ spec:
             requests: { memory: "256Mi", cpu: "200m" }
           readinessProbe:
             httpGet: { path: /actuator/health, port: 18089 }
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
           livenessProbe:
             httpGet: { path: /actuator/health, port: 18089 }
-            initialDelaySeconds: 90
+            initialDelaySeconds: 300
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
@@ -544,11 +544,11 @@ spec:
             requests: { memory: "256Mi", cpu: "200m" }
           readinessProbe:
             httpGet: { path: /actuator/health, port: 18090 }
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
           livenessProbe:
             httpGet: { path: /actuator/health, port: 18090 }
-            initialDelaySeconds: 90
+            initialDelaySeconds: 300
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
