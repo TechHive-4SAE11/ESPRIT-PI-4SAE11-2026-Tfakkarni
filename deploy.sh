@@ -192,6 +192,40 @@ patch_deployments_image_pull_secret() {
   done
 }
 
+load_kind_cached_images() {
+  [[ -z "$DRY_RUN_MODE" ]] || return 0
+  command -v kind >/dev/null 2>&1 || return 0
+  kind get clusters | grep -qx "$KIND_CLUSTER_NAME" || return 0
+
+  mapfile -t manifest_images < <(python3 - <<'PY' "$MANIFEST_DIR"
+from pathlib import Path
+import re
+import sys
+
+images = []
+seen = set()
+for path in sorted(Path(sys.argv[1]).glob("*.yml")):
+    for line in path.read_text(errors="ignore").splitlines():
+        match = re.match(r"\s*image:\s*([^#\s]+)", line)
+        if not match:
+            continue
+        image = match.group(1).strip().strip('"').strip("'")
+        if image not in seen:
+            seen.add(image)
+            images.append(image)
+print("\n".join(images))
+PY
+  )
+
+  for image in "${manifest_images[@]}"; do
+    [[ -n "$image" ]] || continue
+    if docker image inspect "$image" >/dev/null 2>&1; then
+      echo "Loading cached Docker image into kind: ${image}"
+      kind load docker-image --name "$KIND_CLUSTER_NAME" "$image"
+    fi
+  done
+}
+
 wait_rollout() {
   [[ "$WAIT_FOR_ROLLOUT" == "true" && -z "$DRY_RUN_MODE" ]] || return 0
   kubectl -n "$NAMESPACE" rollout status "$1" --timeout="${2:-420s}"
@@ -260,6 +294,7 @@ sync_keycloak() {
 deploy() {
   start_docker_if_needed
   ensure_kubernetes
+  load_kind_cached_images
 
   echo "Deploying Tfakkarni to namespace ${NAMESPACE}${DRY_RUN_MODE:+ (dry-run=${DRY_RUN_MODE})}."
   kubectl_apply "${MANIFEST_DIR}/00-namespace.yml"
