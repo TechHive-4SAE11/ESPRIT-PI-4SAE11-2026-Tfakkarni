@@ -79,7 +79,7 @@ down() {
   stop_pid_file "$PORT_FORWARD_PID_FILE"
   stop_pid_file "$NGROK_PID_FILE"
   if command -v kubectl >/dev/null 2>&1; then
-    kubectl delete namespace "$NAMESPACE" --ignore-not-found=true
+    kubectl delete namespace "$NAMESPACE" --ignore-not-found=true --wait=false
   fi
   echo "Tfakkarni deployment cleanup requested for namespace ${NAMESPACE}."
 }
