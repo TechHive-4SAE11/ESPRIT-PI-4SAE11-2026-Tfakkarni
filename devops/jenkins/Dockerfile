@@ -11,6 +11,10 @@ RUN apt-get update && \
 
 ENV CHROME_BIN=/usr/bin/chromium
 
+ARG KUBECTL_VERSION=v1.36.0
+RUN curl -fsSL -o /usr/local/bin/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" && \
+    chmod +x /usr/local/bin/kubectl
+
 # Switch back to the jenkins user
 USER jenkins
 
