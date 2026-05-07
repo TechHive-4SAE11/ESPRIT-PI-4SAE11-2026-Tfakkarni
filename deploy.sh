@@ -9,6 +9,7 @@ NGROK_API_URL="${NGROK_API_URL:-http://127.0.0.1:4040}"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-tfakkarni-devops}"
 APPLY_PLACEHOLDER_SECRETS="${APPLY_PLACEHOLDER_SECRETS:-true}"
 IMAGE_PULL_SECRET_NAME="${IMAGE_PULL_SECRET_NAME:-dockerhub-pull-secret}"
+WAIT_FOR_CORE_ROLLOUT="${WAIT_FOR_CORE_ROLLOUT:-false}"
 WAIT_FOR_ROLLOUT="${WAIT_FOR_ROLLOUT:-true}"
 START_NGROK="${START_NGROK:-true}"
 SYNC_KEYCLOAK="${SYNC_KEYCLOAK:-true}"
@@ -35,6 +36,7 @@ Environment:
   KUBE_NAMESPACE              Namespace, default: tfakkarni
   APPLY_PLACEHOLDER_SECRETS   Apply k8s/02-secrets.yml, default: true for demo
   WAIT_FOR_ROLLOUT            Wait for rollout status, default: true
+  WAIT_FOR_CORE_ROLLOUT       Also wait for discovery/config/gateway, default: false
   START_NGROK                 Start/reuse ngrok, default: true
   SYNC_KEYCLOAK               Run Keycloak client sync, default: true
   IMAGE_PULL_SECRET_NAME      Kubernetes Docker Hub pull secret, default: dockerhub-pull-secret
@@ -231,6 +233,11 @@ wait_rollout() {
   kubectl -n "$NAMESPACE" rollout status "$1" --timeout="${2:-420s}"
 }
 
+wait_core_rollout() {
+  [[ "$WAIT_FOR_CORE_ROLLOUT" == "true" ]] || return 0
+  wait_rollout "$@"
+}
+
 ensure_local_frontend_port() {
   [[ -z "$DRY_RUN_MODE" ]] || return 0
   if curl -fsS "http://127.0.0.1:${NGROK_PORT}/" >/dev/null 2>&1; then
@@ -308,9 +315,9 @@ deploy() {
   configure_image_pull_secret
   kubectl_apply "${MANIFEST_DIR}/03-infrastructure.yml"
   patch_deployments_image_pull_secret
-  wait_rollout deployment/discovery-service 420s
-  wait_rollout deployment/config-service 420s
-  wait_rollout deployment/api-gateway 420s
+  wait_core_rollout deployment/discovery-service 420s
+  wait_core_rollout deployment/config-service 420s
+  wait_core_rollout deployment/api-gateway 420s
   kubectl_apply "${MANIFEST_DIR}/04-microservices.yml"
   kubectl_apply "${MANIFEST_DIR}/05-frontend.yml"
   patch_deployments_image_pull_secret
