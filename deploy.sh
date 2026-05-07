@@ -272,6 +272,7 @@ deploy() {
   fi
   configure_image_pull_secret
   kubectl_apply "${MANIFEST_DIR}/03-infrastructure.yml"
+  patch_deployments_image_pull_secret
   wait_rollout deployment/discovery-service 420s
   wait_rollout deployment/config-service 420s
   wait_rollout deployment/api-gateway 420s
